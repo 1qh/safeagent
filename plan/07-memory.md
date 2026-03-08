@@ -117,7 +117,7 @@ Layer boundaries are strict:
 
 ### How it works
 
-The agent factory wiring in [05 — Conversation Lifecycle](./05-conversation.md) injects a conversation store scoped by `userId` and `threadId`. Before each model call, the memory module loads the last ten turns plus the rolling summary and prepends them to context.
+The agent factory wiring in [05 — Conversation Pipeline](./05-conversation.md) injects a conversation store scoped by `userId` and `threadId`. Before each model call, the memory module loads the last ten turns plus the rolling summary and prepends them to context.
 
 ```mermaid
 sequenceDiagram
@@ -1476,8 +1476,8 @@ Emotional carry-forward can over-persist if decay is too long.
 
 | Component | Interaction |
 |-----------|------------|
-| **Requirements** ([01 — Requirements](./01-requirements.md)) | Defines trust, controllability, and persistence constraints memory must satisfy |
-| **Conversation Lifecycle** ([05 — Conversation Lifecycle](./05-conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines trust, controllability, and persistence constraints memory must satisfy |
+| **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
 | **Agents & Orchestration** ([06 — Agents & Orchestration](./06-agents.md)) | Defines tool invocation behavior, temporal expression resolution, and source-priority execution that consume memory context |
 | **Document Processing** ([08 — Document Processing](./08-documents.md)) | Coexists with memory recall in source fan-out and citation-aware synthesis |
 

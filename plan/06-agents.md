@@ -678,11 +678,11 @@ flowchart LR
 
 | Component | Interaction |
 |-----------|------------|
-| **Requirements** ([01 — Requirements](./01-requirements.md)) | Defines quality, safety, and behavior constraints for all orchestrated agent runs |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines quality, safety, and behavior constraints for all orchestrated agent runs |
 | **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides intent signals, rewritten queries, ambiguity markers, and dependency hints used by orchestrator and router |
 | **Memory & Intelligence** ([07 — Memory & Intelligence](./07-memory.md)) | Supplies thread short-term, user short-term, long-term recall, rolling summaries, and recall policies used during context assembly |
-| **Transport** ([11 — Transport](./11-transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
-| **Server** ([12 — Server](./12-server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
+| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
+| **Server** ([12 — Server Implementation](./12-server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
 
 ---
 
