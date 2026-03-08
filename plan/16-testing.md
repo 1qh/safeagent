@@ -3069,6 +3069,111 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Authentication refresh callback runs before requests when configured for short-lived tokens.
 - Payload-security validation is enforced at server emit boundary and client parse boundary.
 
+**Context-provider dependency injection**:
+
+- Context-provider hook receives authenticated request identity and thread context and can return optional system-message array.
+- Null or empty return from context-provider results in no additional injected system messages.
+- Direct-file context injection path is verified through context-provider outputs before agent execution.
+- Context-provider output preserves message ordering relative to baseline system prompt blocks.
+
+**Identity extraction and request context**:
+
+- User identity is resolved exclusively from token subject claim and forwarded into request context.
+- Thread identity from request payload and user identity from token are both present in every agent stream call.
+- Missing or invalid token prevents stream handler invocation.
+- Context identity cannot be overridden by model-generated data.
+
+**Keepalive stream behavior**:
+
+- Keepalive comment frames are emitted at fixed configured cadence during long-lived streams.
+- Keepalive timer starts with stream and is cleared on normal completion.
+- Keepalive timer is also cleared on tripwire and unknown-error termination paths.
+- Keepalive comments never mutate event sequencing for typed SSE events.
+
+**Tripwire payload contract**:
+
+- Tripwire events include concept identifier, human-readable reason, and fallback message fields.
+- Input-side p0 violations emit tripwire and terminate stream without further deltas.
+- Development-mode output p0 violations emit tripwire with the same payload shape.
+- Production output p0 path suppresses chunks and injects fallback delta instead of tripwire emission.
+
+**Output language drift safety net**:
+
+- Output sliding-window language scan uses accumulated stream text for drift detection.
+- Unsupported dominant language in configured policy produces output p0 behavior.
+- Drift handling follows the same mode-dependent path as other output p0 violations.
+- Supported-language output remains unaffected by scanner when no drift condition is met.
+
+**Internal versus external stream boundary**:
+
+- Internal framework events remain library-internal and are not exposed directly to network clients.
+- HTTP boundary maps internal events to custom named SSE protocol.
+- TUI consumes internal stream directly while preserving processor-chain semantics.
+- Protocol boundary invariants hold when new internal event kinds are added.
+
+**Session metadata and ownership persistence**:
+
+- Session metadata event is always the first emitted event before any text delta.
+- Trace ownership row is inserted before first outbound SSE event.
+- Trace ownership persistence enforces one trace identifier to one owning user mapping.
+- Feedback ownership verification succeeds only when trace ownership row matches requester.
+
+**Trace-step emission and filtering**:
+
+- Trace-step collector remains always active in processor chain regardless of requested verbosity.
+- Full verbosity emits trace-step events interleaved at natural pipeline positions.
+- Standard verbosity suppresses trace-step emission while keeping identical pipeline execution.
+- HTTP boundary applies verbosity filtering without mutating internal event production.
+- TUI receives trace-step data directly without HTTP filtering.
+
+**Trace-step envelope and type coverage**:
+
+- Trace-step envelope includes type discriminator, step discriminator, step data payload, latency, and timestamp fields.
+- Step-type coverage includes intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite.
+- Source-fetch step supports started, completed, and failed state payload variants.
+- Trace-step payloads preserve discriminated-union typing across all supported step kinds.
+
+**Verbosity security and performance invariants**:
+
+- Verbosity parameter propagates from route input to stream handling unchanged.
+- Standard mode emits eight user-facing event families with no trace-step writes.
+- Full mode adds trace-step events as ninth family without changing core pipeline behavior.
+- Standard mode has no additional stream-write overhead from suppressed trace-step events.
+- Full mode is restricted by developer-level authorization policy at server boundary.
+
+**CTA streaming integrity**:
+
+- CTA tool factory derives allowed suggestion schema directly from server CTA catalog.
+- Catalog ownership remains server-side while tool mechanics remain library-side.
+- Raw CTA tool-call and tool-result chunks are suppressed from outbound SSE stream.
+- Processor emits clean CTA event payload only for valid CTA suggestions.
+- Guardrail-aborted streams emit no CTA events due to processor ordering.
+- CTA payload enforces maximum three suggestions and required field structure.
+
+**Client SDK behavior guarantees**:
+
+- Runtime dependency graph remains zero production dependencies.
+- Browser and React Native compatible transport behavior is validated.
+- Optional typed-client integration path remains optional and does not affect base SDK contract.
+- Incremental SSE parser handles chunked transport and multi-line data assembly correctly.
+- Reconnect delay follows bounded exponential backoff with jitter.
+- Last-event identifier is stored and sent on reconnect attempts.
+- Offline queue capacity is configurable and overflow drops oldest entry while firing overflow callback.
+- Upload requests include authorization and progress reporting hooks.
+- Feedback submission automatically attaches latest trace identifier.
+- Token refresh callback executes before each request when configured.
+
+**SSE schema and payload security**:
+
+- Location payload type enum is restricted to supported place categories.
+- Location image metadata shape enforces required and optional fields exactly.
+- Citation payload URL fields validate trusted pattern constraints before emission.
+- Location coordinate values validate numeric range before emission.
+- Location image providers are enforced against configured provider policy.
+- Trace-step payloads are sanitized to prevent internal leakage in production streams.
+- Client-side schema validation rejects unknown fields and malformed payloads.
+- Client-side URL validation blocks rendering of nonconforming URLs.
+
 ### Module: Server Implementation (12)
 
 **Middleware chain**:
@@ -3124,6 +3229,136 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Tracing backend flushed with ten-second timeout.
 - Database and cache connections closed.
 - New requests during shutdown receive 503 with Retry-After header.
+
+**Thin-server boundary enforcement**:
+
+- Server tests verify configuration ownership while core execution behavior stays delegated to shared library.
+- Server route handlers remain stateless request adapters with no embedded orchestration logic.
+- Library boundary checks prevent server-local duplication of memory, retrieval, or guardrail internals.
+- Statelessness is validated under multi-instance routing without sticky-session assumptions.
+
+**Startup-failure and degradation matrix**:
+
+- Postgres dependency failure is startup-fatal and blocks listener startup.
+- Missing token-secret in production is startup-fatal and blocks listener startup.
+- Missing token-secret in non-production enables explicit development bypass with warning.
+- Missing language-model credentials degrades language-model-dependent endpoints to unavailable responses.
+- Surreal datastore, object storage, cache, background jobs, and tracing failures degrade gracefully with warnings.
+- Typed error-message map coverage is validated at startup and missing entries are fatal.
+- MCP connection failures are non-fatal with tool unavailability surfaced in health state.
+- Cache-layer failures are non-fatal with documented fallback behavior for cache, rate limit, and budget paths.
+
+**Request lifecycle and middleware detail**:
+
+- Middleware order is fully enforced and audited for every protected route.
+- Request identifier is forwarded when present or generated when absent, then propagated into logs.
+- Structured logging context carries request, user, agent, and trace identifiers through async call graph.
+- Rate limit uses sliding-window counters keyed by user and endpoint group.
+- Sliding-window storage uses sorted-set semantics with deterministic retry-after calculation.
+- Budget middleware performs reservation before model execution and reconciliation after completion.
+- Over-budget reservation path performs immediate rollback before rejection.
+- Daily counter expiry aligns with UTC day boundary.
+- Monthly counter expiry aligns with month boundary.
+
+**Agent configuration contracts**:
+
+- Agent registry entries include stable identifier, instructions, model constants, tools, guardrails, memory, and behavior toggles.
+- Model selection values are loaded from shared configuration constants rather than hardcoded literals.
+- Guardrail arrays are wired from server policy module into each agent definition.
+- Factory responsibilities and server-supplied configuration responsibilities remain strictly separated.
+- Unknown agent identifiers resolve to typed not-found behavior.
+
+**Location tool server configuration**:
+
+- Location configuration includes optional geocoder, optional image provider, and image-count limit.
+- Default geocoder behavior works with Nominatim-compatible path when no paid provider is configured.
+- Image provider wiring is server-supplied and opt-in.
+- Location events emit empty image arrays when image provider is not configured.
+- Location tooling remains inactive unless explicitly wired into agent toolset.
+
+**Guardrail policy wiring**:
+
+- Server owns input and output guardrail arrays and concept registry content.
+- Concept registry includes required unsupported-language and hate-speech concept mappings.
+- Guardrail verdict severity mapping follows pass, flag, and block behaviors exactly.
+- Policy composition tests cover topic-boundary and harmful-content rule sets.
+
+**MCP definition and runtime behavior**:
+
+- MCP definitions declare availability, stable identifiers, transport mode, and connection details.
+- MCP lifecycle initialization runs at startup with non-fatal failure handling.
+- Optional allowlists restrict exposed tools per MCP definition.
+- MCP call failures surface to runtime as tool-level errors without crashing server process.
+- Retry responsibility remains on MCP provider side, not server route layer.
+
+**Chat streaming endpoint coverage**:
+
+- Request schema validates message, optional thread identity, optional file references, and verbosity parameter.
+- Full verbosity access is rejected for non-developer callers.
+- Handler resolves agent, delegates stream to transport layer, and passes verbosity through.
+- Stream completion updates usage accounting and budget reconciliation.
+- Typed error mapping applies to stream-time error emissions.
+
+**Upload endpoint coverage**:
+
+- Multipart schema validation handles malformed payload rejection with typed errors.
+- Upload constraints enforce type allowlist, size limits, and quota limits before persistence.
+- Upload scope defaults to thread and supports explicit global scope.
+- Success response returns uploading state while blocking and background stages proceed.
+- Upload processing ownership stays in library pipeline with thin server delegation.
+
+**File-management endpoint coverage**:
+
+- List endpoint enforces pagination, optional status filter, and user scoping.
+- Detail endpoint returns metadata for owned records and typed not-found for missing or non-owned records.
+- Delete endpoint executes full deletion semantics and returns no-content on success.
+- Status endpoint returns status plus progress and failure details when relevant.
+- Page-image redirect endpoint enforces one-based page and zero-based image indexing with seven-day signed URL behavior.
+
+**Feedback and admin endpoint coverage**:
+
+- Feedback endpoint enforces ownership check of trace identifier before submission.
+- Feedback score validation allows only binary values.
+- Tracing-disabled deployments return success with traced-false indicator.
+- Admin budget endpoints enforce admin role for detail, update, and list.
+- Admin update supports optional immediate counter reset flag.
+- Admin list supports pagination and optional over-budget filter behavior.
+
+**Boundary input-validation guarantees**:
+
+- Chat message length cap enforces default thirty-two-thousand-character maximum.
+- Payload schema sanitization removes malformed or unsafe nested structures.
+- Multipart requests enforce structure validity and file presence requirements.
+- Upload validation enforces allowed types, file-size limits, and quota constraints.
+- Feedback validation enforces binary score and owned-trace requirements.
+- Admin validation enforces role and request-shape constraints.
+
+**Typed error-map enforcement**:
+
+- Library emits typed codes only and server maps each code to user-facing message.
+- Startup completeness check fails when any typed code lacks mapping.
+- Mapping supports both static strings and metadata-aware dynamic message builders.
+- Stream and non-stream routes both use the same mapped message source.
+
+**Graceful shutdown sequencing**:
+
+- Shutdown flips stop-accepting state before dependency teardown.
+- New requests after shutdown flag receive service-unavailable response.
+- Active streams are given up to thirty seconds to drain before forced close.
+- Tracing flush is attempted with ten-second timeout budget.
+- Database pools close quickly after stream-drain stage.
+- Retry-after guidance supports load balancer traffic drain coordination.
+
+**Health endpoint behavior**:
+
+- Health endpoint is unauthenticated and available without token.
+- Response includes overall status, uptime, build metadata, service checks, and MCP health map.
+- Core service probes run in parallel with per-probe five-second timeout.
+- Overall response latency remains bounded by five seconds.
+- Overall status is ok when critical datastore is healthy and optional checks pass.
+- Overall status is degraded when critical datastore is healthy and at least one non-critical check fails.
+- Overall status is down when critical datastore is unreachable.
+- HTTP status returns two-hundred for ok or degraded and five-hundred-three for down.
 
 ### Module: TUI App (13)
 
