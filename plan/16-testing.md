@@ -1231,12 +1231,10 @@ flowchart TD
 ### Reconnection Tests
 
 - Client SDK reconnects automatically after connection drop.
-- Reconnected client starts a fresh stream from current state; no mid-stream resume is supported.
+- Reconnected client sends the last event identifier on reconnect so the server can resume from where it left off when supported; otherwise the client starts a fresh stream.
 - Client SDK offline queue persists messages during disconnection and syncs on reconnect.
 - Multiple rapid disconnects and reconnects do not create duplicate connections or leak resources.
 - Reconnection with expired authentication token: client re-authenticates before resuming.
-
-Note: Resumable streaming with replay identifiers is not part of the current transport protocol. Reconnection always starts a new stream.
 
 ### Concurrent Stream Tests
 
@@ -1576,7 +1574,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 | Legacy image-resize API usage | MN_JIMP_LEGACY |
 | Unsupported observability adapter usage | MN_LANGFUSE_OTEL |
 | Cloud observability configuration | MN_LANGFUSE_CLOUD |
-| Raw SQL for metadata tables where ORM is required | MH_DRIZZLE_ORM |
+| Direct query strings for metadata tables where ORM is required | MH_DRIZZLE_ORM |
 | Hardcoded CTA catalog in core library | MH_CTA_SERVER_CATALOG |
 | Internal CTA tool-call leakage to client stream | MH_CTA_HIDDEN |
 
@@ -2125,7 +2123,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 - SSE parsing with correct line buffering for incomplete chunks.
 - Event type discrimination and typed event object construction.
-- Reconnection with backoff and jitter; reconnect starts a fresh stream rather than mid-stream resume.
+- Reconnection with backoff and jitter; client sends the last event identifier on reconnect for server-side resume support.
 - Offline queue: bounded in-memory queue with overflow callback and oldest-item drop policy.
 - Feedback flow attaches the stored trace identifier from session metadata.
 - File-upload flow sends multipart payload with progress callbacks and returns file reference.
