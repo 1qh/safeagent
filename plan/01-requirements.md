@@ -31,8 +31,13 @@ Create a production-ready TypeScript library (`safeagent`) that encapsulates all
 |---|---|
 | **safeagent package** | Published to a package registry — core library with agent, guardrails, MCP, streaming, memory, RAG, upload, observability, cache, rate limiting, circuit breaker, logging |
 | **@safeagent/client SDK** | Lightweight, framework-agnostic TypeScript SDK for consuming safeagent server APIs — SSE parsing, file upload, feedback, thread management, offline queue |
+| **@safeagent/react** | React hooks package implementing AI SDK ChatTransport for seamless `useChat` integration with safeagent SSE protocol |
+| **@safeagent/ui** | Web component package built on shadcn and Vercel ai-elements with custom trace/verbosity visualization components |
+| **@safeagent/ui-native** | React Native component package using NativeWind v4 with offline-first capabilities |
 | **safeagent-tui binary** | Interactive terminal UI for agent testing with streaming chat display, textarea input, commands, and file upload |
 | **Server project** | Separate repository with working SSE streaming API, file upload endpoint, guardrail configuration, MCP server definitions, agent prompts |
+| **Next.js demo app** | Full-featured web chat application demonstrating all components, server switching, verbosity toggle, trace visualization |
+| **Expo demo app** | Mobile chat application with offline-first behavior, all RN components, server switching |
 | **Self-test infrastructure** | Promptfoo integration for evaluation with custom scorer configuration |
 | **Full TDD test suite** | All tests passing under the Bun test runner — unit tests require zero secrets, integration tests use conditional skip |
 | **Document Q&A pipeline** | File upload processing, per-page summarization, hybrid search, progressive retrieval, structured citations with S3 storage |
@@ -53,6 +58,8 @@ Every item below must be verified before the project is considered complete.
 | MCP_DEMO | MCP tools from configured servers are available to the agent | Agent lists tools from all configured MCP servers |
 | GROUNDING_DEMO | Gemini grounding search returns cited responses | Send a request to the grounding agent — response contains grounding metadata |
 | EVAL_DEMO | Eval triggers and reports results | Run eval command — Promptfoo self-test loop completes and reports |
+| WEB_DEMO | Next.js demo renders streaming chat with trace visualization | Launch demo, send message, observe streaming text + trace-step timeline in full verbosity mode |
+| MOBILE_DEMO | Expo demo renders streaming chat with offline queue | Launch demo on simulator, send message, toggle airplane mode, verify queue + sync |
 
 ```mermaid
 flowchart TD
@@ -227,6 +234,27 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_TOPIC_ABANDONMENT | Topic abandonment detection | Detect when a user explicitly abandons a topic ("actually nevermind", "forget that", "let's talk about something else") or implicitly shifts to an unrelated subject. When detected, the agent must cleanly drop the previous topic context so it does not bleed into the new topic's response |
 | MH_PROACTIVE_CLARIFICATION | Proactive clarification for ambiguous input | When user input is genuinely ambiguous (multiple valid interpretations with significantly different answers), the agent must ask a brief clarifying question rather than guessing. The intent pipeline provides an ambiguity signal when the embedding router confidence is below threshold AND the LLM intent validator detects multiple plausible interpretations. The agent presents the top interpretations and asks which one the user means |
 
+### Frontend SDK
+
+| ID | Requirement | Detail |
+|---|---|---|
+| MH_REACT_HOOKS | React hooks package for AI SDK integration | `@safeagent/react` implements AI SDK ChatTransport interface so `useChat` works with safeagent SSE protocol. Exports typed hooks for chat, feedback, file upload, and thread management. Depends on `@safeagent/client` for SSE transport |
+| MH_WEB_COMPONENTS | Web UI component package | `@safeagent/ui` — components built on shadcn and Vercel ai-elements for conversation, messages, input, attachments, tool calls, reasoning, sources, model selector. Every component customizable via className and children slots. shadcn-style copy-into-project installation |
+| MH_RN_COMPONENTS | React Native UI component package | `@safeagent/ui-native` — equivalent component set for React Native using NativeWind v4. Shares hooks and business logic with web package via `@safeagent/react` but separate JSX and styling. Expo 52+ required for `expo/fetch` polyfill |
+| MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [11 — Streaming & Transport](./11-transport.md) |
+| MH_VERBOSITY_FILTER | Verbosity-level event filtering | Chat streaming endpoint accepts verbosity level (`standard` or `full`). `standard` emits user-facing events only. `full` adds trace-step events for developer debugging. Server controls via query parameter |
+| MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [18 — Frontend SDK](./18-frontend-sdk.md) |
+| MH_VERBOSITY_TOGGLE | Verbosity mode toggle component | UI toggle for switching between standard (user-friendly) and full (developer) verbosity modes. When toggled, subsequent requests use the selected verbosity level |
+| MH_SERVER_SWITCH | Multi-server switching in demos | Demo apps support dynamically switching between multiple safeagent server instances (like model switching in ChatGPT/Claude). Connection, auth, and thread state reset on switch |
+| MH_DEMO_WEB | Next.js demo application | Full-featured chat app demonstrating all web components, server switching, verbosity toggle, file upload, tool calls, reasoning display, trace visualization. See [19 — Demos](./19-demos.md) |
+| MH_DEMO_MOBILE | Expo demo application | Mobile chat app with offline-first behavior, all RN components, server switching, verbosity toggle. See [19 — Demos](./19-demos.md) |
+| MH_FRONTEND_TYPE_SAFETY | End-to-end type safety | SSE event types defined once in the safeagent library, flow through `@safeagent/client` → `@safeagent/react` → UI components with zero type casting or manual schema duplication |
+| MH_COMPONENT_CLI | CLI for component installation | shadcn-style CLI that copies components into consumer projects. Individual component installation, not monolithic import. Follows the same pattern as ai-elements installation |
+| MH_STORYBOOK | Component documentation via Storybook | Interactive component documentation with usage examples for both web and RN component packages |
+| MH_FRONTEND_A11Y | Accessibility compliance | All UI components support ARIA attributes, keyboard navigation, and screen reader compatibility. ai-elements already provides this for adopted components — custom components must match |
+| MH_OFFLINE_MOBILE | Offline-first mobile experience | Mobile app queues messages offline via `@safeagent/client` offline queue, persists conversation locally, syncs on reconnect. Visual indicators for offline state and pending messages |
+| MH_AI_ELEMENTS | ai-elements as web component foundation | Adopt Vercel ai-elements components for conversation, messages, input, tool calls, reasoning, attachments, sources, code blocks. Custom components only for gaps: trace UI, server switch, verbosity toggle, thread list, message timestamps, typing indicator, error retry |
+
 ### Complete Must-Have → Task Ownership Mapping
 
 Every must-have requirement maps to one or more implementation tasks in the [17 — Execution Plan](./17-execution.md). This table is the definitive traceability matrix — no must-have is unowned.
@@ -397,6 +425,27 @@ Every must-have requirement maps to one or more implementation tasks in the [17 
 | MH_TOPIC_ABANDONMENT | LLM_INTENT (enhancement — topic abandon intent type) |
 | MH_PROACTIVE_CLARIFICATION | CLARIFICATION_MODEL |
 
+#### Frontend SDK
+
+| Must-Have | Owning Task(s) |
+|-----------|----------------|
+| MH_REACT_HOOKS | REACT_HOOKS |
+| MH_WEB_COMPONENTS | WEB_COMPONENTS |
+| MH_RN_COMPONENTS | RN_COMPONENTS |
+| MH_TRACE_STEP_EVENTS | SSE_STREAMING (enhancement — trace-step collector and emission) |
+| MH_VERBOSITY_FILTER | SSE_STREAMING (enhancement — verbosity parameter), SERVER_ROUTES (enhancement — query parameter) |
+| MH_TRACE_UI | TRACE_UI |
+| MH_VERBOSITY_TOGGLE | WEB_COMPONENTS (enhancement — toggle component) |
+| MH_SERVER_SWITCH | DEMO_WEB, DEMO_MOBILE |
+| MH_DEMO_WEB | DEMO_WEB |
+| MH_DEMO_MOBILE | DEMO_MOBILE |
+| MH_FRONTEND_TYPE_SAFETY | CORE_TYPES (exports), CLIENT_SDK (re-exports), REACT_HOOKS (typed hooks) |
+| MH_COMPONENT_CLI | FRONTEND_CLI |
+| MH_STORYBOOK | STORYBOOK_FRONTEND |
+| MH_FRONTEND_A11Y | WEB_COMPONENTS, RN_COMPONENTS (enforced across all component tasks) |
+| MH_OFFLINE_MOBILE | CLIENT_SDK (offline queue), RN_COMPONENTS (offline indicators) |
+| MH_AI_ELEMENTS | WEB_COMPONENTS (adoption of ai-elements as component foundation) |
+
 Production-scale infrastructure (PgBouncer deployment, table partitioning, multi-region topology) is documented as operational guidance in [15 — Infrastructure § Capacity Planning](./15-infrastructure.md#capacity-planning). These are deployment-time provisioning decisions, not code implementation tasks — the application code is topology-agnostic by design.
 
 ```mermaid
@@ -418,6 +467,7 @@ flowchart LR
         AREA_INFRA[Infrastructure<br/>6 items]
         AREA_CROSS[Cross-Cutting<br/>15 items]
         AREA_HUMAN[Humanlikeness<br/>13 items]
+        AREA_FRONTEND[Frontend SDK<br/>16 items]
     end
 
     subgraph MUST_NOT["MUST NOT HAVE — Outside Boundary"]
@@ -479,7 +529,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_REDIS_STORAGE | Redis storage adapter | Valkey covers all cache/counter needs |
 | MN_UNSUPPORTED_MEDIA | Video/audio/spreadsheet file support | Different media processing pipelines |
 | MN_VOICE_AGENT | Voice/audio agent support | Different product (STT/TTS) |
-| MN_WEB_DASHBOARD | Admin dashboard / web UI | No frontend in this project |
+| MN_WEB_DASHBOARD | Admin dashboard / web UI | Frontend SDK provides chat components and demos only — no admin dashboard, analytics UI, or management console |
 | MN_COMPLEX_MULTI_AGENT | Multi-agent orchestration beyond simple delegation | Different complexity tier |
 | MN_WEBSOCKET | WebSocket for client-facing transport | SSE chosen deliberately for client-to-server streaming. Internal dependencies (e.g., SurrealDB SDK) may use WebSocket internally — this constraint applies only to the API transport layer |
 | MN_EDGE_RUNTIME | Cloudflare/edge runtime support | Different deployment constraints (Bun-only) |
@@ -492,6 +542,15 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_BUN_HOT | Must NOT use Bun hot mode for development | Native modules throw symbol-not-found errors after hot reload; debugger leaks resources |
 | MN_RAW_SURREALQL | Must NOT write raw SurrealQL string queries | All SurrealDB access through surqlize ORM. Type safety is non-negotiable |
 | MN_DIRECT_ENV_ACCESS | Must NOT read environment variables via runtime global environment access | All access through the typed env module validated by @t3-oss/env-core |
+
+### Frontend SDK Constraints
+
+| ID | Exclusion | Rationale |
+|---|---|---|
+| MN_ASSISTANT_UI | assistant-ui library | Not adopted — use official shadcn and Vercel ai-elements only |
+| MN_CUSTOM_THEME | Custom CSS variable theme system beyond shadcn | Tailwind v4 and shadcn color variables is the opinionated styling choice. No custom theming layer, no design token abstraction |
+| MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. `@safeagent/client` is the primary SDK — Eden Treaty SSE data is `Record<string, unknown>` (untyped) |
+| MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via `@safeagent/react`. JSX and styling are separate packages (`@safeagent/ui` for web, `@safeagent/ui-native` for RN) — no universal component abstraction |
 
 ---
 
