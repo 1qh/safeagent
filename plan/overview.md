@@ -1,0 +1,259 @@
+# safeagent — System Plan Overview
+
+> **What**: `safeagent` — a highly-opinionated headless TypeScript library for creating AI agents with streaming guardrails, MCP compatibility, Gemini grounding, intelligent query routing, humanlike conversation, and agentic document Q&A — plus a thin API server that consumes it.
+>
+> **Scale**: Designed for 10 million users from the ground up.
+>
+> **Runtime**: Bun-only TypeScript. All dependencies at latest — no pinning.
+
+---
+
+## High-Level System Architecture
+
+```mermaid
+graph TB
+    subgraph Clients["Client Applications (HTTP/SSE)"]
+        WEB["Web Apps"]
+        MOB["Mobile Apps"]
+    end
+
+    subgraph DirectConsumers["Direct Library Consumers"]
+        TUI["TUI Testing App\n(imports safeagent directly, no HTTP)"]
+    end
+
+    subgraph Server["Server Project (Thin)"]
+        ELYSIA["Elysia HTTP Server"]
+        AUTH["JWT Auth Middleware"]
+        ROUTES["SSE + Upload + Admin Routes"]
+        PROMPTS["Custom Prompts"]
+        INTENTS["Intent Config"]
+        GUARD_RULES["Guardrail Rules"]
+        MCP_CONF["MCP Config"]
+    end
+
+    subgraph Library["safeagent Library (All Logic)"]
+        direction TB
+        subgraph ConversationPipeline["Conversation Pipeline"]
+            EMB_ROUTER["Embedding Router"]
+            LLM_VALID["LLM Intent + Humanlikeness Signals"]
+            SRC_ROUTER["Source Priority Router"]
+            REWRITE["Two-Stage Query Rewrite"]
+        end
+
+        subgraph AgentLayer["Agent Layer"]
+            ORCH["Orchestrator Agent"]
+            SUB_A["Sub-Agent A"]
+            SUB_B["Sub-Agent B"]
+            SUB_N["Sub-Agent N"]
+        end
+
+        subgraph Tools["Agent Tools"]
+            DOC_SEARCH["Document Search"]
+            RAGFLOW["RAGFlow Search"]
+            GROUND["Grounding Search"]
+            MEM_RECALL["Memory Recall"]
+            EVIDENCE["Evidence Gate"]
+            CTA_TOOL["CTA Tool"]
+            LOCATION_TOOL["Location Tool"]
+        end
+
+        subgraph CoreModules["Core Modules"]
+            GUARD["Guardrail Pipeline"]
+            STREAM["SSE Streaming"]
+            UPLOAD["Upload Pipeline"]
+            MEMORY["Memory Intelligence"]
+            RAG["RAG Infrastructure"]
+            FILE_REG["File Registry"]
+        end
+    end
+
+    subgraph Infrastructure["Infrastructure"]
+        PG["PostgreSQL + pgvector"]
+        SURREAL["SurrealDB"]
+        S3["MinIO / S3"]
+        VALKEY["Valkey (Redis)"]
+        TRIGGER["Trigger.dev"]
+        LANGFUSE["Langfuse"]
+    end
+
+    Clients -->|SSE / HTTP| Server
+    TUI -->|direct import| Library
+    Server -->|imports| Library
+    Library --> Infrastructure
+    ORCH --> SUB_A & SUB_B & SUB_N
+    SUB_A & SUB_B & SUB_N --> Tools
+```
+
+## Request Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    participant ER as Embedding Router
+    participant LLM as LLM Validator
+    participant OR as Orchestrator
+    participant SA as Sub-Agent(s)
+    participant SR as Source Router
+    participant SRC as Sources
+
+    C->>S: Stream chat request (SSE)
+    S->>S: JWT Auth + Rate Limit
+
+    Note over S,LLM: Conversation Pipeline (file 05)
+    S->>ER: Classify intent (last 10 msgs, ~30-50ms)
+
+    par Speculative Pre-fetch
+        ER-->>SR: Initial intent guess → start fetching sources
+    and LLM Validation + Humanlikeness Signals
+        S->>LLM: Validate intent + detect correction/frustration/clarification need (~50-100ms)
+    end
+
+    alt LLM agrees with Embedding Router
+        Note over SR: Sources already loading
+    else LLM disagrees
+        SR->>SR: Cancel speculative fetch
+        SR->>SRC: Re-fetch with corrected intent
+    end
+
+    alt Single Intent
+        OR->>OR: Work directly with tools
+    else Multiple Intents
+        OR->>SA: Spawn parallel sub-agents
+        SA->>SRC: Each sub-agent queries sources
+        SA-->>OR: Results stream back
+        OR->>C: Live synthesis streaming
+    end
+```
+
+---
+
+## Table of Contents
+
+Each document below is a self-contained reference for its domain. Files are numbered for reading order but each can be read independently.
+
+### Requirements & Research
+
+| # | Document | Description |
+|---|----------|-------------|
+| 01 | [Requirements & Constraints](./01-requirements.md) | All must-have and must-not-have requirements, task ownership traceability, definition of done |
+| 02 | [Research & Decisions](./02-research.md) | Spike findings, Metis review, architectural decisions (EXEMPT from review rules) |
+
+### System Design
+
+| # | Document | Description |
+|---|----------|-------------|
+| 03 | [System Architecture](./03-architecture.md) | Component boundaries, infrastructure topology, data flows, scaling, connection management |
+| 04 | [Foundation](./04-foundation.md) | Core types, Zod schemas, configuration system, environment variables, storage factory |
+
+### Core Engine
+
+| # | Document | Description |
+|---|----------|-------------|
+| 05 | [Conversation Pipeline](./05-conversation.md) | Input validation → intent detection → query rewriting → source routing → response assembly |
+| 06 | [Agents & Orchestration](./06-agents.md) | Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors |
+| 07 | [Memory & Intelligence](./07-memory.md) | Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle |
+| 08 | [Document Processing](./08-documents.md) | Upload pipeline, multimodal-first processing, per-page summarization, file status management |
+| 09 | [Retrieval & Evidence](./09-retrieval.md) | Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding |
+
+### Safety & Transport
+
+| # | Document | Description |
+|---|----------|-------------|
+| 10 | [Guardrails & Safety](./10-guardrails.md) | Input/output guardrails, factories, zero-leak buffered mode, language and content safety |
+| 11 | [Streaming & Transport](./11-transport.md) | SSE streaming layer, CTA streaming, client SDK, event protocol |
+
+### Server & Interface
+
+| # | Document | Description |
+|---|----------|-------------|
+| 12 | [Server Implementation](./12-server.md) | Thin Elysia server, JWT auth, routes, middleware, startup sequence, error mapping |
+| 13 | [TUI App](./13-tui.md) | OpenTUI Solid terminal interface, component tree, command system, agent integration |
+
+### Operations & Quality
+
+| # | Document | Description |
+|---|----------|-------------|
+| 14 | [Observability & Evaluation](./14-observability.md) | Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering |
+| 15 | [Infrastructure & Operations](./15-infrastructure.md) | Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning |
+| 16 | [Testing Strategy](./16-testing.md) | Test pyramid, coverage map, CI pipeline, audit tasks, QA policy |
+
+### Execution
+
+| # | Document | Description |
+|---|----------|-------------|
+| 17 | [Execution Plan](./17-execution.md) | Parallel batches, dependency graph, task registry, agent dispatch, critical path |
+
+---
+
+## Deliverables Summary
+
+```mermaid
+graph LR
+    subgraph safeagent["safeagent (TypeScript library)"]
+        CORE["Core Library"]
+        TUI_PKG["TUI App"]
+        CLIENT["Client SDK"]
+    end
+
+    subgraph server["Server Project"]
+        SRV_CFG["Custom prompts + config"]
+        SRV_ROUTES["Thin route layer"]
+    end
+
+    safeagent -->|imported by| server
+    CORE -->|linked by| TUI_PKG
+    CORE -.- CLIENT
+```
+
+| Deliverable | Description |
+|-------------|-------------|
+| **safeagent** | TypeScript library — agent creation, guardrails, MCP, streaming, memory, RAG, upload, conversation pipeline, evidence gate, observability, eval |
+| **@safeagent/client** | Framework-agnostic TypeScript client SDK — SSE parsing, reconnection, offline queue, typed events |
+| **safeagent-tui** | Interactive TUI testing app — streaming chat, /upload, commands, "as good as opencode" |
+| **Server** | Thin API server — custom prompts, intent config, guardrail rules, MCP config, JWT auth |
+| **Docker Compose** | Full infrastructure — Postgres+pgvector, SurrealDB, MinIO, Valkey, Trigger.dev, Langfuse stack |
+
+---
+
+## Key Architectural Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Framework | @openai/agents + aisdk() bridge + Elysia (HTTP) | Agent/Runner/Handoff/Guardrail primitives with AI SDK model bridge and Bun-native HTTP layer |
+| Runtime | Bun only | Performance, native TypeScript, zero external runtime dependency |
+| Primary Model | Gemini Flash Lite (single model for everything) | Cost-efficient, fast, multimodal, structured output |
+| Conversation Pipeline | Unified: embedding router → LLM intent → source routing → response | Single coherent flow from input to output with humanlikeness signals at every stage |
+| Intent Detection | Two-stage: Embedding Router + LLM always validates | Maximum robustness with speculative pre-fetching |
+| Multi-Intent | Orchestrator spawns parallel sub-agents | Clean isolation, true parallelism, live synthesis |
+| Query Rewriting | Two-stage: LLM_INTENT (conversation-context) + REWRITE_TOOL (source-specific) | Complementary — context understanding vs retrieval optimization |
+| Source Execution | Parallel with priority weighting | Fire all sources, weight by priority when merging |
+| Source Failures | Circuit breaker wraps external API calls (per-call level, NOT pipeline-level) | Sources must be reliable — breakers on Gemini, RAGFlow, MCP individually |
+| Evidence Gate | Configurable threshold per topic | Server chooses: hard refusal, soft caveat, or ask clarification |
+| File References | Per-user FileRegistry across sessions | Temporal/ordinal resolution, ambiguity → ask to clarify |
+| Anti-Hallucination | Evidence Bundle Gate pattern | Hallucination reduction from ~24% to ~3% |
+| Document Processing | Multimodal-first with progressive retrieval | PDF pages sent directly to Gemini, ~47% cheaper |
+| RAG | Own Drizzle page_index with RRF hybrid search | 3-arm fusion: vector summaries + vector raw text + keyword |
+| Memory | Three-layer: thread short-term (Postgres) + user short-term (Postgres) + long-term (SurrealDB) | Conversation context + cross-thread continuity + persistent knowledge |
+| Humanlikeness | 13 engine-level behaviors woven into conversation pipeline, agents, and memory | Correction handling, frustration detection, response energy, emotional context, style memory, fact supersession, clarification patience, and more |
+| Streaming | RunStreamEvent format throughout | No format bridge, direct streaming path via Runner.run(), TripWire safety |
+| Scaling | Trigger.dev queue + horizontal workers | Configurable per deployment (queue-all vs in-process) |
+| Library/Server | Library defaults + server overrides | Great out-of-box experience, full customizability |
+| Error Messages | Typed error codes, server maps all (validated at startup) | Server controls user-facing tone, startup validation ensures completeness |
+| Testing | Comprehensive: unit + integration + eval + load + adversarial + regression + chaos + property-based | Maximum risk coverage |
+| Observability | Langfuse comprehensive: quality + latency + business metrics | Full agent tracing, cost tracking, user analytics |
+
+---
+
+## Estimated Scale
+
+| Metric | Target |
+|--------|--------|
+| Total users | 10,000,000 (capacity-planned at 1% DAU = 100K daily active, with burst headroom to 10% — see [03](./03-architecture.md) and [15](./15-infrastructure.md) capacity planning sections) |
+| Request latency (p50) | < 200ms to first token (standard streaming mode). Buffered guardrail mode intentionally delays TTFT by the buffer fill window — this is a deliberate safety trade-off, not a performance failure (see [10](./10-guardrails.md)) |
+| Intent classification | < 50ms (embedding), < 100ms (LLM validation) |
+| Source queries | Parallel, < 500ms total |
+| Document upload (50 pages) | ~10s (single key), ~2s (10-key pool) |
+| Storage per user | 100MB quota (configurable) |
+| Budget tracking | Sub-millisecond via Valkey atomic counters |
+| Horizontal scaling | Stateless API server + Trigger.dev workers |
