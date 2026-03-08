@@ -205,11 +205,11 @@ flowchart LR
     end
 
     subgraph AGENT_CALL["Agent Call"]
-        REQUEST_CONTEXT["requestContext: {\n  userId,\n  threadId\n}"]
+        REQUEST_CONTEXT["Request context carries\nuser and thread identity"]
     end
 
     subgraph DB_SCOPE["Conversation store"]
-        THREAD_QUERY_SCOPE["WHERE user_id = userId\nAND thread_id = threadId"]
+        THREAD_QUERY_SCOPE["Scoped by user identity\nand thread identity"]
     end
 
     AUTH_LAYER --> CHAT_ROUTE
@@ -663,7 +663,7 @@ flowchart LR
     end
 
     subgraph RECORD_EXPIRY["Record Expires"]
-        TTL_CLEANUP["Background cleanup\nDELETE WHERE expiresAt < now()"]
+        TTL_CLEANUP["Background cleanup\nRemove records past expiry"]
     end
 
     RECORD_CREATION --> RECORD_ACCESS
