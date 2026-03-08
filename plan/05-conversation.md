@@ -534,12 +534,12 @@ flowchart LR
         RAGFLOW_S["ragflow"]
         PAGE_INDEX["page_index"]
         KEYWORD_ENGINE["keyword search"]
-        WEB["grounding_search"]
+        GROUNDING_SEARCH["grounding_search"]
     end
     HYDE -->|Dense vector retrieval| RAGFLOW_S
     HYDE -->|Dense vector retrieval| PAGE_INDEX
     ENTITY -->|Keyword/BM25 retrieval| KEYWORD_ENGINE
-    DENSE -->|Web grounding retrieval| WEB
+    DENSE -->|Web grounding retrieval| GROUNDING_SEARCH
 ```
 Strategy behavior:
 - HyDE for vector retrieval sources.

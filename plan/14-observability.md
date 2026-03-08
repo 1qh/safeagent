@@ -48,7 +48,7 @@ graph TB
         direction TB
         LF_WEB["Langfuse Web\n(API + UI)"]
         LF_WORKER["Langfuse Worker\n(async processor)"]
-        CH["ClickHouse\n(OLAP traces)"]
+        CLICKHOUSE_OLAP["ClickHouse\n(OLAP traces)"]
         PG_LF["Postgres\n(langfuse DB)"]
         REDIS["Redis\n(queue + cache)"]
         OBJECT_STORE_LF["Object Storage / MinIO\n(langfuse-media bucket)"]
@@ -92,26 +92,26 @@ graph TB
     subgraph DOCKER["Docker Compose — profiles: [langfuse]"]
         direction TB
         subgraph CORE["Langfuse Core"]
-            WEB["langfuse-web\nport 3100\nUI + REST API"]
-            WORKER["langfuse-worker\nasync trace processor"]
+            LANGFUSE_WEB["langfuse-web\nport 3100\nUI + REST API"]
+            LANGFUSE_WORKER["langfuse-worker\nasync trace processor"]
         end
         subgraph STORAGE["Shared Infrastructure"]
-            PG["Postgres (pgvector/pgvector)\nDB: langfuse\n(shared instance,\nseparate from safeagent DB)"]
+            POSTGRES_SHARED["Postgres (pgvector/pgvector)\nDB: langfuse\n(shared instance,\nseparate from safeagent DB)"]
             MINIO["MinIO\nBucket: langfuse-media\n(shared instance,\nseparate from uploads bucket)"]
         end
         subgraph LANGFUSE_ONLY["Langfuse-Only Services"]
-            CH["ClickHouse\nOLAP storage\ntraces + observations + scores"]
+            CLICKHOUSE["ClickHouse\nOLAP storage\ntraces + observations + scores"]
             REDIS_LF["Redis\nport 6380\nqueue + cache\n(separate from Valkey on 6379)"]
         end
-        WEB --> PG
-        WEB --> CH
-        WEB --> REDIS_LF
-        WORKER --> PG
-        WORKER --> CH
-        WORKER --> REDIS_LF
-        WORKER --> MINIO
+        LANGFUSE_WEB --> POSTGRES_SHARED
+        LANGFUSE_WEB --> CLICKHOUSE
+        LANGFUSE_WEB --> REDIS_LF
+        LANGFUSE_WORKER --> POSTGRES_SHARED
+        LANGFUSE_WORKER --> CLICKHOUSE
+        LANGFUSE_WORKER --> REDIS_LF
+        LANGFUSE_WORKER --> MINIO
     end
-    DEV["Developer"] -->|"start the container stack\nwith the langfuse profile"| DOCKER
+    DEVELOPER["Developer"] -->|"start the container stack\nwith the langfuse profile"| DOCKER
     DEV -->|"open the Langfuse web interface"| WEB
 ```
 All six Langfuse services sit behind an optional Langfuse profile in the container stack. Developers opt in by enabling that profile. Without it, safeagent operates normally — the observability module returns no-ops. This keeps the development experience lightweight for contributors who do not need tracing.

@@ -34,7 +34,7 @@ graph TB
         CTA_PROC["CTA Stream\nProcessor"]
         LOC_PROC["Location Stream\nProcessor"]
         TRACE_COLLECT["Trace-Step\nCollector"]
-        TUI["TUI Client\n(direct library stream, no SSE)"]
+        TUI_CLIENT["TUI Client\n(direct library stream, no SSE)"]
     end
 
     subgraph HTTP_BOUNDARY["HTTP Boundary (Elysia)"]
@@ -224,13 +224,13 @@ flowchart LR
     end
 
     subgraph CLIENTS["External Clients"]
-        WEB["Web / Mobile\n@safeagent/client"]
+        WEB_MOBILE_CLIENT["Web / Mobile\n@safeagent/client"]
     end
 
     AGENT --> GP --> CP
     CP --> TUI_C
     CP --> SSE
-    SSE --> WEB
+    SSE --> WEB_MOBILE_CLIENT
 ```
 
 The wire protocol is custom SSE named events, not any framework-specific data format. `@safeagent/client` parses these events directly.

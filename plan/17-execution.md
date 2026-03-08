@@ -1148,24 +1148,24 @@ flowchart TB
 
     subgraph PARALLEL_WITHIN_BATCH_RULE["Rule 2: Parallel Within Batch"]
         START["Batch starts"]
-        T_A["Task A"]
-        T_B["Task B"]
-        T_C["Task C"]
+        TASK_ALPHA["Task A"]
+        TASK_BETA["Task B"]
+        TASK_GAMMA["Task C"]
         DONE["All complete"]
 
-        START --> T_A & T_B & T_C
-        T_A & T_B & T_C --> DONE
+        START --> TASK_ALPHA & TASK_BETA & TASK_GAMMA
+        TASK_ALPHA & TASK_BETA & TASK_GAMMA --> DONE
     end
 
     subgraph FAILURE_ISOLATION_RULE["Rule 3: Failure Isolation"]
-        FAIL_T["Task X fails"]
+        FAILED_TASK["Task X fails"]
         DOWN["Downstream tasks<br/>that depend on X"]
         INDEP["Independent tasks<br/>in same batch"]
         BLOCK["BLOCKED"]
         CONTINUE["CONTINUE"]
 
-        FAIL_T --> DOWN --> BLOCK
-        FAIL_T --> INDEP --> CONTINUE
+        FAILED_TASK --> DOWN --> BLOCK
+        FAILED_TASK --> INDEP --> CONTINUE
     end
 ```
 

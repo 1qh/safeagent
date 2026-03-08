@@ -13,8 +13,8 @@
 ```mermaid
 graph TB
     subgraph CLIENT_APPLICATIONS["Client Applications (HTTP/SSE)"]
-        WEB["Web Apps\n(incl. Next.js Demo)"]
-        MOB["Mobile Apps\n(incl. Expo Demo)"]
+        WEB_CLIENTS["Web Apps\n(incl. Next.js Demo)"]
+        MOBILE_CLIENTS["Mobile Apps\n(incl. Expo Demo)"]
     end
 
     subgraph FRONTEND_SDK_PACKAGES["Frontend SDK (safeagent monorepo)"]
@@ -25,11 +25,11 @@ graph TB
     end
 
     subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
-        TUI["TUI Testing App\n(imports safeagent directly, no HTTP)"]
+        TUI_APP["TUI Testing App\n(imports safeagent directly, no HTTP)"]
     end
 
     subgraph SERVER_PROJECT["Server Project (Thin)"]
-        ELYSIA["Elysia HTTP Server"]
+        ELYSIA_SERVER["Elysia HTTP Server"]
         AUTH["JWT Auth Middleware"]
         ROUTES["SSE + Upload + Admin Routes"]
         PROMPTS["Custom Prompts"]
@@ -48,10 +48,10 @@ graph TB
         end
 
         subgraph AGENT_LAYER["Agent Layer"]
-            ORCH["Orchestrator Agent"]
-            SUB_A["Sub-Agent A"]
-            SUB_B["Sub-Agent B"]
-            SUB_N["Sub-Agent N"]
+            ORCHESTRATOR["Orchestrator Agent"]
+            SUB_AGENT_A["Sub-Agent A"]
+            SUB_AGENT_B["Sub-Agent B"]
+            SUB_AGENT_N["Sub-Agent N"]
         end
 
         subgraph AGENT_TOOLS["Agent Tools"]
@@ -75,7 +75,7 @@ graph TB
     end
 
     subgraph INFRASTRUCTURE_LAYER["Infrastructure"]
-        PG["PostgreSQL + pgvector"]
+        POSTGRESQL["PostgreSQL + pgvector"]
         SURREAL["SurrealDB"]
         OBJECT_STORAGE_BUCKET["MinIO / S3"]
         VALKEY["Valkey (Redis)"]
@@ -84,17 +84,17 @@ graph TB
     end
 
     CLIENT_APPLICATIONS -->|SSE / HTTP| SERVER_PROJECT
-    TUI -->|direct import| SAFEAGENT_LIBRARY
+    TUI_APP -->|direct import| SAFEAGENT_LIBRARY
     SERVER_PROJECT -->|imports| SAFEAGENT_LIBRARY
     SAFEAGENT_LIBRARY --> INFRASTRUCTURE_LAYER
-    ORCH --> SUB_A & SUB_B & SUB_N
-    SUB_A & SUB_B & SUB_N --> AGENT_TOOLS
+    ORCHESTRATOR --> SUB_AGENT_A & SUB_AGENT_B & SUB_AGENT_N
+    SUB_AGENT_A & SUB_AGENT_B & SUB_AGENT_N --> AGENT_TOOLS
 
     SAFEAGENT_LIBRARY -.->|"types"| CLIENT_PKG
     CLIENT_PKG --> REACT_PKG
     REACT_PKG --> UI_WEB_PKG & UI_NATIVE_PKG
-    UI_WEB_PKG -.->|"consumed by"| WEB
-    UI_NATIVE_PKG -.->|"consumed by"| MOB
+    UI_WEB_PKG -.->|"consumed by"| WEB_CLIENTS
+    UI_NATIVE_PKG -.->|"consumed by"| MOBILE_CLIENTS
 ```
 
 ## Request Lifecycle

@@ -48,7 +48,7 @@ flowchart TB
     subgraph AGENT_LAYER["Agent"]
         INTENT["Intent Detection"]
         LANG_GATE["Language Gate\nPost-Intent Gate enforcement"]
-        ORCH["Orchestrator"]
+        ORCHESTRATOR["Orchestrator"]
         SUBAGENTS["Sub-Agents"]
     end
 
@@ -75,10 +75,10 @@ flowchart TB
     AGG_IN -->|p1| FLAG_IN
     AGG_IN -->|p2| INTENT
     INTENT --> LANG_GATE
-    LANG_GATE --> ORCH
-    ORCH --> SUBAGENTS
+    LANG_GATE --> ORCHESTRATOR
+    ORCHESTRATOR --> SUBAGENTS
 
-    ORCH --> WINDOW
+    ORCHESTRATOR --> WINDOW
     WINDOW --> LANG_GUARD_OUTPUT & HATE_GUARD_OUTPUT & GUARDRAIL_N_OUTPUT
     LANG_GUARD_OUTPUT & HATE_GUARD_OUTPUT & GUARDRAIL_N_OUTPUT --> AGG_OUT
     AGG_OUT -->|p0 dev| DEV_TRIP
