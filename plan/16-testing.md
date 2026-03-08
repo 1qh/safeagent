@@ -1,6 +1,6 @@
 # 16 — Testing
 
-> **Scope**: Complete testing methodology covering eight testing types, suite separation for CI behavior, mock-model patterns, QA policy, coverage linkage to requirement IDs, and task specifications for E2E verification, publish preparation, smoke validation, load benchmarking, and final audits.
+> **Scope**: Complete testing methodology covering thirteen testing types, suite separation for CI behavior, mock-model patterns, QA policy, coverage linkage to requirement IDs, and task specifications for E2E verification, publish preparation, smoke validation, load benchmarking, and final audits.
 >
 > **Tasks**: E2E_TESTS, PKG_PUBLISH, SMOKE_TESTS, LOAD_TESTS, AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE.
 
@@ -128,7 +128,7 @@ The goal is not maximum test count but maximum confidence per maintenance dollar
 
 ## Testing Pyramid
 
-The project uses fourteen testing types organized into three tiers by execution frequency and cost. Every module has unit coverage; critical paths are covered by at least three layers.
+The project uses thirteen testing types organized into three tiers by execution frequency and cost. Every module has unit coverage; critical paths are covered by at least three layers.
 
 ```mermaid
 graph TB
@@ -2091,7 +2091,7 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 
 ### Module: Conversation Pipeline (05)
 
-Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete six-phase flow.
+Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete five-phase flow (Phase 0 through Phase 4).
 
 **Phase 0 — input validation and language gate**:
 
@@ -2251,8 +2251,7 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Frustration tracking accumulates escalation trend across turns.
 - Escalation trend injects de-escalation context signal for response strategy.
 - Topic abandonment signal flushes stale active-topic context before synthesis.
-- Low-confidence plus multiple plausible interpretations triggers proactive clarification question.
-- Proactive clarification response includes top plausible interpretations rather than generic ask-again prompt.
+- Low-confidence ambiguous cases trigger proactive clarification rather than forced assumptions.
 - Clarification route is used for no-match and low-confidence ambiguous outcomes.
 
 **Temporal and language piggyback behaviors**:
@@ -3951,8 +3950,8 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Usage-event persistence path is append-only and never mutates prior events.
 - Token-recording persistence is non-blocking relative to response streaming path.
 - Budget exceeded response returns HTTP 429 with descriptive denial payload.
-- Key format for daily counters matches `budget:{userId}:daily:{YYYY-MM-DD}`.
-- Key format for monthly counters matches `budget:{userId}:monthly:{YYYY-MM}`.
+- Daily counter keys are scoped per user and auto-expire at the UTC day boundary.
+- Monthly counter keys are scoped per user and auto-expire at the UTC month-end boundary.
 - Per-user limit overrides are cached and reused before TTL expiry.
 - Override-cache invalidation occurs immediately after admin limit update.
 - Admin detail path returns user limits, current spend, and period metadata.
@@ -4136,7 +4135,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - ai-elements wrappers render correctly in integrated chat-surface state.
 - Custom components consume hook state and emit expected callback semantics.
 - API shape remains consistent across related primitive wrappers.
-- `className` extension points apply without breaking default internals.
+- Custom CSS class extension points apply without breaking default internals.
 - Slot-override behavior works for key composition surfaces.
 - Accessibility semantics are present for custom controls and dynamic surfaces.
 - Offline-state UI provides actionable reconnect guidance.
@@ -4272,71 +4271,71 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 Every Must Have feature area maps to one or more testing layers.
 
-| Feature Area | Unit | Integration | End-to-End | Eval | Load | Adversarial |
-|---|---|---|---|---|---|---|
-| Agent creation and defaults | ✓ |  | ✓ |  |  |  |
-| Input guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Streaming output guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Zero-leak buffered mode | ✓ |  | ✓ |  |  | ✓ |
-| Guardrail factories | ✓ |  |  |  |  |  |
-| MCP client wrapper | ✓ | ✓ | ✓ |  |  |  |
-| Streaming transport | ✓ |  | ✓ |  | ✓ |  |
-| Grounding search mode | ✓ | ✓ | ✓ | ✓ |  |  |
-| Short-term memory | ✓ | ✓ | ✓ |  |  |  |
-| Long-term memory | ✓ | ✓ | ✓ | ✓ |  |  |
-| Memory recall tool | ✓ |  | ✓ |  |  |  |
-| Auth middleware | ✓ |  | ✓ |  | ✓ |  |
-| Trace and thread delivery | ✓ |  | ✓ |  |  |  |
-| Provider-agnostic configuration | ✓ |  |  |  |  |  |
-| TUI streaming display | ✓ |  | ✓ |  |  |  |
-| Promptfoo provider helper | ✓ |  |  | ✓ |  |  |
-| Custom evaluation scorers | ✓ |  |  | ✓ |  |  |
-| File upload pipeline | ✓ | ✓ | ✓ |  | ✓ |  |
-| Multimodal document processing | ✓ | ✓ | ✓ | ✓ |  |  |
-| Hybrid retrieval | ✓ | ✓ | ✓ | ✓ | ✓ |  |
-| Structured citations | ✓ | ✓ | ✓ | ✓ |  |  |
-| Object storage | ✓ | ✓ | ✓ |  | ✓ |  |
-| File signature validation | ✓ |  |  |  |  |  |
-| CTA streaming | ✓ |  | ✓ | ✓ |  |  |
-| Location enrichment | ✓ |  | ✓ |  |  |  |
-| Rate limiting | ✓ | ✓ |  |  | ✓ |  |
-| Token budget | ✓ |  | ✓ |  | ✓ |  |
-| Circuit breaker | ✓ |  |  |  |  |  |
-| Structured logging | ✓ |  |  |  |  |  |
-| Observability tracing | ✓ | ✓ | ✓ |  |  |  |
-| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ |
-| CORS allowlist enforcement | ✓ | ✓ | ✓ |  |  |  |
-| Role-based authorization | ✓ | ✓ | ✓ |  |  | ✓ |
-| Audit logging | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| User feedback linkage | ✓ |  | ✓ |  |  |  |
-| ORM and migrations | ✓ | ✓ |  |  |  |  |
-| Injection detection ensemble | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Content sanitization | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Memory poisoning defense | ✓ | ✓ | ✓ |  |  | ✓ |
-| Structured result memory | ✓ | ✓ | ✓ |  |  |  |
-| Cross-conversation retrieval | ✓ | ✓ | ✓ |  |  |  |
-| Admin API | ✓ |  |  |  |  |  |
-| Prompt management | ✓ | ✓ |  |  |  |  |
-| Client offline queue | ✓ |  |  |  |  |  |
-| Frontend type safety | ✓ | ✓ | ✓ |  |  |  |
-| OpenAPI documentation | ✓ | ✓ | ✓ |  |  |  |
-| Correction handling | ✓ |  | ✓ | ✓ |  |  |
-| Emotional context carry-forward | ✓ |  | ✓ | ✓ |  |  |
-| Frustration escalation detection | ✓ |  | ✓ | ✓ |  | ✓ |
-| Repeated question differentiation | ✓ |  | ✓ | ✓ |  |  |
-| Communication style memory | ✓ | ✓ | ✓ |  |  |  |
-| Temporal fact markers | ✓ | ✓ |  |  |  |  |
-| Fact supersession | ✓ | ✓ | ✓ |  |  |  |
-| Implicit reference resolution | ✓ |  | ✓ | ✓ |  |  |
-| Response energy matching | ✓ |  | ✓ | ✓ |  |  |
-| Conversation resumption | ✓ |  | ✓ |  |  |  |
-| Clarification patience model | ✓ |  | ✓ | ✓ |  |  |
-| Topic abandonment | ✓ |  | ✓ | ✓ |  |  |
-| Proactive clarification | ✓ |  | ✓ | ✓ |  |  |
+| Feature Area | Unit | Integration | End-to-End | Eval | Load | Adversarial | Regression |
+|---|---|---|---|---|---|---|---|
+| Agent creation and defaults | ✓ |  | ✓ |  |  |  |  |
+| Input guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
+| Streaming output guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
+| Zero-leak buffered mode | ✓ |  | ✓ |  |  | ✓ | ✓ |
+| Guardrail factories | ✓ |  |  |  |  |  |  |
+| MCP client wrapper | ✓ | ✓ | ✓ |  |  |  |  |
+| Streaming transport | ✓ |  | ✓ |  | ✓ |  | ✓ |
+| Grounding search mode | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| Short-term memory | ✓ | ✓ | ✓ |  |  |  |  |
+| Long-term memory | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Memory recall tool | ✓ |  | ✓ |  |  |  |  |
+| Auth middleware | ✓ |  | ✓ |  | ✓ |  | ✓ |
+| Trace and thread delivery | ✓ |  | ✓ |  |  |  |  |
+| Provider-agnostic configuration | ✓ |  |  |  |  |  |  |
+| TUI streaming display | ✓ |  | ✓ |  |  |  |  |
+| Promptfoo provider helper | ✓ |  |  | ✓ |  |  |  |
+| Custom evaluation scorers | ✓ |  |  | ✓ |  |  |  |
+| File upload pipeline | ✓ | ✓ | ✓ |  | ✓ |  |  |
+| Multimodal document processing | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| Hybrid retrieval | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |
+| Structured citations | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| Object storage | ✓ | ✓ | ✓ |  | ✓ |  |  |
+| File signature validation | ✓ |  |  |  |  |  | ✓ |
+| CTA streaming | ✓ |  | ✓ | ✓ |  |  |  |
+| Location enrichment | ✓ |  | ✓ |  |  |  |  |
+| Rate limiting | ✓ | ✓ |  |  | ✓ |  | ✓ |
+| Token budget | ✓ |  | ✓ |  | ✓ |  | ✓ |
+| Circuit breaker | ✓ |  |  |  |  |  | ✓ |
+| Structured logging | ✓ |  |  |  |  |  |  |
+| Observability tracing | ✓ | ✓ | ✓ |  |  |  |  |
+| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| CORS allowlist enforcement | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Role-based authorization | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Audit logging | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |
+| User feedback linkage | ✓ |  | ✓ |  |  |  |  |
+| ORM and migrations | ✓ | ✓ |  |  |  |  |  |
+| Injection detection ensemble | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
+| Content sanitization | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
+| Memory poisoning defense | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Structured result memory | ✓ | ✓ | ✓ |  |  |  |  |
+| Cross-conversation retrieval | ✓ | ✓ | ✓ |  |  |  |  |
+| Admin API | ✓ |  |  |  |  |  |  |
+| Prompt management | ✓ | ✓ |  |  |  |  |  |
+| Client offline queue | ✓ |  |  |  |  |  |  |
+| Frontend type safety | ✓ | ✓ | ✓ |  |  |  |  |
+| OpenAPI documentation | ✓ | ✓ | ✓ |  |  |  |  |
+| Correction handling | ✓ |  | ✓ | ✓ |  |  |  |
+| Emotional context carry-forward | ✓ |  | ✓ | ✓ |  |  |  |
+| Frustration escalation detection | ✓ |  | ✓ | ✓ |  | ✓ | ✓ |
+| Repeated question differentiation | ✓ |  | ✓ | ✓ |  |  |  |
+| Communication style memory | ✓ | ✓ | ✓ |  |  |  |  |
+| Temporal fact markers | ✓ | ✓ |  |  |  |  |  |
+| Fact supersession | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Implicit reference resolution | ✓ |  | ✓ | ✓ |  |  |  |
+| Response energy matching | ✓ |  | ✓ | ✓ |  |  |  |
+| Conversation resumption | ✓ |  | ✓ |  |  |  |  |
+| Clarification patience model | ✓ |  | ✓ | ✓ |  |  |  |
+| Topic abandonment | ✓ |  | ✓ | ✓ |  |  |  |
+| Proactive clarification | ✓ |  | ✓ | ✓ |  |  |  |
 
 ## Extended Coverage Map
 
-The six new testing categories provide additional coverage layers beyond the original six-column map.
+The six new testing categories provide additional coverage layers beyond the original seven-column map.
 
 | Feature Area | Chaos | Contract | Mutation | Snapshot | Streaming | Property-Based |
 |---|---|---|---|---|---|---|
@@ -4450,7 +4449,7 @@ Coverage is additionally mapped directly to requirement IDs in `01 — Requireme
 
 ## Verification Strategy Summary
 
-All verification is automated and agent-executed. The fourteen testing types form a comprehensive strategy governed by the testing philosophy: we sacrifice speed of development to ensure nothing breaks when we move forward.
+All verification is automated and agent-executed. The thirteen testing types form a comprehensive strategy governed by the testing philosophy: we sacrifice speed of development to ensure nothing breaks when we move forward.
 
 - Infrastructure baseline: Bun test runner.
 - Delivery discipline: RED to GREEN to REFACTOR per task.
