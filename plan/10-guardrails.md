@@ -214,7 +214,7 @@ Pattern detection across streaming text requires context. A single chunk might b
 flowchart TB
     STREAM["LLM token stream"]
 
-    subgraph Buffer["Sliding Window Buffer"]
+    subgraph BUFFER["Sliding Window Buffer"]
         CHUNK["Incoming chunk\n(text-delta)"]
         WINDOW["Window: last N characters\nof accumulated text"]
         APPEND["Append chunk to window\nTrim to window size"]
@@ -245,34 +245,34 @@ The window size is configurable. Larger windows catch longer patterns but add mo
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Streaming: Stream starts
+    [*] --> STREAMING: Stream starts
 
-    Streaming: Streaming
-    Streaming: Chunks pass through
-    Streaming: Window accumulates
+    STREAMING: Streaming
+    STREAMING: Chunks pass through
+    STREAMING: Window accumulates
 
-    Streaming --> ViolationDev: p0 detected (dev mode)
-    Streaming --> ViolationProd: p0 detected (prod mode)
-    Streaming --> Flagged: p1 detected
-    Streaming --> Complete: Stream ends cleanly
+    STREAMING --> VIOLATION_DEV: p0 detected (dev mode)
+    STREAMING --> VIOLATION_PROD: p0 detected (prod mode)
+    STREAMING --> FLAGGED: p1 detected
+    STREAMING --> COMPLETE: Stream ends cleanly
 
-    ViolationDev: Development Violation
-    ViolationDev: Emit tripwire event with details
-    ViolationDev: Stream terminates
+    VIOLATION_DEV: Development Violation
+    VIOLATION_DEV: Emit tripwire event with details
+    VIOLATION_DEV: Stream terminates
 
-    ViolationProd: Production Violation
-    ViolationProd: Suppress all remaining chunks
-    ViolationProd: Inject fallback from ConceptRegistry
+    VIOLATION_PROD: Production Violation
+    VIOLATION_PROD: Suppress all remaining chunks
+    VIOLATION_PROD: Inject fallback from ConceptRegistry
 
-    Flagged: Flagged (p1)
-    Flagged: Log to Langfuse via onFlag
-    Flagged: Chunk still delivered to client
+    FLAGGED: Flagged (p1)
+    FLAGGED: Log to Langfuse via onFlag
+    FLAGGED: Chunk still delivered to client
 
-    Flagged --> Streaming: Continue
+    FLAGGED --> STREAMING: Continue
 
-    ViolationDev --> [*]
-    ViolationProd --> [*]
-    Complete --> [*]
+    VIOLATION_DEV --> [*]
+    VIOLATION_PROD --> [*]
+    COMPLETE --> [*]
 ```
 
 ---
@@ -350,13 +350,13 @@ flowchart TB
         COMPOSITE["createCompositeGuardrail\n(fns, aggregation)"]
     end
 
-    subgraph Output["All return GuardrailFn"]
+    subgraph OUTPUT["All return GuardrailFn"]
         FN["(text: string) => Promise<GuardrailVerdict>"]
     end
 
     REGEX & KEYWORD & LLM_G & EXTERNAL & COMPOSITE --> FN
 
-    subgraph Usage["Server composes these"]
+    subgraph USAGE["Server composes these"]
         SERVER_LOGIC["Server-defined detection logic\n+ ConceptRegistry"]
     end
 

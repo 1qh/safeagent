@@ -12,16 +12,16 @@
 
 ```mermaid
 graph TB
-    subgraph Clients["Client Applications (HTTP/SSE)"]
+    subgraph CLIENT_APPLICATIONS["Client Applications (HTTP/SSE)"]
         WEB["Web Apps"]
         MOB["Mobile Apps"]
     end
 
-    subgraph DirectConsumers["Direct Library Consumers"]
+    subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
         TUI["TUI Testing App\n(imports safeagent directly, no HTTP)"]
     end
 
-    subgraph Server["Server Project (Thin)"]
+    subgraph SERVER_PROJECT["Server Project (Thin)"]
         ELYSIA["Elysia HTTP Server"]
         AUTH["JWT Auth Middleware"]
         ROUTES["SSE + Upload + Admin Routes"]
@@ -31,23 +31,23 @@ graph TB
         MCP_CONF["MCP Config"]
     end
 
-    subgraph Library["safeagent Library (All Logic)"]
+    subgraph SAFEAGENT_LIBRARY["safeagent Library (All Logic)"]
         direction TB
-        subgraph ConversationPipeline["Conversation Pipeline"]
+        subgraph CONVERSATION_PIPELINE["Conversation Pipeline"]
             EMB_ROUTER["Embedding Router"]
             LLM_VALID["LLM Intent + Humanlikeness Signals"]
             SRC_ROUTER["Source Priority Router"]
             REWRITE["Two-Stage Query Rewrite"]
         end
 
-        subgraph AgentLayer["Agent Layer"]
+        subgraph AGENT_LAYER["Agent Layer"]
             ORCH["Orchestrator Agent"]
             SUB_A["Sub-Agent A"]
             SUB_B["Sub-Agent B"]
             SUB_N["Sub-Agent N"]
         end
 
-        subgraph Tools["Agent Tools"]
+        subgraph AGENT_TOOLS["Agent Tools"]
             DOC_SEARCH["Document Search"]
             RAGFLOW["RAGFlow Search"]
             GROUND["Grounding Search"]
@@ -57,7 +57,7 @@ graph TB
             LOCATION_TOOL["Location Tool"]
         end
 
-        subgraph CoreModules["Core Modules"]
+        subgraph CORE_MODULES["Core Modules"]
             GUARD["Guardrail Pipeline"]
             STREAM["SSE Streaming"]
             UPLOAD["Upload Pipeline"]
@@ -67,19 +67,19 @@ graph TB
         end
     end
 
-    subgraph Infrastructure["Infrastructure"]
+    subgraph INFRASTRUCTURE_LAYER["Infrastructure"]
         PG["PostgreSQL + pgvector"]
         SURREAL["SurrealDB"]
-        S3["MinIO / S3"]
+        OBJECT_STORAGE_BUCKET["MinIO / S3"]
         VALKEY["Valkey (Redis)"]
         TRIGGER["Trigger.dev"]
         LANGFUSE["Langfuse"]
     end
 
-    Clients -->|SSE / HTTP| Server
-    TUI -->|direct import| Library
-    Server -->|imports| Library
-    Library --> Infrastructure
+    CLIENT_APPLICATIONS -->|SSE / HTTP| SERVER_PROJECT
+    TUI -->|direct import| SAFEAGENT_LIBRARY
+    SERVER_PROJECT -->|imports| SAFEAGENT_LIBRARY
+    SAFEAGENT_LIBRARY --> INFRASTRUCTURE_LAYER
     ORCH --> SUB_A & SUB_B & SUB_N
     SUB_A & SUB_B & SUB_N --> Tools
 ```
@@ -190,18 +190,18 @@ Each document below is a self-contained reference for its domain. Files are numb
 
 ```mermaid
 graph LR
-    subgraph safeagent["safeagent (TypeScript library)"]
+    subgraph SAFEAGENT_PACKAGE["safeagent (TypeScript library)"]
         CORE["Core Library"]
         TUI_PKG["TUI App"]
         CLIENT["Client SDK"]
     end
 
-    subgraph server["Server Project"]
+    subgraph SERVER_PACKAGE["Server Project"]
         SRV_CFG["Custom prompts + config"]
         SRV_ROUTES["Thin route layer"]
     end
 
-    safeagent -->|imported by| server
+    SAFEAGENT_PACKAGE -->|imported by| SERVER_PACKAGE
     CORE -->|linked by| TUI_PKG
     CORE -.- CLIENT
 ```

@@ -26,7 +26,7 @@ Observability in safeagent flows from agent execution through the `@openai/agent
 Eval operates on a separate axis. Custom evaluation scorers run in production for live monitoring (toxicity, hallucination, faithfulness). Promptfoo runs offline for regression testing — it is an external CLI tool, not a library import. Our code spawns it as a subprocess via `Bun.spawn` for fully automated, zero-human-intervention eval execution.
 ```mermaid
 graph TB
-    subgraph Runtime["Agent Runtime"]
+    subgraph RUNTIME["Agent Runtime"]
         direction TB
         AGENT["Agent Execution\n(createAgent runtime)"]
         GUARD_IN["Input Guardrail\nProcessor"]
@@ -37,14 +37,14 @@ graph TB
         FILES["File Processing\n(upload pipeline)"]
         MEM["Memory Operations\n(SurrealDB)"]
     end
-    subgraph Exporter["Application Observability Layer"]
+    subgraph EXPORTER["Application Observability Layer"]
         direction TB
         OBS["Tracing Helpers\n(custom wrappers)"]
         PII["PII Redaction Layer\n(Presidio -> structured-output LLM)"]
         LF_EXP["Langfuse Client\n(langfuse SDK)"]
         OBS --> PII --> LF_EXP
     end
-    subgraph Langfuse["Langfuse (self-hosted)"]
+    subgraph LANGFUSE["Langfuse (self-hosted)"]
         direction TB
         LF_WEB["Langfuse Web\n(API + UI)"]
         LF_WORKER["Langfuse Worker\n(async processor)"]
@@ -58,12 +58,12 @@ graph TB
         LF_WEB --> REDIS
         LF_WORKER --> OBJECT_STORE_LF
     end
-    subgraph Feedback["Feedback Loop"]
+    subgraph FEEDBACK["Feedback Loop"]
         CLIENT["Client App"]
         FB_EP["Feedback Endpoint"]
         CLIENT -->|"thumbs up/down\n+ traceId"| FB_EP
     end
-    subgraph Eval["Eval Pipeline"]
+    subgraph EVAL["Eval Pipeline"]
         direction TB
         SCORERS["Custom Evaluation Scorers\n(live production)"]
         PF["Promptfoo\n(external dev tool)"]
@@ -89,17 +89,17 @@ The design separates concerns cleanly. Application instrumentation traces struct
 Langfuse runs self-hosted to keep trace data on-premises. The stack requires six services, two of which share infrastructure with safeagent's existing Postgres and MinIO instances (separate databases and buckets) to reduce memory overhead by roughly 2 GB.
 ```mermaid
 graph TB
-    subgraph Docker["Docker Compose — profiles: [langfuse]"]
+    subgraph DOCKER["Docker Compose — profiles: [langfuse]"]
         direction TB
-        subgraph Core["Langfuse Core"]
+        subgraph CORE["Langfuse Core"]
             WEB["langfuse-web\nport 3100\nUI + REST API"]
             WORKER["langfuse-worker\nasync trace processor"]
         end
-        subgraph Storage["Shared Infrastructure"]
+        subgraph STORAGE["Shared Infrastructure"]
             PG["Postgres (pgvector/pgvector)\nDB: langfuse\n(shared instance,\nseparate from safeagent DB)"]
             MINIO["MinIO\nBucket: langfuse-media\n(shared instance,\nseparate from uploads bucket)"]
         end
-        subgraph Langfuse_Only["Langfuse-Only Services"]
+        subgraph LANGFUSE_ONLY["Langfuse-Only Services"]
             CH["ClickHouse\nOLAP storage\ntraces + observations + scores"]
             REDIS_LF["Redis\nport 6380\nqueue + cache\n(separate from Valkey on 6379)"]
         end
@@ -111,7 +111,7 @@ graph TB
         WORKER --> REDIS_LF
         WORKER --> MINIO
     end
-    DEV["Developer"] -->|"start the container stack\nwith the langfuse profile"| Docker
+    DEV["Developer"] -->|"start the container stack\nwith the langfuse profile"| DOCKER
     DEV -->|"open the Langfuse web interface"| WEB
 ```
 All six Langfuse services sit behind an optional Langfuse profile in the container stack. Developers opt in by enabling that profile. Without it, safeagent operates normally — the observability module returns no-ops. This keeps the development experience lightweight for contributors who do not need tracing.
@@ -136,21 +136,21 @@ When `LANGFUSE_PUBLIC_KEY` is not set, the entire observability module returns n
 Every agent interaction produces a trace in Langfuse and moves through a full lifecycle: trace creation, parent span creation, child span enrichment, generation capture, score writes, flush, retention, and dashboard aggregation. Core instrumentation populates the top-level structure. Custom spans add domain-specific detail at each stage.
 ```mermaid
 graph TB
-    subgraph Trace["Trace (one per agent request)"]
+    subgraph TRACE["Trace (one per agent request)"]
         direction TB
-        subgraph Auto["Auto-traced by application wrappers"]
+        subgraph AUTO["Auto-traced by application wrappers"]
             AGENT_SPAN["Agent Run Span\n(total duration, model, agent ID)"]
             GEN["Generation\n(LLM call: tokens, cost, TTFT,\nmodel, temperature)"]
             TOOL_SPAN["Tool Call Span\n(tool name, input/output, duration)"]
         end
-        subgraph Custom["Custom Spans (CUSTOM_SPANS)"]
+        subgraph CUSTOM["Custom Spans (CUSTOM_SPANS)"]
             GI_SPAN["guardrail.input\n(verdict, severity, conceptId)"]
             GO_SPAN["guardrail.output\n(buffer state, chunk count, tripwire)"]
             RAG_SPAN["rag.pipeline\n(query, mode, result count)"]
             FILE_SPAN["file.process\n(fileName, fileType, mode)"]
             MEM_SPAN["memory.operation\n(op type, userId)"]
         end
-        subgraph Scores["Scores"]
+        subgraph SCORES["Scores"]
             S_GI["guardrail_input_pass\n(boolean)"]
             S_GO["guardrail_output_pass\n(boolean)"]
             S_UF["user_feedback\n(boolean — thumbs up/down)"]
@@ -166,9 +166,9 @@ graph TB
         AGENT_SPAN --> MEM_SPAN
         GI_SPAN -.->|"boolean score"| S_GI
         GO_SPAN -.->|"boolean score"| S_GO
-        Trace -.->|"Submit feedback"| S_UF
-        Trace -.->|"sampling"| S_TOX
-        Trace -.->|"sampling"| S_HALL
+        TRACE -.->|"Submit feedback"| S_UF
+        TRACE -.->|"sampling"| S_TOX
+        TRACE -.->|"sampling"| S_HALL
     end
 ```
 ### Span Taxonomy Levels
@@ -194,20 +194,20 @@ The observability module is a thin factory that composes direct `langfuse` SDK i
 `createObservability` reads configuration from its argument or falls back to environment variables. It constructs a `Langfuse` client, builds the `LangfuseTracingExporter`, attaches the two-stage PII redaction layer (Presidio followed by structured-output LLM review), and returns both components.
 ```mermaid
 graph LR
-    subgraph Config["Configuration Resolution"]
+    subgraph CONFIG["Configuration Resolution"]
         ENV["Environment Variables\nLANGFUSE_PUBLIC_KEY\nLANGFUSE_SECRET_KEY\nLANGFUSE_BASE_URL"]
         ARG["Explicit Config\n(overrides env)"]
         ENV --> MERGE["Merged Config"]
         ARG --> MERGE
     end
-    subgraph Factory["createObservability()"]
+    subgraph FACTORY["createObservability()"]
         MERGE --> CHECK{"LANGFUSE_PUBLIC_KEY\nset?"}
         CHECK -->|"Yes"| BUILD["Build Langfuse client\n+ LangfuseTracingExporter\n+ PII redaction\n+ ScoreHelper"]
         CHECK -->|"No"| NOOP["Return no-ops\nexporter: null\nscoreHelper: silent"]
         BUILD --> RETURN["{ exporter,\nscoreHelper }"]
         NOOP --> RETURN
     end
-    subgraph Consumers["Consumers"]
+    subgraph CONSUMERS["Consumers"]
         AGENT_RUNTIME["createAgent runtime\nwith tracing helpers"]
         SERVER["Server routes\n(scoreHelper)"]
         ADVANCED["Custom spans\n(exporter)"]
@@ -249,9 +249,9 @@ When `LANGFUSE_PUBLIC_KEY` is absent, the factory returns fully functional no-op
 Core instrumentation traces the structural skeleton (agent lifecycle, LLM calls, tool invocations). Custom spans fill in domain semantics: did the guardrail pass? Which search arms contributed? How long did page summarization take?
 ```mermaid
 graph TB
-    subgraph Request["Agent Request Lifecycle"]
+    subgraph REQUEST["Agent Request Lifecycle"]
         direction TB
-        subgraph InputPhase["Input Phase"]
+        subgraph INPUT_PHASE["Input Phase"]
             INPUT["User Message"]
             GI["guardrail.input"]
             GI_SCORE["guardrail_input_pass\n(boolean score)"]
@@ -262,7 +262,7 @@ graph TB
             GI -.-> GI_SCORE
             FLAG_CB --> AGENT_RUN
         end
-        subgraph Processing["Agent Processing"]
+        subgraph PROCESSING["Agent Processing"]
             AGENT_RUN["Agent Run"]
             RAG_P["rag.pipeline"]
             RAG_E["rag.embed_query"]
@@ -272,7 +272,7 @@ graph TB
             AGENT_RUN --> RAG_P
             RAG_P --> RAG_E --> RAG_H --> RAG_F --> RAG_A
         end
-        subgraph OutputPhase["Output Phase"]
+        subgraph OUTPUT_PHASE["Output Phase"]
             STREAM["Streaming Response"]
             GO["guardrail.output"]
             GO_SCORE["guardrail_output_pass\n(boolean score)"]
@@ -305,7 +305,7 @@ Added to `createOutputGuardrailProcessor` via an optional `scoreHelper` paramete
 Wraps the RAG query path with a parent span and child spans for each stage. The child spans differ by processing mode:
 ```mermaid
 graph TB
-    subgraph Indexed["Indexed Mode (PDFs)"]
+    subgraph INDEXED["Indexed Mode (PDFs)"]
         RP_I["rag.pipeline\n(query, mode=indexed)"]
         EQ_I["rag.embed_query"]
         HS["rag.hybrid_search\n(RRF arm scores, top-K pages)"]
@@ -313,7 +313,7 @@ graph TB
         AN_I["rag.answer\n(Gemini multimodal)"]
         RP_I --> EQ_I --> HS --> FC --> AN_I
     end
-    subgraph RAGMode["RAG Mode (large TXT)"]
+    subgraph RAG_MODE["RAG Mode (large TXT)"]
         RP_R["rag.pipeline\n(query, mode=rag)"]
         EQ_R["rag.embed_query"]
         VS["rag.vector_search\n(PgVector query)"]
@@ -326,19 +326,19 @@ Each child span captures its own input, output, and duration. The `rag.hybrid_se
 Wraps per-file processing in the upload pipeline:
 ```mermaid
 graph TB
-    subgraph FileProc["file.process (per file)"]
+    subgraph FILE_PROC["file.process (per file)"]
         direction TB
         META["fileName, fileType, fileSize,\nprocessing mode, duration"]
-        subgraph Blocking["Indexed Mode — Blocking Stage"]
+        subgraph BLOCKING["Indexed Mode — Blocking Stage"]
             SP["file.split_pages\n(pdf-lib)"]
             SUM["file.summarize\n(per-page Gemini multimodal,\npage count, concurrency, tokens)"]
             EMB["file.embed_summaries\n(batch embedding)"]
             SP --> SUM --> EMB
         end
-        subgraph Background["Indexed Mode — Background Stage"]
+        subgraph BACKGROUND["Indexed Mode — Background Stage"]
             ENR["file.enrich\n(unpdf text extraction + embedding,\npage count, job queue latency)"]
         end
-        subgraph RAGFile["RAG Mode (large TXT)"]
+        subgraph RAG_FILE["RAG Mode (large TXT)"]
             CHK["file.chunk\n(MDocument chunking)"]
             ECHK["file.embed_chunks\n(chunk embedding)"]
             CHK --> ECHK

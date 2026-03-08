@@ -30,19 +30,19 @@ The API-serving codebase remains intentionally thin: it imports the shared libra
 
 ```mermaid
 graph LR
-    subgraph safeagent["safeagent workspace"]
-        core["Core Library\nAgent logic · Memory · Tools · File processing"]
-        tui["TUI App\nTerminal UI"]
-        client["Client SDK\nHTTP SDK"]
+    subgraph SAFEAGENT_WORKSPACE["safeagent workspace"]
+        CORE_LIBRARY["Core Library\nAgent logic · Memory · Tools · File processing"]
+        TUI_APP["TUI App\nTerminal UI"]
+        CLIENT_SDK["Client SDK\nHTTP SDK"]
     end
 
-    subgraph server_repo["server repo"]
-        elysia["Elysia API Server\nRoutes · SSE · Auth lifecycle hooks"]
+    subgraph SERVER_REPO["server repo"]
+        ELYSIA_SERVER["Elysia API Server\nRoutes · SSE · Auth lifecycle hooks"]
     end
 
-    core --> elysia
-    core --> tui
-    client -.->|"HTTP"| elysia
+    CORE_LIBRARY --> ELYSIA_SERVER
+    CORE_LIBRARY --> TUI_APP
+    CLIENT_SDK -.->|"HTTP"| ELYSIA_SERVER
 ```
 
 ---
@@ -53,65 +53,65 @@ Every service the system depends on is shown below. Arrows indicate the directio
 
 ```mermaid
 graph TB
-    subgraph clients["Clients"]
-        browser["Browser / Web App"]
-        sdk["SDK Consumer"]
+    subgraph CLIENTS["Clients"]
+        BROWSER_CLIENT["Browser / Web App"]
+        SDK_CONSUMER["SDK Consumer"]
     end
 
-    subgraph direct_clients["Direct Library Consumers"]
-        tui_client["TUI\n(imports safeagent directly,\nno HTTP)"]
+    subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
+        TUI_CLIENT["TUI\n(imports safeagent directly,\nno HTTP)"]
     end
 
-    subgraph api_layer["API Layer (stateless, N instances)"]
-        api1["API Server :3000"]
-        api2["API Server :3000"]
-        apiN["API Server :3000 ..."]
+    subgraph API_LAYER["API Layer (stateless, N instances)"]
+        API_INSTANCE_A["API Server :3000"]
+        API_INSTANCE_B["API Server :3000"]
+        API_INSTANCE_N["API Server :3000 ..."]
     end
 
-    subgraph storage["Persistent Storage"]
-        pg[("PostgreSQL + pgvector\n:5432")]
-        surreal[("SurrealDB\n:8000")]
-        minio[("MinIO / S3\n:9000")]
+    subgraph PERSISTENT_STORAGE["Persistent Storage"]
+        POSTGRES_DB[("PostgreSQL + pgvector\n:5432")]
+        SURREALDB[("SurrealDB\n:8000")]
+        OBJECT_STORAGE[("MinIO / S3\n:9000")]
     end
 
-    subgraph cache["Cache & Counters"]
-        valkey[("Valkey\n:6379")]
+    subgraph CACHE_AND_COUNTERS["Cache & Counters"]
+        VALKEY_CACHE[("Valkey\n:6379")]
     end
 
-    subgraph jobs["Background Jobs"]
-        trigger_web["Trigger.dev Webapp\n:3040"]
-        trigger_worker["Trigger.dev Worker"]
+    subgraph BACKGROUND_JOBS["Background Jobs"]
+        TRIGGER_WEBAPP["Trigger.dev Webapp\n:3040"]
+        TRIGGER_WORKER["Trigger.dev Worker"]
     end
 
-    subgraph observability["Observability (opt-in)"]
-        langfuse_web["Langfuse Web\n:3100"]
-        langfuse_worker["Langfuse Worker"]
-        clickhouse[("ClickHouse\n:8123")]
-        langfuse_redis[("Redis (Langfuse)\n:6380")]
+    subgraph OBSERVABILITY_STACK["Observability (opt-in)"]
+        LANGFUSE_WEB["Langfuse Web\n:3100"]
+        LANGFUSE_WORKER["Langfuse Worker"]
+        CLICKHOUSE_DB[("ClickHouse\n:8123")]
+        LANGFUSE_REDIS[("Redis (Langfuse)\n:6380")]
     end
 
-    subgraph conversion["Document Conversion"]
-        libreoffice["LibreOffice Headless\n:2002"]
+    subgraph DOCUMENT_CONVERSION["Document Conversion"]
+        LIBREOFFICE_SERVICE["LibreOffice Headless\n:2002"]
     end
 
-    browser & sdk --> api1 & api2 & apiN
-    tui_client -.->|"direct import\n(same workspace)"| pg & surreal & minio & valkey
+    BROWSER_CLIENT & SDK_CONSUMER --> API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N
+    TUI_CLIENT -.->|"direct import\n(same workspace)"| POSTGRES_DB & SURREALDB & OBJECT_STORAGE & VALKEY_CACHE
 
-    api1 & api2 & apiN --> pg
-    api1 & api2 & apiN --> surreal
-    api1 & api2 & apiN --> minio
-    api1 & api2 & apiN --> valkey
-    api1 & api2 & apiN --> trigger_web
-    api1 & api2 & apiN --> libreoffice
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> POSTGRES_DB
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> SURREALDB
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> OBJECT_STORAGE
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> VALKEY_CACHE
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> TRIGGER_WEBAPP
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N --> LIBREOFFICE_SERVICE
 
-    trigger_web --> pg
-    trigger_web --> minio
-    trigger_web --> valkey
+    TRIGGER_WEBAPP --> POSTGRES_DB
+    TRIGGER_WEBAPP --> OBJECT_STORAGE
+    TRIGGER_WEBAPP --> VALKEY_CACHE
 
-    api1 & api2 & apiN -.->|"traces (opt-in)"| langfuse_web
-    langfuse_worker --> clickhouse
-    langfuse_worker --> langfuse_redis
-    langfuse_worker --> minio
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_N -.->|"traces (opt-in)"| LANGFUSE_WEB
+    LANGFUSE_WORKER --> CLICKHOUSE_DB
+    LANGFUSE_WORKER --> LANGFUSE_REDIS
+    LANGFUSE_WORKER --> OBJECT_STORAGE
 ```
 
 ---
@@ -122,50 +122,50 @@ Each storage system has a specific, non-overlapping responsibility. Nothing is s
 
 ```mermaid
 graph LR
-    subgraph postgres["PostgreSQL + pgvector"]
-        pg_conv["Conversation store\nShort-term memory\n(Drizzle ORM + bun-sql)"]
-        pg_pgvector["PgVector\nLarge TXT RAG\n(custom pgvector via Drizzle)"]
-        pg_page["page_index table\nHNSW + tsvector GIN\n(Drizzle ORM)"]
-        pg_files["file_uploads\nuser_storage_quotas\n(Drizzle ORM)"]
-        pg_usage["usage_events\nuser_budget_limits\n(Drizzle ORM)"]
-        pg_langfuse[("langfuse DB\n(separate database)")]
+    subgraph POSTGRESQL_LAYER["PostgreSQL + pgvector"]
+        PG_CONVERSATION_STORE["Conversation store\nShort-term memory\n(Drizzle ORM + bun-sql)"]
+        PG_VECTOR_STORE["PgVector\nLarge TXT RAG\n(custom pgvector via Drizzle)"]
+        PG_PAGE_INDEX["page_index table\nHNSW + tsvector GIN\n(Drizzle ORM)"]
+        PG_FILE_TABLES["file_uploads\nuser_storage_quotas\n(Drizzle ORM)"]
+        PG_USAGE_TABLES["usage_events\nuser_budget_limits\n(Drizzle ORM)"]
+        PG_LANGFUSE_DB[("langfuse DB\n(separate database)")]
     end
 
-    subgraph surreal["SurrealDB"]
-        surreal_graph["Graph memory\nRELATE statements"]
-        surreal_vec["Vector memory\nCosine similarity search"]
+    subgraph SURREALDB_LAYER["SurrealDB"]
+        SURREAL_GRAPH_MEMORY["Graph memory\nRELATE statements"]
+        SURREAL_VECTOR_MEMORY["Vector memory\nCosine similarity search"]
     end
 
-    subgraph minio["MinIO (S3-compatible)"]
-        minio_files["safeagent bucket\nOriginal files\nPer-page PDFs\nExtracted images"]
-        minio_langfuse["langfuse-media bucket\nLangfuse media blobs"]
+    subgraph MINIO_LAYER["MinIO (S3-compatible)"]
+        MINIO_SAFEAGENT_BUCKET["safeagent bucket\nOriginal files\nPer-page PDFs\nExtracted images"]
+        MINIO_LANGFUSE_BUCKET["langfuse-media bucket\nLangfuse media blobs"]
     end
 
-    subgraph valkey["Valkey"]
-        valkey_budget["Budget counters\nAtomic INCR"]
-        valkey_rate["Rate limiting\nSorted sets"]
-        valkey_session["Session cache"]
-        valkey_router["Embedding router cache\nTopic embeddings"]
-        valkey_intent["Intent LLM cache"]
-        valkey_registry["FileRegistry cache\nTemporal/ordinal resolution"]
+    subgraph VALKEY_LAYER["Valkey"]
+        VALKEY_BUDGET_COUNTERS["Budget counters\nAtomic INCR"]
+        VALKEY_RATE_LIMITING["Rate limiting\nSorted sets"]
+        VALKEY_SESSION_CACHE["Session cache"]
+        VALKEY_ROUTER_CACHE["Embedding router cache\nTopic embeddings"]
+        VALKEY_INTENT_CACHE["Intent LLM cache"]
+        VALKEY_FILE_REGISTRY["FileRegistry cache\nTemporal/ordinal resolution"]
     end
 
-    agent["Agent Request"] --> pg_conv
-    agent --> surreal_graph & surreal_vec
-    agent --> pg_page & pg_pgvector
-    agent --> valkey_budget & valkey_rate & valkey_session
-    agent --> valkey_router & valkey_intent & valkey_registry
+    AGENT_REQUEST["Agent Request"] --> PG_CONVERSATION_STORE
+    AGENT_REQUEST --> SURREAL_GRAPH_MEMORY & SURREAL_VECTOR_MEMORY
+    AGENT_REQUEST --> PG_PAGE_INDEX & PG_VECTOR_STORE
+    AGENT_REQUEST --> VALKEY_BUDGET_COUNTERS & VALKEY_RATE_LIMITING & VALKEY_SESSION_CACHE
+    AGENT_REQUEST --> VALKEY_ROUTER_CACHE & VALKEY_INTENT_CACHE & VALKEY_FILE_REGISTRY
 
-    file_upload["File Upload"] --> minio_files
-    file_upload --> pg_files
-    file_upload --> pg_page
+    FILE_UPLOAD_REQUEST["File Upload"] --> MINIO_SAFEAGENT_BUCKET
+    FILE_UPLOAD_REQUEST --> PG_FILE_TABLES
+    FILE_UPLOAD_REQUEST --> PG_PAGE_INDEX
 
-    background["Background Jobs\n(Trigger.dev)"] --> pg_usage
-    background --> minio_files
-    background --> valkey_budget
+    BACKGROUND_JOBS["Background Jobs\n(Trigger.dev)"] --> PG_USAGE_TABLES
+    BACKGROUND_JOBS --> MINIO_SAFEAGENT_BUCKET
+    BACKGROUND_JOBS --> VALKEY_BUDGET_COUNTERS
 
-    langfuse_svc["Langfuse Services"] --> pg_langfuse
-    langfuse_svc --> minio_langfuse
+    LANGFUSE_SERVICES["Langfuse Services"] --> PG_LANGFUSE_DB
+    LANGFUSE_SERVICES --> MINIO_LANGFUSE_BUCKET
 ```
 
 ### Storage Responsibilities in Detail
@@ -193,38 +193,38 @@ Services are grouped into runtime profiles. The default profile starts the recom
 
 ```mermaid
 graph TB
-    subgraph default["Default Profile (always on)"]
-        pg_svc["postgres\npgvector/pgvector\n:5432"]
-        surreal_svc["surrealdb\n:8000"]
-        minio_svc["minio\n:9000 (API)\n:9001 (Console)"]
-        valkey_svc["valkey\n:6379"]
-        libre_svc["libreoffice\nheadless\n:2002"]
+    subgraph DEFAULT_PROFILE["Default Profile (always on)"]
+        POSTGRES_SERVICE["postgres\npgvector/pgvector\n:5432"]
+        SURREALDB_SERVICE["surrealdb\n:8000"]
+        MINIO_SERVICE["minio\n:9000 (API)\n:9001 (Console)"]
+        VALKEY_SERVICE["valkey\n:6379"]
+        LIBREOFFICE_SERVICE["libreoffice\nheadless\n:2002"]
     end
 
-    subgraph trigger_profile["Trigger profile"]
-        trigger_web_svc["trigger-webapp\n:3040"]
-        trigger_super_svc["trigger-supervisor"]
-        trigger_docker_svc["trigger-docker-proxy"]
-        trigger_electric_svc["trigger-electric"]
-        trigger_registry_svc["trigger-registry\n:5000"]
+    subgraph TRIGGER_PROFILE["Trigger profile"]
+        TRIGGER_WEBAPP_SERVICE["trigger-webapp\n:3040"]
+        TRIGGER_SUPERVISOR_SERVICE["trigger-supervisor"]
+        TRIGGER_DOCKER_PROXY_SERVICE["trigger-docker-proxy"]
+        TRIGGER_ELECTRIC_SERVICE["trigger-electric"]
+        TRIGGER_REGISTRY_SERVICE["trigger-registry\n:5000"]
     end
 
-    subgraph langfuse_profile["Langfuse profile"]
-        langfuse_web_svc["langfuse-web\n:3100"]
-        langfuse_worker_svc["langfuse-worker"]
-        clickhouse_svc["clickhouse\n:8123"]
-        langfuse_redis_svc["redis (langfuse)\n:6380"]
+    subgraph LANGFUSE_PROFILE["Langfuse profile"]
+        LANGFUSE_WEB_SERVICE["langfuse-web\n:3100"]
+        LANGFUSE_WORKER_SERVICE["langfuse-worker"]
+        CLICKHOUSE_SERVICE["clickhouse\n:8123"]
+        LANGFUSE_REDIS_SERVICE["redis (langfuse)\n:6380"]
     end
 
-    pg_svc -.->|"shared server\nseparate DB"| langfuse_web_svc
-    minio_svc -.->|"shared server\nseparate bucket"| langfuse_worker_svc
+    POSTGRES_SERVICE -.->|"shared server\nseparate DB"| LANGFUSE_WEB_SERVICE
+    MINIO_SERVICE -.->|"shared server\nseparate bucket"| LANGFUSE_WORKER_SERVICE
 
-    trigger_super_svc --> pg_svc
-    trigger_super_svc --> minio_svc
-    trigger_super_svc --> valkey_svc
+    TRIGGER_SUPERVISOR_SERVICE --> POSTGRES_SERVICE
+    TRIGGER_SUPERVISOR_SERVICE --> MINIO_SERVICE
+    TRIGGER_SUPERVISOR_SERVICE --> VALKEY_SERVICE
 
-    langfuse_worker_svc --> clickhouse_svc
-    langfuse_worker_svc --> langfuse_redis_svc
+    LANGFUSE_WORKER_SERVICE --> CLICKHOUSE_SERVICE
+    LANGFUSE_WORKER_SERVICE --> LANGFUSE_REDIS_SERVICE
 ```
 
 ### Profile Details
@@ -255,50 +255,50 @@ All services communicate over a single Docker bridge network (`safeagent-net`). 
 
 ```mermaid
 graph TB
-    subgraph external["External (host network)"]
-        client_ext["Clients\n(browser, TUI, SDK)"]
-        admin["Admin\n(MinIO console, Langfuse UI,\nTrigger.dev dashboard)"]
+    subgraph EXTERNAL_NETWORK["External (host network)"]
+        CLIENT_ENDPOINTS["Clients\n(browser, TUI, SDK)"]
+        ADMIN_ENDPOINTS["Admin\n(MinIO console, Langfuse UI,\nTrigger.dev dashboard)"]
     end
 
-    subgraph docker_net["safeagent-net (Docker bridge)"]
-        subgraph api_group["API Servers"]
-            api_svc["elysia-api\n:3000 → host:3000"]
+    subgraph DOCKER_NETWORK["safeagent-net (Docker bridge)"]
+        subgraph API_GROUP["API Servers"]
+            API_SERVICE["elysia-api\n:3000 → host:3000"]
         end
 
-        subgraph data_group["Data Services"]
-            pg_net["postgres\n:5432 (internal only)"]
-            surreal_net["surrealdb\n:8000 (internal only)"]
-            valkey_net["valkey\n:6379 (internal only)"]
+        subgraph DATA_GROUP["Data Services"]
+            POSTGRES_NETWORK["postgres\n:5432 (internal only)"]
+            SURREAL_NETWORK["surrealdb\n:8000 (internal only)"]
+            VALKEY_NETWORK["valkey\n:6379 (internal only)"]
         end
 
-        subgraph object_group["Object Storage"]
-            minio_api_net["minio API\n:9000 (internal only)"]
-            minio_console_net["minio console\n:9001 → host:9001"]
+        subgraph OBJECT_GROUP["Object Storage"]
+            MINIO_API_NETWORK["minio API\n:9000 (internal only)"]
+            MINIO_CONSOLE_NETWORK["minio console\n:9001 → host:9001"]
         end
 
-        subgraph job_group["Jobs (profile: trigger)"]
-            trigger_net["trigger-webapp\n:3040 → host:3040"]
+        subgraph JOB_GROUP["Jobs (profile: trigger)"]
+            TRIGGER_NETWORK["trigger-webapp\n:3040 → host:3040"]
         end
 
-        subgraph obs_group["Observability (profile: langfuse)"]
-            langfuse_net["langfuse-web\n:3100 → host:3100"]
-            clickhouse_net["clickhouse\n:8123 (internal only)"]
-            langfuse_redis_net["redis\n:6380 (internal only)"]
+        subgraph OBS_GROUP["Observability (profile: langfuse)"]
+            LANGFUSE_NETWORK["langfuse-web\n:3100 → host:3100"]
+            CLICKHOUSE_NETWORK["clickhouse\n:8123 (internal only)"]
+            LANGFUSE_REDIS_NETWORK["redis\n:6380 (internal only)"]
         end
 
-        subgraph conv_group["Conversion"]
-            libre_net["libreoffice\n:2002 (internal only)"]
+        subgraph CONVERSION_GROUP["Conversion"]
+            LIBREOFFICE_NETWORK["libreoffice\n:2002 (internal only)"]
         end
     end
 
-    client_ext -->|"HTTP/SSE :3000"| api_svc
-    admin -->|"HTTP :9001"| minio_console_net
-    admin -->|"HTTP :3040"| trigger_net
-    admin -->|"HTTP :3100"| langfuse_net
+    CLIENT_ENDPOINTS -->|"HTTP/SSE :3000"| API_SERVICE
+    ADMIN_ENDPOINTS -->|"HTTP :9001"| MINIO_CONSOLE_NETWORK
+    ADMIN_ENDPOINTS -->|"HTTP :3040"| TRIGGER_NETWORK
+    ADMIN_ENDPOINTS -->|"HTTP :3100"| LANGFUSE_NETWORK
 
-    api_svc --> pg_net & surreal_net & valkey_net & minio_api_net & libre_net
-    api_svc -.->|"traces"| langfuse_net
-    api_svc -->|"HTTP trigger"| trigger_net
+    API_SERVICE --> POSTGRES_NETWORK & SURREAL_NETWORK & VALKEY_NETWORK & MINIO_API_NETWORK & LIBREOFFICE_NETWORK
+    API_SERVICE -.->|"traces"| LANGFUSE_NETWORK
+    API_SERVICE -->|"HTTP trigger"| TRIGGER_NETWORK
 ```
 
 ### Port Reference
@@ -444,39 +444,39 @@ The API server is stateless. Every instance connects to the same external servic
 
 ```mermaid
 graph TB
-    subgraph lb["Load Balancer (round-robin)"]
-        lb_node["nginx / cloud LB\n:443 → :3000"]
+    subgraph LOAD_BALANCER["Load Balancer (round-robin)"]
+        LOAD_BALANCER_NODE["nginx / cloud LB\n:443 → :3000"]
     end
 
-    subgraph api_fleet["API Server Fleet"]
-        api_a["API Instance A\n:3000"]
-        api_b["API Instance B\n:3000"]
-        api_c["API Instance C\n:3000"]
-        api_n["API Instance N\n:3000"]
+    subgraph API_SERVER_FLEET["API Server Fleet"]
+        API_INSTANCE_A["API Instance A\n:3000"]
+        API_INSTANCE_B["API Instance B\n:3000"]
+        API_INSTANCE_C["API Instance C\n:3000"]
+        API_INSTANCE_N["API Instance N\n:3000"]
     end
 
-    subgraph shared_state["Shared External State"]
-        pg_shared[("PostgreSQL\n(primary + read replicas)")]
-        surreal_shared[("SurrealDB")]
-        minio_shared[("MinIO\n(distributed mode)")]
-        valkey_shared[("Valkey\n(cluster mode)")]
+    subgraph SHARED_EXTERNAL_STATE["Shared External State"]
+        POSTGRES_SHARED[("PostgreSQL\n(primary + read replicas)")]
+        SURREAL_SHARED[("SurrealDB")]
+        MINIO_SHARED[("MinIO\n(distributed mode)")]
+        VALKEY_SHARED[("Valkey\n(cluster mode)")]
     end
 
-    subgraph bg_fleet["Background Worker Fleet"]
-        tr_worker_a["Trigger.dev Worker A"]
-        tr_worker_b["Trigger.dev Worker B"]
+    subgraph BACKGROUND_WORKER_FLEET["Background Worker Fleet"]
+        TRIGGER_WORKER_A["Trigger.dev Worker A"]
+        TRIGGER_WORKER_B["Trigger.dev Worker B"]
     end
 
-    lb_node --> api_a & api_b & api_c & api_n
+    LOAD_BALANCER_NODE --> API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_C & API_INSTANCE_N
 
-    api_a & api_b & api_c & api_n --> pg_shared
-    api_a & api_b & api_c & api_n --> surreal_shared
-    api_a & api_b & api_c & api_n --> minio_shared
-    api_a & api_b & api_c & api_n --> valkey_shared
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_C & API_INSTANCE_N --> POSTGRES_SHARED
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_C & API_INSTANCE_N --> SURREAL_SHARED
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_C & API_INSTANCE_N --> MINIO_SHARED
+    API_INSTANCE_A & API_INSTANCE_B & API_INSTANCE_C & API_INSTANCE_N --> VALKEY_SHARED
 
-    tr_worker_a & tr_worker_b --> pg_shared
-    tr_worker_a & tr_worker_b --> minio_shared
-    tr_worker_a & tr_worker_b --> valkey_shared
+    TRIGGER_WORKER_A & TRIGGER_WORKER_B --> POSTGRES_SHARED
+    TRIGGER_WORKER_A & TRIGGER_WORKER_B --> MINIO_SHARED
+    TRIGGER_WORKER_A & TRIGGER_WORKER_B --> VALKEY_SHARED
 ```
 
 ### Scaling Properties
@@ -501,27 +501,27 @@ All database clients share a single Postgres server with a hard limit of 200 con
 
 ```mermaid
 graph TB
-    subgraph pg_server["PostgreSQL Server (max_connections=200)"]
-        pg_budget["200 connections total"]
+    subgraph POSTGRES_SERVER["PostgreSQL Server (max_connections=200)"]
+        PG_CONNECTION_BUDGET["200 connections total"]
     end
 
-    subgraph api_instance["Per API Instance"]
-        conv_pool["Conversation store pool\n(Drizzle ORM + bun-sql)\n~5 connections"]
-        pgvector_pool["Custom pgvector pool\n(Drizzle)\n~5 connections"]
-        drizzle_pool["Drizzle ORM pool\n(page_index, files, usage)\n~10 connections"]
+    subgraph API_INSTANCE_PROFILE["Per API Instance"]
+        CONVERSATION_POOL["Conversation store pool\n(Drizzle ORM + bun-sql)\n~5 connections"]
+        PGVECTOR_POOL["Custom pgvector pool\n(Drizzle)\n~5 connections"]
+        DRIZZLE_POOL["Drizzle ORM pool\n(page_index, files, usage)\n~10 connections"]
     end
 
-    subgraph trigger_instance["Per Trigger.dev Worker"]
-        trigger_pool["Worker pool\n~10 connections"]
+    subgraph TRIGGER_WORKER_PROFILE["Per Trigger.dev Worker"]
+        TRIGGER_POOL["Worker pool\n~10 connections"]
     end
 
-    subgraph langfuse_instance["Langfuse Services"]
-        langfuse_pool["Langfuse pool\n~10 connections"]
+    subgraph LANGFUSE_SERVICE_PROFILE["Langfuse Services"]
+        LANGFUSE_POOL["Langfuse pool\n~10 connections"]
     end
 
-    pg_budget --> conv_pool & pgvector_pool & drizzle_pool
-    pg_budget --> trigger_pool
-    pg_budget --> langfuse_pool
+    PG_CONNECTION_BUDGET --> CONVERSATION_POOL & PGVECTOR_POOL & DRIZZLE_POOL
+    PG_CONNECTION_BUDGET --> TRIGGER_POOL
+    PG_CONNECTION_BUDGET --> LANGFUSE_POOL
 ```
 
 ### Connection Budget Strategy

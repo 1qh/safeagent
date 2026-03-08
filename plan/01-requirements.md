@@ -606,27 +606,27 @@ flowchart TD
     GATE_TESTS_PASS{Does the test suite pass<br/>in BOTH repos?} -->|NO| NOTDONE([Not Done<br/>Fix failing tests])
     GATE_TESTS_PASS -->|YES| GATE_UNIT_NO_SECRETS
 
-    GATE_UNIT_NO_SECRETS{Do ALL unit tests pass<br/>without secrets?} -->|NO| NOTDONE2([Not Done<br/>Mock external calls])
+    GATE_UNIT_NO_SECRETS{Do ALL unit tests pass<br/>without secrets?} -->|NO| NOT_DONE_MOCK_EXTERNAL_CALLS([Not Done<br/>Mock external calls])
     GATE_UNIT_NO_SECRETS -->|YES| GATE_TYPE_CHECK
 
-    GATE_TYPE_CHECK{Do integration tests<br/>use skipIf guards?} -->|NO| NOTDONE3([Not Done<br/>Add conditional skip])
+    GATE_TYPE_CHECK{Do integration tests<br/>use skipIf guards?} -->|NO| NOT_DONE_ADD_CONDITIONAL_SKIP([Not Done<br/>Add conditional skip])
     GATE_TYPE_CHECK -->|YES| GATE_LINT_CLEAN
 
-    GATE_LINT_CLEAN{Is the subpath barrel<br/>export updated?} -->|NO| NOTDONE4([Not Done<br/>Update module index])
+    GATE_LINT_CLEAN{Is the subpath barrel<br/>export updated?} -->|NO| NOT_DONE_UPDATE_MODULE_INDEX([Not Done<br/>Update module index])
     GATE_LINT_CLEAN -->|YES| GATE_COVERAGE_MET
 
     GATE_COVERAGE_MET{Does the feature match<br/>a Must Have item?} -->|NO| GATE_IMPL_DETAIL{Is it an<br/>internal impl detail?}
     GATE_COVERAGE_MET -->|YES| GATE_PERF_BUDGET
-    GATE_IMPL_DETAIL -->|NO| NOTDONE5([Not Done<br/>Scope creep — remove])
+    GATE_IMPL_DETAIL -->|NO| NOT_DONE_SCOPE_CREEP_REMOVE([Not Done<br/>Scope creep — remove])
     GATE_IMPL_DETAIL -->|YES| GATE_PERF_BUDGET
 
-    GATE_PERF_BUDGET{Does ANY code match<br/>a Must NOT Have item?} -->|YES| NOTDONE6([Not Done<br/>Remove forbidden pattern])
+    GATE_PERF_BUDGET{Does ANY code match<br/>a Must NOT Have item?} -->|YES| NOT_DONE_REMOVE_FORBIDDEN_PATTERN([Not Done<br/>Remove forbidden pattern])
     GATE_PERF_BUDGET -->|NO| GATE_SECURITY_SCAN
 
-    GATE_SECURITY_SCAN{Is evidence saved<br/>for QA scenarios?} -->|NO| NOTDONE7([Not Done<br/>Run QA and save evidence])
+    GATE_SECURITY_SCAN{Is evidence saved<br/>for QA scenarios?} -->|NO| NOT_DONE_RUN_QA_SAVE_EVIDENCE([Not Done<br/>Run QA and save evidence])
     GATE_SECURITY_SCAN -->|YES| GATE_REVIEW_APPROVED
 
-    GATE_REVIEW_APPROVED{Was commit made<br/>after task completion?} -->|NO| NOTDONE8([Not Done<br/>Commit with passing tests])
+    GATE_REVIEW_APPROVED{Was commit made<br/>after task completion?} -->|NO| NOT_DONE_COMMIT_WITH_PASSING_TESTS([Not Done<br/>Commit with passing tests])
     GATE_REVIEW_APPROVED -->|YES| DONE([Task Done])
 ```
 

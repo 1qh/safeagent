@@ -131,10 +131,10 @@ graph LR
     SERVER_AGENT_CFG["SERVER_AGENT_CFG<br/>Server<br/>Config"]:::crit
     SERVER_ROUTES["SERVER_ROUTES<br/>Server<br/>Routes"]:::crit
     UPLOAD_ENDPOINT["UPLOAD_ENDPOINT<br/>Upload<br/>Endpoint"]:::crit
-    E2E_TESTS["E2E_TESTS<br/>E2E<br/>Tests"]:::crit
+    END_TO_END_TESTS["E2E_TESTS<br/>E2E<br/>Tests"]:::crit
     FINAL["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE<br/>Final<br/>Audit"]:::crit
 
-    SPIKE_CORE_STACK --> SCAFFOLD_LIB --> CORE_TYPES --> ZOD_SCHEMAS --> CONFIG_DEFAULTS --> AGENT_FACTORY --> CTA_STREAMING --> SERVER_AGENT_CFG --> SERVER_ROUTES --> UPLOAD_ENDPOINT --> E2E_TESTS --> FINAL
+    SPIKE_CORE_STACK --> SCAFFOLD_LIB --> CORE_TYPES --> ZOD_SCHEMAS --> CONFIG_DEFAULTS --> AGENT_FACTORY --> CTA_STREAMING --> SERVER_AGENT_CFG --> SERVER_ROUTES --> UPLOAD_ENDPOINT --> END_TO_END_TESTS --> FINAL
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
@@ -431,10 +431,10 @@ graph TB
     BATCH_UPLOAD_COST["Batch 8b<br/>12 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification"]
     BATCH_ROUTES_SUBAGENT["Batch 9a<br/>2 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY"]
     BATCH_ENDPOINTS["Batch 9b<br/>5 tasks — Endpoints,<br/>Barrel Exports"]
-    BATCH_E2E_DEPLOY["Batch 10<br/>4 tasks — E2E, Deploy,<br/>Publish, Load"]
+    BATCH_END_TO_END_DEPLOY["Batch 10<br/>4 tasks — E2E, Deploy,<br/>Publish, Load"]
     BATCH_FINAL_AUDIT["FINAL<br/>4 tasks — Audit"]
 
-    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_E2E_DEPLOY --> BATCH_FINAL_AUDIT
+    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FINAL_AUDIT
 
     style BATCH_SPIKE fill:#ff6b6b,color:white
     style BATCH_RAG_SPIKE fill:#ff6b6b,color:white
@@ -585,10 +585,10 @@ graph TB
     SERVER_ROUTES --> FILE_CRUD["FILE_CRUD File CRUD"]
     SERVER_ROUTES --> ADMIN_API["ADMIN_API Admin API"]
 
-    UPLOAD_ENDPOINT --> E2E_TESTS["E2E_TESTS E2E Tests"]:::crit
+    UPLOAD_ENDPOINT --> END_TO_END_TESTS["E2E_TESTS E2E Tests"]:::crit
     BARREL_EXPORTS --> PKG_PUBLISH["PKG_PUBLISH Publish"]
 
-    E2E_TESTS --> F["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
+    END_TO_END_TESTS --> F["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
@@ -598,27 +598,27 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph IntentPipeline["Intent Detection Pipeline (Document 05)"]
+    subgraph INTENT_PIPELINE["Intent Detection Pipeline (Document 05)"]
         EMBED_ROUTER["EMBED_ROUTER<br/>Embedding Router<br/>Batch 6"]:::new
         LLM_INTENT["LLM_INTENT<br/>LLM Intent Validator<br/>+ Query Rewriter<br/>Batch 8a"]:::new
         PREFETCH_COORD["PREFETCH_COORD<br/>Speculative Pre-Fetch<br/>Coordinator<br/>Batch 8b"]:::new
     end
 
-    subgraph QueryPipeline["Query Pipeline (Document 05)"]
+    subgraph QUERY_PIPELINE["Query Pipeline (Document 05)"]
         REWRITE_STRATEGIES["REWRITE_STRATEGIES<br/>Rewrite Strategy<br/>Modules<br/>Batch 3"]:::new
         RAGFLOW_CLIENT["RAGFLOW_CLIENT<br/>RAGFlow Client<br/>+ Tool<br/>Batch 6"]:::new
         SOURCE_ROUTER["SOURCE_ROUTER<br/>Source Priority<br/>Router<br/>Batch 8a"]:::new
         REWRITE_TOOL["REWRITE_TOOL<br/>Query Rewrite<br/>Tool<br/>Batch 8b"]:::new
     end
 
-    subgraph FileIntelligence["File Intelligence (Document 09)"]
+    subgraph FILE_INTELLIGENCE["File Intelligence (Document 09)"]
         FILE_REGISTRY["FILE_REGISTRY<br/>FileRegistry<br/>Batch 4"]:::new
         EVIDENCE_GATE["EVIDENCE_GATE<br/>Evidence Bundle<br/>Gate<br/>Batch 7"]:::new
         DOC_SEARCH["DOC_SEARCH<br/>Per-Document<br/>Search Tool<br/>Batch 8a"]:::new
         VISUAL_GROUNDING["VISUAL_GROUNDING<br/>Visual Grounding<br/>Batch 8a"]:::new
     end
 
-    subgraph Orchestration["Orchestration (Document 06)"]
+    subgraph ORCHESTRATION["Orchestration (Document 06)"]
         ORCHESTRATOR["ORCHESTRATOR<br/>Orchestrator Agent<br/>Framework<br/>Batch 8b"]:::new
         SUBAGENT_FACTORY["SUBAGENT_FACTORY<br/>Sub-Agent Factory<br/>Batch 9a"]:::new
     end
@@ -651,154 +651,154 @@ graph TB
 ```mermaid
 graph TB
     subgraph BATCH_SPIKE["Batch 0 — 1 task"]
-        SPIKE_CORE_STACK_p["SPIKE_CORE_STACK"]
+        SPIKE_CORE_STACK_P["SPIKE_CORE_STACK"]
     end
 
     subgraph BATCH_RAG_SPIKE["Batch 0.5 — 1 task"]
-        SPIKE_RAG_DEPS_p["SPIKE_RAG_DEPS"]
+        SPIKE_RAG_DEPS_P["SPIKE_RAG_DEPS"]
     end
 
     subgraph BATCH_SCAFFOLD["Batch 1 — 2 parallel"]
-        SCAFFOLD_LIB_p["SCAFFOLD_LIB"]
-        SCAFFOLD_SERVER_p["SCAFFOLD_SERVER"]
+        SCAFFOLD_LIB_P["SCAFFOLD_LIB"]
+        SCAFFOLD_SERVER_P["SCAFFOLD_SERVER"]
     end
 
     subgraph BATCH_TYPES_STORAGE["Batch 2 — 8 parallel"]
-        CORE_TYPES_p["CORE_TYPES"]
-        STORAGE_WRAPPER_p["STORAGE_WRAPPER"]
-        MCP_HEALTH_p["MCP_HEALTH"]
-        PROVIDER_HELPERS_p["PROVIDER_HELPERS"]
-        TUI_SHELL_p["TUI_SHELL"]
-        SURREALDB_CLIENT_p["SURREALDB_CLIENT"]
-        DOCKER_COMPOSE_p["DOCKER_COMPOSE"]
-        STRUCT_LOGGING_p["STRUCT_LOGGING"]
+        CORE_TYPES_P["CORE_TYPES"]
+        STORAGE_WRAPPER_P["STORAGE_WRAPPER"]
+        MCP_HEALTH_P["MCP_HEALTH"]
+        PROVIDER_HELPERS_P["PROVIDER_HELPERS"]
+        TUI_SHELL_P["TUI_SHELL"]
+        SURREALDB_CLIENT_P["SURREALDB_CLIENT"]
+        DOCKER_COMPOSE_P["DOCKER_COMPOSE"]
+        STRUCT_LOGGING_P["STRUCT_LOGGING"]
     end
 
     subgraph BATCH_SCHEMAS_MEMORY["Batch 3 — 13 parallel"]
-        ZOD_SCHEMAS_p["ZOD_SCHEMAS"]
-        MCP_CLIENT_p["MCP_CLIENT"]
-        SHORT_TERM_MEM_p["SHORT_TERM_MEM"]
-        PROVIDER_FALLBACK_p["PROVIDER_FALLBACK"]
-        TUI_CHAT_p["TUI_CHAT"]
-        TUI_INPUT_p["TUI_INPUT"]
-        TUI_COMMANDS_p["TUI_COMMANDS"]
-        LANGFUSE_MODULE_p["LANGFUSE_MODULE"]
-        KEY_POOL_p["KEY_POOL"]
-        VALKEY_CACHE_p["VALKEY_CACHE"]
-        CIRCUIT_BREAKER_p["CIRCUIT_BREAKER"]
-        REWRITE_STRATEGIES_p["REWRITE_STRATEGIES (new)"]
-        USER_SHORTTERM_MEM_p["USER_SHORTTERM_MEM (new)"]
+        ZOD_SCHEMAS_P["ZOD_SCHEMAS"]
+        MCP_CLIENT_P["MCP_CLIENT"]
+        SHORT_TERM_MEM_P["SHORT_TERM_MEM"]
+        PROVIDER_FALLBACK_P["PROVIDER_FALLBACK"]
+        TUI_CHAT_P["TUI_CHAT"]
+        TUI_INPUT_P["TUI_INPUT"]
+        TUI_COMMANDS_P["TUI_COMMANDS"]
+        LANGFUSE_MODULE_P["LANGFUSE_MODULE"]
+        KEY_POOL_P["KEY_POOL"]
+        VALKEY_CACHE_P["VALKEY_CACHE"]
+        CIRCUIT_BREAKER_P["CIRCUIT_BREAKER"]
+        REWRITE_STRATEGIES_P["REWRITE_STRATEGIES (new)"]
+        USER_SHORTTERM_MEM_P["USER_SHORTTERM_MEM (new)"]
     end
 
     subgraph BATCH_CONFIG_GUARDS["Batch 4 — 6 parallel"]
-        CONFIG_DEFAULTS_p["CONFIG_DEFAULTS"]
-        INPUT_GUARD_p["INPUT_GUARD"]
-        OUTPUT_GUARD_p["OUTPUT_GUARD"]
-        GUARD_FACTORY_p["GUARD_FACTORY"]
-        FILE_REGISTRY_p["FILE_REGISTRY (new)"]
-        SUMMARY_CAP_p["SUMMARY_CAP (new)"]
+        CONFIG_DEFAULTS_P["CONFIG_DEFAULTS"]
+        INPUT_GUARD_P["INPUT_GUARD"]
+        OUTPUT_GUARD_P["OUTPUT_GUARD"]
+        GUARD_FACTORY_P["GUARD_FACTORY"]
+        FILE_REGISTRY_P["FILE_REGISTRY (new)"]
+        SUMMARY_CAP_P["SUMMARY_CAP (new)"]
     end
 
     subgraph BATCH_AGENT_DOCS["Batch 5 — 4 parallel"]
-        DOC_PIPELINE_p["DOC_PIPELINE"]
-        FILE_STORAGE_p["FILE_STORAGE"]
-        AGENT_FACTORY_p["AGENT_FACTORY"]:::crit
-        STRUCTURED_RESULT_MEM_p["STRUCTURED_RESULT_MEM (new)"]
+        DOC_PIPELINE_P["DOC_PIPELINE"]
+        FILE_STORAGE_P["FILE_STORAGE"]
+        AGENT_FACTORY_P["AGENT_FACTORY"]:::crit
+        STRUCTURED_RESULT_MEM_P["STRUCTURED_RESULT_MEM (new)"]
     end
 
     subgraph BATCH_STREAMING_TOOLS["Batch 6 — 17 parallel (MAX CONCURRENCY)"]
-        SSE_STREAMING_p["SSE_STREAMING"]
-        GEMINI_GROUNDING_p["GEMINI_GROUNDING"]
-        GUARD_PIPELINE_p["GUARD_PIPELINE"]
-        EVAL_CONFIG_p["EVAL_CONFIG"]
-        FACT_EXTRACTION_p["FACT_EXTRACTION"]
-        MEMORY_RECALL_p["MEMORY_RECALL"]
-        RAG_INFRA_p["RAG_INFRA"]
-        CTA_STREAMING_p["CTA_STREAMING"]
-        LOCATION_TOOL_p["LOCATION_TOOL"]
-        RATE_LIMITING_p["RATE_LIMITING"]
-        PROMPT_MGMT_p["PROMPT_MGMT"]
-        ZERO_LEAK_GUARD_p["ZERO_LEAK_GUARD"]
-        EMBED_ROUTER_p["EMBED_ROUTER (new)"]
-        RAGFLOW_CLIENT_p["RAGFLOW_CLIENT (new)"]
-        LANG_GUARD_p["LANG_GUARD"]
-        HATE_SPEECH_GUARD_p["HATE_SPEECH_GUARD"]
-        MEMORY_CONTROL_p["MEMORY_CONTROL (new)"]
+        SSE_STREAMING_P["SSE_STREAMING"]
+        GEMINI_GROUNDING_P["GEMINI_GROUNDING"]
+        GUARD_PIPELINE_P["GUARD_PIPELINE"]
+        EVAL_CONFIG_P["EVAL_CONFIG"]
+        FACT_EXTRACTION_P["FACT_EXTRACTION"]
+        MEMORY_RECALL_P["MEMORY_RECALL"]
+        RAG_INFRA_P["RAG_INFRA"]
+        CTA_STREAMING_P["CTA_STREAMING"]
+        LOCATION_TOOL_P["LOCATION_TOOL"]
+        RATE_LIMITING_P["RATE_LIMITING"]
+        PROMPT_MGMT_P["PROMPT_MGMT"]
+        ZERO_LEAK_GUARD_P["ZERO_LEAK_GUARD"]
+        EMBED_ROUTER_P["EMBED_ROUTER (new)"]
+        RAGFLOW_CLIENT_P["RAGFLOW_CLIENT (new)"]
+        LANG_GUARD_P["LANG_GUARD"]
+        HATE_SPEECH_GUARD_P["HATE_SPEECH_GUARD"]
+        MEMORY_CONTROL_P["MEMORY_CONTROL (new)"]
     end
 
     subgraph BATCH_EVIDENCE_UPLOAD["Batch 7 — 8 parallel"]
-        EVIDENCE_GATE_p["EVIDENCE_GATE (new)"]
-        UPLOAD_PIPELINE_p["UPLOAD_PIPELINE"]
-        CUSTOM_SPANS_p["CUSTOM_SPANS"]
-        TRIGGER_TASKS_p["TRIGGER_TASKS"]
-        SELF_TEST_p["SELF_TEST"]
-        NON_ACTIONABLE_DETECT_p["NON_ACTIONABLE_DETECT (new)"]
-        INPUT_VALIDATION_p["INPUT_VALIDATION (new)"]
-        THREAD_RESURRECTION_p["THREAD_RESURRECTION (new)"]
+        EVIDENCE_GATE_P["EVIDENCE_GATE (new)"]
+        UPLOAD_PIPELINE_P["UPLOAD_PIPELINE"]
+        CUSTOM_SPANS_P["CUSTOM_SPANS"]
+        TRIGGER_TASKS_P["TRIGGER_TASKS"]
+        SELF_TEST_P["SELF_TEST"]
+        NON_ACTIONABLE_DETECT_P["NON_ACTIONABLE_DETECT (new)"]
+        INPUT_VALIDATION_P["INPUT_VALIDATION (new)"]
+        THREAD_RESURRECTION_P["THREAD_RESURRECTION (new)"]
     end
 
     subgraph BATCH_SERVER_TUI["Batch 8a — 16 parallel"]
-        TUI_AGENT_p["TUI_AGENT"]
-        SERVER_AGENT_CFG_p["SERVER_AGENT_CFG"]
-        SERVER_MCP_p["SERVER_MCP"]
-        SERVER_GUARDRAILS_p["SERVER_GUARDRAILS"]
-        CLIENT_SDK_p["CLIENT_SDK"]
-        AGENT_ROUTER_p["AGENT_ROUTER"]
-        JWT_AUTH_p["JWT_AUTH"]
-        LLM_INTENT_p["LLM_INTENT (new)"]
-        SOURCE_ROUTER_p["SOURCE_ROUTER (new)"]
-        DOC_SEARCH_p["DOC_SEARCH (new)"]
-        VISUAL_GROUNDING_p["VISUAL_GROUNDING (new)"]
-        EXTRACTION_SAFEGUARDS_p["EXTRACTION_SAFEGUARDS (new)"]
-        STYLE_PREFERENCES_p["STYLE_PREFERENCES (new)"]
-        FACT_SUPERSESSION_p["FACT_SUPERSESSION (new)"]
-        RESPONSE_CALIBRATION_p["RESPONSE_CALIBRATION (new)"]
-        CONTEXT_BUDGET_p["CONTEXT_BUDGET (new)"]
+        TUI_AGENT_P["TUI_AGENT"]
+        SERVER_AGENT_CFG_P["SERVER_AGENT_CFG"]
+        SERVER_MCP_P["SERVER_MCP"]
+        SERVER_GUARDRAILS_P["SERVER_GUARDRAILS"]
+        CLIENT_SDK_P["CLIENT_SDK"]
+        AGENT_ROUTER_P["AGENT_ROUTER"]
+        JWT_AUTH_P["JWT_AUTH"]
+        LLM_INTENT_P["LLM_INTENT (new)"]
+        SOURCE_ROUTER_P["SOURCE_ROUTER (new)"]
+        DOC_SEARCH_P["DOC_SEARCH (new)"]
+        VISUAL_GROUNDING_P["VISUAL_GROUNDING (new)"]
+        EXTRACTION_SAFEGUARDS_P["EXTRACTION_SAFEGUARDS (new)"]
+        STYLE_PREFERENCES_P["STYLE_PREFERENCES (new)"]
+        FACT_SUPERSESSION_P["FACT_SUPERSESSION (new)"]
+        RESPONSE_CALIBRATION_P["RESPONSE_CALIBRATION (new)"]
+        CONTEXT_BUDGET_P["CONTEXT_BUDGET (new)"]
     end
 
     subgraph BATCH_UPLOAD_COST["Batch 8b — 12 parallel"]
-        TUI_UPLOAD_p["TUI_UPLOAD"]
-        COST_TRACKING_p["COST_TRACKING"]
-        TTL_CLEANUP_p["TTL_CLEANUP"]
-        CROSS_CONV_RAG_p["CROSS_CONV_RAG"]
-        PREFETCH_COORD_p["PREFETCH_COORD (new)"]
-        REWRITE_TOOL_p["REWRITE_TOOL (new)"]
-        ORCHESTRATOR_p["ORCHESTRATOR (new)"]
-        DEPENDENT_INTENT_p["DEPENDENT_INTENT (new)"]
-        FRUSTRATION_SIGNAL_p["FRUSTRATION_SIGNAL (new)"]
-        CLARIFICATION_MODEL_p["CLARIFICATION_MODEL (new)"]
-        ATTRIBUTE_NEGATION_p["ATTRIBUTE_NEGATION (new)"]
-        QUERY_REPLAY_p["QUERY_REPLAY (new)"]
+        TUI_UPLOAD_P["TUI_UPLOAD"]
+        COST_TRACKING_P["COST_TRACKING"]
+        TTL_CLEANUP_P["TTL_CLEANUP"]
+        CROSS_CONV_RAG_P["CROSS_CONV_RAG"]
+        PREFETCH_COORD_P["PREFETCH_COORD (new)"]
+        REWRITE_TOOL_P["REWRITE_TOOL (new)"]
+        ORCHESTRATOR_P["ORCHESTRATOR (new)"]
+        DEPENDENT_INTENT_P["DEPENDENT_INTENT (new)"]
+        FRUSTRATION_SIGNAL_P["FRUSTRATION_SIGNAL (new)"]
+        CLARIFICATION_MODEL_P["CLARIFICATION_MODEL (new)"]
+        ATTRIBUTE_NEGATION_P["ATTRIBUTE_NEGATION (new)"]
+        QUERY_REPLAY_P["QUERY_REPLAY (new)"]
     end
 
     subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 2 parallel"]
-        SUBAGENT_FACTORY_p["SUBAGENT_FACTORY (new)"]
-        SERVER_ROUTES_p["SERVER_ROUTES"]
+        SUBAGENT_FACTORY_P["SUBAGENT_FACTORY (new)"]
+        SERVER_ROUTES_P["SERVER_ROUTES"]
     end
 
     subgraph BATCH_ENDPOINTS["Batch 9b — 5 parallel"]
-        BARREL_EXPORTS_p["BARREL_EXPORTS"]
-        UPLOAD_ENDPOINT_p["UPLOAD_ENDPOINT"]
-        FEEDBACK_ENDPOINT_p["FEEDBACK_ENDPOINT"]
-        FILE_CRUD_p["FILE_CRUD"]
-        ADMIN_API_p["ADMIN_API"]
+        BARREL_EXPORTS_P["BARREL_EXPORTS"]
+        UPLOAD_ENDPOINT_P["UPLOAD_ENDPOINT"]
+        FEEDBACK_ENDPOINT_P["FEEDBACK_ENDPOINT"]
+        FILE_CRUD_P["FILE_CRUD"]
+        ADMIN_API_P["ADMIN_API"]
     end
 
-    subgraph BATCH_E2E_DEPLOY["Batch 10 — 4 parallel"]
-        E2E_TESTS_p["E2E_TESTS"]
-        PKG_PUBLISH_p["PKG_PUBLISH"]
-        SMOKE_TESTS_p["SMOKE_TESTS"]
-        LOAD_TESTS_p["LOAD_TESTS"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 4 parallel"]
+        END_TO_END_TESTS_P["E2E_TESTS"]
+        PKG_PUBLISH_P["PKG_PUBLISH"]
+        SMOKE_TESTS_P["SMOKE_TESTS"]
+        LOAD_TESTS_P["LOAD_TESTS"]
     end
 
     subgraph BATCH_FINAL_AUDIT["FINAL — 4 parallel"]
-        AUDIT_PLAN_p["AUDIT_PLAN"]
-        AUDIT_CODE_p["AUDIT_CODE"]
-        AUDIT_QA_p["AUDIT_QA"]
-        AUDIT_SCOPE_p["AUDIT_SCOPE"]
+        AUDIT_PLAN_P["AUDIT_PLAN"]
+        AUDIT_CODE_P["AUDIT_CODE"]
+        AUDIT_QA_P["AUDIT_QA"]
+        AUDIT_SCOPE_P["AUDIT_SCOPE"]
     end
 
-    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_E2E_DEPLOY --> BATCH_FINAL_AUDIT
+    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FINAL_AUDIT
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
@@ -811,7 +811,7 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph AgentTypes["Agent Categories"]
+    subgraph AGENT_TYPES["Agent Categories"]
         DEEP["deep<br/>(complex, multi-file,<br/>integration work)"]
         QUICK["quick<br/>(single-file,<br/>straightforward)"]
         VIS["visual-engineering<br/>(UI components,<br/>Playwright verification)"]
@@ -820,7 +820,7 @@ graph LR
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DeepTasks["deep Tasks (48)"]
+    subgraph DEEP_TASKS["deep Tasks (48)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
         DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
@@ -830,7 +830,7 @@ graph LR
         DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION"]
     end
 
-    subgraph QuickTasks["quick Tasks (25)"]
+    subgraph QUICK_TASKS["quick Tasks (25)"]
         QUICK_FOUND["SCAFFOLD_LIB, SCAFFOLD_SERVER, CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER"]
         QUICK_INFRA["MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, BARREL_EXPORTS, SERVER_AGENT_CFG"]
         QUICK_SERVER["SERVER_MCP, SERVER_GUARDRAILS, PKG_PUBLISH, DOCKER_COMPOSE, LANGFUSE_MODULE"]
@@ -838,11 +838,11 @@ graph LR
         QUICK_ENGINE["NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION"]
     end
 
-    subgraph VisTasks["visual-engineering Tasks (5)"]
+    subgraph VIS_TASKS["visual-engineering Tasks (5)"]
         VIS_TUI_TASKS["TUI_SHELL, TUI_CHAT, TUI_INPUT, TUI_COMMANDS, TUI_UPLOAD"]
     end
 
-    subgraph UHighTasks["unspecified-high Tasks (23)"]
+    subgraph U_HIGH_TASKS["unspecified-high Tasks (23)"]
         UHIGH_GUARD_MCP["GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, EVAL_CONFIG, SELF_TEST"]
         UHIGH_SERVER_SMOKE["SERVER_ROUTES, SMOKE_TESTS, UPLOAD_ENDPOINT, CUSTOM_SPANS, CTA_STREAMING"]
         UHIGH_CLIENT_COST["CLIENT_SDK, COST_TRACKING, LOAD_TESTS, FILE_CRUD, JWT_AUTH, ADMIN_API, REWRITE_TOOL, CONTEXT_BUDGET, RESPONSE_CALIBRATION"]
@@ -850,20 +850,20 @@ graph LR
         UHIGH_AUDIT_CODE["AUDIT_CODE"]
     end
 
-    subgraph MixedTasks["Mixed Tasks (1)"]
+    subgraph MIXED_TASKS["Mixed Tasks (1)"]
         MIXED_AUDIT_QA["AUDIT_QA (unspecified-high + playwright)"]
     end
 
-    subgraph OracleTasks["oracle Tasks (1)"]
+    subgraph ORACLE_TASKS["oracle Tasks (1)"]
         ORACLE_AUDIT_PLAN["AUDIT_PLAN"]
     end
 
-    DEEP --> DeepTasks
-    QUICK --> QuickTasks
-    VIS --> VisTasks
-    UHIGH --> UHighTasks
-    MIXED --> MixedTasks
-    ORACLE --> OracleTasks
+    DEEP --> DEEP_TASKS
+    QUICK --> QUICK_TASKS
+    VIS --> VIS_TASKS
+    UHIGH --> U_HIGH_TASKS
+    MIXED --> MIXED_TASKS
+    ORACLE --> ORACLE_TASKS
 ```
 
 ### Agent Dispatch Summary Table

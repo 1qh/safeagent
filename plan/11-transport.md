@@ -26,7 +26,7 @@ The streaming system keeps `@openai/agents` `RunStreamEvent` items internal to t
 
 ```mermaid
 graph TB
-    subgraph AgentLayer["Agent Layer (RunStreamEvent internal format)"]
+    subgraph AGENT_LAYER["Agent Layer (RunStreamEvent internal format)"]
         AGENT["Runner.run(agent)\nAsyncIterable of RunStreamEvent"]
         GUARD_PROC["Output Guardrail\nProcessor"]
         CTA_PROC["CTA Stream\nProcessor"]
@@ -34,14 +34,14 @@ graph TB
         TUI["TUI Client\n(direct library stream, no SSE)"]
     end
 
-    subgraph HTTPBoundary["HTTP Boundary (Elysia)"]
+    subgraph HTTP_BOUNDARY["HTTP Boundary (Elysia)"]
         HANDLER["createStreamHandler"]
         META_INJECT["Session Meta Injector\n{ traceId, threadId, agentId }"]
         KEEPALIVE["Keepalive Timer\n(comment: ping)"]
         ERR_CATCH["TripWire / Error\nCatcher"]
     end
 
-    subgraph SSEWire["SSE Wire Protocol (named events)"]
+    subgraph SSE_WIRE["SSE Wire Protocol (named events)"]
         EVT_META["event: session-meta\ndata: { traceId, threadId }"]
         EVT_TEXT["event: text-delta\ndata: { delta }"]
         EVT_CTA["event: cta\ndata: { cta: [...] }"]
@@ -52,7 +52,7 @@ graph TB
         EVT_ERR["event: error\ndata: { code, message }"]
     end
 
-    subgraph ClientSDK["@safeagent/client"]
+    subgraph CLIENT_SDK["@safeagent/client"]
         PARSER["SSE Parser"]
         TYPED["Typed Event\nDispatcher"]
         QUEUE["Offline Message\nQueue"]
@@ -85,12 +85,12 @@ The factory accepts an `errorMessageMap` parameter — a plain object keyed by e
 flowchart TB
     REQ["Chat Streaming Request"]
 
-    subgraph Auth["Auth Middleware (runs before handler)"]
+    subgraph AUTH["Auth Middleware (runs before handler)"]
         JWT["JWT Verification"]
         CTX["requestContext\n{ userId, threadId }"]
     end
 
-    subgraph Handler["createStreamHandler internals"]
+    subgraph HANDLER["createStreamHandler internals"]
         direction TB
         CTX_PROV["contextProvider()\nDI hook — injects file context\nfor direct-mode files"]
         META_FIRST["Emit session-meta event\n(first event on stream,\nBEFORE any guardrail/agent work)"]
@@ -132,11 +132,11 @@ The JWT auth lifecycle hook extracts `userId` from the bearer token and attaches
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant Elysia
-    participant AuthMiddleware
-    participant createStreamHandler
-    participant Agent
+    participant CLIENT
+    participant ELYSIA
+    participant AUTH_MIDDLEWARE
+    participant CREATE_STREAM_HANDLER
+    participant AGENT
 
     Client->>Elysia: Chat streaming request\nAuthorization: Bearer token
     Elysia->>AuthMiddleware: verify JWT
@@ -144,8 +144,8 @@ sequenceDiagram
     Elysia->>createStreamHandler: handle(ctx)
     createStreamHandler->>createStreamHandler: read userId from ctx, threadId from body
     createStreamHandler->>Agent: stream(messages, { userId, threadId })
-    Agent-->>createStreamHandler: AsyncIterable<RunStreamEvent>
-    createStreamHandler-->>Client: SSE stream
+    AGENT-->>createStreamHandler: AsyncIterable<RunStreamEvent>
+    CREATE_STREAM_HANDLER-->>Client: SSE stream
 ```
 
 ### Keepalive
@@ -204,18 +204,18 @@ The TUI consumes the library stream directly (no SSE). Tests against the agent l
 
 ```mermaid
 flowchart LR
-    subgraph Internal["Library internals (RunStreamEvent format throughout)"]
+    subgraph INTERNAL["Library internals (RunStreamEvent format throughout)"]
         AGENT["Runner.run(agent)\nAsyncIterable of RunStreamEvent"]
         GP["Guardrail\nProcessor"]
         CP["CTA\nProcessor"]
         TUI_C["TUI\nconsumer"]
     end
 
-    subgraph Wire["SSE Wire"]
+    subgraph WIRE["SSE Wire"]
         SSE["Custom named SSE events\nsession-meta | text-delta | cta | citation | location | tripwire | done | error"]
     end
 
-    subgraph Clients["External Clients"]
+    subgraph CLIENTS["External Clients"]
         WEB["Web / Mobile\n@safeagent/client"]
     end
 
@@ -237,8 +237,8 @@ Every stream starts with a `session-meta` event before any text delta arrives. T
 
 ```mermaid
 sequenceDiagram
-    participant Handler as createStreamHandler
-    participant Client as @safeagent/client
+    participant HANDLER as createStreamHandler
+    participant CLIENT as @safeagent/client
 
     Handler->>Client: event: session-meta\ndata: { traceId, threadId, agentId }
     Note over Client: client stores traceId for feedback submission
@@ -290,7 +290,7 @@ flowchart TB
     TOOL_CALL["suggest_cta tool call\n(RunStreamEvent)"]
     PROC["createCTAStreamProcessor\n(stream processor)"]
 
-    subgraph Decision["Processor decision"]
+    subgraph DECISION["Processor decision"]
         IS_CTA{"is suggest_cta\ntool call?"}
         SUPPRESS["suppress tool-call\nevent from stream"]
         EMIT_CTA["emit cta event\nevent: cta\ndata: {\"cta\":[...]}"]
@@ -311,7 +311,7 @@ The CTA event is emitted as a custom named SSE event. The handler writes `event:
 
 ```mermaid
 flowchart LR
-    subgraph Payload["CTA Event Payload"]
+    subgraph PAYLOAD["CTA Event Payload"]
         direction TB
         ID["id: string"]
         LABEL["label: string"]
@@ -320,14 +320,14 @@ flowchart LR
         ICON["icon?: string"]
     end
 
-    subgraph Constraints["Constraints"]
+    subgraph CONSTRAINTS["Constraints"]
         MAX["max 3 per response"]
         CATALOG["must exist in server catalog"]
         LLM_DEC["LLM-decided (not hardcoded)"]
     end
 
-    Payload --> CONSTRAINTS_CHECK["validated against catalog\nat tool call time"]
-    Constraints --> CONSTRAINTS_CHECK
+    PAYLOAD --> CONSTRAINTS_CHECK["validated against catalog\nat tool call time"]
+    CONSTRAINTS --> CONSTRAINTS_CHECK
 ```
 
 ### CTA Stream Processor Placement
@@ -364,14 +364,14 @@ The client opens an SSE connection using the Fetch API with a streaming response
 
 ```mermaid
 flowchart TB
-    subgraph Connection["Connection Layer"]
+    subgraph CONNECTION["Connection Layer"]
         FETCH["fetch() with\nReadableStream body"]
         READER["ReadableStreamDefaultReader"]
         DECODER["TextDecoder\n(UTF-8 incremental)"]
         PARSER["SSE line parser\n(event / data / id fields)"]
     end
 
-    subgraph Dispatch["Event Dispatch"]
+    subgraph DISPATCH["Event Dispatch"]
         ROUTE{"event type?"}
         ON_META["onSessionMeta(event)"]
         ON_TEXT["onTextDelta(event)"]
@@ -400,15 +400,15 @@ The client reconnects automatically when the connection drops. It uses exponenti
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Connecting
-    Connecting --> Connected: stream opened
-    Connecting --> Backoff: connection failed
-    Connected --> Backoff: connection dropped
-    Connected --> Closed: done event received
-    Connected --> Closed: client.close() called
-    Backoff --> Connecting: backoff timer expires
-    Backoff --> Closed: max retries exceeded
-    Closed --> [*]
+    [*] --> CONNECTING
+    CONNECTING --> CONNECTED: stream opened
+    CONNECTING --> BACKOFF: connection failed
+    CONNECTED --> BACKOFF: connection dropped
+    CONNECTED --> CLOSED: done event received
+    CONNECTED --> CLOSED: client.close() called
+    BACKOFF --> CONNECTING: backoff timer expires
+    BACKOFF --> CLOSED: max retries exceeded
+    CLOSED --> [*]
 
     note right of Backoff
         delay = min(base * 2^attempt + jitter, maxDelay)
@@ -423,18 +423,18 @@ The queue is bounded. When it reaches capacity, an `overflow` event fires and th
 
 ```mermaid
 flowchart TB
-    subgraph NetworkCheck["Network State"]
+    subgraph NETWORK_CHECK["Network State"]
         ONLINE{"navigator.onLine\nor fetch probe?"}
     end
 
-    subgraph Queue["Offline Queue"]
+    subgraph QUEUE["Offline Queue"]
         ENQUEUE["enqueue message"]
         BOUNDED["bounded capacity\n(configurable)"]
         OVERFLOW["emit overflow event\ndrop oldest"]
         DRAIN["drain FIFO\non reconnect"]
     end
 
-    subgraph Send["Send Path"]
+    subgraph SEND["Send Path"]
         DIRECT["send immediately"]
     end
 
@@ -460,15 +460,15 @@ The client stores the `traceId` from the most recent `session-meta` event. When 
 
 ```mermaid
 sequenceDiagram
-    participant App
-    participant Client as @safeagent/client
-    participant Server
+    participant APP
+    participant CLIENT as @safeagent/client
+    participant SERVER
 
-    Server-->>Client: session-meta { traceId: "abc123" }
+    SERVER-->>Client: session-meta { traceId: "abc123" }
     Note over Client: stores traceId internally
     App->>Client: submitFeedback({ score: 1 })
     Client->>Server: Submit feedback\n{ traceId, score: 1 }
-    Server-->>Client: 200 OK
+    SERVER-->>Client: 200 OK
 ```
 
 ### JWT Auth
@@ -498,7 +498,7 @@ For `location`, `type` is one of `city`, `neighborhood`, `restaurant`, `landmark
 
 ```mermaid
 classDiagram
-    class SSESessionMetaEvent {
+    class SSE_SESSION_META_EVENT {
         type: "session-meta"
         traceId: string
         threadId: string
@@ -510,7 +510,7 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class SSETextDeltaEvent {
+    class SSE_TEXT_DELTA_EVENT {
         type: "text-delta"
         delta: string
     }
@@ -520,7 +520,7 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class SSECTAEvent {
+    class SSECTA_EVENT {
         type: "cta"
         cta: CTA[]
     }
@@ -531,18 +531,18 @@ classDiagram
         url?: string
         icon?: string
     }
-    SSECTAEvent --> CTA
+    SSECTA_EVENT --> CTA
 ```
 
 ### SSECitationEvent
 
 ```mermaid
 classDiagram
-    class SSECitationEvent {
+    class SSE_CITATION_EVENT {
         type: "citation"
         citation: Citation
     }
-    class Citation {
+    class CITATION {
         source: string
         fileId?: string
         page?: number
@@ -550,32 +550,32 @@ classDiagram
         scope?: "thread" | "global"
         images?: ImageRef[]
     }
-    class ImageRef {
+    class IMAGE_REF {
         url: string
         description: string
         imageIndex: number
         apiPath: string
     }
-    Citation --> ImageRef
-    SSECitationEvent --> Citation
+    CITATION --> IMAGE_REF
+    SSE_CITATION_EVENT --> CITATION
 ```
 
 ### SSELocationEvent
 
 ```mermaid
 classDiagram
-    class SSELocationEvent {
+    class SSE_LOCATION_EVENT {
         type: "location"
         location: LocationResult
     }
-    SSELocationEvent --> LocationResult
+    SSE_LOCATION_EVENT --> LOCATION_RESULT
 ```
 
 ### SSETripwireEvent
 
 ```mermaid
 classDiagram
-    class SSETripwireEvent {
+    class SSE_TRIPWIRE_EVENT {
         type: "tripwire"
         conceptId: string
         reason: string
@@ -589,7 +589,7 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class SSEDoneEvent {
+    class SSE_DONE_EVENT {
         type: "done"
     }
 ```
@@ -598,7 +598,7 @@ classDiagram
 
 ```mermaid
 classDiagram
-    class SSEErrorEvent {
+    class SSE_ERROR_EVENT {
         type: "error"
         code: string
         message: string

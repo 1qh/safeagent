@@ -530,13 +530,13 @@ graph TB
 
 ```mermaid
 erDiagram
-    user {
+    USER_ENTITY {
         string id PK
         string userId
         datetime createdAt
     }
 
-    fact {
+    FACT_ENTITY {
         string id PK
         string subject
         string predicate
@@ -551,7 +551,7 @@ erDiagram
         datetime expiresAt
     }
 
-    interaction {
+    INTERACTION_ENTITY {
         string id PK
         string action
         string query
@@ -561,7 +561,7 @@ erDiagram
         datetime expiresAt
     }
 
-    media_fact {
+    MEDIA_FACT_ENTITY {
         string id PK
         string description
         array extractedEntities
@@ -571,7 +571,7 @@ erDiagram
         datetime expiresAt
     }
 
-    knows {
+    KNOWS_EDGE_ENTITY {
         string id PK
         record_id in
         record_id out
@@ -579,44 +579,44 @@ erDiagram
         datetime createdAt
     }
 
-    performed {
+    PERFORMED_EDGE_ENTITY {
         string id PK
         record_id in
         record_id out
         datetime createdAt
     }
 
-    observed {
+    OBSERVED_EDGE_ENTITY {
         string id PK
         record_id in
         record_id out
         datetime createdAt
     }
 
-    related_to {
+    RELATED_TO_EDGE_ENTITY {
         string id PK
         record_id in
         record_id out
         string relationship
     }
 
-    supersedes {
+    SUPERSEDES_EDGE_ENTITY {
         string id PK
         record_id in
         record_id out
         string reason
     }
 
-    user ||--o{ knows : "in"
-    fact ||--o{ knows : "out"
-    user ||--o{ performed : "in"
-    interaction ||--o{ performed : "out"
-    user ||--o{ observed : "in"
-    media_fact ||--o{ observed : "out"
-    fact ||--o{ related_to : "in"
-    fact ||--o{ related_to : "out"
-    fact ||--o{ supersedes : "in"
-    fact ||--o{ supersedes : "out"
+    USER_ENTITY ||--o{ KNOWS_EDGE_ENTITY : "in"
+    FACT_ENTITY ||--o{ KNOWS_EDGE_ENTITY : "out"
+    USER_ENTITY ||--o{ PERFORMED_EDGE_ENTITY : "in"
+    INTERACTION_ENTITY ||--o{ PERFORMED_EDGE_ENTITY : "out"
+    USER_ENTITY ||--o{ OBSERVED_EDGE_ENTITY : "in"
+    MEDIA_FACT_ENTITY ||--o{ OBSERVED_EDGE_ENTITY : "out"
+    FACT_ENTITY ||--o{ RELATED_TO_EDGE_ENTITY : "in"
+    FACT_ENTITY ||--o{ RELATED_TO_EDGE_ENTITY : "out"
+    FACT_ENTITY ||--o{ SUPERSEDES_EDGE_ENTITY : "in"
+    FACT_ENTITY ||--o{ SUPERSEDES_EDGE_ENTITY : "out"
 ```
 
 ### Fact types
