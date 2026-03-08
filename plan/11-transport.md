@@ -1,6 +1,6 @@
 # 11 — Streaming & Transport
 
-> **Scope**: SSE streaming pipeline, custom SSE event protocol boundary, CTA tool streaming, and the `@safeagent/client` SDK.
+> **Scope**: SSE streaming pipeline, custom SSE event protocol boundary, trace-step event family, verbosity-level filtering, CTA tool streaming, and the `@safeagent/client` SDK.
 >
 > **Tasks**: SSE_STREAMING (SSE Streaming Layer), CTA_STREAMING (CTA Streaming), CLIENT_SDK (Client SDK)
 
@@ -12,6 +12,8 @@
 - [SSE Streaming Layer (SSE_STREAMING)](#sse-streaming-layer-ssestreaming)
 - [Stream Format Boundary](#stream-format-boundary)
 - [Session Metadata Delivery](#session-metadata-delivery)
+- [Trace-Step Events](#trace-step-events)
+- [Verbosity Levels](#verbosity-levels)
 - [CTA Streaming (CTA_STREAMING)](#cta-streaming-ctastreaming)
 - [Client SDK (CLIENT_SDK)](#client-sdk-clientsdk)
 - [SSE Event Type Reference](#sse-event-type-reference)
@@ -22,7 +24,7 @@
 
 ## Architecture Overview
 
-The streaming system keeps `@openai/agents` `RunStreamEvent` items internal to the safeagent library. At the HTTP boundary, `createStreamHandler` iterates `Runner.run()` stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for `@safeagent/client` and other SSE consumers.
+The streaming system keeps `@openai/agents` `RunStreamEvent` items internal to the safeagent library. At the HTTP boundary, `createStreamHandler` iterates `Runner.run()` stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for `@safeagent/client` and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
 
 ```mermaid
 graph TB
@@ -31,12 +33,14 @@ graph TB
         GUARD_PROC["Output Guardrail\nProcessor"]
         CTA_PROC["CTA Stream\nProcessor"]
         LOC_PROC["Location Stream\nProcessor"]
+        TRACE_COLLECT["Trace-Step\nCollector"]
         TUI["TUI Client\n(direct library stream, no SSE)"]
     end
 
     subgraph HTTP_BOUNDARY["HTTP Boundary (Elysia)"]
         HANDLER["createStreamHandler"]
         META_INJECT["Session Meta Injector\n{ traceId, threadId, agentId }"]
+        VERBOSITY_FILTER["Verbosity Filter\n(standard: user-facing only\nfull: all events)"]
         KEEPALIVE["Keepalive Timer\n(comment: ping)"]
         ERR_CATCH["TripWire / Error\nCatcher"]
     end
@@ -44,6 +48,7 @@ graph TB
     subgraph SSE_WIRE["SSE Wire Protocol (named events)"]
         EVT_META["event: session-meta\ndata: { traceId, threadId }"]
         EVT_TEXT["event: text-delta\ndata: { delta }"]
+        EVT_TRACE["event: trace-step\ndata: { step, data, latencyMs }"]
         EVT_CTA["event: cta\ndata: { cta: [...] }"]
         EVT_CIT["event: citation\ndata: { citation }"]
         EVT_LOC["event: location\ndata: { location: { name, type, lat, lng, images, context? } }"]
@@ -59,12 +64,15 @@ graph TB
         RECONNECT["Reconnection\nManager"]
     end
 
-    AGENT --> GUARD_PROC --> CTA_PROC --> LOC_PROC
-    LOC_PROC --> TUI
-    LOC_PROC --> HANDLER
+    AGENT --> GUARD_PROC --> CTA_PROC --> LOC_PROC --> TRACE_COLLECT
+    TRACE_COLLECT --> TUI
+    TRACE_COLLECT --> HANDLER
+    HANDLER --> VERBOSITY_FILTER
     ERR_CATCH -.->|"catches TripWire"| EVT_TRIP
-    KEEPALIVE --> EVT_META & EVT_TEXT & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR
-    EVT_META & EVT_TEXT & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR --> PARSER
+    VERBOSITY_FILTER --> EVT_META & EVT_TEXT & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR
+    VERBOSITY_FILTER -->|"full only"| EVT_TRACE
+    KEEPALIVE -.-> EVT_META
+    EVT_META & EVT_TEXT & EVT_TRACE & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR --> PARSER
     PARSER --> TYPED --> QUEUE
     QUEUE --> RECONNECT
 ```
@@ -212,7 +220,7 @@ flowchart LR
     end
 
     subgraph WIRE["SSE Wire"]
-        SSE["Custom named SSE events\nsession-meta | text-delta | cta | citation | location | tripwire | done | error"]
+        SSE["Custom named SSE events\nsession-meta | text-delta | trace-step | cta | citation | location | tripwire | done | error"]
     end
 
     subgraph CLIENTS["External Clients"]
@@ -263,6 +271,171 @@ The `trace_owners` Postgres table (managed by Drizzle ORM) enables feedback owne
 | createdAt | timestamp | NOT NULL, DEFAULT now() |
 
 No additional indexes beyond the primary key — lookups are always by `traceId`.
+
+---
+
+## Trace-Step Events
+
+Trace-step events provide real-time visibility into the engine pipeline for developer debugging and tracing. They expose what the engine is doing internally — intent classification, memory recall, guardrail evaluation, retrieval, tool execution, and context assembly — as structured SSE events. These events are emitted only when the verbosity level is `full`, ensuring end users never see internal pipeline details.
+
+This is the primary mechanism for the frontend trace and debug experience described in [18 — Frontend SDK](./18-frontend-sdk.md). When verbosity is `standard` (the default), only user-facing events are emitted. When verbosity is `full`, trace-step events are interleaved with regular events to show pipeline activity in real time.
+
+### Trace-Step Event Envelope
+
+All trace-step events share a common envelope: `type: "trace-step"`, a `step` discriminator field, a step-specific `data` payload, a `latencyMs` timing field for visualization, and a `timestamp` for ordering.
+
+```mermaid
+classDiagram
+    class SSE_TRACE_STEP_EVENT {
+        type: "trace-step"
+        step: TraceStepType
+        data: TraceStepData
+        latencyMs: number
+        timestamp: number
+    }
+```
+
+### Step Types
+
+| Step | Emitted When | Data Summary |
+|------|-------------|-------------|
+| `intent-detected` | Embedding router and LLM validator complete | Intent name, confidence score, detection source (embedding or LLM override), whether LLM agreed with or corrected the embedding classification |
+| `memory-recall` | Long-term memory recall returns | Number of facts recalled, top relevance score, temporal distribution summary |
+| `guardrail-input` | Input guardrails aggregate | Aggregate verdict (pass, block, or flag), individual guardrail result summaries, highest severity encountered |
+| `guardrail-output` | Output guardrail scan runs | Scan result (pass or flag), concept identifier if flagged, sliding window position |
+| `retrieval` | RAG or document search completes | Source name, result count, retrieval mode (hybrid, direct, or external) |
+| `tool-call-start` | Agent invokes a tool | Tool name, tool category |
+| `tool-call-end` | Tool execution completes | Tool name, success or error indicator, result summary |
+| `context-budget` | Context assembly completes | Used tokens, total budget, breakdown by layer (thread history, user short-term, long-term recall, source content) |
+| `source-fetch` | Source router dispatches or completes a source fetch | Source name, status (started, completed, or failed), result count on completion |
+| `rewrite` | Query rewrite applied | Strategy name (HyDE, EntityExtraction, DenseKeywords), trigger reason |
+
+### Emission Ordering
+
+Trace-step events are interleaved with regular events in the order they occur in the pipeline. The engine always produces trace-step data internally (it needs this data for Langfuse tracing regardless). The verbosity filter at the HTTP boundary decides whether to emit them to the SSE stream.
+
+```mermaid
+sequenceDiagram
+    participant ENGINE as Engine Pipeline
+    participant HANDLER as createStreamHandler
+    participant CLIENT as Client (full verbosity)
+
+    ENGINE->>HANDLER: session-meta
+    HANDLER->>CLIENT: event: session-meta
+
+    ENGINE->>HANDLER: trace-step (intent-detected)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (guardrail-input)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (memory-recall)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (context-budget)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (source-fetch started)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (retrieval)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: text-delta
+    HANDLER->>CLIENT: event: text-delta
+
+    ENGINE->>HANDLER: text-delta
+    HANDLER->>CLIENT: event: text-delta
+
+    ENGINE->>HANDLER: trace-step (tool-call-start)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (tool-call-end)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: trace-step (guardrail-output)
+    HANDLER->>CLIENT: event: trace-step
+
+    ENGINE->>HANDLER: cta
+    HANDLER->>CLIENT: event: cta
+
+    ENGINE->>HANDLER: done
+    HANDLER->>CLIENT: event: done
+```
+
+### Relationship to Langfuse
+
+Trace-step events are a real-time subset of the data that Langfuse captures asynchronously. They share the same `traceId` (from `session-meta`). The key differences:
+
+| Aspect | Trace-Step Events | Langfuse Traces |
+|--------|------------------|----------------|
+| Delivery | Real-time SSE during stream | Async batch export after stream completes |
+| Audience | Developers debugging via frontend UI | Analytics and observability dashboards |
+| Detail level | Summary per pipeline step | Full span tree with nested children and metadata |
+| Persistence | Ephemeral (client memory only) | Permanent (Langfuse storage) |
+| Correlation | Same `traceId` from `session-meta` | Same `traceId` |
+
+A developer can watch trace-step events in real-time during a conversation, then switch to Langfuse for deep post-hoc analysis of the same request using the shared `traceId`. See [14 — Observability](./14-observability.md) for the full Langfuse tracing architecture.
+
+### Trace-Step Collector
+
+The trace-step collector is a stream processor that sits after the location processor in the chain. It intercepts pipeline milestone signals — timing data, classification results, guardrail verdicts — and packages them as `trace-step` data events. Unlike the CTA and location processors which suppress tool-call events, the trace-step collector emits additional events alongside the normal stream without suppressing anything.
+
+The collector is always active regardless of verbosity. The verbosity filter at the HTTP boundary decides whether trace-step events reach the SSE wire. The TUI consumes trace-step data directly from the library stream with no filtering.
+
+```mermaid
+flowchart LR
+    AGENT["Agent\nstream"]
+    GP["Guardrail\nProcessor"]
+    CP["CTA\nProcessor"]
+    LP["Location\nProcessor"]
+    TC["Trace-Step\nCollector"]
+    TUI_OUT["TUI\n(all events)"]
+    HTTP_OUT["HTTP Handler\n(verbosity filter)"]
+
+    AGENT --> GP --> CP --> LP --> TC
+    TC --> TUI_OUT
+    TC --> HTTP_OUT
+```
+
+---
+
+## Verbosity Levels
+
+The chat streaming endpoint accepts a `verbosity` parameter that controls which events are emitted on the SSE stream. This parameter is passed from the server route to `createStreamHandler`.
+
+| Level | Events Emitted | Target Audience |
+|-------|---------------|----------------|
+| `standard` (default) | `session-meta`, `text-delta`, `cta`, `citation`, `location`, `tripwire`, `done`, `error` | End users, production applications |
+| `full` | All `standard` events plus `trace-step` events interleaved at their natural pipeline positions | Developers debugging pipeline behavior via [18 — Frontend SDK](./18-frontend-sdk.md) verbosity toggle |
+
+### Verbosity Filtering
+
+```mermaid
+flowchart LR
+    HANDLER["createStreamHandler"]
+    VERBOSITY{"verbosity\nparameter"}
+    STANDARD_FILTER["Emit user-facing\nevents only\n(8 event types)"]
+    FULL_FILTER["Emit all events\nincluding trace-step\n(9 event types)"]
+    SSE["SSE Response"]
+
+    HANDLER --> VERBOSITY
+    VERBOSITY -->|standard| STANDARD_FILTER --> SSE
+    VERBOSITY -->|full| FULL_FILTER --> SSE
+```
+
+The filter is applied at the HTTP boundary, not inside the engine. The engine always produces trace-step data (it needs it for Langfuse regardless). `createStreamHandler` decides whether to emit trace-step events to the SSE stream based on the verbosity parameter.
+
+This design means:
+
+- Zero performance cost when verbosity is `standard` — trace-step events are simply not written to the response
+- The engine pipeline is identical regardless of verbosity — no conditional behavior in agent logic
+- The TUI can consume trace-step data directly from the library stream (no verbosity filtering needed since TUI is not HTTP)
+- Frontend applications control verbosity per-request, allowing a developer to toggle between standard and full modes without server restart
+
+### Verbosity and Security
+
+Trace-step data may contain internal pipeline details (intent names, guardrail concept IDs, tool names, token counts). When verbosity is `full`, the server trusts that the requesting client is a developer who should see this information. The server should enforce that `full` verbosity requires an authenticated user with developer-level permissions. This is an authorization concern owned by the server, not the library — the library simply respects the `verbosity` parameter it receives.
 
 ---
 
@@ -485,6 +658,7 @@ All event types are shared between the server (emitter) and the client (consumer
 |---|---|---|
 | `session-meta` | `SSESessionMetaEvent` | First event on every stream. Carries trace and thread IDs. |
 | `text-delta` | `SSETextDeltaEvent` | Incremental text chunk from the LLM. |
+| `trace-step` | `SSETraceStepEvent` | Pipeline step visibility event. Only emitted when verbosity is `full`. Carries step type, step-specific data, and timing. |
 | `cta` | `SSECTAEvent` | Call-to-action suggestions from the CTA tool. |
 | `citation` | `SSECitationEvent` | Source citation metadata for grounded output. |
 | `location` | `SSELocationEvent` | Location enrichment data for a place mentioned by the agent. Emitted progressively as places are geocoded and enriched. Client renders map pins and inline image galleries. |
@@ -515,6 +689,37 @@ classDiagram
         delta: string
     }
 ```
+
+### SSETraceStepEvent
+
+```mermaid
+classDiagram
+    class SSE_TRACE_STEP_EVENT {
+        type: "trace-step"
+        step: TraceStepType
+        data: TraceStepData
+        latencyMs: number
+        timestamp: number
+    }
+
+    class TRACE_STEP_TYPE {
+        <<enumeration>>
+        intent-detected
+        memory-recall
+        guardrail-input
+        guardrail-output
+        retrieval
+        tool-call-start
+        tool-call-end
+        context-budget
+        source-fetch
+        rewrite
+    }
+
+    SSE_TRACE_STEP_EVENT --> TRACE_STEP_TYPE
+```
+
+`TraceStepData` is a discriminated union keyed by `step`. Each step type carries a step-specific payload described in the [Trace-Step Events](#trace-step-events) section.
 
 ### SSECTAEvent
 
@@ -611,10 +816,14 @@ classDiagram
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines platform requirements and transport expectations that this SSE boundary and client SDK must satisfy. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
+| **Foundation** ([04 — Foundation](./04-foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
 | **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the `RunStreamEvent` stream consumed by this SSE transport layer. |
 | **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
-| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring and HTTP boundary where this document's `createStreamHandler` and SSE event protocol are applied. |
+| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's `createStreamHandler` and SSE event protocol are applied. |
+| **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share `traceId` with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
+| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes `@safeagent/client` events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
+| **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
 
 ---
 
@@ -633,11 +842,14 @@ Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()
 - Inserting a `{ traceId, userId }` row into the `trace_owners` Postgres table before emitting the first SSE event (enables feedback ownership verification — see FEEDBACK_ENDPOINT)
 - Calling the `contextProvider` DI hook to inject file context before invoking the agent
 - Calling `Runner.run(agent, input, { stream: true })` to get `AsyncIterable<RunStreamEvent>`
-- Iterating `RunStreamEvent` items and mapping them to the eight SSE event types:
+- Accepting a `verbosity` parameter (`standard` or `full`) from the route handler. When `standard`, only user-facing events are emitted. When `full`, `trace-step` events are also emitted alongside user-facing events.
+- Running the trace-step collector in the processor chain to capture pipeline milestone data (intent classification, guardrail verdicts, memory recall, retrieval results, tool execution, context budget) as `trace-step` data events
+- Iterating `RunStreamEvent` items and mapping them to the nine SSE event types:
   - `raw_model_stream_event` (text delta) → `text-delta` SSE event
   - `run_item_stream_event` with tool call for `suggest_cta` → `cta` SSE event (tool chunks suppressed)
   - `run_item_stream_event` with tool call for `search_locations` → `location` SSE event (tool chunks suppressed)
   - Citation metadata from tool results → `citation` SSE event
+  - Pipeline milestones (from trace-step collector) → `trace-step` SSE events (only when verbosity is `full`)
   - `agent_updated_stream_event` → logged for tracing (handoff routing)
   - Stream start → `session-meta` SSE event (first event, carries traceId + threadId)
   - Stream end → `done` SSE event
@@ -665,6 +877,8 @@ Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()
 - Error codes not in the map produce a generic fallback message
 - Keepalive comment lines appear at the configured interval during long responses
 - The TUI can consume the same processor chain output without going through the HTTP handler
+- When verbosity is `full`, `trace-step` events are interleaved with user-facing events at their natural pipeline positions
+- When verbosity is `standard`, zero `trace-step` events appear in the stream
 - `userId` extracted from JWT is present in the agent's `requestContext` for every call
 
 **QA Scenarios**:
@@ -675,6 +889,9 @@ Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()
 - Response takes 45 seconds → keepalive comments appear and connection stays open
 - `contextProvider` returns file content → agent receives file content prepended to messages
 - Missing or invalid JWT → 401 before stream opens (auth middleware, not handler)
+- Verbosity `full` → `trace-step` events interleaved with user-facing events showing pipeline activity
+- Verbosity `standard` → zero `trace-step` events in stream, identical to pre-trace behavior
+- Verbosity `full` with p0 guardrail → `trace-step` for `guardrail-input` appears, then `tripwire`, then stream closes
 
 ---
 
@@ -724,7 +941,8 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 
 - SSE connection management using Fetch API streaming
 - Incremental SSE line parser (handles chunked delivery, multi-line data fields)
-- Typed event dispatch: register callbacks for each event type
+- Typed event dispatch: register callbacks for each of the nine event types (including `trace-step`)
+- `trace-step` event dispatch with step-type discrimination: the `onTraceStep` callback receives a discriminated union payload typed by `step` field, allowing consumers to handle each pipeline step differently
 - Auto-reconnection with exponential backoff and jitter; respect `Last-Event-ID`
 - Offline message queue: enabled via `offline: { enabled: true, maxQueueSize: N }` config; queues `sendMessage` calls when offline; drains FIFO on reconnect; emits a client-local `overflow` callback (NOT an SSE event) when queue is full and drops oldest
 - File upload: multipart POST with progress callback; returns file reference
@@ -742,7 +960,7 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 **Acceptance Criteria**:
 
 - Package installs with zero production dependencies
-- All eight event types are handled with typed callbacks
+- All nine event types are handled with typed callbacks (including `trace-step`)
 - `onSessionMeta` fires before `onTextDelta` on every stream
 - `traceId` from `session-meta` is stored and attached to `submitFeedback` automatically
 - Connection drops trigger reconnection with backoff; `Last-Event-ID` is sent
@@ -759,6 +977,7 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 - Server sends `cta` → `onCTA` fires with a typed CTA array
 - Server sends `citation` → `onCitation` fires with typed source citation data
 - Server sends `location` → `onLocation` fires with typed place, coordinates, and image metadata
+- Server sends `trace-step` (verbosity full) → `onTraceStep` fires with discriminated union payload; step type and step-specific data are fully typed
 - Connection drops mid-stream → client reconnects with backoff and sends `Last-Event-ID`
 - Max retries exceeded → `onError` fires and no further reconnect attempts are made
 - `sendMessage` while offline → message is queued and sent after reconnect
@@ -770,3 +989,4 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 ---
 
 *Previous: [10 — Guardrails & Safety](./10-guardrails.md) | Next: [12 — Server Implementation](./12-server.md)*
+
