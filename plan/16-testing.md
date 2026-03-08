@@ -1695,6 +1695,194 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 
 - All thresholds (USER_SHORTTERM_LIMIT, USER_SHORTTERM_FADEOUT, ROLLING_SUMMARY_MAX_TOKENS, CONTEXT_WINDOW_BUDGET, MAX_RECALL_TOKENS, MAX_INPUT_MESSAGE_LENGTH, GIBBERISH_CONFIDENCE_THRESHOLD, RECENCY_BOOST values, TTL values) applied correctly at boundary values.
 
+**Environment variable contracts — presence, absence, and coupled requirements**:
+
+- Missing primary provider key still allows server startup while model-dependent endpoints return explicit unavailable responses.
+- Comma-separated primary key pools trim whitespace, ignore empty segments, and preserve deterministic rotation order.
+- Single key and multi-key pool forms produce equivalent behavior for non-rotation paths.
+- Missing moderation provider key disables moderation-only guardrail paths without disabling unrelated safety checks.
+- Missing auth secret blocks startup in production mode and never downgrades to warning-only behavior.
+- Missing auth secret in non-production enables documented development bypass path and logs clear security posture.
+- Missing database connection string fails startup as hard-required dependency.
+- Missing long-term memory database URL disables only long-term memory features while short-term memory continues.
+- Missing cache URL activates in-memory cache fallback without blocking startup.
+- Cache URL rejects non-redis URI scheme inputs at validation time.
+- Missing object-storage endpoint disables upload paths while non-upload chat paths remain available.
+- Object-storage access key is required whenever object-storage endpoint is configured.
+- Object-storage secret key is required whenever object-storage endpoint is configured.
+- Object-storage bucket is required whenever object-storage endpoint is configured.
+- Missing background worker URL keeps jobs in-process.
+- Worker API key is required whenever worker URL is configured.
+- Comma-separated CORS origins parse into a normalized origin allowlist, and empty input falls back to wildcard policy.
+- Missing observability credentials disable exporter integration while core request handling remains healthy.
+- Missing retrieval base URL disables external retrieval source only.
+- Retrieval API key and dataset identifiers are both required when retrieval base URL is present.
+- Runtime port defaults to 3000 when unset.
+- Runtime log level defaults to info when unset.
+
+**Model constants and policy enforcement**:
+
+- Primary model constant is used as canonical model across classification, rewrite, extraction, and synthesis workloads.
+- Embedding constant enforces one canonical embedding model across all embedding generation paths.
+- Embedding dimension constant is fixed at 3072 and mismatched vector lengths are rejected.
+- Primary provider constant routes through provider bridge configuration for all agent creation paths.
+- Key-pool environment constant points to comma-separated primary keys and is not redefined in downstream modules.
+- One-model policy blocks production logic from branching by model family.
+- Grounding mode is treated as capability toggle and never as model switch.
+- Terminal-only model switching is allowed in development/testing and excluded from deployment behavior.
+- Thinking level stays optional in agent-creation configuration and can be omitted without validation failure.
+- Constants are sourced once and reused, preventing duplicated divergent definitions.
+- Key pool rotation is round-robin and deterministic across repeated calls.
+
+**Thinking-level assignments**:
+
+- Default agent path assigns no explicit thinking level.
+- Classifier path assigns minimal thinking level.
+- Summarization path assigns minimal thinking level.
+- Fact extraction path assigns low thinking level.
+- Grounding agent path assigns no explicit thinking level.
+- Intent validation path assigns minimal thinking level.
+- Query rewriting path assigns low thinking level.
+- Evidence scoring path assigns low thinking level.
+
+**Core type-system coverage**:
+
+- Agent-domain contracts validate required and optional fields for configuration, mode, response, stream chunks, and parallel grounding results.
+- Guardrail-domain contracts validate severity, verdicts, function interfaces, concept registries, pipeline config, flags, aggregate verdicts, and guard mode behavior.
+- MCP-domain contracts validate server and client configuration shapes.
+- Configuration-domain contracts validate library config and deep-partial override compatibility.
+- Storage-domain contracts validate storage config across memory, postgres, and custom branches.
+- Memory-domain contracts validate memory config structure and default-injection compatibility.
+- Stream-domain contracts validate stream config, SSE config, request body contracts, and session-meta delivery options.
+- SSE event-domain contracts validate text-delta, session-meta, trace-step, CTA, citation, location, tripwire, done, and error event shapes.
+- Upload-domain contracts validate direct file context, upload config, upload result, file result, blocking-stage config, and processing-mode values.
+- Documents-domain contracts validate processed documents, page splits, summaries, image descriptions, raster extraction, and page image outputs.
+- Retrieval-domain contracts validate hybrid result structures, query-tool config, chunk config, retrieval result, citation shape, and document answer shape.
+- Files-domain contracts validate storage config, object-storage config, cleanup dependencies, and cleanup results.
+- Eval-domain contracts validate eval config, scorer config, and evaluation-runner config.
+- Model-domain contracts validate model config and fallback model config shapes.
+- Key-pool-domain contracts validate key-pool config and runtime pool interfaces.
+- Cache-domain contracts validate cache config and cache interface contracts.
+- Location-domain contracts validate tool config, geocode provider interfaces, image-search interfaces, image results, and location results.
+- Queue-domain contracts validate task payload, background payloads, budget aggregation payloads, cleanup payloads, and queue adapter interfaces.
+- Budget-domain contracts validate usage events, budget config, and budget-check result contracts.
+- Memory-support contracts validate temporal references, preference updates, control actions, interaction signals, media facts, fact types, and structured result records.
+- Trace-step discriminated unions validate all documented step categories with step-specific payload shape plus common latency timing.
+- Runtime-enumerable error-code object and compile-time union remain aligned for message-map coverage checks.
+
+**Memory defaults and safeguard typing**:
+
+- User short-term limit default enforces cap of 20 cross-thread user messages.
+- User short-term fadeout default stops injection after three turns in active thread.
+- Rolling summary model default points to canonical primary model.
+- Rolling summary token cap default enforces 2048-token upper bound.
+- Thread resurrection gap default enforces 604800-second inactivity threshold.
+- Context window budget default enforces 120000-token total assembly budget.
+- Long-term recall cap default enforces 4096-token recall ceiling.
+- Input message length default enforces 32000-character maximum.
+- Gibberish confidence threshold default is 0.3 for low-confidence language handling.
+- Extraction safeguards default to enabled.
+- Recency boost defaults apply 1.5 multiplier inside 24 hours and 1.2 inside seven days.
+- Structured result retention default enforces seven-day lifespan.
+- Memory inspection tooling defaults to enabled.
+- Interaction signal retention default enforces 30-day lifespan.
+- Media fact retention default enforces 30-day lifespan.
+- Fact attribution typing permits only self, third-party, or general targets.
+- Fact certainty typing permits only stated, hypothetical, or asked certainty.
+- Extraction safeguard typing includes sarcasm, attribution, hypothetical, and hallucination-prevention switches.
+- Context budget typing includes total context, recall, and summary budget controls.
+- Thread resurrection typing includes inactivity threshold and rehydration behavior controls.
+- Combined memory context typing requires thread short-term layer, optional user short-term layer, and long-term recall layer.
+
+**Schema rules and runtime validation**:
+
+- Zod v4 namespace import pattern is enforced consistently.
+- One-argument record form is rejected in schema definitions.
+- Optionality is explicit and never delegated to deep-partial helpers.
+- Function and provider-instance fields use broad schema acceptance with additional runtime guarding.
+- Safe agent configuration schema matches canonical agent contract shape.
+- Guardrail severity and verdict schemas enforce supported value sets.
+- Concept registry and guardrail pipeline schemas enforce complete nested structures.
+- MCP server schema validates required fields and optional settings.
+- Storage schema validates explicit backend selection contracts.
+- Memory schema validates all memory configuration keys and default behavior.
+- Model schema validates primary and fallback model configuration objects.
+- Evaluation schema validates scorer and evaluator configuration.
+- Trace-step event schema discriminates by step field and validates step-specific payloads.
+- Verbosity schema accepts only standard and full values.
+- Validation helper behavior returns typed output on pass and structured error data on failure.
+- Schema defaults populate omitted fields only where defaults are explicitly defined.
+- Inferred schema output types remain aligned with declared domain contracts.
+
+**Configuration merge and ownership boundaries**:
+
+- Built-in defaults plus user overrides always follow merge-then-validate flow.
+- Undefined override values are ignored and do not erase defaults.
+- Null override values replace defaults intentionally.
+- Array overrides replace, rather than merge, prior arrays.
+- Function overrides replace prior handlers directly.
+- Nested object overrides recurse by key while preserving untouched siblings.
+- Invalid merged config returns descriptive, field-specific validation feedback.
+- Library remains owner of defaults and shared contracts.
+- Server remains owner of deployment-required runtime checks.
+
+**Storage factory behavior**:
+
+- Explicit backend configuration takes precedence over environment auto-detection in every branch.
+- Explicit postgres selection returns typed postgres-backed storage.
+- Explicit memory selection returns in-memory storage.
+- Explicit custom selection returns caller-provided implementation unchanged.
+- No explicit config with database URL present auto-selects postgres.
+- No explicit config and no database URL auto-selects in-memory storage.
+- Backend selection emits clear log records describing chosen path.
+- Postgres access uses typed ORM query construction only.
+- SurrealDB-oriented implementations use typed query APIs only.
+- Raw query-string paths are treated as validation failures for database access policy.
+
+**MCP health-check and registration behavior**:
+
+- Health check lists observed tools and compares them against configured server set.
+- Tool keys map to server ownership through underscore-prefixed namespace parsing.
+- Names containing underscores use greedy ownership matching to avoid ambiguous mapping.
+- Connected status requires tool presence and configured minimum count threshold satisfaction.
+- Empty status requires zero tools with explicit empty-tools allowance.
+- Failed status is assigned when expected tools are absent or minimum counts are unmet.
+- Unknown status persists until first health-check execution.
+- Warn-on-failure mode records warning and returns status map.
+- Throw-on-failure mode raises typed connection error and aborts flow.
+- Periodic checks run on configured cadence and update status transitions.
+- Wrapper augments existing client behavior without creating duplicate clients.
+
+**Provider resolution and fallback contracts**:
+
+- Provider resolution accepts model identifiers as strings and resolves provider path.
+- Provider resolution accepts direct model instances as pass-through values.
+- Provider resolution accepts model-factory inputs as pass-through values.
+- Fallback wrapper applies ordered chain after primary failure.
+- Stream generation path uses fallback middleware.
+- Non-stream generation path uses fallback middleware.
+- Fallback callback emits once when fallback provider is actually used.
+- Primary provider success does not trigger fallback provider calls.
+- Primary and fallback failure path surfaces original primary error context.
+
+**Subpath barrel export compliance**:
+
+- MCP module-group barrel includes all MCP health and client exports.
+- Memory module-group barrel includes short-term memory and long-term memory client exports.
+- Guardrails module-group barrel includes input, output, factory, pipeline, language, hate-speech, and zero-leak exports.
+- Retrieval module-group barrel includes retrieval infrastructure exports.
+- Upload module-group barrel includes upload pipeline exports.
+- Files module-group barrel includes storage and registry exports.
+- Documents module-group barrel includes document pipeline exports.
+- Database module-group barrel includes file-storage and cost-tracking exports.
+- LLM module-group barrel includes key-pool exports.
+- Observability module-group barrel includes tracing and custom span exports.
+- Cache module-group barrel includes cache implementation exports.
+- Trigger module-group barrel includes background task exports.
+- Location module-group barrel includes location-tool exports.
+- Any new public function, type, or class updates its module-group barrel in the same change.
+- Top-level barrel aggregates subpath barrels only and does not bypass module-group ownership.
+
 ### Module: Conversation Pipeline (05)
 
 Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete six-phase flow.
