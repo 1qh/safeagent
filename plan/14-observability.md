@@ -179,6 +179,15 @@ graph TB
 | **Generation** | Auto (LLM calls) | Token count, cost, TTFT, model name, temperature |
 | **Score** | Boolean or numeric | `guardrail_input_pass`, `user_feedback`, `toxicity` |
 Scores can attach to traces (user feedback) or to specific spans (guardrail verdicts). The `scoreHelper` abstraction handles both cases — `spanId` is optional.
+
+### Trace-Step Events and Langfuse Correlation
+
+Trace-step SSE events (defined in [11 — Streaming & Transport](./11-transport.md)) are a real-time subset of Langfuse trace data, projected through the streaming layer for frontend visualization. Both share the same traceId: the engine generates a traceId per request, includes it in the `session-meta` SSE event, and uses it for Langfuse trace creation. This means:
+
+- Each trace-step event corresponds to a custom span or generation in Langfuse.
+- The frontend trace timeline and the Langfuse dashboard show the same pipeline execution from different perspectives — real-time streaming vs post-hoc analysis.
+- User feedback submitted via the frontend carries the traceId from `session-meta`, linking thumbs-up/down scores to the correct Langfuse trace.
+- Verbosity level (`standard` vs `full`) controls only SSE emission — Langfuse always receives the full trace regardless of verbosity setting.
 ### Trace Lifecycle Phases
 | Phase | What Happens | Primary Outputs |
 |-------|--------------|-----------------|
@@ -616,6 +625,8 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 | **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
 | **Server** ([12 — Server Implementation](./12-server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
 | **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
+| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Trace visualization components consume trace-step events correlated with Langfuse traces via shared traceId. Frontend feedback hooks submit scores to Langfuse through the feedback endpoint. |
+| **Demo Applications** ([19 — Demo Applications](./19-demos.md)) | Both demos implement feedback submission (traceId-linked), verbosity toggle (triggers trace-step event emission), and trace timeline rendering — all flowing into Langfuse observability. |
 | **Circuit Breaker** (CIRCUIT_BREAKER) | Prompt manager wraps remote fetches with the circuit breaker to avoid repeated latency spikes during Langfuse outages. |
 ---
 ## Task Specifications
