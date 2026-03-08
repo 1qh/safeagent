@@ -302,16 +302,20 @@ Request body fields:
 - message text
 - optional thread identifier
 - optional list of file identifiers for contextual grounding
+Query parameters:
+- optional verbosity level (`standard` or `full`, default `standard`). When `full`, trace-step events are emitted alongside user-facing events for real-time pipeline visibility. The server should enforce that `full` verbosity requires developer-level permissions (see [11 — Streaming & Transport](./11-transport.md) for verbosity security considerations)
 Flow:
 1. Middleware chain executes in standard order.
 2. Handler resolves target agent from registry by requested agent id.
-3. Handler delegates stream orchestration to createStreamHandler configured with server error map.
-4. Handler sets SSE response headers and starts stream piping.
-5. Stream emits typed events until completion or error.
-6. Final usage accounting updates budget counters.
+3. Handler reads verbosity from query parameters (default `standard`).
+4. Handler delegates stream orchestration to createStreamHandler configured with server error map and verbosity level.
+5. Handler sets SSE response headers and starts stream piping.
+6. Stream emits typed events until completion or error. When verbosity is `full`, `trace-step` events are interleaved with user-facing events at their natural pipeline positions.
+7. Final usage accounting updates budget counters.
 SSE event families:
 - session-meta carrying trace and thread metadata
 - text-delta for incremental text
+- trace-step for pipeline visibility (only when verbosity is `full`) — see [11 — Streaming & Transport](./11-transport.md)
 - cta for call-to-action events
 - citation for source references
 - location for location enrichment data and optional images
@@ -509,6 +513,8 @@ HTTP status behavior:
 | **Guardrails** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
 | **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
 | **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
+| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes server SSE endpoints through `@safeagent/react` hooks; verbosity parameter drives frontend trace visualization. |
+| **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
 ---
 ## Task Specifications
 ---
@@ -554,6 +560,7 @@ QA scenarios:
 What to do:
 Implement all route handlers listed in this document with thin handler design: validate request, delegate to library function, map response. Register route groups with correct middleware and apply requireRole to admin routes.
 Define all routes with OpenAPI integration using Zod v4 request and response schemas and aligned schema mapping configuration. Serve OpenAPI JSON and Scalar UI from public endpoints.
+The chat streaming endpoint must accept an optional `verbosity` query parameter (`standard` or `full`, default `standard`) validated by VerbosityLevelSchema. The handler passes the verbosity value to createStreamHandler. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
 Depends on: SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING
 Acceptance criteria:
 - All mapped routes are registered on correct HTTP methods.
@@ -565,6 +572,7 @@ Acceptance criteria:
 - Every route documents request and response schemas.
 - Security requirements are documented per route.
 - SSE endpoint documents stream response behavior.
+- SSE endpoint accepts optional `verbosity` query parameter and passes it to createStreamHandler.
 - Error responses use server error message map.
 QA scenarios:
 - Validate unauthorized behavior across protected routes.
@@ -573,6 +581,9 @@ QA scenarios:
 - Validate known agent stream endpoint behavior and headers.
 - Validate unknown agent stream behavior as not found.
 - Validate upload success and malformed upload error mapping.
+- Validate verbosity `standard` produces no `trace-step` events.
+- Validate verbosity `full` includes `trace-step` events interleaved with user-facing events.
+- Validate invalid verbosity value returns bad request.
 ---
 ### Task SERVER_MCP: MCP Definitions
 What to do:
