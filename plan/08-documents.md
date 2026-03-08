@@ -722,30 +722,30 @@ Polling interval is left to the client. A 2-second interval is reasonable for mo
 
 ```mermaid
 flowchart TD
-    subgraph PER_FILE["cleanupFile(fileId, userId, deps)\ncalled on per-file deletion or TTL expiry"]
+    subgraph PER_FILE["Per-file cleanup\n(on deletion or TTL expiry)"]
         direction TB
-        CHECK_FILE["Require BOTH fileId AND userId"]
+        CHECK_FILE["Require both file and user identity"]
         STORAGE_DELETE_FILE_OBJECTS["Delete S3 objects\nfor this file only"]
-        PAGE_DEL_FILE["DELETE FROM page_index\nWHERE file_id = ? AND user_id = ?"]
-        CHUNK_DEL_FILE["DELETE PgVector chunks\nWHERE file_id = ? AND user_id = ?"]
-        META_DEL_FILE["UPDATE file_uploads\nSET status='deleted',\ndeleted_at=NOW()\nWHERE file_id = ? AND user_id = ?"]
-        QUOTA_REL_FILE["Release storage quota\ndecrBy(userId, fileSize)"]
+        PAGE_DEL_FILE["Remove page index rows\nscoped to file and user"]
+        CHUNK_DEL_FILE["Remove vector chunks\nscoped to file and user"]
+        META_DEL_FILE["Mark file as deleted\nwith deletion timestamp"]
+        QUOTA_REL_FILE["Release storage quota\nfor the file owner"]
 
         CHECK_FILE --> STORAGE_DELETE_FILE_OBJECTS --> PAGE_DEL_FILE --> CHUNK_DEL_FILE --> META_DEL_FILE --> QUOTA_REL_FILE
     end
 
-    subgraph PER_THREAD["cleanupThread(threadId, userId, deps)\ncalled on thread deletion"]
+    subgraph PER_THREAD["Per-thread cleanup\n(on thread deletion)"]
         direction TB
-        LIST_FILES["SELECT file_id FROM file_uploads\nWHERE thread_id = ? AND user_id = ?\nAND thread_id != '__global__'\nAND status != 'deleted'"]
-        LOOP["For each file: cleanupFile(fileId, userId, deps)"]
+        LIST_FILES["Find non-deleted files\nbelonging to this thread and user\n(excluding global scope)"]
+        LOOP["For each file:\nrun per-file cleanup"]
 
         LIST_FILES --> LOOP
     end
 
     subgraph TTL["TTL-based automatic cleanup"]
         SCHEDULED["Trigger.dev scheduled task\nRuns daily"]
-        FIND_EXPIRED["SELECT * FROM file_uploads\nWHERE expires_at < NOW()\nAND status != 'deleted'"]
-        CALL_CLEANUP["Call cleanupFile\nfor each expired file"]
+        FIND_EXPIRED["Query expired file records\nnon-deleted, past expiration"]
+        CALL_CLEANUP["Run per-file cleanup\nfor each expired file"]
     end
 
     LOOP --> PER_FILE

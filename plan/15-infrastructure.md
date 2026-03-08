@@ -465,9 +465,9 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph REDACTION_DEFAULTS["Default Redaction Paths"]
-        REDACT_AUTH_HEADER["req.headers.authorization"]
-        REDACT_API_KEY["*.apiKey"]
-        REDACT_JWT_SECRET["*.jwtSecret"]
+        REDACT_AUTH_HEADER["Authorization header"]
+        REDACT_API_KEY["API key fields"]
+        REDACT_JWT_SECRET["JWT secret fields"]
     end
     subgraph LOG_LEVELS["Log Levels"]
         LOG_TRACE["trace — verbose debug"]

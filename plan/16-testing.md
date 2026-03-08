@@ -38,7 +38,7 @@ graph TB
         direction TB
         UNIT_TESTS["Unit Tests\nfastest, cheapest, most numerous"]
         INTEGRATION_TESTS["Integration Tests\nreal provider calls, conditional skip"]
-        END_TO_END_TESTS["End-to-End Tests\nfull flow across repositories"]
+        E2E_TESTS["End-to-End Tests\nfull flow across repositories"]
         EVAL_TESTS["Eval Tests\nPromptfoo plus custom evaluation scorers"]
         LOAD_TESTS_LAYER["Load Tests\nstreaming, concurrency, latency"]
         ADVERSARIAL_TESTS["Adversarial Tests\nguardrail bypass and injection"]
@@ -47,8 +47,8 @@ graph TB
     end
 
     UNIT_TESTS --> INTEGRATION_TESTS
-    INTEGRATION_TESTS --> END_TO_END_TESTS
-    END_TO_END_TESTS --> EVAL_TESTS
+    INTEGRATION_TESTS --> E2E_TESTS
+    E2E_TESTS --> EVAL_TESTS
     EVAL_TESTS --> LOAD_TESTS_LAYER
     LOAD_TESTS_LAYER --> ADVERSARIAL_TESTS
     ADVERSARIAL_TESTS --> REGRESSION_TESTS
@@ -56,7 +56,7 @@ graph TB
 
     style UNIT_TESTS fill:#22aa44,color:#fff
     style INTEGRATION_TESTS fill:#33bb55,color:#fff
-    style END_TO_END_TESTS fill:#4488cc,color:#fff
+    style E2E_TESTS fill:#4488cc,color:#fff
     style EVAL_TESTS fill:#5599dd,color:#fff
     style LOAD_TESTS_LAYER fill:#ff9900,color:#fff
     style ADVERSARIAL_TESTS fill:#ff4444,color:#fff
