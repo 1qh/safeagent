@@ -6,6 +6,7 @@
 
 ## Table of Contents
 
+- [Testing Philosophy](#testing-philosophy)
 - [Testing Pyramid](#testing-pyramid)
 - [Test Execution Flow](#test-execution-flow)
 - [CI Pipeline](#ci-pipeline)
@@ -19,49 +20,158 @@
 - [Adversarial Tests](#adversarial-tests)
 - [Regression Tests](#regression-tests)
 - [Property-Based Tests](#property-based-tests)
+- [Chaos and Failure Testing](#chaos-and-failure-testing)
+- [Contract Testing](#contract-testing)
+- [Mutation Testing](#mutation-testing)
+- [Snapshot and Golden-File Testing](#snapshot-and-golden-file-testing)
+- [Streaming-Specific Tests](#streaming-specific-tests)
+- [Per-Module Test Specifications](#per-module-test-specifications)
 - [Development Seed Data](#development-seed-data)
 - [QA Policy](#qa-policy)
 - [Task Specifications](#task-specifications)
 - [Coverage Map](#coverage-map)
+- [Extended Coverage Map](#extended-coverage-map)
 - [Requirement-Level Coverage (MH_*, MN_*)](#requirement-level-coverage-mh_-mn_)
 - [Verification Strategy Summary](#verification-strategy-summary)
 - [Cross-Plan References](#cross-plan-references)
 - [External References](#external-references)
 
+## Testing Philosophy
+
+> **Core Principle**: We sacrifice speed of development to ensure nothing breaks when we move forward. Every logic path, every feature boundary, and every failure mode has comprehensive automated verification before code is considered complete.
+
+This philosophy governs all testing decisions across both repositories. It rests on seven pillars.
+
+### Pillar 1 — Incremental Confidence
+
+Every implementation task delivers tests and implementation together. TDD discipline (RED → GREEN → REFACTOR) is non-negotiable. When a module ships, its test coverage ships simultaneously. The system grows in lockstep: no feature exists without corresponding verification. Moving forward means every step lands on proven ground.
+
+### Pillar 2 — Layered Defense
+
+No single testing layer catches all failure modes. Unit tests catch logic errors. Integration tests catch wiring errors. End-to-end tests catch behavioral regressions. Eval tests catch quality degradation. Adversarial tests catch safety bypasses. Property-based tests catch invariant violations. Chaos tests catch resilience gaps. Every critical path is covered by at least three independent layers.
+
+```mermaid
+flowchart LR
+    subgraph DEFENSE_LAYERS["Layered Defense Model"]
+        UNIT_LAYER["Unit\nlogic errors"]
+        INTEGRATION_LAYER["Integration\nwiring errors"]
+        END_TO_END_LAYER["End-to-End\nbehavioral regression"]
+        EVAL_LAYER["Eval\nquality degradation"]
+        ADVERSARIAL_LAYER["Adversarial\nsafety bypass"]
+        PROPERTY_LAYER["Property-Based\ninvariant violation"]
+        CHAOS_LAYER["Chaos\nresilience gaps"]
+    end
+
+    UNIT_LAYER --> INTEGRATION_LAYER --> END_TO_END_LAYER --> EVAL_LAYER
+    EVAL_LAYER --> ADVERSARIAL_LAYER --> PROPERTY_LAYER --> CHAOS_LAYER
+
+    style UNIT_LAYER fill:#22aa44,color:#fff
+    style INTEGRATION_LAYER fill:#33bb55,color:#fff
+    style END_TO_END_LAYER fill:#4488cc,color:#fff
+    style EVAL_LAYER fill:#5599dd,color:#fff
+    style ADVERSARIAL_LAYER fill:#ff4444,color:#fff
+    style PROPERTY_LAYER fill:#8866cc,color:#fff
+    style CHAOS_LAYER fill:#ff9900,color:#fff
+```
+
+### Pillar 3 — Deterministic Core, Stochastic Edge
+
+The system isolates deterministic orchestration (routing, retries, guardrails, state machines, configuration merging, budget arithmetic, rate limiting) into testable code layers where assertions are exact. LLM outputs are inherently non-deterministic and require eval-based validation rather than assertion-based testing. These two paradigms coexist but never conflate. Deterministic logic uses strict equality assertions. Stochastic output uses threshold-based quality scoring.
+
+### Pillar 4 — Eval as First-Class Citizen
+
+AI agent systems fail differently than traditional software. Output quality degradation, reasoning drift, and emergent misbehavior do not manifest as exceptions. They manifest as subtle changes in response quality that only evaluation can detect. Evaluation datasets are treated as code: version-controlled, reviewed, and maintained. Eval results are compared against defined thresholds, and regressions are failures. Golden datasets grow from production failures, not synthetic scenarios.
+
+### Pillar 5 — Test at the Right Speed
+
+Run cheap tests on every commit. Run expensive tests nightly. Run chaos experiments in staging. Match test execution cost to failure impact. Unit tests gate every push. Integration tests gate release readiness. Eval tests gate quality certification. Load tests gate deployment confidence. This stratification preserves developer velocity while maintaining comprehensive coverage.
+
+```mermaid
+flowchart TD
+    subgraph TEST_SPEED["Test Speed Stratification"]
+        EVERY_COMMIT["Every Commit\nunit tests and property tests\nseconds"]
+        EVERY_PR["Every Pull Request\nintegration tests and contract tests\nminutes"]
+        NIGHTLY["Nightly\neval tests and mutation tests\ntens of minutes"]
+        STAGING["Staging\nchaos experiments and load tests\nhours"]
+        GAME_DAY["Game Day\nfull chaos and production-scale load\nscheduled"]
+    end
+
+    EVERY_COMMIT --> EVERY_PR --> NIGHTLY --> STAGING --> GAME_DAY
+
+    style EVERY_COMMIT fill:#22aa44,color:#fff
+    style EVERY_PR fill:#33bb55,color:#fff
+    style NIGHTLY fill:#4488cc,color:#fff
+    style STAGING fill:#ff9900,color:#fff
+    style GAME_DAY fill:#ff4444,color:#fff
+```
+
+### Pillar 6 — Contract as Boundary
+
+The library and server exist in separate repositories with a clean interface boundary. Consumer-driven contract tests verify that interface changes propagate correctly without requiring full integration test execution. Schema validation catches mismatches at the unit test level. The library defines what it provides. The server defines what it expects. Contract tests verify these promises align.
+
+### Pillar 7 — Embrace Non-Determinism
+
+Rather than fighting LLM variability, testing strategies account for it. Snapshot structure, not content. Evaluate quality, not exact correctness. Use golden datasets with property assertions rather than string matching. Accept that streaming output varies and test format compliance and behavioral invariants instead. For every non-deterministic output, define what properties must hold regardless of the specific text generated.
+
+### The Testing Tax
+
+Every test incurs maintenance cost that compounds over time. The testing philosophy manages this tax deliberately:
+
+- **Unit tests**: near-zero maintenance cost, highest value per line. Write liberally.
+- **Integration tests**: moderate maintenance cost, essential for external boundary validation. Write selectively for real integration points.
+- **End-to-end tests**: highest maintenance cost, highest confidence per test. Write for critical user flows only.
+- **Eval tests**: ongoing curation cost as production reveals new failure modes. Budget for eval maintenance as a continuous activity.
+- **Load tests**: minimal maintenance, high infrastructure cost. Run on demand, not continuously.
+- **Adversarial tests**: growing corpus, low individual cost. Expand continuously as new attack vectors emerge.
+
+The goal is not maximum test count but maximum confidence per maintenance dollar. Intelligent test selection and layered coverage outperform naive coverage expansion.
+
 ## Testing Pyramid
 
-The project uses eight testing types with increasing scope, operating cost, and feedback latency. Every module has unit coverage; critical paths are covered by at least three layers.
+The project uses fourteen testing types organized into three tiers by execution frequency and cost. Every module has unit coverage; critical paths are covered by at least three layers.
 
 ```mermaid
 graph TB
-    subgraph TESTING_PYRAMID["Testing Pyramid"]
+    subgraph FAST_TIER["Fast Tier — Every Commit"]
         direction TB
         UNIT_TESTS["Unit Tests\nfastest, cheapest, most numerous"]
+        PROPERTY_TESTS["Property-Based Tests\nfuzzed inputs and invariants"]
+        CONTRACT_TESTS["Contract Tests\nlibrary-server interface"]
+        SNAPSHOT_TESTS["Snapshot Tests\nstructural and quality-score"]
+        REGRESSION_TESTS["Regression Tests\ncaptured failures do not recur"]
+    end
+
+    subgraph MEDIUM_TIER["Medium Tier — Every PR or Nightly"]
+        direction TB
         INTEGRATION_TESTS["Integration Tests\nreal provider calls, conditional skip"]
         E2E_TESTS["End-to-End Tests\nfull flow across repositories"]
         EVAL_TESTS["Eval Tests\nPromptfoo plus custom evaluation scorers"]
-        LOAD_TESTS_LAYER["Load Tests\nstreaming, concurrency, latency"]
         ADVERSARIAL_TESTS["Adversarial Tests\nguardrail bypass and injection"]
-        REGRESSION_TESTS["Regression Tests\ncaptured failures do not recur"]
-        PROPERTY_TESTS["Property-Based Tests\nfuzzed inputs and invariants"]
+        MUTATION_TESTS["Mutation Tests\nsafety-critical path validation"]
+        STREAMING_TESTS["Streaming Tests\nmid-stream failure and backpressure"]
     end
 
-    UNIT_TESTS --> INTEGRATION_TESTS
-    INTEGRATION_TESTS --> E2E_TESTS
-    E2E_TESTS --> EVAL_TESTS
-    EVAL_TESTS --> LOAD_TESTS_LAYER
-    LOAD_TESTS_LAYER --> ADVERSARIAL_TESTS
-    ADVERSARIAL_TESTS --> REGRESSION_TESTS
-    REGRESSION_TESTS --> PROPERTY_TESTS
+    subgraph EXPENSIVE_TIER["Expensive Tier — Staging and Game Day"]
+        direction TB
+        LOAD_TESTS_LAYER["Load Tests\nstreaming, concurrency, latency"]
+        CHAOS_TESTS["Chaos Tests\nsystematic failure injection"]
+    end
+
+    FAST_TIER --> MEDIUM_TIER --> EXPENSIVE_TIER
 
     style UNIT_TESTS fill:#22aa44,color:#fff
-    style INTEGRATION_TESTS fill:#33bb55,color:#fff
+    style PROPERTY_TESTS fill:#22aa44,color:#fff
+    style CONTRACT_TESTS fill:#22aa44,color:#fff
+    style SNAPSHOT_TESTS fill:#22aa44,color:#fff
+    style REGRESSION_TESTS fill:#22aa44,color:#fff
+    style INTEGRATION_TESTS fill:#4488cc,color:#fff
     style E2E_TESTS fill:#4488cc,color:#fff
     style EVAL_TESTS fill:#5599dd,color:#fff
-    style LOAD_TESTS_LAYER fill:#ff9900,color:#fff
     style ADVERSARIAL_TESTS fill:#ff4444,color:#fff
-    style REGRESSION_TESTS fill:#aa44aa,color:#fff
-    style PROPERTY_TESTS fill:#8866cc,color:#fff
+    style MUTATION_TESTS fill:#aa44aa,color:#fff
+    style STREAMING_TESTS fill:#4488cc,color:#fff
+    style LOAD_TESTS_LAYER fill:#ff9900,color:#fff
+    style CHAOS_TESTS fill:#ff9900,color:#fff
 ```
 
 ## Test Execution Flow
