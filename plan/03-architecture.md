@@ -24,7 +24,7 @@
 
 The system is organized into two independently managed codebases that are deployed together: one for reusable agent capabilities and one for HTTP serving.
 
-The shared library codebase contains core agent intelligence: agent definitions built on `@openai/agents` (with Gemini via `aisdk()` bridge), memory adapters, file processing pipelines, budget enforcement, and tool implementations. It also includes a terminal application, a client SDK, and a frontend SDK stack (`@safeagent/react` hooks, `@safeagent/ui` web components, `@safeagent/ui-native` React Native components).
+The shared library codebase contains core agent intelligence: agent definitions built on `@openai/agents` (with Gemini via an SDK bridge helper), memory adapters, file processing pipelines, budget enforcement, and tool implementations. It also includes a terminal application, a client SDK, and a frontend SDK stack (React Hooks, Web Components, Native Components).
 
 The API-serving codebase remains intentionally thin: it imports the shared library, applies deployment-specific configuration, and exposes capabilities over HTTP via Elysia. This boundary keeps core logic reusable and testable in isolation while keeping transport concerns separate.
 
@@ -34,9 +34,9 @@ graph LR
         CORE_LIBRARY["Core Library\nAgent logic · Memory · Tools · File processing"]
         TUI_APP["TUI App\nTerminal UI"]
         CLIENT_SDK["Client SDK\nSSE Transport"]
-        REACT_HOOKS_PKG["@safeagent/react\nHooks + ChatTransport"]
-        UI_WEB_PKG["@safeagent/ui\nWeb Components"]
-        UI_NATIVE_PKG["@safeagent/ui-native\nRN Components"]
+        REACT_HOOKS_PKG["React Hooks\nHooks + ChatTransport"]
+        UI_WEB_PKG["Web Components\nUI package"]
+        UI_NATIVE_PKG["Native Components\nRN package"]
     end
 
     subgraph SERVER_REPO["server repo"]

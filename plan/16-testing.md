@@ -202,7 +202,7 @@ flowchart TD
     end
 
     subgraph MOCK_USAGE["Usage in tests"]
-        MOCK_AGENT_CREATE["createAgent with mock model"]
+        MOCK_AGENT_CREATE["agent factory with mock model"]
         MOCK_RUNNER_CALL["Runner.run for stream or non-stream"]
         MOCK_ASSERTIONS["Assert chunks, tool calls, text output"]
     end
@@ -422,7 +422,7 @@ Eval tests measure response quality rather than only functional correctness. Res
 
 ### Promptfoo Integration
 
-The library provides `createPromptfooProvider` to expose compatible evaluation interfaces. `runSelfTest` starts an ephemeral service layer, emits evaluation configuration, and evaluation runs externally. Result artifacts are collected for threshold comparison. Custom scorer helpers integrate specialized metrics into the same evaluation pipeline.
+The library provides a Promptfoo provider factory to expose compatible evaluation interfaces. A self-test runner starts an ephemeral service layer, emits evaluation configuration, and evaluation runs externally. Result artifacts are collected for threshold comparison. Custom scorer helpers integrate specialized metrics into the same evaluation pipeline.
 
 ## Load Tests (LOAD_TESTS)
 

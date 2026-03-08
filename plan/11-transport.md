@@ -24,12 +24,12 @@
 
 ## Architecture Overview
 
-The streaming system keeps `@openai/agents` `RunStreamEvent` items internal to the safeagent library. At the HTTP boundary, `createStreamHandler` iterates `Runner.run()` stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for `@safeagent/client` and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
+The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for `@safeagent/client` and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
 
 ```mermaid
 graph TB
     subgraph AGENT_LAYER["Agent Layer (RunStreamEvent internal format)"]
-        AGENT["Runner.run(agent)\nAsyncIterable of RunStreamEvent"]
+        AGENT["Agent execution with streaming\nAsync event stream"]
         GUARD_PROC["Output Guardrail\nProcessor"]
         CTA_PROC["CTA Stream\nProcessor"]
         LOC_PROC["Location Stream\nProcessor"]
@@ -38,7 +38,7 @@ graph TB
     end
 
     subgraph HTTP_BOUNDARY["HTTP Boundary (Elysia)"]
-        HANDLER["createStreamHandler"]
+        HANDLER["stream handler factory"]
         META_INJECT["Session Meta Injector\n{ traceId, threadId, agentId }"]
         VERBOSITY_FILTER["Verbosity Filter\n(standard: user-facing only\nfull: all events)"]
         KEEPALIVE["Keepalive Timer\n(comment: ping)"]
@@ -81,11 +81,11 @@ graph TB
 
 ## SSE Streaming Layer (SSE_STREAMING)
 
-### createStreamHandler
+### Stream Handler Factory
 
-`createStreamHandler` is an Elysia route handler factory exported by the library. It wires together every concern that touches the HTTP streaming path: context injection, `Runner.run()` invocation, `RunStreamEvent` → SSE translation, keepalive, and error handling. The server registers it as a route and configures auth middleware; the library owns all the streaming logic inside. The library also exports the underlying framework-agnostic stream processing primitives for non-Elysia consumers (e.g., tests, TUI).
+stream handler factory is an Elysia route handler factory exported by the library. It wires together every concern that touches the HTTP streaming path: context injection, agent execution stream invocation, internal stream event to SSE translation, keepalive, and error handling. The server registers it as a route and configures auth middleware; the library owns all the streaming logic inside. The library also exports the underlying framework-agnostic stream processing primitives for non-Elysia consumers (e.g., tests, TUI).
 
-The handler calls `Runner.run(agent, input, { stream: true })` which returns `AsyncIterable<RunStreamEvent>`. Event types include `raw_model_stream_event` (text deltas), `run_item_stream_event` (tool calls, messages, handoffs), and `agent_updated_stream_event` (agent switches via handoff). The handler maps these to the eight SSE event types. Framework guardrail exceptions (`InputGuardrailTripwireTriggered`, `OutputGuardrailTripwireTriggered`) are caught at the boundary and emitted as `tripwire` SSE events.
+The handler executes the agent with streaming enabled and receives an async stream of framework events. Event families include model text chunks, run item events (tool calls, messages, handoffs), and agent update events for handoff switches. The handler maps these to the eight SSE event types. Framework guardrail tripwire exceptions are caught at the boundary and emitted as `tripwire` SSE events.
 
 The factory accepts an `errorMessageMap` parameter — a plain object keyed by error code string, where values are either a static message string or a function `(metadata) => string` for dynamic messages. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [12 — Server Implementation](./12-server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
 
@@ -98,18 +98,18 @@ flowchart TB
         CTX["requestContext\n{ userId, threadId }"]
     end
 
-    subgraph HANDLER["createStreamHandler internals"]
+    subgraph HANDLER["stream handler factory internals"]
         direction TB
         CTX_PROV["contextProvider()\nDI hook — injects file context\nfor direct-mode files"]
         META_FIRST["Emit session-meta event\n(first event on stream,\nBEFORE any guardrail/agent work)"]
-        AGENT_CALL["Runner.run(agent, input, { stream: true })"]
+        AGENT_CALL["Execute agent with\nstreaming enabled"]
         PROC_CHAIN["RunStreamEvent iteration\nguardrails → CTA → location"]
         SSE_WRITE["Elysia sse() generator"]
         KEEPALIVE_T["Keepalive interval\n(comment: ping every N seconds)"]
         ERR_BOUND["Error boundary\ncatch TripWire → emit tripwire event\ncatch unknown → emit error event"]
     end
 
-    RESP["SSE Response\nContent-Type: text/event-stream"]
+    RESP["SSE Response\nSSE content type"]
 
     REQ --> JWT --> CTX
     CTX --> CTX_PROV
@@ -136,7 +136,7 @@ The hook is dependency-injected so the library stays agnostic about how the serv
 
 ### userId Flow
 
-The JWT auth lifecycle hook extracts `userId` from the bearer token and attaches it to Elysia context via `derive` or `resolve`. `createStreamHandler` reads `userId` from context and passes it into the agent call via `requestContext` along with the `threadId` from the request body. The agent and all its tools receive `userId` through this channel. Nothing in the library reads `userId` from anywhere else.
+The JWT auth lifecycle hook extracts `userId` from the bearer token and attaches it to Elysia context via `derive` or `resolve`. stream handler factory reads `userId` from context and passes it into the agent call via `requestContext` along with the `threadId` from the request body. The agent and all its tools receive `userId` through this channel. Nothing in the library reads `userId` from anywhere else.
 
 ```mermaid
 sequenceDiagram
@@ -202,18 +202,18 @@ flowchart LR
 
 This is the most important invariant in the entire streaming system.
 
-**`RunStreamEvent` items (produced by `Runner.run()`) are used inside the library. The HTTP transport emits a custom named-event SSE protocol for external clients.**
+**Framework stream events are used inside the library. The HTTP transport emits a custom named-event SSE protocol for external clients.**
 
-The TUI consumes the library stream directly (no SSE). Tests against the agent layer use `RunStreamEvent` items directly. The HTTP handler maps those events to custom SSE events for network transport. This means:
+The TUI consumes the library stream directly (no SSE). Tests against the agent layer use framework stream events directly. The HTTP handler maps those events to custom SSE events for network transport. This means:
 
 - Adding a new stream processor updates one internal stream path, while external clients still receive stable named SSE events.
 - The TUI and the HTTP path share the same processor chain, so behavior is identical.
-- Internal `RunStreamEvent` items and external SSE event names are intentionally separated by the transport boundary.
+- Internal framework stream events and external SSE event names are intentionally separated by the transport boundary.
 
 ```mermaid
 flowchart LR
     subgraph INTERNAL["Library internals (RunStreamEvent format throughout)"]
-        AGENT["Runner.run(agent)\nAsyncIterable of RunStreamEvent"]
+        AGENT["Agent execution with streaming\nAsync event stream"]
         GP["Guardrail\nProcessor"]
         CP["CTA\nProcessor"]
         TUI_C["TUI\nconsumer"]
@@ -235,7 +235,7 @@ flowchart LR
 
 The wire protocol is custom SSE named events, not any framework-specific data format. `@safeagent/client` parses these events directly.
 
-Location enrichment events are emitted during the live stream, never batched at the end. A single response can emit multiple `location` events, typically one per detected place. The underlying `search_locations` tool-call and tool-result chunks are suppressed from the outbound SSE stream using a `createLocationStreamProcessor` that mirrors the CTA suppression pattern, and only the clean `location` event payload is emitted to clients. When no image provider is configured, each `location` event still includes `lat` and `lng`, and `images` is emitted as an empty array.
+Location enrichment events are emitted during the live stream, never batched at the end. A single response can emit multiple `location` events, typically one per detected place. The underlying `search_locations` tool-call and tool-result chunks are suppressed from the outbound SSE stream using a location stream processor that mirrors the CTA suppression pattern, and only the clean `location` event payload is emitted to clients. When no image provider is configured, each `location` event still includes `lat` and `lng`, and `images` is emitted as an empty array.
 
 ---
 
@@ -245,7 +245,7 @@ Every stream starts with a `session-meta` event before any text delta arrives. T
 
 ```mermaid
 sequenceDiagram
-    participant HANDLER as createStreamHandler
+    participant HANDLER as stream handler factory
     participant CLIENT as @safeagent/client
 
     HANDLER->>CLIENT: event: session-meta\ndata: { traceId, threadId, agentId }
@@ -262,7 +262,7 @@ The client SDK stores `traceId` automatically so feedback submissions (thumbs up
 
 ### trace_owners Table Schema
 
-The `trace_owners` Postgres table (managed by Drizzle ORM) enables feedback ownership verification. `createStreamHandler` inserts a row before emitting the first SSE event; the feedback endpoint queries it to confirm the requesting user owns the trace. The Drizzle schema for this table is owned by SSE_STREAMING — it is defined and migrated as part of that task.
+The `trace_owners` Postgres table (managed by Drizzle ORM) enables feedback ownership verification. stream handler factory inserts a row before emitting the first SSE event; the feedback endpoint queries it to confirm the requesting user owns the trace. The Drizzle schema for this table is owned by SSE_STREAMING — it is defined and migrated as part of that task.
 
 | Column | Type | Constraints |
 |--------|------|-------------|
@@ -317,7 +317,7 @@ Trace-step events are interleaved with regular events in the order they occur in
 ```mermaid
 sequenceDiagram
     participant ENGINE as Engine Pipeline
-    participant HANDLER as createStreamHandler
+    participant HANDLER as stream handler factory
     participant CLIENT as Client (full verbosity)
 
     ENGINE->>HANDLER: session-meta
@@ -402,7 +402,7 @@ flowchart LR
 
 ## Verbosity Levels
 
-The chat streaming endpoint accepts a `verbosity` parameter that controls which events are emitted on the SSE stream. This parameter is passed from the server route to `createStreamHandler`.
+The chat streaming endpoint accepts a verbosity control parameter that controls which events are emitted on the SSE stream. This parameter is passed from the server route to stream handler factory.
 
 | Level | Events Emitted | Target Audience |
 |-------|---------------|----------------|
@@ -413,7 +413,7 @@ The chat streaming endpoint accepts a `verbosity` parameter that controls which 
 
 ```mermaid
 flowchart LR
-    HANDLER["createStreamHandler"]
+    HANDLER["stream handler factory"]
     VERBOSITY{"verbosity\nparameter"}
     STANDARD_FILTER["Emit user-facing\nevents only\n(8 event types)"]
     FULL_FILTER["Emit all events\nincluding trace-step\n(9 event types)"]
@@ -424,7 +424,7 @@ flowchart LR
     VERBOSITY -->|full| FULL_FILTER --> SSE
 ```
 
-The filter is applied at the HTTP boundary, not inside the engine. The engine always produces trace-step data (it needs it for Langfuse regardless). `createStreamHandler` decides whether to emit trace-step events to the SSE stream based on the verbosity parameter.
+The filter is applied at the HTTP boundary, not inside the engine. The engine always produces trace-step data (it needs it for Langfuse regardless). stream handler factory decides whether to emit trace-step events to the SSE stream based on the verbosity parameter.
 
 This design means:
 
@@ -435,7 +435,7 @@ This design means:
 
 ### Verbosity and Security
 
-Trace-step data may contain internal pipeline details (intent names, guardrail concept IDs, tool names, token counts). When verbosity is `full`, the server trusts that the requesting client is a developer who should see this information. The server should enforce that `full` verbosity requires an authenticated user with developer-level permissions. This is an authorization concern owned by the server, not the library — the library simply respects the `verbosity` parameter it receives.
+Trace-step data may contain internal pipeline details (intent names, guardrail concept IDs, tool names, token counts). When verbosity is `full`, the server trusts that the requesting client is a developer who should see this information. The server should enforce that `full` verbosity requires an authenticated user with developer-level permissions. This is an authorization concern owned by the server, not the library — the library simply respects the verbosity control parameter it receives.
 
 ---
 
@@ -447,9 +447,9 @@ Call-to-action suggestions are structured UI hints the agent can emit alongside 
 
 Each CTA has: `id`, `label`, `action` (one of `deeplink`, `callback`, or `dismiss`), optional `url`, and optional `icon`. A response carries at most three CTAs.
 
-### createCTATool
+### CTA Tool and Stream Processor
 
-The server defines a CTA catalog in its config: a list of available CTAs with their IDs, labels, and actions. The library's `createCTATool` factory takes that catalog and returns a framework-compatible tool the agent can call. The tool's input schema is derived from the catalog so the LLM can only suggest CTAs that actually exist.
+The server defines a CTA catalog in its config: a list of available CTAs with their IDs, labels, and actions. The library's CTA tool factory takes that catalog and returns a framework-compatible tool the agent can call. The tool's input schema is derived from the catalog so the LLM can only suggest CTAs that actually exist.
 
 The server owns the catalog. The library owns the tool mechanics. This separation means adding a new CTA to the server config automatically makes it available to the agent without touching library code.
 
@@ -461,7 +461,7 @@ The key behavior: tool-call events are suppressed from the SSE stream. The clien
 flowchart TB
     LLM["LLM decides to\nsuggest CTAs"]
     TOOL_CALL["suggest_cta tool call\n(RunStreamEvent)"]
-    PROC["createCTAStreamProcessor\n(stream processor)"]
+    PROC["CTA stream processor factory\n(stream processor)"]
 
     subgraph DECISION["Processor decision"]
         IS_CTA{"is suggest_cta\ntool call?"}
@@ -820,7 +820,7 @@ classDiagram
 | **Foundation** ([04 — Foundation](./04-foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
 | **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the `RunStreamEvent` stream consumed by this SSE transport layer. |
 | **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
-| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's `createStreamHandler` and SSE event protocol are applied. |
+| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
 | **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share `traceId` with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
 | **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes `@safeagent/client` events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
 | **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
@@ -835,16 +835,16 @@ classDiagram
 
 **What to do**:
 
-Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()` output into a well-formed SSE response. This includes:
+Build stream handler factory that turns internal agent stream output into a well-formed SSE response. This includes:
 
 - Accepting an `errorMessageMap` parameter from the server — a plain object mapping error codes to user-facing messages (string or function). Used by the error boundary to populate the `message` field in `error` SSE events.
 - Extracting `userId` from the JWT auth context and combining it with `threadId` from the request body to form `requestContext`
 - Inserting a `{ traceId, userId }` row into the `trace_owners` Postgres table before emitting the first SSE event (enables feedback ownership verification — see FEEDBACK_ENDPOINT)
 - Calling the `contextProvider` DI hook to inject file context before invoking the agent
-- Calling `Runner.run(agent, input, { stream: true })` to get `AsyncIterable<RunStreamEvent>`
-- Accepting a `verbosity` parameter (`standard` or `full`) from the route handler. When `standard`, only user-facing events are emitted. When `full`, `trace-step` events are also emitted alongside user-facing events.
+- Executing the agent with streaming enabled to get the internal async event stream
+- Accepting a verbosity control parameter (`standard` or `full`) from the route handler. When `standard`, only user-facing events are emitted. When `full`, `trace-step` events are also emitted alongside user-facing events.
 - Running the trace-step collector in the processor chain to capture pipeline milestone data (intent classification, guardrail verdicts, memory recall, retrieval results, tool execution, context budget) as `trace-step` data events
-- Iterating `RunStreamEvent` items and mapping them to the nine SSE event types:
+- Iterating internal framework stream events and mapping them to the nine SSE event types:
   - `raw_model_stream_event` (text delta) → `text-delta` SSE event
   - `run_item_stream_event` with tool call for `suggest_cta` → `cta` SSE event (tool chunks suppressed)
   - `run_item_stream_event` with tool call for `search_locations` → `location` SSE event (tool chunks suppressed)
@@ -855,19 +855,19 @@ Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()
   - Stream end → `done` SSE event
 - Writing the stream through Elysia's `sse()` generator response path
 - Running a keepalive interval that writes SSE comment lines to prevent proxy timeouts
-- Catching `InputGuardrailTripwireTriggered` / `OutputGuardrailTripwireTriggered` exceptions (from framework guardrails) and emitting a `tripwire` SSE event with `conceptId`, reason, and fallback message
+- Catching framework guardrail tripwire exceptions and emitting a `tripwire` SSE event with `conceptId`, reason, and fallback message
 - Catching all other errors, looking up the error code in `errorMessageMap` to get the user-facing message, and emitting an `error` SSE event with `{ code, message }`
 - Closing the stream cleanly in all exit paths
 
 **Depends on**:
 
-- AGENT_FACTORY (Agent Factory — `Runner.run()` must return `AsyncIterable<RunStreamEvent>`)
+- AGENT_FACTORY (Agent Factory — internal execution must expose an async stream of framework events)
 - INPUT_GUARD, OUTPUT_GUARD (Guardrail Processors — processor chain must be composable)
 - SCAFFOLD_LIB (library scaffolding — `@openai/agents` + `@openai/agents-extensions` bridge packages installed)
 
 **Acceptance Criteria**:
 
-- The chat streaming endpoint returns `Content-Type: text/event-stream`
+- The chat streaming endpoint returns a response with the SSE content type
 - The first event on every stream is `session-meta` with non-empty `traceId` and `threadId`
 - A `trace_owners` row is inserted before the first SSE event (traceId + userId)
 - Text deltas arrive as `text-delta` events in order
@@ -901,9 +901,9 @@ Build `createStreamHandler`, the Elysia handler factory that turns `Runner.run()
 
 Build the CTA tool and stream processor pair:
 
-- The `createCTATool` factory — takes a `CTACatalog` (array of `CTA` definitions) and returns a framework-compatible tool. The tool's input schema is derived from the catalog so the LLM can only reference valid CTA IDs. The tool's execute function returns the selected CTAs.
-- The `createCTAStreamProcessor` factory — returns a stream processor that intercepts `suggest_cta` tool-call events, suppresses them from the output stream, and emits a `cta` data event in their place. All other chunks pass through unchanged.
-- Define the `CTA` type: `{ id, label, action: 'deeplink' | 'callback' | 'dismiss', url?, icon? }`
+- The CTA tool factory — takes a CTA catalog definition and returns a framework-compatible tool. The tool input is constrained by the catalog so the LLM can only reference valid CTA IDs. The tool execution returns the selected CTAs.
+- The CTA stream processor factory — returns a stream processor that intercepts `suggest_cta` tool-call events, suppresses them from the output stream, and emits a `cta` data event in their place. All other chunks pass through unchanged.
+- Define CTA data with `id`, `label`, `action` (`deeplink`, `callback`, or `dismiss`), and optional `url` and `icon` fields.
 - Enforce the max-3-CTAs constraint at the tool schema level
 - Document the catalog configuration shape for server authors
 
@@ -914,7 +914,7 @@ Build the CTA tool and stream processor pair:
 
 **Acceptance Criteria**:
 
-- The `createCTATool` factory returns a valid framework-compatible tool
+- The CTA tool factory returns a valid framework-compatible tool
 - The LLM cannot suggest a CTA ID that isn't in the catalog (schema validation rejects it)
 - A response with CTAs produces exactly one `cta` SSE event
 - No `tool-call` or `tool-result` events for `suggest_cta` appear in the SSE stream
@@ -929,7 +929,7 @@ Build the CTA tool and stream processor pair:
 - LLM calls `suggest_cta` with 4 CTAs → schema rejects the call (max-3 constraint)
 - Response has no CTA tool call → no `cta` event appears in the stream
 - p0 guardrail fires before CTA tool call → `tripwire` event with no `cta` event
-- Empty catalog passed to `createCTATool` → tool is created but the LLM has no valid CTA options to suggest
+- Empty catalog passed to CTA tool factory → tool is created but the LLM has no valid CTA options to suggest
 
 ---
 
@@ -945,7 +945,7 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 - `trace-step` event dispatch with step-type discrimination: the `onTraceStep` callback receives a discriminated union payload typed by `step` field, allowing consumers to handle each pipeline step differently
 - Auto-reconnection with exponential backoff and jitter; respect `Last-Event-ID`
 - Offline message queue: enabled via `offline: { enabled: true, maxQueueSize: N }` config; queues `sendMessage` calls when offline; drains FIFO on reconnect; emits a client-local `overflow` callback (NOT an SSE event) when queue is full and drops oldest
-- File upload: multipart POST with progress callback; returns file reference
+- File upload: multipart upload request with progress callback; returns file reference
 - Feedback submission: `submitFeedback` — attaches stored `traceId` automatically
 - JWT auth: accept token at construction or via async refresh callback
 - Full TypeScript types for all events, config, and public methods
@@ -982,11 +982,10 @@ Build `@safeagent/client`, a zero-dependency TypeScript package:
 - Max retries exceeded → `onError` fires and no further reconnect attempts are made
 - `sendMessage` while offline → message is queued and sent after reconnect
 - Queue reaches `maxQueueSize` → `onOverflow` fires and oldest message is dropped
-- `submitFeedback` after stream → POST includes `traceId` from the last `session-meta`
+- `submitFeedback` after stream → request includes trace identifier from the last `session-meta`
 - JWT refresh callback provided → callback runs before each request and fresh token is used
 - File upload → progress callback fires and a file reference is returned on completion
 
 ---
 
 *Previous: [10 — Guardrails & Safety](./10-guardrails.md) | Next: [12 — Server Implementation](./12-server.md)*
-

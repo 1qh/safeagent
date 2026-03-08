@@ -1,6 +1,6 @@
 # 06 — Agents & Orchestration
 
-> **Scope**: Agent creation factory wrapping `@openai/agents`, `aisdk()` bridge for Gemini, orchestrator with handoff-based sub-agent routing, multi-intent handling, live synthesis streaming, provider fallback, and context shaping behaviors that make responses feel natural under real conversational conditions.
+> **Scope**: Agent creation factory wrapping `@openai/agents`, SDK bridge helper for Gemini, orchestrator with handoff-based sub-agent routing, multi-intent handling, live synthesis streaming, provider fallback, and context shaping behaviors that make responses feel natural under real conversational conditions.
 >
 > **Existing tasks**: AGENT_FACTORY (Agent Factory), PROVIDER_FALLBACK (Provider Fallback), AGENT_ROUTER (Agent Router)
 > **New components**: Orchestrator pattern using framework handoffs, sub-agent framework, live synthesis
@@ -10,7 +10,7 @@
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
-- [Agent Factory (createAgent)](#agent-factory-createagent)
+- [Agent Factory (Agent Creation Factory)](#agent-factory-agent-creation-factory)
 - [Orchestrator Agent Pattern](#orchestrator-agent-pattern)
 - [Context Assembly, Budgeting, and Response Calibration](#context-assembly-budgeting-and-response-calibration)
 - [Live Synthesis Streaming](#live-synthesis-streaming)
@@ -28,17 +28,17 @@
 
 ## Architecture Overview
 
-The agent layer has three tiers: the **factory** (wraps `@openai/agents` `Agent` with safe defaults), the **orchestrator** (supervises multi-intent execution via framework handoffs), and **sub-agents** (handle individual intents with scoped tools).
+The agent layer has three tiers: the **factory** (wraps `@openai/agents` framework agent class with safe defaults), the **orchestrator** (supervises multi-intent execution via the framework's handoff mechanism), and **sub-agents** (handle individual intents with scoped tools).
 
 ```mermaid
 graph TB
     subgraph FACTORY_LAYER["Agent Factory (Library)"]
-        CREATE_AGENT["createAgent(config)\nwraps framework Agent\n+ aisdk(google(...))"]
-        CREATE_ORCHESTRATOR["createOrchestratorAgent(config)\nAgent with handoffs to sub-agents"]
-        CREATE_SUB_AGENT["createSubAgent(config)\nscoped Agent per intent"]
+        CREATE_AGENT["Agent creation factory\nwraps framework agent class\n+ SDK model bridge"]
+        CREATE_ORCHESTRATOR["Orchestrator factory\nframework agent class with handoffs to sub-agents"]
+        CREATE_SUB_AGENT["Sub-agent factory\nscoped framework agent class per intent"]
     end
 
-    subgraph RUNTIME_LAYER["Runtime Execution (Runner.run)"]
+    subgraph RUNTIME_LAYER["Runtime Execution (framework execution method)"]
         direction TB
         ORCHESTRATOR_AGENT["Orchestrator Agent<br/>(Supervisor)"]
 
@@ -59,16 +59,16 @@ graph TB
 
 ---
 
-## Agent Factory (createAgent)
+## Agent Factory (Agent Creation Factory)
 
-The core factory wraps `@openai/agents` `Agent` with safeagent-specific configuration. It uses `aisdk(google(...))` from `@openai/agents-extensions` to bridge Gemini into the framework's provider-agnostic `Model` interface. It is the foundation for all agents in the system.
+The core factory wraps `@openai/agents` framework agent class with safeagent-specific configuration. It uses the SDK model bridge from `@openai/agents-extensions` to connect Gemini to the framework's provider-agnostic model interface. It is the foundation for all agents in the system.
 
 ```mermaid
 flowchart TB
     subgraph SAFE_AGENT_CONFIG["SafeAgentConfig"]
         CONFIG_ID["id + name"]
         CONFIG_INSTRUCTIONS["instructions (prompt)"]
-        CONFIG_MODEL["model (PRIMARY_PROVIDER\nvia aisdk(google(...)))"]
+        CONFIG_MODEL["model (PRIMARY_PROVIDER\nvia SDK model bridge)"]
         CONFIG_TOOLS["tools"]
         CONFIG_GUARDRAILS["inputGuardrails +\noutputGuardrails"]
         CONFIG_MEMORY["memory config"]
@@ -79,17 +79,17 @@ flowchart TB
         CONFIG_HANDOFFS["handoffs (optional)"]
     end
 
-    subgraph AGENT_FACTORY["createAgent()"]
-        FACTORY_RESOLVE_MODEL["aisdk(google(model))"]
-        FACTORY_BUILD_GUARDRAILS["Build guardrails\n(InputGuardrail[] +\nOutputGuardrail[])"]
+    subgraph AGENT_FACTORY["agent creation factory"]
+        FACTORY_RESOLVE_MODEL["SDK model bridge"]
+        FACTORY_BUILD_GUARDRAILS["Build guardrails\n(guardrail arrays)"]
         FACTORY_WIRE_MEMORY["Wire memory\n(Conversation store)"]
         FACTORY_WIRE_TOOLS["Wire tools\n(MCP + custom)"]
-        FACTORY_CONSTRUCT_AGENT["new Agent({...})"]
+        FACTORY_CONSTRUCT_AGENT["Construct framework agent class instance"]
     end
 
-    subgraph FACTORY_OUTPUT["Agent + Runner"]
-        OUTPUT_RUNNER["Runner.run(agent, input)\nAsyncIterable of RunStreamEvent"]
-        OUTPUT_STRUCTURED["generateObject (when outputSchema set)"]
+    subgraph FACTORY_OUTPUT["Agent + runtime"]
+        OUTPUT_RUNNER["framework execution method\nAsyncIterable of RunStreamEvent"]
+        OUTPUT_STRUCTURED["structured output generation (when outputSchema set)"]
     end
 
     SAFE_AGENT_CONFIG --> AGENT_FACTORY --> FACTORY_OUTPUT
@@ -119,7 +119,7 @@ stateDiagram-v2
     TOOLS_MODE: NO grounding (mutual exclusion)
 
     STRUCTURED_MODE: Structured Output Mode
-    STRUCTURED_MODE: generateObject with Zod v4 schema
+    STRUCTURED_MODE: structured output generation with Zod v4 schema
     STRUCTURED_MODE: Returns typed JSON
 ```
 
@@ -154,7 +154,7 @@ sequenceDiagram
 
 ## Orchestrator Agent Pattern
 
-The orchestrator is a **supervisor agent** that handles multi-intent messages by routing to sub-agents via the framework handoff mechanism. Handoffs are implemented as tool calls under the hood: the model calls `transfer_to_<agent_name>()` to route control.
+The orchestrator is a **supervisor agent** that handles multi-intent messages by routing to sub-agents via the framework handoff mechanism. Handoffs are implemented as tool calls under the hood: the model makes an agent transfer call to route control.
 
 ```mermaid
 flowchart TB
@@ -174,8 +174,8 @@ flowchart TB
         SPLIT_SUB_QUERIES["Split into sub-queries"]
 
         subgraph PARALLEL_HANDOFFS["Sub-Agents (via Handoffs)"]
-            HANDOFF_REFUND["transfer_to_refund_agent<br/>Query: 'refund policy'"]
-            HANDOFF_COMPANY["transfer_to_company_agent<br/>Query: 'CEO name'"]
+            HANDOFF_REFUND["agent transfer call<br/>Query: 'refund policy'"]
+            HANDOFF_COMPANY["agent transfer call<br/>Query: 'CEO name'"]
         end
 
         MULTI_INTENT_SYNTHESIS["Live Synthesis<br/>(stream as handoffs complete)"]
@@ -190,21 +190,21 @@ flowchart TB
 
 ### Sub-Agent Lifecycle
 
-Each sub-agent is an independent `Agent` instance with its own tools, scoped to a single intent. The framework `Handoff` transfers control from orchestrator to sub-agent. The `inputFilter` on each handoff rewrites conversation history so the sub-agent focuses on its assigned intent. The `onHandoff` callback logs the routing decision.
+Each sub-agent is an independent framework agent class instance with its own tools, scoped to a single intent. The framework's handoff mechanism transfers control from orchestrator to sub-agent. Handoff input filtering scopes conversation history so the sub-agent focuses on its assigned intent. Handoff callbacks log routing decisions.
 
 ```mermaid
 sequenceDiagram
-    participant RUNNER as Runner.run()
+    participant RUNNER as Framework execution method
     participant ORCHESTRATOR
-    participant SUB_AGENT as Sub-Agent (via Handoff)
+    participant SUB_AGENT as Sub-Agent (via framework handoff mechanism)
     participant AGENT_TOOLS as Agent Tools
     participant DATA_SOURCES as Data Sources
 
     RUNNER->>ORCHESTRATOR: Start with user message
     ORCHESTRATOR->>ORCHESTRATOR: Detect intents, decide routing
-    ORCHESTRATOR->>SUB_AGENT: transfer_to_<agent>() handoff
-    Note over SUB_AGENT: inputFilter scopes context to intent
-    Note over SUB_AGENT: onHandoff logs routing decision
+    ORCHESTRATOR->>SUB_AGENT: agent transfer call handoff
+    Note over SUB_AGENT: handoff context scoping limits to intent
+    Note over SUB_AGENT: handoff callback logs routing decision
 
     SUB_AGENT->>SUB_AGENT: Analyze query
 
@@ -443,7 +443,7 @@ Each agent (orchestrator or sub-agent) receives a role-specific tool set:
 ```mermaid
 graph LR
     subgraph ORCHESTRATOR_TOOLS["Orchestrator Tools + Handoffs"]
-        TOOL_HANDOFFS["Handoffs to sub-agents\n(transfer_to_<agent>)"]
+        TOOL_HANDOFFS["Handoffs to sub-agents\n(agent transfer call)"]
         TOOL_QUERY_REWRITE_ORCH["queryRewrite"]
         TOOL_SOURCE_SET_ORCH["All source tools"]
     end
@@ -501,11 +501,11 @@ flowchart TB
 
 **Purpose**: When the model discusses places, it may call `search_locations` so each place is enriched with coordinates and optional images. Client applications can render interactive maps and inline place visuals from these events.
 
-**Factory**: `createLocationTool` accepts a `LocationToolConfig` and returns an AI SDK tool definition.
+**Factory**: The location tool factory accepts a `LocationToolConfig` and returns an AI SDK tool definition.
 
 **Tool name**: `search_locations`.
 
-**Suppression pattern**: Tool-call and tool-result stream chunks for `search_locations` are suppressed using the same mechanism as `suggest_cta`. A `createLocationStreamProcessor` intercepts `search_locations` chunks, suppresses them from outbound stream, and emits clean `location` events derived from tool result.
+**Suppression pattern**: Tool-call and tool-result stream chunks for `search_locations` are suppressed using the same mechanism as `suggest_cta`. A location stream processor factory intercepts `search_locations` chunks, suppresses them from outbound stream, and emits clean `location` events derived from tool result.
 
 **Input contract**: Model passes a place list and optional context text. Context clarifies ambiguous names and improves provider relevance.
 
@@ -532,7 +532,7 @@ flowchart LR
     IMAGE_PATH --> LOCATION_MERGE
 
     LOCATION_MERGE --> LOCATION_RESULTS[LocationResult[]]
-    LOCATION_RESULTS --> LOCATION_STREAM_PROCESSOR[createLocationStreamProcessor]
+    LOCATION_RESULTS --> LOCATION_STREAM_PROCESSOR[location stream processor factory]
     LOCATION_STREAM_PROCESSOR --> LOCATION_SSE[Emit location SSE events]
 ```
 
@@ -557,22 +557,22 @@ sequenceDiagram
 
 ### Task LOCATION_TOOL: Location Enrichment Tool
 
-**What to do**: Implement `createLocationTool` factory that accepts `LocationToolConfig` and returns an AI SDK tool definition named `search_locations`. The tool receives place names and optional context, resolves each place through configured `GeocodeProvider` (Nominatim default), optionally fetches images via configured `ImageSearchProvider`, and returns `LocationResult[]`. Implement Valkey caching for resolved locations with configurable TTL. Implement `createLocationStreamProcessor` that intercepts `search_locations` tool-call and tool-result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Implement convenience adapter helper `createGooglePlacesImageProvider(apiKey)` that wraps Google Places Photos as `ImageSearchProvider` including place imagery and coordinate support.
+**What to do**: Build the location tool factory that accepts `LocationToolConfig` and returns an AI SDK tool definition named `search_locations`. The tool receives place names and optional context, resolves each place through configured `GeocodeProvider` (Nominatim default), optionally fetches images via configured `ImageSearchProvider`, and returns `LocationResult[]`. Build Valkey caching for resolved locations with configurable TTL. Build the location stream processor factory that intercepts `search_locations` tool-call and tool-result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Build a places image provider factory helper that wraps Google Places Photos as `ImageSearchProvider` including place imagery and coordinate support.
 
 **Depends on**: CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE
 
 **Acceptance Criteria**:
 
-- `createLocationTool` returns valid AI SDK tool definition with name `search_locations`
+- Location tool factory returns valid AI SDK tool definition with name `search_locations`
 - Tool resolves place names through configured geocode provider
 - Valkey cache is checked before geocode provider call; cache hits skip provider call
 - Cache entries use configurable TTL
-- `createLocationStreamProcessor` suppresses `search_locations` tool-call and tool-result chunks from outbound stream
+- Location stream processor factory suppresses `search_locations` tool-call and tool-result chunks from outbound stream
 - Each resolved place emits `location` SSE event with `name`, `type`, `lat`, `lng`, `images`, and optional `context`
 - Unresolved places (geocode returns null) are silently skipped with warning log
 - When no `ImageSearchProvider` is configured, `images` defaults to empty array
 - `GeocodeProvider` and `ImageSearchProvider` are pluggable so server can substitute custom implementations
-- `createGooglePlacesImageProvider(apiKey)` returns valid `ImageSearchProvider` implementation
+- Places image provider factory helper returns a valid `ImageSearchProvider` implementation
 
 **QA Scenarios**:
 
@@ -593,7 +593,7 @@ For deployments with multiple specialized agents, the router dispatches each que
 ```mermaid
 flowchart LR
     USER_QUERY["User Query"]
-    QUERY_CLASSIFIER["PRIMARY_MODEL<br/>generateObject<br/>(enum mode)"]
+    QUERY_CLASSIFIER["PRIMARY_MODEL<br/>structured output generation<br/>(enum mode)"]
     THREAD_CACHE["Per-thread cache<br/>(Valkey)"]
 
     USER_QUERY --> THREAD_CACHE
@@ -611,7 +611,7 @@ flowchart LR
     AGENT_DISPATCH --> TARGET_MAIN_AGENT & TARGET_GROUNDING_AGENT & TARGET_SPECIALIZED_AGENT
 ```
 
-Router uses Gemini Flash Lite `generateObject` with `output: 'enum'` for single-token classification latency. Results are cached per thread in Valkey so the same thread keeps consistent agent continuity.
+Router uses Gemini Flash Lite structured output generation with enum output mode for single-token classification latency. Results are cached per thread in Valkey so the same thread keeps consistent agent continuity.
 
 ---
 
@@ -670,7 +670,7 @@ flowchart LR
     FALLBACK_PROVIDER -->|Failure| RESULT_ERROR
 ```
 
-`createFallbackModel` wraps two providers. If primary fails, it tries fallback. No dynamic smart routing; only sequential try/catch for predictable behavior.
+The fallback model wrapper wraps two providers. If primary fails, it tries fallback. No dynamic smart routing; only sequential try/catch for predictable behavior.
 
 ---
 
@@ -690,36 +690,36 @@ flowchart LR
 
 ### Task AGENT_FACTORY: Agent Creation Factory + Framework Adapter
 
-**What to do**: Create core `createAgent` factory that wraps `@openai/agents` `Agent` with safeagent-specific configuration. Use `aisdk(google(...))` from `@openai/agents-extensions` to bridge Gemini into framework `Model`. Wire guardrails as `InputGuardrail[]` and `OutputGuardrail[]`, register tools (custom + MCP), and configure memory integration. Agent execution uses `Runner.run()` to handle tool loop, `maxTurns`, retries, and streaming.
+**What to do**: Build the core agent creation factory that wraps `@openai/agents` framework agent class with safeagent-specific configuration. Use the SDK model bridge from `@openai/agents-extensions` to connect Gemini into the framework model interface. Configure guardrail arrays, register tools (custom + MCP), and connect memory integration. Agent execution uses the framework's execution method to handle tool loop, `maxTurns`, retries, and streaming.
 
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Schemas), CONFIG_DEFAULTS (Config), STORAGE_WRAPPER (Storage), PROVIDER_HELPERS (Provider)
 
 **Acceptance Criteria**:
 
-- `createAgent` returns configured framework `Agent` wrapped with safe defaults
-- `aisdk(google(PRIMARY_PROVIDER))` produces valid `Model` for agent
-- Agent modes (chat, grounding, tools, structured) each return non-empty response through `Runner.run()`
-- Guardrails wired as framework `InputGuardrail[]` and `OutputGuardrail[]`
+- Agent creation factory returns configured framework agent class instance wrapped with safe defaults
+- SDK model bridge for `PRIMARY_PROVIDER` produces a valid framework model
+- Agent modes (chat, grounding, tools, structured) each return non-empty response through the framework's execution method
+- Guardrails are wired as guardrail arrays
 - Memory integration includes conversation store with configurable window
 - Tool binding includes custom tools and MCP tools
 - `thinkingLevel` is passed to provider
 - `guardMode` controls active guardrails
 - `requestContext` propagation (user ID, thread ID) reaches tools via runner context
-- Unit tests use `MockLanguageModel` from `ai/test` wrapped via `aisdk()`
+- Unit tests use `MockLanguageModel` from `ai/test` wrapped via the SDK bridge helper
 
 **QA Scenarios**:
 
-- Create agent with defaults -> `Runner.run()` streams `RunStreamEvent` successfully
+- Create agent with defaults -> framework execution method streams `RunStreamEvent` successfully
 - Create agent with grounding -> grounding metadata present in response
 - Create agent with tools -> tool calls execute in runner loop
 - Create agent with output schema -> typed JSON returned through structured output path
-- Two concurrent `Runner.run()` calls with different thread IDs -> no state leakage
+- Two concurrent framework execution method calls with different thread IDs -> no state leakage
 
 ---
 
 ### Task PROVIDER_FALLBACK: Provider Fallback Helper
 
-**What to do**: Implement `createFallbackModel` that wraps two providers with sequential try/catch.
+**What to do**: Build the fallback model wrapper that wraps two providers with sequential try/catch.
 
 **Depends on**: PROVIDER_HELPERS (Provider helpers)
 
@@ -741,7 +741,7 @@ flowchart LR
 
 ### Task AGENT_ROUTER: Agent Router — Query Classification + Dispatch
 
-**What to do**: Implement query classification that routes to correct agent using `generateObject` enum mode with per-thread Valkey caching.
+**What to do**: Build query classification that routes to the correct agent using structured output generation in enum mode with per-thread Valkey caching.
 
 **Depends on**: AGENT_FACTORY (Agent Factory), SSE_STREAMING (Streaming)
 
@@ -765,16 +765,16 @@ flowchart LR
 
 ### Task MCP_CLIENT: MCP Client Configuration + Multi-Server
 
-**What to do**: Configure MCP client using framework classes `MCPServerStdio`, `MCPServerSSE`, and `MCPServerStreamableHttp`. Build configuration layer that accepts multiple MCP server definitions and returns framework-compatible instances. Use framework `toolFilter` (static allowlist and blocklist) to control exposed MCP tools per agent. Enable `cacheToolsList: true` for stable servers. Add health monitoring and graceful reconnection on top of framework MCP classes. Library provides default MCP client config that server may override.
+**What to do**: Configure MCP client using the framework's MCP transport classes. Build a configuration layer that accepts multiple MCP server definitions and returns framework-compatible instances. Use the framework's tool filtering option (static allowlist and blocklist) to control exposed MCP tools per agent. Enable tool list caching for stable servers. Add health monitoring and graceful reconnection on top of framework MCP transport classes. Library provides default MCP client config that server may override.
 
 **Depends on**: CORE_TYPES (Foundation Types), MCP_HEALTH (MCP Health-Check Wrapper)
 
 **Acceptance Criteria**:
 
-- MCP config creates framework-compatible `MCPServer` instances (`MCPServerStdio`, `MCPServerSSE`, `MCPServerStreamableHttp`)
+- MCP config creates framework-compatible MCP server instances using MCP transport classes
 - Healthy MCP servers connect at startup and expose tools to agents automatically
-- `toolFilter` per agent controls visible MCP tools
-- `cacheToolsList` enabled for stable servers to avoid re-listing every request
+- Tool filtering option per agent controls visible MCP tools
+- Tool list caching is enabled for stable servers to avoid re-listing every request
 - Health monitor detects availability changes and updates connection state
 - Reconnection retries with backoff after disconnects and restores tool availability
 - Library defaults apply when server overrides are not provided
@@ -784,7 +784,7 @@ flowchart LR
 
 - Start with three healthy MCP servers -> all connect and all tools appear in agent tool list
 - Start with one unhealthy plus two healthy servers -> healthy servers available, unhealthy excluded without blocking startup
-- Agent with allowlist `toolFilter` -> only listed MCP tools visible to that agent
+- Agent with allowlist tool filtering option -> only listed MCP tools visible to that agent
 - Disconnect active MCP server during runtime -> health status changes and reconnection begins automatically
 - Override default MCP config from server project -> override values apply without breaking base defaults
 
@@ -817,17 +817,17 @@ flowchart LR
 
 ### Task ORCHESTRATOR: Orchestrator Agent Framework
 
-**What to do**: Implement supervisor orchestrator pattern using framework `Handoff`. Orchestrator is an `Agent` with `handoffs` pointing to sub-agents. Each handoff uses `inputFilter` to scope history to assigned intent and `onHandoff` to log routing decisions. For multi-intent messages, orchestrator spawns parallel sub-agent runs and synthesizes results while streaming. Runner handles handoff execution automatically: when model calls `transfer_to_<agent>()`, runner switches to target agent.
+**What to do**: Build the supervisor orchestrator pattern using the framework's handoff mechanism. Orchestrator is a framework agent class instance with handoffs pointing to sub-agents. Each handoff uses history scoping to the assigned intent and routing callbacks for logging. For multi-intent messages, orchestrator spawns parallel sub-agent runs and synthesizes results while streaming. The runtime handles handoff execution automatically: when the model makes an agent transfer call, execution switches to the target agent.
 
 **Depends on**: AGENT_FACTORY (Agent Factory), EMBED_ROUTER (Embedding Router), LLM_INTENT (LLM Intent Validator), SOURCE_ROUTER (Source Priority Router)
 
 **Acceptance Criteria**:
 
-- `createOrchestratorAgent` creates `Agent` with sub-agent handoffs
-- Each handoff has `inputFilter` for context scoping and `onHandoff` for logging
+- Orchestrator factory creates a framework agent class instance with sub-agent handoffs
+- Each handoff has context scoping and routing logging
 - Single intent -> orchestrator works directly with tools without handoff overhead
 - Multiple independent intents -> parallel sub-agent runs via handoffs, one per intent
-- Multiple dependent intents -> sequential runs with constraint passing via `inputFilter`
+- Multiple dependent intents -> sequential runs with constraint passing through handoff-scoped context
 - Sub-agents execute independently with their own tool sets
 - Auto-trigger `memoryRecall` on first turn before reasoning
 - Recalled context injected alongside thread short-term and user short-term context
@@ -852,19 +852,19 @@ flowchart LR
 
 ### Task SUBAGENT_FACTORY: Sub-Agent Factory
 
-**What to do**: Implement sub-agent factory that creates intent-scoped `Agent` instances with proper tools from topic source-priority configuration. Each sub-agent is a framework `Agent` referenced by orchestrator via `Handoff`. Factory produces both `Agent` instance and corresponding handoff config, including `inputFilter`, `onHandoff`, and optional `isEnabled` predicate for conditional routing.
+**What to do**: Build a sub-agent factory that creates intent-scoped framework agent class instances with proper tools from topic source-priority configuration. Each sub-agent is referenced by the orchestrator through the framework's handoff mechanism. The factory produces both a sub-agent instance and corresponding handoff configuration, including context scoping, routing logging, and optional conditional routing predicates.
 
 **Depends on**: AGENT_FACTORY (Agent Factory), ORCHESTRATOR (Orchestrator), SOURCE_ROUTER (Source Priority Router)
 
 **Acceptance Criteria**:
 
-- `createSubAgent` creates scoped framework `Agent` plus handoff configuration
+- Sub-agent factory creates a scoped framework agent class instance plus handoff configuration
 - Tool set determined by topic source priority
 - Each source maps to corresponding tool on agent
 - Rewrite strategies assigned per tool based on topic config
 - Evidence gate tool included with topic threshold configuration
 - Sub-agent prompt includes intent context for focused generation
-- Handoff `inputFilter` scopes conversation to assigned intent
+- Handoff context scoping limits conversation to assigned intent
 - Unit tests verify tool assignment from intent config
 
 **QA Scenarios**:
@@ -873,13 +873,13 @@ flowchart LR
 - Topic with external knowledge source -> corresponding tool includes correct dataset IDs
 - Topic with HyDE rewrite strategy -> tool configured with HyDE rewriter
 - Missing evidence threshold config -> defaults applied
-- Handoff `inputFilter` removes irrelevant conversation turns
+- Handoff context scoping removes irrelevant conversation turns
 
 ---
 
 ### Task DEPENDENT_INTENT: Dependent Intent Coordination
 
-**What to do**: Implement orchestrator support for detecting and processing dependent intents sequentially. When intent validator reports dependent structure (for example, feedback + constrained search), orchestrator executes feedback first to produce a constraint, then passes that constraint into dependent search via handoff `inputFilter`, ensuring search respects feedback.
+**What to do**: Build orchestrator support for detecting and processing dependent intents sequentially. When the intent validator reports dependent structure (for example, feedback + constrained search), the orchestrator executes feedback first to produce a constraint, then passes that constraint into dependent search through handoff context scoping, ensuring search respects feedback.
 
 **Depends on**: ORCHESTRATOR (Orchestrator Agent Framework), LLM_INTENT (LLM Intent Validator)
 
@@ -888,12 +888,12 @@ flowchart LR
 - Orchestrator detects dependent intents from validator output
 - Dependent intents execute sequentially, not in parallel
 - Feedback intent executes first and produces constraint
-- Constraint passes to dependent intent via `inputFilter` context
+- Constraint passes to dependent intent through handoff-scoped context
 - Dependent intent receives constraint and applies it during search and filtering
 - Results from both intents synthesize into coherent response
 - Independent intents continue to run in parallel without regression
 - Unit tests verify sequential and parallel execution paths
-- Constraint passing verified through `inputFilter` context inspection
+- Constraint passing is verified through handoff-scoped context inspection
 
 **QA Scenarios**:
 
@@ -902,7 +902,7 @@ flowchart LR
 - Three intents (feedback + search + other) -> dependent chain sequential, independent intent parallelized appropriately
 - Constraint prevents disliked item appearing in results -> exclusion works
 - One dependent stage fails -> remaining results still delivered with partial-failure note
-- Constraint context visible in sub-agent trace -> `inputFilter` context includes constraint
+- Constraint context visible in sub-agent trace -> handoff-scoped context includes constraint
 
 ---
 
@@ -912,7 +912,7 @@ flowchart LR
 - OpenAI Agents SDK — Handoffs: https://openai.github.io/openai-agents-js/guides/handoffs
 - OpenAI Agents SDK — Guardrails: https://openai.github.io/openai-agents-js/guides/guardrails
 - OpenAI Agents SDK — AI SDK bridge: https://openai.github.io/openai-agents-js/extensions/ai-sdk
-- AI SDK `generateObject` structured output: https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data
+- AI SDK structured output generation: https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data
 
 ---
 

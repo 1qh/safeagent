@@ -126,7 +126,7 @@ sequenceDiagram
     participant THREAD_DB as Conversation store (Postgres)
     participant PRIMARY_MODEL as PRIMARY_MODEL
 
-    SERVER->>AGENT: Runner.run(agent, input, { stream: true })
+    SERVER->>AGENT: Framework execution method (agent, input, stream)
 
     AGENT->>THREAD_DB: Load thread history\n(userId=userId, threadId=threadId)
     THREAD_DB-->>AGENT: Last 10 turns (or fewer)
@@ -401,7 +401,7 @@ sequenceDiagram
     SUMMARY_LAYER-->>ORCHESTRATOR: Gap exceeds THREAD_RESURRECTION_GAP
     ORCHESTRATOR->>SUMMARY_LAYER: Extract key entities from rolling summary
     SUMMARY_LAYER-->>ORCHESTRATOR: Entity set for recall
-    ORCHESTRATOR->>MEMORY_RECALL_TOOL: memoryRecall(entity set)
+    ORCHESTRATOR->>MEMORY_RECALL_TOOL: memory recall tool call (entity set)
     MEMORY_RECALL_TOOL->>MEMORY_STORE: Retrieve still-valid long-term facts
     MEMORY_STORE-->>MEMORY_RECALL_TOOL: Available records only
     MEMORY_RECALL_TOOL-->>ORCHESTRATOR: Re-hydrated memory context
@@ -446,7 +446,7 @@ graph LR
 
 | Config | Value | Notes |
 |--------|-------|-------|
-| `SURREALDB_URL` | WebSocket endpoint | Supports credentials in URL |
+| SurrealDB connection endpoint | WebSocket endpoint | Supports credentials in URL |
 | Namespace | `safeagent` | Shared namespace |
 | Database | `memory` | Dedicated logical database |
 
@@ -458,7 +458,7 @@ No MTREE index is required for bounded per-user memory volume. Sequential scan w
 
 Long-term memory client provides:
 
-- `createUserNode`
+- user node creation helper
 - `storeFact`
 - `storeInteraction`
 - `storeMediaFact`
@@ -1076,7 +1076,7 @@ flowchart TB
     FIRST_TURN_CHECK{"First message in thread?"}
 
     AUTO_RECALL_MODE["Auto-trigger memoryRecall\nbefore reasoning\nInject as system context"]
-    AGENT_CONTROLLED_MODE["Agent decides whether to call\nmemoryRecall based on query intent"]
+    AGENT_CONTROLLED_MODE["Agent decides whether to call\nthe memory recall tool based on query intent"]
 
     INCOMING_MESSAGE --> FIRST_TURN_CHECK
     FIRST_TURN_CHECK -->|"Yes"| AUTO_RECALL_MODE
@@ -1115,10 +1115,10 @@ sequenceDiagram
 flowchart TB
     subgraph AGENT_STAGE["Agent Tool Use"]
         TOOL_DECISION["Agent decides query needs prior user context"]
-        TOOL_CALL["Call memoryRecall(query, temporalHint?)"]
+        TOOL_CALL["Call memory recall tool\n(query + optional temporal hint)"]
     end
 
-    subgraph RECALL_PIPELINE["createMemoryRecallTool"]
+    subgraph RECALL_PIPELINE["memory recall tool factory"]
         QUERY_EMBEDDING["Embed query text"]
 
         subgraph PARALLEL_SEARCH["Parallel Search"]
@@ -1493,7 +1493,7 @@ Emotional carry-forward can over-persist if decay is too long.
 
 **Acceptance Criteria**:
 
-- `createShortTermMemory` returns configured memory module backed by conversation store.
+- Thread short-term memory capability returns a configured memory module backed by conversation store.
 - `lastMessages` default is ten and remains configurable.
 - Memory scope is enforced by `userId` + `threadId`.
 - `userId` enters only through request context.
@@ -1568,7 +1568,7 @@ Emotional carry-forward can over-persist if decay is too long.
 
 **Acceptance Criteria**:
 
-- Connects via `SURREALDB_URL`.
+- Connects via the SurrealDB connection endpoint.
 - Uses surqlize with typed schema and query helpers.
 - Namespace and database are set for memory domain.
 - Persistent connection auto-recovers after drop.
@@ -1585,7 +1585,7 @@ Emotional carry-forward can over-persist if decay is too long.
 **QA Scenarios**:
 
 - Server mode connection initializes correctly.
-- `createUserNode` is idempotent.
+- User node creation helper is idempotent.
 - `storeFact` creates fact + relation edge.
 - `storeInteraction` creates interaction + relation edge.
 - `storeMediaFact` creates media + relation edge.
@@ -1655,7 +1655,7 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task MEMORY_RECALL: Enhanced Memory Recall Tool
 
-**What to do**: Implement `createMemoryRecallTool` supporting semantic + graph retrieval over facts/interactions/media, temporal filtering, recency weighting, TTL refresh, and auto-trigger behavior on new threads.
+**What to do**: Build the memory recall tool factory supporting semantic + graph retrieval over facts/interactions/media, temporal filtering, recency weighting, TTL refresh, and auto-trigger behavior on new threads.
 
 **Depends on**: SURREALDB_CLIENT, AGENT_FACTORY
 
@@ -1732,7 +1732,7 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task MEMORY_CONTROL: User Memory Control Tools
 
-**What to do**: Implement `createMemoryInspectTool` and `createMemoryDeleteTool` for user-visible memory inspection and confirmation-gated memory deletion including cache and structured-result cleanup.
+**What to do**: Build memory inspect and memory delete tool factories for user-visible memory inspection and confirmation-gated memory deletion including cache and structured-result cleanup.
 
 **Depends on**: SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY
 

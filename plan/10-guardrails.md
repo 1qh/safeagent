@@ -29,7 +29,7 @@
 
 ## Architecture Overview
 
-The guardrail system wraps every agent interaction with two enforcement layers: one that runs before the LLM sees the user's message, and one that runs on every chunk the LLM emits. Both layers share the same type system and the same `GuardrailFn` interface, so detection logic is written once and deployed in either position.
+The guardrail system wraps every agent interaction with two enforcement layers: one that runs before the LLM sees the user's message, and one that runs on every chunk the LLM emits. Both layers share the same type system and the same guardrail function type, so detection logic is written once and deployed in either position.
 
 ```mermaid
 flowchart TB
@@ -101,7 +101,7 @@ flowchart TB
 
 **`GuardrailVerdict`** is what every guardrail function returns — a structure containing a `severity` (GuardrailSeverity) and a `conceptId` (string). The `conceptId` is a server-defined string key that maps to a fallback message in the `ConceptRegistry`. For clean passes, `conceptId` is always `'PASS'`.
 
-**`GuardrailFn`** is the unified interface for both input and output guardrails — an async function that takes a text string and returns a `GuardrailVerdict`. The same function signature works in both positions. A regex guardrail written for input can be reused on output without modification.
+**Guardrail function type** is the unified interface for both input and output guardrails — an async function that takes a text string and returns a `GuardrailVerdict`. The same function signature works in both positions. A regex guardrail written for input can be reused on output without modification.
 
 **`ConceptRegistry`** is a server-defined mapping (record) from concept ID strings to `ConceptConfig` objects.
 
@@ -170,9 +170,9 @@ flowchart TB
     INPUT["User message text"]
 
     subgraph PARALLEL_GUARDRAIL_RUN["Run ALL guardrails in parallel"]
-        GUARD_FIRST["Guardrail 1\nGuardrailFn(text)"]
-        GUARD_SECOND["Guardrail 2\nGuardrailFn(text)"]
-        GUARD_NTH["Guardrail N\nGuardrailFn(text)"]
+        GUARD_FIRST["Guardrail 1\nGuardrail function evaluates text"]
+        GUARD_SECOND["Guardrail 2\nGuardrail function evaluates text"]
+        GUARD_NTH["Guardrail N\nGuardrail function evaluates text"]
     end
 
     INPUT --> GUARD_FIRST & GUARD_SECOND & GUARD_NTH
@@ -190,7 +190,7 @@ flowchart TB
     CHECK -->|p1| FLAG["onFlag(verdict)\n→ Langfuse trace\nContinue to agent"]
     CHECK -->|p2| PASS["Pass to agent\nIntent detection proceeds"]
 
-    ABORT --> TRIPWIRE["Framework TripWire\nInputGuardrailTripwireTriggered\nStream terminates\nClient receives tripwire event"]
+    ABORT --> TRIPWIRE["Framework TripWire\ninput tripwire exception\nStream terminates\nClient receives tripwire event"]
 ```
 
 **Key behaviors**:
@@ -198,13 +198,13 @@ flowchart TB
 - All guardrails run in parallel regardless of intermediate results. There's no short-circuit on the first p0 — all verdicts are collected before aggregating.
 - Worst-wins: if any guardrail returns p0, the aggregate is p0. If no p0 but any p1, aggregate is p1.
 - When multiple guardrails return p0, the `conceptId` from the first p0 in the array order is used for the fallback message.
-- The `abort` maps to `tripwireTriggered: true` in the framework guardrail return value, which causes the framework to throw `InputGuardrailTripwireTriggered`.
+- The `abort` maps to `tripwireTriggered: true` in the framework guardrail return value, which causes the framework to throw the input tripwire exception.
 
 ---
 
 ## Output Guardrails (OUTPUT_GUARD)
 
-Output guardrails run on the orchestrator's synthesis stream via the framework's `OutputGuardrail` interface. They see every streaming chunk as it arrives from the LLM.
+Output guardrails run on the orchestrator's synthesis stream via the framework's output guardrail interface. They see every streaming chunk as it arrives from the LLM.
 
 ### Sliding Window Buffer
 
@@ -343,14 +343,14 @@ The library ships five factory functions. Servers use these to compose their det
 ```mermaid
 flowchart TB
     subgraph GUARDRAIL_FACTORIES["Guardrail Factories (library)"]
-        REGEX["createRegexGuardrail\n(patterns, conceptId, severity)"]
-        KEYWORD["createKeywordGuardrail\n(keywords, conceptId, severity)"]
-        LLM_G["createLLMGuardrail\n(classifier, conceptId)"]
-        EXTERNAL["createExternalGuardrail\n(endpoint, conceptId)"]
-        COMPOSITE["createCompositeGuardrail\n(fns, aggregation)"]
+        REGEX["Regex guardrail factory\n(patterns, concept, severity)"]
+        KEYWORD["Keyword guardrail factory\n(keywords, concept, severity)"]
+        LLM_G["LLM guardrail factory\n(classifier, concept)"]
+        EXTERNAL["External moderation guardrail factory\n(endpoint, concept)"]
+        COMPOSITE["Composite guardrail factory\n(guardrails, aggregation)"]
     end
 
-    subgraph OUTPUT["All return GuardrailFn"]
+    subgraph OUTPUT["All return guardrail function type"]
         FN["(text: string) => Promise<GuardrailVerdict>"]
     end
 
@@ -363,26 +363,26 @@ flowchart TB
     FN --> SERVER_LOGIC
 ```
 
-**`createRegexGuardrail`** — accepts patterns, a concept ID, and a severity level.
+**Regex guardrail factory** — accepts patterns, a concept ID, and a severity level.
 Runs one or more regular expressions against the text. If any pattern matches, returns the given severity and conceptId. Fast, deterministic, zero latency. Best for known-bad patterns, PII formats, and structural violations.
 
-**`createKeywordGuardrail`** — accepts keywords, a concept ID, and a severity level.
+**Keyword guardrail factory** — accepts keywords, a concept ID, and a severity level.
 Case-insensitive keyword matching. Simpler than regex but sufficient for blocklist enforcement. Runs synchronously.
 
-**`createLLMGuardrail`**
+**LLM guardrail factory**
 Calls a small classifier model (uses `PRIMARY_MODEL` by default) to evaluate the text. Returns a verdict based on the model's output. Slower than regex but catches semantic violations that patterns miss. The `classifier` argument is a function the server provides — it receives the text and returns a severity.
 
-**`createExternalGuardrail`**
-POSTs the text to an external HTTP endpoint and maps the response to a verdict. Enables integration with third-party moderation APIs (OpenAI Moderation, AWS Comprehend, custom services). The endpoint contract is defined by the server. Accepts a `failMode` config field: `'open'` (default — network errors return `p2 PASS`, logging a warning) or `'closed'` (network errors return `p0` with the configured conceptId, treating unreachable moderation as a block). The `failMode` field is required in the factory config object.
+**External moderation guardrail factory**
+Sends the text to an external moderation endpoint and maps the response to a verdict. Enables integration with third-party moderation APIs (OpenAI Moderation, AWS Comprehend, custom services). The endpoint contract is defined by the server. Accepts a `failMode` config field: `'open'` (default — network errors return `p2 PASS`, logging a warning) or `'closed'` (network errors return `p0` with the configured conceptId, treating unreachable moderation as a block). The `failMode` field is required in the factory config object.
 
-**`createCompositeGuardrail`**
-Combines multiple `GuardrailFn` instances into one. The `aggregation` strategy determines how verdicts are combined. Default aggregation is worst-wins.
+**Composite guardrail factory**
+Combines multiple guardrail function type instances into one. The `aggregation` strategy determines how verdicts are combined. Default aggregation is worst-wins.
 
 ### Composite Guardrail Composition
 
 ```mermaid
 flowchart TB
-    subgraph COMPOSITE_GUARDRAIL["createCompositeGuardrail([g1, g2, g3], 'worst-wins')"]
+    subgraph COMPOSITE_GUARDRAIL["Composite guardrail factory with worst-wins aggregation"]
         INPUT_C["text input"]
         
         subgraph INNER_GUARDRAILS["INNER_GUARDRAILS guardrails (parallel)"]
@@ -392,14 +392,14 @@ flowchart TB
         end
         
         AGG_C["Worst-wins\np1 wins"]
-        RESULT_C["GuardrailVerdict\n{ severity: 'p1', conceptId: 'flagged' }"]
+        RESULT_C["Guardrail verdict\nseverity flagged at p1"]
     end
 
     INPUT_C --> INNER_REGEX_GUARDRAIL & INNER_KEYWORD_GUARDRAIL & INNER_LLM_GUARDRAIL
     INNER_REGEX_GUARDRAIL & INNER_KEYWORD_GUARDRAIL & INNER_LLM_GUARDRAIL --> AGG_C --> RESULT_C
 ```
 
-The composite factory is the primary composition tool. It always runs its constituent guardrails in parallel and aggregates their verdicts. Sequential layering (e.g., run regex first, then keyword matching, then an LLM classifier only if cheaper checks pass) is achieved inside a single custom `GuardrailFn` — not via the composite factory. A server might define a single "content policy" `GuardrailFn` that internally runs staged checks. This layered approach keeps average latency low while maintaining thorough coverage.
+The composite factory is the primary composition tool. It always runs its constituent guardrails in parallel and aggregates their verdicts. Sequential layering (e.g., run regex first, then keyword matching, then an LLM classifier only if cheaper checks pass) is achieved inside a single custom guardrail function type implementation, not via the composite factory. A server might define a single content-policy guardrail function type implementation that internally runs staged checks. This layered approach keeps average latency low while maintaining thorough coverage.
 
 ---
 
@@ -418,13 +418,13 @@ Language Guard is an opt-in guardrail that ensures the agent never responds in a
 Language Guard uses a two-stage design:
 
 - Fast Detect — Fast Library Check (< 1ms): runs eld on input text. If language is clearly unsupported and no translation keywords are present, return p0 immediately. If language is clearly supported and no translation keywords are present, pass immediately. If confidence is low, input is mixed language, or translation keywords are present, defer to Post-Intent Gate.
-- Intent detection step (existing pipeline stage): the intent system runs and returns language fields piggybacked in the same generateObject result.
-- Post-Intent Gate — Post-intent language gate (zero additional model latency): this is not an input guardrail in the GuardrailFn sense. It runs after intent detection returns and checks intendedOutputLanguage from the intent result. If intendedOutputLanguage is outside supportedLanguages, return p0.
+- Intent detection step (existing pipeline stage): the intent system runs and returns language fields piggybacked in the same structured output generation result.
+- Post-Intent Gate — Post-intent language gate (zero additional model latency): this is not an input guardrail in the guardrail function type sense. It runs after intent detection returns and checks intendedOutputLanguage from the intent result. If intendedOutputLanguage is outside supportedLanguages, return p0.
 - Output scanner: eld also runs on the output sliding window to detect language drift during streaming. The output scanner must run with unrestricted eld detection (no setLanguageSubset), then block only when the detected dominant language is outside supportedLanguages.
 
 ### Enforcement boundary clarification
 
-Post-Intent Gate is an enforcement gate between intent detection and orchestrator execution, not a GuardrailFn-style input guard. The ordering is fixed:
+Post-Intent Gate is an enforcement gate between intent detection and orchestrator execution, not a guardrail function type-style input guard. The ordering is fixed:
 
 1. Fast Detect input guardrail runs in parallel with other input guards and handles clear allow/block cases quickly.
 2. Intent detection runs (embedding router plus LLM validator) and returns intendedOutputLanguage, hasTranslationIntent, and translationTargetLanguage.
@@ -638,7 +638,7 @@ The pipeline orchestrator wires all guardrails into the `@openai/agents` framewo
 
 ### Pipeline Configuration
 
-`GuardrailPipelineConfig` is the top-level configuration object with these fields: `input` (an array of GuardrailFn, run before the agent in parallel), `output` (an array of GuardrailFn, run on each output chunk), `concepts` (a ConceptRegistry mapping conceptId to fallback message), `guardMode` (a GuardMode value — either `'development'` or `'production'`), and `onFlag` (a callback invoked on p1 verdicts for Langfuse logging).
+`GuardrailPipelineConfig` is the top-level configuration object with these fields: `input` (an array of guardrail function type instances, run before the agent in parallel), `output` (an array of guardrail function type instances, run on each output chunk), `concepts` (a ConceptRegistry mapping conceptId to fallback message), `guardMode` (a GuardMode value — either `'development'` or `'production'`), and `onFlag` (a callback invoked on p1 verdicts for Langfuse logging).
 
 ### GuardMode Precedence
 
@@ -660,7 +660,7 @@ flowchart TB
     subgraph PIPELINE_ORCHESTRATOR["GuardrailPipelineOrchestrator"]
         CONFIG["GuardrailPipelineConfig"]
         
-        subgraph FRAMEWORK_INPUT_GUARDRAILS["Framework InputGuardrail[]"]
+        subgraph FRAMEWORK_INPUT_GUARDRAILS["Framework input guardrail interface array"]
             INPUT_EXECUTE_HOOK["execute(context, agent)"]
             INPUT_PARALLEL_RUN["Run input guardrails\nin parallel"]
             INPUT_WORST_WINS["Worst-wins aggregation"]
@@ -668,7 +668,7 @@ flowchart TB
             INPUT_FLAG_RESULT["onFlag() on p1"]
         end
         
-        subgraph FRAMEWORK_OUTPUT_GUARDRAILS["Framework OutputGuardrail[]"]
+        subgraph FRAMEWORK_OUTPUT_GUARDRAILS["Framework output guardrail interface array"]
             OUTPUT_EXECUTE_HOOK["execute(context, agent, output)"]
             OUTPUT_WINDOW_UPDATE["Update sliding window"]
             OUTPUT_GUARDRAIL_RUN["Run output guardrails\non window text"]
@@ -684,7 +684,7 @@ flowchart TB
     FRAMEWORK_OUTPUT_GUARDRAILS -->|wired as| AGENT_OUTPUT_GUARDRAILS["agent.outputGuardrails[]"]
 ```
 
-The `createGuardrailPipeline` factory takes a `GuardrailPipelineConfig` and returns `{ inputGuardrails: InputGuardrail[], outputGuardrails: OutputGuardrail[] }` — framework-compatible guardrail arrays ready to be passed to `createAgent`. The agent factory (AGENT_FACTORY) accepts these guardrails and wires them into the `@openai/agents` `Agent` constructor.
+The guardrail pipeline factory takes a `GuardrailPipelineConfig` and returns framework-compatible input and output guardrail arrays ready to be passed to the agent constructor. The agent factory (AGENT_FACTORY) accepts these guardrails and wires them into the framework agent constructor.
 
 ### Full Pipeline Flow
 
@@ -777,7 +777,7 @@ flowchart TB
 
 **Sub-agents are not individually guardrailed.** The orchestrator's synthesis stream is the single enforcement point for output. This is intentional: sub-agent outputs are intermediate results that the orchestrator synthesizes before they reach the client. Guardrailing each sub-agent would add latency without additional safety benefit, since the orchestrator's output guardrails catch any violations in the final response.
 
-**The evidence gate (file 09) is a separate concern.** It evaluates whether retrieved evidence is sufficient to answer a question. It's not a safety guardrail and doesn't use the `GuardrailFn` interface.
+**The evidence gate (file 09) is a separate concern.** It evaluates whether retrieved evidence is sufficient to answer a question. It's not a safety guardrail and doesn't use the guardrail function type interface.
 
 ### Relationship to Server & Observability (file 12)
 
@@ -810,7 +810,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task INPUT_GUARD: Input Guardrails
 
-**What to do**: Implement the input guardrail processor that runs all configured `GuardrailFn` instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls `abort` on p0 or `onFlag` on p1.
+**What to do**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls `abort` on p0 or `onFlag` on p1.
 
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
@@ -822,8 +822,8 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - p1 → `onFlag` called, message passes to agent
 - p2 → message passes to agent silently
 - Empty guardrail array → message always passes
-- Guardrail integrates with the framework's `InputGuardrail` interface
-- Unit tests with mocked `GuardrailFn` instances
+- Guardrail integrates with the framework's input guardrail interface
+- Unit tests with mocked guardrail function type instances
 
 **QA Scenarios**:
 - All guardrails return p2 → message reaches agent
@@ -837,7 +837,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task OUTPUT_GUARD: Output Guardrails
 
-**What to do**: Implement the output guardrail processor that maintains a sliding window buffer, runs all configured `GuardrailFn` instances on each chunk's window text, and takes action based on severity and GuardMode.
+**What to do**: Build the output guardrail processor that maintains a sliding window buffer, runs all configured guardrail function type instances on each chunk's window text, and takes action based on severity and GuardMode.
 
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
@@ -847,7 +847,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - All output guardrails run on window text after each chunk
 - p2 → chunk emitted to client unchanged
 - p1 → `onFlag` called, chunk emitted unchanged
-- p0 + development → `tripwireTriggered: true` returned (framework throws `OutputGuardrailTripwireTriggered`), handler catches and emits tripwire SSE event with `{ conceptId, reason, fallbackMessage }`
+- p0 + development → `tripwireTriggered: true` returned (framework throws the output tripwire exception), handler catches and emits a tripwire SSE event with concept, reason, and fallback details
 - p0 + production → all remaining chunks suppressed, fallback text-delta injected from `ConceptRegistry[conceptId]`
 - Once p0 fires in production, no further chunks emitted (suppression is permanent for that stream)
 - Non-text-delta chunk types (tool calls, etc.) pass through without guardrail evaluation
@@ -856,7 +856,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 **QA Scenarios**:
 - Clean stream → all chunks reach client
 - p1 on chunk 5 → chunks 1-5 reach client, onFlag called, chunks 6+ continue
-- p0 on chunk 5 in dev mode → chunks 1-5 reach client, `OutputGuardrailTripwireTriggered` thrown, handler catches and emits tripwire SSE event
+- p0 on chunk 5 in dev mode → chunks 1-5 reach client, output tripwire exception thrown, handler catches and emits tripwire SSE event
 - p0 on chunk 5 in prod mode → chunks 1-4 reach client, chunk 5 suppressed, fallback injected
 - Multi-token pattern spanning two chunks → sliding window catches it
 - ConceptRegistry missing conceptId → fallback to generic message, log warning
@@ -865,20 +865,20 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task GUARD_FACTORY: Guardrail Authoring Factories
 
-**What to do**: Implement the five factory functions that produce guardrail instances compatible with the `@openai/agents` framework's `InputGuardrail` and `OutputGuardrail` interfaces. Each factory returns a guardrail whose `execute` function evaluates input/output and returns `{ tripwireTriggered: boolean, outputInfo: GuardrailVerdict }`. The `tripwireTriggered` field maps to our severity system: `p0` → `true` (halt), `p1`/`p2` → `false` (flag or pass). The framework throws `InputGuardrailTripwireTriggered` / `OutputGuardrailTripwireTriggered` exceptions automatically when `tripwireTriggered: true` — these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
+**What to do**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose `execute` function evaluates input or output and returns `tripwireTriggered` plus `outputInfo`. The `tripwireTriggered` field maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when `tripwireTriggered: true`; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
 
 **Depends on**: CORE_TYPES (Types)
 
 **Acceptance Criteria**:
-- `createRegexGuardrail` → matches any pattern → returns verdict with `tripwireTriggered` based on severity
-- `createKeywordGuardrail` → case-insensitive match → returns verdict
-- `createLLMGuardrail` → calls classifier fn → maps result to verdict
-- `createExternalGuardrail` → POST to endpoint → maps response to verdict
-- `createCompositeGuardrail` → runs all fns in parallel → aggregates (worst-wins)
-- All factories return objects conforming to the framework's `InputGuardrail` / `OutputGuardrail` interface
+- Regex guardrail factory → matches any pattern → returns verdict with `tripwireTriggered` based on severity
+- Keyword guardrail factory → case-insensitive match → returns verdict
+- LLM guardrail factory → calls classifier function → maps result to verdict
+- External moderation guardrail factory → sends text to external moderation endpoint → maps response to verdict
+- Composite guardrail factory → runs all guardrails in parallel → aggregates (worst-wins)
+- All factories return objects conforming to the framework guardrail interfaces
 - `outputInfo` field carries the full `GuardrailVerdict` (severity, conceptId, reason)
-- No match / clean result → `{ tripwireTriggered: false, outputInfo: { severity: 'p2', conceptId: 'PASS' } }`
-- `createExternalGuardrail` handles network errors based on `failMode` config: `'open'` returns pass with warning log, `'closed'` returns `tripwireTriggered: true` with the configured conceptId
+- No match or clean result returns a pass-state verdict with no tripwire trigger
+- External moderation guardrail factory handles network errors based on `failMode` config: `'open'` returns pass with warning log, `'closed'` returns `tripwireTriggered: true` with the configured conceptId
 - Unit tests for each factory with representative inputs
 
 **QA Scenarios**:
@@ -947,19 +947,19 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task GUARD_PIPELINE: Guardrail Pipeline Orchestrator
 
-**What to do**: Implement the pipeline orchestrator that takes a `GuardrailPipelineConfig` and produces arrays of framework-compatible `InputGuardrail[]` and `OutputGuardrail[]`, handling GuardMode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework's `Agent` constructor (`inputGuardrails`, `outputGuardrails`). The framework runs input guardrails in parallel with the agent by default (`runInParallel: true`). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
+**What to do**: Build the pipeline orchestrator that takes a `GuardrailPipelineConfig` and produces framework-compatible input and output guardrail arrays, handling GuardMode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework agent constructor. The framework runs input guardrails in parallel with the agent by default (`runInParallel: true`). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
 
 **Depends on**: INPUT_GUARD (Input Guardrails), OUTPUT_GUARD (Output Guardrails), GUARD_FACTORY (Guardrail Factories)
 
 **Acceptance Criteria**:
-- `createGuardrailPipeline` returns `{ inputGuardrails: InputGuardrail[], outputGuardrails: OutputGuardrail[] }`
+- The guardrail pipeline factory returns framework-compatible input and output guardrail arrays
 - Both arrays contain framework-compatible guardrail objects
 - GuardMode precedence: pipeline config > agent config > default `'development'`
 - `onFlag` callback wired to both input and output guardrails
 - `ConceptRegistry` accessible to output guardrails for fallback injection
 - Empty `input[]` → empty `inputGuardrails` array
 - Empty `output[]` → empty `outputGuardrails` array
-- Guardrails returned by pipeline are passed directly to `createAgent` → `new Agent({ inputGuardrails, outputGuardrails })`
+- Guardrails returned by the pipeline are passed directly to the agent constructor with input and output guardrail arrays
 - Integration test: full pipeline with mock agent, mock guardrails, mock LLM stream
 
 **QA Scenarios**:
@@ -1003,7 +1003,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ## Design Decisions
 
-**Why unified `GuardrailFn` for input and output?** A single interface means detection logic is portable. A PII detector written for input works on output without modification. It also simplifies testing — mock a `GuardrailFn` once, use it in both positions.
+**Why unified guardrail function type for input and output?** A single interface means detection logic is portable. A PII detector written for input works on output without modification. It also simplifies testing — mock one guardrail function type implementation and use it in both positions.
 
 **Why worst-wins aggregation?** Safety systems should fail toward caution. If any guardrail detects a violation, the violation wins. The alternative (best-wins or voting) would allow a single permissive guardrail to override multiple detecting ones.
 

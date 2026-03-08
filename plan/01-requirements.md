@@ -92,12 +92,12 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_AGENT_DEFAULTS | Agent creation with sensible defaults | `createAgent` factory with full customizability |
+| MH_AGENT_DEFAULTS | Agent creation with sensible defaults | Agent creation factory with full customizability |
 | MH_INPUT_GUARDRAILS | Input guardrails (server-defined) | `GuardrailFn[]` → severity+conceptId → block/flag/pass |
-| MH_STREAMING_GUARDRAILS | Streaming output guardrails | Framework `OutputGuardrail` with `tripwireTriggered` pattern + sliding-window buffer |
-| MH_GUARDRAIL_FACTORIES | Guardrail authoring factories | `createRegexGuardrail`, `createKeywordGuardrail`, `createLLMGuardrail`, `createExternalGuardrail`, `createCompositeGuardrail` |
+| MH_STREAMING_GUARDRAILS | Streaming output guardrails | Framework output guardrail list with tripwire-trigger pattern + sliding-window buffer |
+| MH_GUARDRAIL_FACTORIES | Guardrail authoring factories | Factory-pattern helpers for regex, keyword, model-based, external, and composite guardrails |
 | MH_MCP_CLIENT | MCP client wrapper | Multi-server support and health checks |
-| MH_SSE_STREAMING | SSE streaming via Elysia | `Runner.run()` → `RunStreamEvent` with Elysia `sse()` generators for real-time token delivery |
+| MH_SSE_STREAMING | SSE streaming via Elysia | The framework's execution method emits stream event types that are forwarded through Elysia SSE generators for real-time token delivery |
 | MH_GEMINI_GROUNDING | Gemini grounding search | Separate agent mode for web-grounded responses |
 | MH_PROVIDER_AGNOSTIC | Provider-agnostic model configuration | No model-specific branching in core agent logic. Grounding mode is an explicit exception — it uses `@ai-sdk/google` directly because Gemini grounding is a Google-specific capability with no provider-neutral equivalent |
 | MH_CONFIG_OVERRIDABLE | All configs have defaults, all defaults are overridable | Every configuration surface has sensible fallbacks |
@@ -119,7 +119,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 |---|---|---|
 | MH_SHORT_TERM_MEMORY | Short-term memory (Postgres) | Via Drizzle ORM, 10 turns per conversation, auto-injected |
 | MH_LONG_TERM_MEMORY | Long-term memory (SurrealDB) | Graph + vector storage, LLM fact extraction, agent recall tool |
-| MH_MEMORY_RECALL_TOOL | `createMemoryRecallTool` | Agent-initiated long-term memory search |
+| MH_MEMORY_RECALL_TOOL | Memory recall tool factory | Agent-initiated long-term memory search |
 | MH_USERID_SCOPING | `userId` scoping on all memory operations | Server passes direct `userId` parameters — every operation scoped |
 | MH_NO_WRITES_WITHOUT_USER | Must not write memory, doc chunks, or file metadata without userId | Conversation and document operations require both threadId AND userId. Per-file operations (CRUD, cleanup) require fileId AND userId. Long-term memory operations require userId only (cross-thread by design — see [07 — Memory & Intelligence](./07-memory.md) Two-Tier Responsibilities). |
 
@@ -127,7 +127,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_JWT_AUTH_REQUIRED | JWT auth on all API routes when `JWT_SECRET` is set | `createAuthMiddleware` extracts userId from JWT `sub` claim, sets context. Reject with 401 if missing/invalid. When `JWT_SECRET` is absent: in production (`NODE_ENV=production`) the server must refuse startup (hard fail — security boundary, no fallback); in development, middleware enters dev-bypass mode (default dev userId, startup warning). No `x-user-id` header — userId extracted from JWT claims by the server |
+| MH_JWT_AUTH_REQUIRED | JWT auth on all API routes when `JWT_SECRET` is set | Auth middleware factory extracts userId from JWT `sub` claim and sets request context. Reject with 401 if missing or invalid. When `JWT_SECRET` is absent: in production environment mode, the server must refuse startup (hard fail — security boundary, no fallback); in development, middleware enters dev-bypass mode (default dev userId, startup warning). No user identity header override — userId is extracted from JWT claims by the server |
 | MH_TRACE_THREAD_DELIVERY | `traceId` + `threadId` delivery | Emitted as first SSE custom data event for client-side feedback linking and multi-turn continuity |
 | MH_ESM_ONLY | ESM-only TypeScript package | No CommonJS, no dual-format |
 
@@ -141,7 +141,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_PROMPTFOO_SELFTEST | Promptfoo self-test | `createPromptfooProvider` helper for evaluation integration |
+| MH_PROMPTFOO_SELFTEST | Promptfoo self-test | Evaluation-provider helper for prompt testing integration |
 | MH_EVAL_SCORERS | Custom evaluation scorers configuration helper | Custom scoring functions for live production quality monitoring |
 
 ### Document Processing & Upload
@@ -156,8 +156,8 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_BACKGROUND_ENRICHMENT | Background raw text enrichment | Background stage via Trigger.dev task (production) or in-process fallback (dev) — `unpdf` text extraction + embedding + tsvector for keyword search |
 | MH_IMAGE_PROCESSING | Image processing (JIMP) | JIMP resize (max 2048px) → direct multimodal on query |
 | MH_PAGE_INDEX_TABLE | Own Drizzle `page_index` table | Per-page search with custom text chunking and custom pgvector access via Drizzle |
-| MH_CUSTOM_QUERY_TOOL | Custom `searchDocument` tool | Server-side threadId+userId filter (NOT `createVectorQueryTool` LLM-controlled filter). Created by `createDocumentQueryTool` factory. Retrieves ALL context for matched pages: original PDF page (fetched from S3) + summary + matching raw text chunks. Be exhaustive |
-| MH_STRUCTURED_CITATIONS | Structured citations | `generateObject` producing `{ answer, citations: Citation[] }`. Canonical `Citation` type includes `source` (human label), `fileId` (machine ID), `page`, `quote`, optional `scope`, optional `images[]` with presigned URLs + fallback API paths |
+| MH_CUSTOM_QUERY_TOOL | Custom document search tool | Server-side threadId and userId filtering (NOT model-controlled access filters). Built via a document query tool factory. Retrieves all context for matched pages: original PDF page (fetched from object storage), summary, and matching raw text chunks. Be exhaustive |
+| MH_STRUCTURED_CITATIONS | Structured citations | Structured output generation returns an answer with a list of citations. Canonical citation type includes source (human label), fileId (machine ID), page, quote, optional scope, and optional images with presigned URLs plus fallback API paths |
 
 ### Storage & Files
 
@@ -191,7 +191,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_CTA_STREAMING | CTA streaming | `createCTATool` — LLM-decided, context-aware call-to-action suggestions emitted as custom `cta` data event at end of stream |
+| MH_CTA_STREAMING | CTA streaming | CTA tool factory enables model-decided, context-aware call-to-action suggestions emitted as a custom `cta` data event at end of stream |
 | MH_CTA_SCHEMA | CTA schema | `{ id, label, action: 'deeplink' | 'callback' | 'dismiss', url, icon? }`, max 3 per response |
 | MH_CTA_HIDDEN | CTA tool hidden from client | `suggest_cta` tool-call events suppressed from stream, only clean `cta` data event emitted |
 | MH_CTA_SERVER_CATALOG | CTA catalog defined in server config | Library provides the tool factory + stream injection — catalog is thin server config |
@@ -200,8 +200,8 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_LOCATION_TOOL | Location enrichment tool (opt-in) | `createLocationTool` factory with pluggable `GeocodeProvider` and `ImageSearchProvider`. Default geocoding uses Nominatim with Valkey cache. Image provider must be configured by server. Emits `location` SSE events with coordinates and images per place. Location enrichment failures degrade silently (log + continue); unresolved places do not emit `location` events |
-| MH_GEOCODE_PLUGGABLE | Geocoding provider is pluggable | Default is Nominatim. Server can override with any `GeocodeProvider` function |
+| MH_LOCATION_TOOL | Location enrichment tool (opt-in) | Location tool factory with pluggable geocoding and image-search providers. Default geocoding uses Nominatim with Valkey cache. Image provider must be configured by server. Emits `location` SSE events with coordinates and images per place. Location enrichment failures degrade silently (log + continue); unresolved places do not emit `location` events |
+| MH_GEOCODE_PLUGGABLE | Geocoding provider is pluggable | Default is Nominatim. Server can override with any geocoding provider function |
 | MH_GEOCODE_CACHED | Geocoding cached in Valkey | Geocoding results use thirty-day TTL. When Valkey is unavailable, caching falls back to in-memory (per-process) and cache effectiveness is reduced |
 | MH_LOCATION_SUPPRESSED | Location tool hidden from client stream | `search_locations` tool-call and tool-result events are suppressed from SSE output. Client receives only clean `location` data events |
 
@@ -209,12 +209,12 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_RATE_LIMITING | Rate limiting | `createRateLimiter` factory — Valkey sliding window sorted sets, configurable window/max, 429 with `Retry-After` |
+| MH_RATE_LIMITING | Rate limiting | Rate limiter factory — Valkey sliding-window sorted sets, configurable window and max, 429 with `Retry-After` |
 | MH_STRUCTURED_LOGGING | Structured logging | LogTape with hierarchical categories — library uses `getLogger`, server calls `configure` once at startup. AsyncLocalStorage request context (requestId, userId, threadId). `@logtape/redaction` for sensitive fields, `@logtape/otel` for Langfuse correlation |
 | MH_FILE_CRUD | File management CRUD | File list, file detail, and file delete server endpoints |
 | MH_TTL_CLEANUP | TTL-based automatic cleanup | Trigger.dev scheduled task finds expired files, deletes S3 + PgVector chunks + metadata |
-| MH_CIRCUIT_BREAKER | Circuit breaker | `createCircuitBreaker` factory — closed/open/half-open states, wraps async functions with configurable failure threshold + reset timeout |
-| MH_AUTH_MIDDLEWARE | JWT auth middleware | `createAuthMiddleware` factory — verifies JWT, extracts userId to Elysia context via resolve, role-based authorization (`requireRole` helper) |
+| MH_CIRCUIT_BREAKER | Circuit breaker | Circuit breaker factory — closed/open/half-open states, wraps asynchronous operations with configurable failure threshold and reset timeout |
+| MH_AUTH_MIDDLEWARE | JWT auth middleware | Auth middleware factory — verifies JWT, extracts userId to Elysia request context, and supports role-based authorization via a role-check helper |
 
 ### Humanlikeness
 

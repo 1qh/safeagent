@@ -18,10 +18,10 @@ graph TB
     end
 
     subgraph FRONTEND_SDK_PACKAGES["Frontend SDK (safeagent monorepo)"]
-        CLIENT_PKG["@safeagent/client"]
-        REACT_PKG["@safeagent/react"]
-        UI_WEB_PKG["@safeagent/ui"]
-        UI_NATIVE_PKG["@safeagent/ui-native"]
+        CLIENT_PKG["Client SDK"]
+        REACT_PKG["React Hooks"]
+        UI_WEB_PKG["Web Components"]
+        UI_NATIVE_PKG["Native Components"]
     end
 
     subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
@@ -201,9 +201,9 @@ graph LR
     end
 
     subgraph FRONTEND_PACKAGES["Frontend SDK"]
-        REACT_HOOKS_PKG["@safeagent/react"]
-        WEB_UI_PKG["@safeagent/ui"]
-        NATIVE_UI_PKG["@safeagent/ui-native"]
+        REACT_HOOKS_PKG["React Hooks"]
+        WEB_UI_PKG["Web Components"]
+        NATIVE_UI_PKG["Native Components"]
     end
 
     subgraph DEMO_PACKAGES["Demo Applications"]
@@ -244,7 +244,7 @@ graph LR
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Framework | @openai/agents + aisdk() bridge + Elysia (HTTP) | Agent/Runner/Handoff/Guardrail primitives with AI SDK model bridge and Bun-native HTTP layer |
+| Framework | @openai/agents + SDK bridge helper + Elysia (HTTP) | Agent/Runner/Handoff/Guardrail primitives with AI SDK model bridge and Bun-native HTTP layer |
 | Runtime | Bun only | Performance, native TypeScript, zero external runtime dependency |
 | Primary Model | Gemini Flash Lite (single model for everything) | Cost-efficient, fast, multimodal, structured output |
 | Conversation Pipeline | Unified: embedding router → LLM intent → source routing → response | Single coherent flow from input to output with humanlikeness signals at every stage |
@@ -260,7 +260,7 @@ graph LR
 | RAG | Own Drizzle page_index with RRF hybrid search | 3-arm fusion: vector summaries + vector raw text + keyword |
 | Memory | Three-layer: thread short-term (Postgres) + user short-term (Postgres) + long-term (SurrealDB) | Conversation context + cross-thread continuity + persistent knowledge |
 | Humanlikeness | 13 engine-level behaviors woven into conversation pipeline, agents, and memory | Correction handling, frustration detection, response energy, emotional context, style memory, fact supersession, clarification patience, and more |
-| Streaming | RunStreamEvent format throughout | No format bridge, direct streaming path via Runner.run(), TripWire safety |
+| Streaming | Framework stream-event format throughout | No format bridge, direct streaming path via the framework's execution method, TripWire safety |
 | Frontend SDK | @safeagent/client → @safeagent/react → @safeagent/ui (web) + @safeagent/ui-native (RN) | Types flow once from engine through dependency chain — zero duplication, shared hooks, separate JSX |
 | Web Components | shadcn + ai-elements (48 adopted) + 8 custom | Mature Radix-backed primitives from AI SDK team, gap-fill only where needed |
 | RN Components | NativeWind, separate JSX, shared hooks | No DOM, no Radix — native implementation with hook-level parity |

@@ -22,13 +22,13 @@
 - [External References](#external-references)
 ---
 ## Architecture Overview
-Observability in safeagent flows from agent execution through the `@openai/agents` framework's tracing system into Langfuse. The framework provides a pluggable `TracingExporter` interface — safeagent implements a `LangfuseTracingExporter` that translates framework trace/span events into Langfuse API calls. The framework automatically creates spans for agent runs, LLM generations, tool calls, guardrail executions, and handoffs. Custom domain spans (guardrails, RAG stages, file processing) are added on top using the framework's `customSpan` API. User feedback from client apps feeds back into Langfuse as scores linked to original traces, closing the quality loop.
-Eval operates on a separate axis. Custom evaluation scorers run in production for live monitoring (toxicity, hallucination, faithfulness). Promptfoo runs offline for regression testing — it is an external CLI tool, not a library import. Our code spawns it as a subprocess via `Bun.spawn` for fully automated, zero-human-intervention eval execution.
+Observability in safeagent flows from agent execution through the `@openai/agents` framework's tracing system into Langfuse. The framework provides a pluggable `TracingExporter` interface — safeagent implements a tracing exporter that translates framework trace/span events into Langfuse API calls. The framework automatically creates spans for agent runs, LLM generations, tool calls, guardrail executions, and handoffs. Custom domain spans (guardrails, RAG stages, file processing) are added on top using the framework's `customSpan` API. User feedback from client apps feeds back into Langfuse as scores linked to original traces, closing the quality loop.
+Eval operates on a separate axis. Custom evaluation scorers run in production for live monitoring (toxicity, hallucination, faithfulness). Promptfoo runs offline for regression testing — it is an external CLI tool, not a library import. Our code spawns it as a subprocess via subprocess spawning for fully automated, zero-human-intervention eval execution.
 ```mermaid
 graph TB
     subgraph RUNTIME["Agent Runtime"]
         direction TB
-        AGENT["Agent Execution\n(createAgent runtime)"]
+        AGENT["Agent Execution\n(agent factory runtime)"]
         GUARD_IN["Input Guardrail\nProcessor"]
         LLM["LLM Generation\n(Gemini)"]
         TOOLS["Tool Calls\n(MCP + built-in)"]
@@ -81,7 +81,7 @@ graph TB
     FB_EP -->|"scoreHelper"| LF_EXP
     SCORERS -->|"sampling"| LF_EXP
     PF -->|"HTTP requests"| HTTP_PROVIDER
-    HTTP_PROVIDER -->|"Runner.run(agent, input)"| AGENT
+    HTTP_PROVIDER -->|"execute agent run for request input"| AGENT
 ```
 The design separates concerns cleanly. Application instrumentation traces structural events (agent lifecycle, LLM calls, tool invocations). Custom spans add domain semantics (guardrail verdicts, search arm scores, page processing progress). Scoring links trace quality to user outcomes. Prompt management enables runtime instruction changes without redeployment.
 ---
@@ -198,9 +198,9 @@ Trace-step SSE events (defined in [11 — Streaming & Transport](./11-transport.
 | **Review** | Dashboards and alerts consume traces, scores, and derived metrics for operational decisions. | Quality, safety, latency, and cost signal views with alert routing. |
 ---
 ## Langfuse Observability Module
-The observability module is a thin factory that composes direct `langfuse` SDK initialization and custom redaction helpers into a single creation point. It returns two things: the `LangfuseTracingExporter` for framework tracing, and a pre-wired `scoreHelper` for writing scores to traces.
+The observability module is a thin factory that composes direct `langfuse` SDK initialization and custom redaction helpers into a single creation point. It returns two things: the tracing exporter for framework tracing, and a pre-wired `scoreHelper` for writing scores to traces.
 ### Factory Design
-`createObservability` reads configuration from its argument or falls back to environment variables. It constructs a `Langfuse` client, builds the `LangfuseTracingExporter`, attaches the two-stage PII redaction layer (Presidio followed by structured-output LLM review), and returns both components.
+observability factory reads configuration from its argument or falls back to environment variables. It constructs a `Langfuse` client, builds the tracing exporter, attaches the two-stage PII redaction layer (Presidio followed by structured-output LLM review), and returns both components.
 ```mermaid
 graph LR
     subgraph CONFIG["Configuration Resolution"]
@@ -209,15 +209,15 @@ graph LR
         ENV --> MERGE["Merged Config"]
         ARG --> MERGE
     end
-    subgraph FACTORY["createObservability()"]
+    subgraph FACTORY["observability factory()"]
         MERGE --> CHECK{"LANGFUSE_PUBLIC_KEY\nset?"}
-        CHECK -->|"Yes"| BUILD["Build Langfuse client\n+ LangfuseTracingExporter\n+ PII redaction\n+ ScoreHelper"]
+        CHECK -->|"Yes"| BUILD["Build Langfuse client\n+ tracing exporter\n+ PII redaction\n+ ScoreHelper"]
         CHECK -->|"No"| NOOP["Return no-ops\nexporter: null\nscoreHelper: silent"]
         BUILD --> RETURN["{ exporter,\nscoreHelper }"]
         NOOP --> RETURN
     end
     subgraph CONSUMERS["Consumers"]
-        AGENT_RUNTIME["createAgent runtime\nwith tracing helpers"]
+        AGENT_RUNTIME["agent factory runtime\nwith tracing helpers"]
         SERVER["Server routes\n(scoreHelper)"]
         ADVANCED["Custom spans\n(exporter)"]
     end
@@ -245,7 +245,7 @@ Production deployments can reduce trace volume with sampling. The factory accept
 | `ratio` | Trace a percentage of requests (e.g., `probability: 0.1` for 10%) |
 | `custom` | Caller-provided sampler function for conditional tracing (e.g., always trace flagged requests) |
 ### Score Helper
-`createScoreHelper` wraps the exporter's `addScoreToTrace` into a cleaner two-method API:
+scoring helper factory wraps the exporter's `addScoreToTrace` into a cleaner two-method API:
 | Method | Signature | Use Case |
 |--------|-----------|----------|
 | `boolean` | accepts traceId, optional spanId, name, value, optional comment | Guardrail pass/fail, user feedback |
@@ -267,7 +267,7 @@ graph TB
             INPUT --> GI
             GI -->|"p2 pass"| AGENT_RUN
             GI -->|"p0 block"| BLOCKED["Fallback Response"]
-            GI -->|"p1 flag"| FLAG_CB["createGuardrailFlagCallback\n→ guardrail.flagged span"]
+            GI -->|"p1 flag"| FLAG_CB["guardrail flag callback factory\n→ guardrail.flagged span"]
             GI -.-> GI_SCORE
             FLAG_CB --> AGENT_RUN
         end
@@ -293,7 +293,7 @@ graph TB
 ```
 ### Span Catalog
 #### Input Guardrail Span
-Added to `createInputGuardrailProcessor` via an optional `scoreHelper` parameter. After the guardrail check completes:
+Added to input guardrail processor factory via an optional `scoreHelper` parameter. After the guardrail check completes:
 | Attribute | Value |
 |-----------|-------|
 | Span name | `guardrail.input` |
@@ -301,9 +301,9 @@ Added to `createInputGuardrailProcessor` via an optional `scoreHelper` parameter
 | Boolean score | `guardrail_input_pass` — `true` if p2 (safe), `false` if p0 (blocked) |
 | On p0 | Additional score: `guardrail_blocked` on the trace with conceptId |
 | On p1 | Additional score: `guardrail_flagged` on the trace with conceptId |
-The p1 flag callback (`createGuardrailFlagCallback`) is a standalone export that emits a custom Langfuse span: `{ name: 'guardrail.flagged', attributes: { severity: 'p1', conceptId, text: truncated } }`. The server passes this as `onFlag` in `GuardrailPipelineConfig` — guardrail code never imports observability code. This decoupling means the guardrail module has zero knowledge of Langfuse.
+The p1 flag callback (guardrail flag callback factory) is a standalone export that emits a custom Langfuse span: `{ name: 'guardrail.flagged', attributes: { severity: 'p1', conceptId, text: truncated } }`. The server passes this as `onFlag` in `GuardrailPipelineConfig` — guardrail code never imports observability code. This decoupling means the guardrail module has zero knowledge of Langfuse.
 #### Streaming Output Guardrail Span
-Added to `createOutputGuardrailProcessor` via an optional `scoreHelper` parameter. After the stream completes or a tripwire fires:
+Added to output guardrail processor factory via an optional `scoreHelper` parameter. After the stream completes or a tripwire fires:
 | Attribute | Value |
 |-----------|-------|
 | Span name | `guardrail.output` |
@@ -366,7 +366,7 @@ Wraps long-term memory operations:
 | | `memory.graph_traverse` (depth, nodes visited) |
 | | `memory.expire_stale` (expired count) |
 #### PII redaction integration
-All spans pass through a two-layer PII redaction pipeline before export. The first stage uses Presidio for deterministic entity detection and masking. The second stage uses a structured-output LLM pass that classifies and normalizes residual sensitive fragments missed by deterministic detection. Redaction is enabled by default in `createObservability` and can be disabled only in tightly controlled debugging sessions.
+All spans pass through a two-layer PII redaction pipeline before export. The first stage uses Presidio for deterministic entity detection and masking. The second stage uses a structured-output LLM pass that classifies and normalizes residual sensitive fragments missed by deterministic detection. Redaction is enabled by default in observability factory and can be disabled only in tightly controlled debugging sessions.
 #### Graceful No-Op
 Every custom span checks whether the `scoreHelper` parameter was provided. When observability is not configured, the parameter is `undefined` and no span or score creation is attempted. Guardrail logic, RAG queries, and file processing all work identically with or without tracing.
 ---
@@ -461,7 +461,7 @@ sequenceDiagram
 | Score name | `user_feedback` |
 | Langfuse link | Score linked to original trace via `traceId` |
 ### Trace ownership
-The server records `{ traceId, userId }` when the SSE stream starts in a Postgres `trace_owners` table (managed by Drizzle ORM, inserted by `createStreamHandler` before the first SSE event) and checks this mapping before accepting feedback. This is not storing feedback content; it is a minimal ownership check to prevent a user from submitting scores for another user's trace.
+The server records `{ traceId, userId }` when the SSE stream starts in a Postgres `trace_owners` table (managed by Drizzle ORM, inserted by stream handler factory before the first SSE event) and checks this mapping before accepting feedback. This is not storing feedback content; it is a minimal ownership check to prevent a user from submitting scores for another user's trace.
 ### Graceful Degradation
 When Langfuse is not configured (`LANGFUSE_PUBLIC_KEY` absent), the endpoint still accepts requests. The no-op `scoreHelper` silently drops the score. The response is `200 { ok: true, traced: false }` instead of `200 { ok: true }`. Client apps never need error handling for the no-Langfuse case.
 ### Why Not Store in Postgres
@@ -510,7 +510,7 @@ sequenceDiagram
     PM-->>AGENT: Compiled prompt string
 ```
 ### Factory Design
-`createPromptManager` returns a `PromptManager` with four methods:
+prompt management factory returns a `PromptManager` with four methods:
 | Method | Purpose |
 |--------|---------|
 | `preload` | Fetches all configured prompt keys from Langfuse at startup. Hydrates the in-memory cache. Non-fatal on failure — falls back to local prompts with a warning. |
@@ -538,7 +538,7 @@ sequenceDiagram
 The server creates a `PromptManager` during startup and passes compiled prompts into agent config composition. Agents receive their instructions as strings — they have no knowledge of whether the prompt came from Langfuse or a local fallback. This is an opt-in feature. If the server does not configure prompt management, agents use instructions defined in code.
 ---
 ## Eval/Scoring Configuration
-Evaluation has two modes: live production scoring via custom scorer functions, and offline regression testing via Promptfoo. The `createScorerConfig` helper bridges these into safeagent's agent system.
+Evaluation has two modes: live production scoring via custom scorer functions, and offline regression testing via Promptfoo. The scorer configuration builder helper bridges these into safeagent's agent system.
 ### Custom evaluation scorers (live production)
 The project defines custom scorer functions that run on a configurable sample of production traffic. Each scorer evaluates a specific quality dimension:
 | Scorer Category | Examples |
@@ -547,7 +547,7 @@ The project defines custom scorer functions that run on a configurable sample of
 | Safety | `toxicity`, `bias` |
 | Accuracy | `hallucination`, `faithfulness` |
 | Quality | `completeness`, `coherence` |
-Scorers are imported from application scorer modules. The `createScorerConfig` helper takes a record of scorer names to scorer instances with optional sampling configuration and returns a valid scorer config for agent construction.
+Scorers are imported from application scorer modules. The scorer configuration builder helper takes a record of scorer names to scorer instances with optional sampling configuration and returns a valid scorer config for agent construction.
 ### Sampling Configuration
 | Sampling Type | Behavior |
 |--------------|----------|
@@ -576,19 +576,19 @@ graph TB
 Core dashboard views cover reliability, quality, safety, and cost. Alert classes include availability, latency, quality drift, safety spikes, and spend velocity anomalies, each routed through explicit ownership and escalation policy.
 ---
 ## Self-Test Infrastructure
-Self-testing allows agents to validate themselves against a test suite. Promptfoo is the eval engine — an external CLI tool that must be installed in the environment (dev dependency or CI image). The safeagent library spawns Promptfoo as a subprocess via `Bun.spawn` for fully automated eval execution with zero human intervention.
+Self-testing allows agents to validate themselves against a test suite. Promptfoo is the eval engine — an external CLI tool that must be installed in the environment (dev dependency or CI image). The safeagent library spawns Promptfoo as a subprocess via subprocess spawning for fully automated eval execution with zero human intervention.
 ```mermaid
 sequenceDiagram
     participant BUN as Bun Process (safeagent)
     participant HTTP as Ephemeral HTTP Server (Bun, random port)
     participant PF as Promptfoo (external CLI)
-    BUN->>BUN: runSelfTest(config)
+    BUN->>BUN: self-test runner(config)
     BUN->>HTTP: Start ephemeral server (port: 0 — OS assigns)
     Note over HTTP: Wraps agent as HTTP provider
     BUN->>BUN: Generate Promptfoo config file with HTTP provider URL
-    BUN->>BUN: Spawn Promptfoo CLI via Bun.spawn
+    BUN->>BUN: Spawn Promptfoo CLI via subprocess spawning
     PF->>HTTP: Send provider request with prompt payload
-    HTTP->>BUN: Runner.run(agent, prompt)
+    HTTP->>BUN: execute agent for eval input
     BUN-->>HTTP: { output: result.text }
     HTTP-->>PF: Response
     PF->>PF: Score results
@@ -597,12 +597,12 @@ sequenceDiagram
     BUN->>HTTP: server.stop()
 ```
 ### How It Works
-The `runSelfTest` function starts an ephemeral HTTP server on a random port that wraps the agent as a Promptfoo-compatible HTTP provider. It generates eval configuration pointing to this server, then spawns Promptfoo as a subprocess via `Bun.spawn`. When the subprocess exits, `runSelfTest` parses the output file, shuts down the HTTP server, and returns structured results. The entire flow is fully automated — no human intervention required.
+The self-test runner function starts an ephemeral HTTP server on a random port that wraps the agent as a Promptfoo-compatible HTTP provider. It generates eval configuration pointing to this server, then spawns Promptfoo as a subprocess via subprocess spawning. When the subprocess exits, self-test runner parses the output file, shuts down the HTTP server, and returns structured results. The entire flow is fully automated — no human intervention required.
 Promptfoo is a CLI dependency (dev/CI only), not a library import — our code never imports the `promptfoo` package and has zero dependency on `better-sqlite3` or any Promptfoo transitive dependency. The subprocess spawning pattern keeps the dependency boundary clean.
 ### Eval Helpers
-`runEval` is the lower-level helper that handles the HTTP server, Promptfoo configuration generation, and subprocess spawning. It starts an ephemeral HTTP server wrapping the agent, generates Promptfoo configuration with the HTTP provider URL, and spawns the Promptfoo CLI via `Bun.spawn`. `runSelfTest` composes `runEval` with test case management and result parsing.
+evaluation runner is the lower-level helper that handles the HTTP server, Promptfoo configuration generation, and subprocess spawning. It starts an ephemeral HTTP server wrapping the agent, generates Promptfoo configuration with the HTTP provider URL, and spawns the Promptfoo CLI via subprocess spawning. self-test runner composes evaluation runner with test case management and result parsing.
 ### Self-Test API
-`runSelfTest` is the high-level entry point:
+self-test runner is the high-level entry point:
 | Config Field | Purpose |
 |-------------|---------|
 | `agent` | The agent instance to test |
@@ -610,11 +610,11 @@ Promptfoo is a CLI dependency (dev/CI only), not a library import — our code n
 | `scorers` | Optional list of scorer names to apply |
 | `timeout` | How long to keep the HTTP server alive (default: 5 minutes) |
 The function starts the HTTP server, generates the Promptfoo config file, and waits for eval to complete or timeout.
-### `createPromptfooProvider`
+### Eval Provider
 Wraps a safeagent Agent as a Promptfoo custom provider:
 | Field | Value |
 |-------|-------|
-| `callApi` | Calls `Runner.run(agent, prompt)`, returns `{ output: result.finalOutput, tokenUsage: { total, prompt, completion } }` |
+| `callApi` | Calls execute agent for eval input, returns `{ output: result.finalOutput, tokenUsage: { total, prompt, completion } }` |
 This provider is used in the direct in-process path (when Promptfoo runs in Bun) and as the agent-facing adapter in the HTTP bridge.
 ---
 ## Cross-References
@@ -631,16 +631,16 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 ---
 ## Task Specifications
 ### Task LANGFUSE_MODULE: Langfuse Observability Module
-**What to do**: Build the `LangfuseTracingExporter` that implements the `@openai/agents` framework's `TracingExporter` interface. The exporter translates framework `Trace` and `Span` objects into Langfuse API calls via the direct `langfuse` SDK. Register it with the framework tracing processor pipeline. Build `createObservability` factory that sets up the exporter, score helper, and PII redaction. Return `{ exporter, scoreHelper }`. Implement `createScoreHelper` with `boolean` and `numeric` methods — `spanId` parameter is optional for trace-level scores. Default to env vars. Enable the Presidio plus structured-output LLM redaction pipeline by default. Implement the full no-op path when `LANGFUSE_PUBLIC_KEY` is absent: disable tracing on the framework and return a `scoreHelper` with silent no-op `boolean` and `numeric` methods. Dev mode uses `realtime: true`, production uses `realtime: false` with configurable ratio sampling.
+**What to do**: Build the tracing exporter that implements the `@openai/agents` framework's `TracingExporter` interface. The exporter translates framework trace and span objects into Langfuse API calls via the direct `langfuse` SDK. Register it with the framework tracing processor pipeline. Build observability factory that sets up the exporter, score helper, and PII redaction. Return `{ exporter, scoreHelper }`. Implement scoring helper factory with `boolean` and `numeric` methods, with optional `spanId` for trace-level scores. Default to env vars. Enable the Presidio plus structured-output LLM redaction pipeline by default. Implement the full no-op path when `LANGFUSE_PUBLIC_KEY` is absent: disable tracing on the framework and return a score helper with silent no-op `boolean` and `numeric` methods. Dev mode uses `realtime: true`, production uses `realtime: false` with configurable ratio sampling.
 **Depends on**: CORE_TYPES (types — `ObservabilityConfig` type definition)
 **Acceptance Criteria**:
-- `LangfuseTracingExporter` implements the framework's `TracingExporter` interface (`export(items: (Trace | Span)[]): Promise<void>`)
+- tracing exporter implements the framework's `TracingExporter` interface (`export(items: (Trace | Span)[]): Promise<void>`)
 - Exporter registered via `addTraceProcessor(new BatchTraceProcessor(exporter))` — framework handles batching and retry
 - Framework auto-traces agent runs, LLM generations, tool calls, guardrail checks, and handoffs — all appear in Langfuse
-- `createObservability` returns `{ exporter, scoreHelper }` — both accessible
+- observability factory returns `{ exporter, scoreHelper }` — both accessible
 - Graceful no-op when `LANGFUSE_PUBLIC_KEY` not set: `setTracingDisabled(true)` called, `scoreHelper.boolean` and `scoreHelper.numeric` silently do nothing
 - PII redaction enabled by default, disableable via config
-- `createScoreHelper` returns helper with `boolean` and `numeric` methods
+- scoring helper factory returns helper with `boolean` and `numeric` methods
 - Config defaults read from env vars: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`
 - `realtime` defaults to `true` in development, `false` in production
 **QA Scenarios**:
@@ -651,7 +651,7 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 - Framework `BatchTraceProcessor` batches and flushes correctly under Bun runtime (call `forceFlush()` on shutdown)
 ---
 ### Task CUSTOM_SPANS: Custom Observability Spans
-**What to do**: Instrument six high-value tracing points with custom spans and scores. (1) Input guardrail span in `createInputGuardrailProcessor` — boolean score `guardrail_input_pass`, plus `guardrail_blocked` or `guardrail_flagged` scores on p0/p1. (2) Streaming output guardrail span in `createOutputGuardrailProcessor` — boolean score `guardrail_output_pass`, plus `guardrail_tripwire` if abort is called. (3) RAG pipeline spans: parent `rag.pipeline` with children `rag.embed_query`, `rag.hybrid_search` (indexed mode with arm scores) or `rag.vector_search` (RAG mode), `rag.fetch_context`, `rag.answer`. (4) File processing spans: parent `file.process` with children for blocking stage (`file.split_pages`, `file.summarize`, `file.embed_summaries`), background stage (`file.enrich`), RAG mode (`file.chunk`, `file.embed_chunks`), and DOCX conversion (`file.convert_docx`). (5) Memory operation spans: parent `memory.operation` with children `memory.store_fact`, `memory.search`, `memory.graph_traverse`, `memory.expire_stale`. (6) Export `createGuardrailFlagCallback` — returns a callback that emits a `guardrail.flagged` Langfuse span with p1 details, decoupling guardrail code from observability code. All spans are no-op when observability is not configured.
+**What to do**: Instrument six high-value tracing points with custom spans and scores. (1) Input guardrail span in input guardrail processor factory — boolean score `guardrail_input_pass`, plus `guardrail_blocked` or `guardrail_flagged` scores on p0/p1. (2) Streaming output guardrail span in output guardrail processor factory — boolean score `guardrail_output_pass`, plus `guardrail_tripwire` if abort is called. (3) RAG pipeline spans: parent `rag.pipeline` with children `rag.embed_query`, `rag.hybrid_search` (indexed mode with arm scores) or `rag.vector_search` (RAG mode), `rag.fetch_context`, `rag.answer`. (4) File processing spans: parent `file.process` with children for blocking stage (`file.split_pages`, `file.summarize`, `file.embed_summaries`), background stage (`file.enrich`), RAG mode (`file.chunk`, `file.embed_chunks`), and DOCX conversion (`file.convert_docx`). (5) Memory operation spans: parent `memory.operation` with children `memory.store_fact`, `memory.search`, `memory.graph_traverse`, `memory.expire_stale`. (6) Export guardrail flag callback factory — returns a callback that emits a `guardrail.flagged` Langfuse span with p1 details, decoupling guardrail code from observability code. All spans are no-op when observability is not configured.
 **Depends on**: LANGFUSE_MODULE (observability module), INPUT_GUARD (input guardrail), OUTPUT_GUARD (streaming guardrail), RAG_INFRA (RAG infrastructure)
 **Acceptance Criteria**:
 - Input guardrail emits `guardrail_input_pass` boolean score on every check
@@ -660,7 +660,7 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 - File processing emits `file.process` span with child spans matching the processing mode
 - `file.convert_docx` span emitted for DOCX-to-PDF conversion
 - Memory operations emit `memory.operation` parent with appropriate child spans
-- `createGuardrailFlagCallback` returns a function compatible with `onFlag` in `GuardrailPipelineConfig`
+- guardrail flag callback factory returns a function compatible with `onFlag` in `GuardrailPipelineConfig`
 - All spans are no-op when `scoreHelper` is `undefined` (observability not configured)
 - No span or score creation attempted without observability — guardrails, RAG, file processing all work identically
 **QA Scenarios**:
@@ -672,7 +672,7 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 > **FEEDBACK_ENDPOINT** — canonical task specification is in [12 — Server Implementation](./12-server.md#task-feedback_endpoint-feedback-endpoint). The server route wires Langfuse score submission to the HTTP layer. See also LANGFUSE_MODULE for the scoreHelper dependency.
 ---
 ### Task PROMPT_MGMT: Langfuse Prompt Management Integration
-**What to do**: Build `createPromptManager` factory returning a `PromptManager` with `preload`, `get`, `refresh`, and `stats` methods. `preload` fetches configured prompt keys from the Langfuse API at startup and hydrates an in-memory cache with per-entry expiry. `get` serves cached prompts with variable interpolation (`{{var}}` tokens) and strict missing-variable checks. On cache miss or expiry, attempt refresh then fall back to local prompts from `fallbackPrompts` config. Wrap remote fetches with the CIRCUIT_BREAKER circuit breaker to avoid repeated latency spikes. Use `AbortController` to bound network calls. Never fail startup when Langfuse is unavailable and fallback prompts exist. Never expose Langfuse secret key in logs or error messages. Export via subpath barrel.
+**What to do**: Build prompt management factory returning a prompt manager with `preload`, `get`, `refresh`, and `stats` methods. `preload` fetches configured prompt keys from the Langfuse API at startup and hydrates an in-memory cache with per-entry expiry. `get` serves cached prompts with variable interpolation (`{{var}}` tokens) and strict missing-variable checks. On cache miss or expiry, attempt refresh then fall back to local prompts from `fallbackPrompts` config. Wrap remote fetches with the CIRCUIT_BREAKER circuit breaker to avoid repeated latency spikes. Use `AbortController` to bound network calls. Never fail startup when Langfuse is unavailable and fallback prompts exist. Never expose Langfuse secret key in logs or error messages. Export via subpath barrel.
 **Depends on**: LANGFUSE_MODULE (Langfuse observability — env handling patterns, credential management)
 **Acceptance Criteria**:
 - `preload` fetches remote prompts and hydrates in-memory cache
@@ -689,32 +689,32 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 - Set cache TTL to 100ms → `preload` → wait 200ms → `get` → assert refresh attempted → if Langfuse still available, new value served; if unavailable, stale value served
 ---
 ### Task EVAL_CONFIG: Eval/Scoring Configuration Helpers
-**What to do**: Build `createScorerConfig` — configures custom scorer functions for live production monitoring with sampling support. Re-export commonly used project scorer factories (answerRelevancy, toxicity, hallucination, faithfulness, promptAlignment). Build `createPromptfooProvider` — wraps a safeagent Agent as a Promptfoo custom provider with `callApi` that calls `Runner.run(agent, prompt)` and returns `{ output, tokenUsage }`. Build `runEval` — starts an ephemeral HTTP server wrapping the agent, generates Promptfoo configuration with the HTTP provider URL, and spawns the Promptfoo CLI as a subprocess via `Bun.spawn`. Promptfoo is a CLI dev dependency — our code never imports the `promptfoo` package (no library dependency), but spawns it as a subprocess for fully automated execution.
+**What to do**: Build scorer configuration builder — configures custom scorer functions for live production monitoring with sampling support. Re-export commonly used project scorer factories (answerRelevancy, toxicity, hallucination, faithfulness, promptAlignment). Build eval provider factory — wraps a safeagent Agent as a Promptfoo custom provider with `callApi` that calls execute agent for eval input and returns `{ output, tokenUsage }`. Build evaluation runner — starts an ephemeral HTTP server wrapping the agent, generates Promptfoo configuration with the HTTP provider URL, and spawns the Promptfoo CLI as a subprocess via subprocess spawning. Promptfoo is a CLI dev dependency — our code never imports the `promptfoo` package (no library dependency), but spawns it as a subprocess for fully automated execution.
 **Depends on**: AGENT_FACTORY (agent factory — agent instance for provider wrapping)
 **Acceptance Criteria**:
-- `createScorerConfig` produces valid scorer config with sampling support
-- `createPromptfooProvider` wraps agent with correct Promptfoo provider interface (`callApi` method)
+- scorer configuration builder produces valid scorer config with sampling support
+- eval provider factory wraps agent with correct Promptfoo provider interface (`callApi` method)
 - HTTP server starts on random port and responds to Promptfoo provider requests
 - Promptfoo config file generated with correct HTTP provider URL
 - Server shuts down after timeout
 **QA Scenarios**:
-- Call `createScorerConfig` with toxicity scorer → assert returns valid config object with sampling metadata
-- Call `createPromptfooProvider` → assert returned object has `callApi` method → call it → assert `Runner.run(agent, prompt)` was invoked → assert response has `output` and `tokenUsage`
-- Call `runEval` with mock config → assert HTTP server starts on random port → assert generated config includes correct provider URL
-- Start server from `runEval` flow → send a request with `{ prompt: 'test' }` → assert response contains `{ output }` → wait for timeout → assert server stops and port is released
+- Call scorer configuration builder with toxicity scorer → assert returns valid config object with sampling metadata
+- Call eval provider factory → assert returned object has `callApi` method → call it → assert execute agent for eval input was invoked → assert response has `output` and `tokenUsage`
+- Call evaluation runner with mock config → assert HTTP server starts on random port → assert generated config includes correct provider URL
+- Start server from evaluation runner flow → send a request with `{ prompt: 'test' }` → assert response contains `{ output }` → wait for timeout → assert server stops and port is released
 ---
 ### Task SELF_TEST: Self-Test Infrastructure (Promptfoo External CLI)
-**What to do**: Build `runSelfTest` — the self-testing loop for agents. Accepts `SelfTestConfig` with `agent`, `testCases`, optional `scorers`, and optional `timeout`. Workflow: start ephemeral HTTP server wrapping the agent (using EVAL_CONFIG's HTTP server pattern), generate Promptfoo configuration with HTTP provider URL and test cases, spawn Promptfoo CLI via `Bun.spawn`, wait for subprocess exit, parse results from output file, shut down server, return structured `SelfTestResult`. Fully automated — zero human intervention. Promptfoo is a CLI dev dependency (not a library import).
-**Depends on**: EVAL_CONFIG (eval helpers — HTTP server pattern, `createPromptfooProvider`, `runEval`)
+**What to do**: Build self-test runner — the self-testing loop for agents. Accepts `SelfTestConfig` with `agent`, `testCases`, optional `scorers`, and optional `timeout`. Workflow: start ephemeral HTTP server wrapping the agent (using EVAL_CONFIG's HTTP server pattern), generate Promptfoo configuration with HTTP provider URL and test cases, spawn Promptfoo CLI via subprocess spawning, wait for subprocess exit, parse results from output file, shut down server, return structured `SelfTestResult`. Fully automated — zero human intervention. Promptfoo is a CLI dev dependency (not a library import).
+**Depends on**: EVAL_CONFIG (eval helpers — HTTP server pattern, eval provider factory, evaluation runner)
 **Acceptance Criteria**:
-- `runSelfTest` generates valid Promptfoo config from test cases
+- self-test runner generates valid Promptfoo config from test cases
 - HTTP server starts on a random port and responds to requests with `{ output }` JSON
 - Promptfoo config file generated with all test cases
 - Server shuts down after timeout
 - Results parsed if Promptfoo output file exists
 **QA Scenarios**:
-- Call `runSelfTest` with mock agent and test cases → assert HTTP server started → assert generated config contains all test cases → assert server stopped after completion/timeout
-- Call `runSelfTest` without Promptfoo output file present → assert timeout path returns structured result without crash
+- Call self-test runner with mock agent and test cases → assert HTTP server started → assert generated config contains all test cases → assert server stopped after completion/timeout
+- Call self-test runner without Promptfoo output file present → assert timeout path returns structured result without crash
 - Provide test case with assertion that should fail → assert result marks that test case as failed with `gradingResult.reason`
 - Multiple test cases → assert all are executed and results array has one entry per test case
 ---

@@ -25,32 +25,32 @@ The complete infrastructure stack spans three container-orchestration profiles. 
 ```mermaid
 graph TB
     subgraph CORE_SERVICES["Core Services (always running)"]
-        POSTGRES_DB[("PostgreSQL + pgvector\n:5432")]
-        SURREAL_DB[("SurrealDB\n:8000")]
-        MINIO_STORAGE[("MinIO S3\n:9000 / :9001")]
-        VALKEY_CACHE[("Valkey\n:6379")]
+        POSTGRES_DB[("PostgreSQL + pgvector")]
+        SURREAL_DB[("SurrealDB")]
+        MINIO_STORAGE[("MinIO S3")]
+        VALKEY_CACHE[("Valkey")]
         LIBREOFFICE_SIDECAR["LibreOffice Sidecar\n(separate Compose service)"]
     end
     subgraph TRIGGER_PROFILE["Trigger.dev Profile (opt-in)"]
-        TRIGGER_WEBAPP["trigger-webapp\n:3040"]
+        TRIGGER_WEBAPP["trigger-webapp"]
         TRIGGER_SUPERVISOR["trigger-supervisor"]
         TRIGGER_DOCKER_PROXY["trigger-docker-proxy"]
         TRIGGER_ELECTRIC["trigger-electric"]
-        TRIGGER_REGISTRY["trigger-registry\n:5000"]
+        TRIGGER_REGISTRY["trigger-registry"]
     end
     subgraph LANGFUSE_PROFILE["Langfuse Profile (opt-in)"]
-        CLICKHOUSE_DB[("ClickHouse\n:8123")]
-        LANGFUSE_REDIS[("Redis\n:6380")]
-        LANGFUSE_WEB["langfuse-web\n:3100"]
+        CLICKHOUSE_DB[("ClickHouse")]
+        LANGFUSE_REDIS[("Redis")]
+        LANGFUSE_WEB["langfuse-web"]
         LANGFUSE_WORKER["langfuse-worker"]
     end
     subgraph API_LAYER["API Layer (stateless, N instances)"]
-        ELYSIA_API["Elysia API Server\n:3000"]
+        ELYSIA_API["Elysia API Server"]
     end
     ELYSIA_API -->|"Drizzle ORM"| POSTGRES_DB
     ELYSIA_API -->|"WebSocket"| SURREAL_DB
     ELYSIA_API -->|"S3 protocol"| MINIO_STORAGE
-    ELYSIA_API -->|"ioredis"| VALKEY_CACHE
+    ELYSIA_API -->|"Redis client library"| VALKEY_CACHE
     ELYSIA_API -->|"HTTP API"| TRIGGER_WEBAPP
     ELYSIA_API -->|"langfuse SDK"| LANGFUSE_WEB
     TRIGGER_WEBAPP --> POSTGRES_DB
@@ -123,7 +123,7 @@ graph LR
 | **db** | pgvector/pgvector | 5432 | Short-term memory, Drizzle ORM tables, PgVector chunks, file metadata, Langfuse DB, Trigger DB | Native database readiness probe | pg_data |
 | **surrealdb** | surrealdb/surrealdb | 8000 | Long-term memory (graph + vector) | Service health endpoint probe | surrealdb_data |
 | **minio** | minio/minio | 9000, 9001 | S3-compatible file storage, Langfuse media | Object storage liveness endpoint probe | minio_data |
-| **minio-init** | minio/mc | — | Auto-creates `safeagent` and `langfuse-media` buckets | — | — |
+| **minio-init** | minio/mc | — | Auto-creates application and media buckets | — | — |
 | **valkey** | valkey/valkey | 6379 | Cache, budget counters, rate limiting sorted sets | Cache service ping probe | valkey_data |
 | **trigger-webapp** | triggerdotdev/trigger.dev | 3040 | Background job dashboard and API | — | — |
 | **trigger-supervisor** | triggerdotdev/supervisor | — | Manages containerized worker execution | — | — |
@@ -157,8 +157,8 @@ This strategy aligns with [03 — System Architecture](./03-architecture.md), [0
 The key pool distributes Gemini API calls across N API keys using round-robin. A single key adds zero overhead. N keys provide N× throughput by spreading requests across independent rate limit quotas.
 ```mermaid
 flowchart TB
-    KEY_ENV["GOOGLE_API_KEY\n(read via KEY_POOL_ENV constant)\nkey1,key2,key3"]
-    POOL_FACTORY["createKeyPool(config)"]
+    KEY_ENV["GOOGLE_API_KEY\n(read via key pool environment variable)\nkey1,key2,key3"]
+    POOL_FACTORY["key pool factory"]
     KEY_POOL_INSTANCE["KeyPool Instance"]
     KEY_ENV --> POOL_FACTORY
     POOL_FACTORY --> KEY_POOL_INSTANCE
@@ -196,21 +196,21 @@ flowchart LR
     end
 ```
 ### Key Concepts
-- **Comma-separated env var** — the `KEY_POOL_ENV` constant resolves to the `GOOGLE_API_KEY` environment variable (see [04 — Foundation](./04-foundation.md)). That variable contains API keys separated by commas. Whitespace is trimmed. A single key with no comma means no pool is created, and callers use the provider directly.
+- **Comma-separated env var** — the key pool environment variable resolves to the `GOOGLE_API_KEY` environment variable (see [04 — Foundation](./04-foundation.md)). That variable contains API keys separated by commas. Whitespace is trimmed. A single key with no comma means no pool is created, and callers use the provider directly.
 - **Independent counters** — provider and embedder calls cycle through keys independently. Summarization may call the provider first and the embedder later, and separate counters distribute load evenly across both paths.
 - **Per-key concurrency** — default is 5 concurrent requests per key. With 3 keys, the system supports 15 concurrent API calls. This is configurable through `perKeyConcurrency`.
 - **Health checking** — each key tracks consecutive failures. After 3 failures, the key is marked unhealthy and skipped. A background probe re-tests unhealthy keys every 60 seconds. If all keys are unhealthy, the pool falls back to round-robin across all keys in degraded mode.
-- **Factory from env** — `createKeyPoolFromEnv` reads the env var, returns `undefined` for missing or single-key scenarios, and returns a `KeyPool` for two or more keys.
+- **Factory from env** — the key pool env helper reads the env var, returns `undefined` for missing or single-key scenarios, and returns a key pool for two or more keys.
 ---
 ## Valkey Cache
-Valkey provides sub-millisecond read and write for budget counters, rate limiting sorted sets, and general-purpose caching. The connection uses `redis://` protocol. When Valkey is unavailable, an in-memory fallback satisfies the same interface for development and testing.
+Valkey provides sub-millisecond read and write for budget counters, rate limiting sorted sets, and general-purpose caching. The connection uses a Redis connection URL. When Valkey is unavailable, an in-memory fallback satisfies the same interface for development and testing.
 ```mermaid
 flowchart TB
-    subgraph CACHE_FACTORY["createCache(config?)"]
+    subgraph CACHE_FACTORY["cache factory"]
         direction TB
         VALKEY_URL_CHECK{"VALKEY_URL\nset?"}
-        VALKEY_IMPL["createValkeyCache(url)\nioredis client"]
-        MEMORY_IMPL["createMemoryCache()\nMap-backed fallback"]
+        VALKEY_IMPL["Valkey-backed cache\nRedis client library"]
+        MEMORY_IMPL["In-memory cache\nMap-backed fallback"]
         VALKEY_URL_CHECK -->|Yes| VALKEY_IMPL
         VALKEY_URL_CHECK -->|No| MEMORY_IMPL
     end
@@ -225,12 +225,12 @@ flowchart TB
         CACHE_EXPIRE["expire(key, ttl)"]
         CACHE_CLOSE["close()"]
         CACHE_HEALTH["isHealthy()"]
-        CACHE_CLIENT["getClient()"]
+        CACHE_CLIENT["raw client accessor"]
     end
     CACHE_FACTORY --> CACHE_INTERFACE
     subgraph CACHE_CONSUMERS["Cache Consumers"]
         BUDGET_COUNTERS["Budget Counters (COST_TRACKING)\natomic INCR/INCRBY"]
-        RATE_LIMIT_CONSUMER["Rate Limiting (RATE_LIMITING)\nsorted sets via getClient()"]
+        RATE_LIMIT_CONSUMER["Rate Limiting (RATE_LIMITING)\nsorted sets via raw client accessor"]
         LIMIT_CACHE["Budget Limit Cache\nper-user overrides, 5-min TTL"]
     end
     CACHE_INTERFACE --> CACHE_CONSUMERS
@@ -253,9 +253,9 @@ flowchart LR
     BUDGET_KEY_HELPERS --> VALKEY_REALTIME_OPS
 ```
 ### In-Memory Fallback
-The memory cache implements the identical `Cache` interface using a `Map`. TTL is checked on read. A periodic sweep every 60 seconds prevents unbounded growth in long-running development servers. `getClient` returns `null` in memory mode, and consumers that need raw ioredis operations such as sorted sets or transactional units degrade to no-op or sequential fallback.
+The memory cache implements the identical `Cache` interface using a `Map`. TTL is checked on read. A periodic sweep every 60 seconds prevents unbounded growth in long-running development servers. The raw client accessor returns `null` in memory mode, and consumers that need raw Redis client library operations such as sorted sets or transactional units degrade to no-op or sequential fallback.
 ### Connection URL
-The `VALKEY_URL` environment variable must use the `redis://` scheme. Using `valkey://` causes a connection error.
+The `VALKEY_URL` environment variable must use a Redis connection URL scheme. Using `valkey://` causes a connection error.
 ---
 ## Cost Tracking and Budget Enforcement
 Budget enforcement follows an event-sourced design with two layers: a hot path through Valkey for real-time decisions and a cold path through Postgres for audit and reconciliation.
@@ -303,7 +303,7 @@ flowchart TB
 3. Compare counters against limits and return `BudgetCheckResult` with `allowed`, `daily`, `monthly`, and `resetsAt`.
 4. Daily keys auto-expire at midnight UTC, and monthly keys expire at month end. Fresh counters start at zero for each new period.
 ### Token Recording
-Token recording uses ioredis transactional atomicity where increment and expiration are committed as one unit. This prevents orphaned keys that never expire if one operation succeeds and the other fails. In memory mode, sequential operations are acceptable for development. The Postgres insert into `usage_events` is fire-and-forget and never blocks the response.
+Token recording uses Redis client library transactional atomicity where increment and expiration are committed as one unit. This prevents orphaned keys that never expire if one operation succeeds and the other fails. In memory mode, sequential operations are acceptable for development. The Postgres insert into `usage_events` is fire-and-forget and never blocks the response.
 ### Budget INCRBY Pessimistic Reservation Model
 Budget enforcement uses a pessimistic reservation pattern on accumulating spend counters:
 - Before starting an LLM call, the system atomically increments the period spend counter by estimated token count using `INCRBY`.
@@ -322,14 +322,14 @@ Trigger.dev handles all background job execution. In production, tasks run in is
 flowchart TB
     subgraph TASK_DISPATCH["Task Dispatch"]
         API_CALLER["API Server\nqueue.trigger(taskId, payload)"]
-        ADAPTER_FACTORY["createQueueAdapter(deps)"]
+        ADAPTER_FACTORY["queue adapter factory"]
         TRIGGER_ENV_CHECK{"TRIGGER_DEV_API_URL\nset?"}
         API_CALLER --> ADAPTER_FACTORY
         ADAPTER_FACTORY --> TRIGGER_ENV_CHECK
     end
     subgraph PRODUCTION_PATH["Production Path"]
-        TRIGGER_ADAPTER["createTriggerAdapter(config)"]
-        TRIGGER_HTTP_POST["HTTP POST\nTrigger.dev task endpoint\nBearer auth + JSON payload"]
+        TRIGGER_ADAPTER["queue adapter factory (remote dispatcher)"]
+        TRIGGER_HTTP_POST["Task dispatch request\nTrigger.dev task endpoint\nBearer auth + JSON payload"]
         TRIGGER_WEBAPP_SERVICE["Trigger.dev Webapp"]
         TRIGGER_SUPERVISOR_PROC["Supervisor"]
         TASK_CONTAINER["Container\nIsolated task execution"]
@@ -342,7 +342,7 @@ flowchart TB
         TRIGGER_WEBAPP_SERVICE --> TRIGGER_DASHBOARD
     end
     subgraph DEVELOPMENT_PATH["Development Path"]
-        IN_PROCESS_ADAPTER["createInProcessAdapter(handlers)"]
+        IN_PROCESS_ADAPTER["queue adapter factory (in-process fallback)"]
         HANDLER_EXECUTION["Handler executes in-process\nFire-and-forget\nTracked in runningTasks Set"]
         TRIGGER_ENV_CHECK -->|No| IN_PROCESS_ADAPTER
         IN_PROCESS_ADAPTER --> HANDLER_EXECUTION
@@ -366,22 +366,22 @@ flowchart LR
     TASK_CLEANUP --- PAYLOAD_CLEANUP
 ```
 ### Task Handlers
-Each registered task maps to a shared handler function. `processBackgroundStageJob` handles document enrichment through object retrieval, text extraction, embedding, and upsert; `runBudgetAggregation` handles Postgres-to-Valkey reconciliation with distributed locking; `runCleanup` handles asynchronous file and data cleanup; and `cleanupExpiredFiles` performs scheduled TTL sweeps for expired file records.
+Each registered task maps to a shared handler function. The document enrichment handler covers object retrieval, text extraction, embedding, and upsert; the budget aggregation handler covers Postgres-to-Valkey reconciliation with distributed locking; the cleanup handler covers asynchronous file and data cleanup; and the expired file cleanup function performs scheduled TTL sweeps for expired file records.
 ### QueueAdapter Interface
-The `QueueAdapter` exposes `trigger` for immediate dispatch. The adapter is created once at server startup and injected into route handlers and pipeline functions.
+The queue adapter interface exposes immediate dispatch. The adapter is created once at server startup and injected into route handlers and pipeline functions.
 ### In-Process Adapter Details
 The in-process adapter tracks running tasks in a `Set<Promise<void>>`. Handler failures are caught and logged and never propagate to callers. `getRunningCount` exposes in-flight tasks for health monitoring. During graceful shutdown, the server awaits `Promise.allSettled` to drain running jobs.
 ### Handler Idempotency
 The background enrichment handler uses `UPSERT` keyed on `file_id + page_number`. Since `page_index` has exactly one row per physical page with nullable enrichment columns populated during processing, retries after partial failure update existing rows without creating duplicates.
 ---
 ## Rate Limiting
-The `createRateLimiter` middleware factory produces per-route rate limiting using Valkey sorted sets and a sliding window algorithm. Each request adds a timestamped entry, expired entries are pruned on every check, and all operations execute in a single Lua script for atomicity at scale.
+The rate limiter factory produces per-route rate limiting using Valkey sorted sets and a sliding window algorithm. Each request adds a timestamped entry, expired entries are pruned on every check, and all operations execute in a single Lua script for atomicity at scale.
 ```mermaid
 flowchart TB
     subgraph REQUEST_FLOW["Request Flow"]
         RATE_REQUEST["Incoming Request"]
         USER_EXTRACT["Extract userId\nfrom JWT auth context"]
-        KEY_BUILD["Build key\nrl:{userId}"]
+        KEY_BUILD["Build key\nper-user rate limit key"]
         LUA_EXECUTION["Execute Lua Script\n(single roundtrip)"]
         LIMIT_CHECK{"count >\nmaxRequests?"}
         RATE_ALLOW["→ next()"]
@@ -424,7 +424,7 @@ flowchart LR
 - **Lua EVAL over transactional batching** — sorted set rate limiting needs conditional read-then-write behavior and consistent retry timing in one roundtrip.
 - **Member uniqueness** — each entry uses `crypto.randomUUID` to avoid collisions when multiple requests arrive within the same millisecond.
 - **Per-user keying** — default extraction uses `userId` from auth context, and custom key extraction is supported for non-standard routes.
-- **No-op in development fallback** — when `cache.getClient` is `null`, global rate limiting is disabled to avoid blocking local workflows without Valkey.
+- **No-op in development fallback** — when the cache raw client accessor is `null`, global rate limiting is disabled to avoid blocking local workflows without Valkey.
 - **Retry-After calculation** — derived from the oldest in-window entry using `ceil`, clamped to a minimum of one second.
 ---
 ## Structured Logging
@@ -539,7 +539,7 @@ stateDiagram-v2
     [*] --> CLOSED_STATE
     CLOSED_STATE --> CLOSED_STATE : Success\n(reset failure counter)
     CLOSED_STATE --> OPEN_STATE : Failure count\n≥ failureThreshold (5)
-    OPEN_STATE --> OPEN_STATE : execute() called\n→ CircuitOpenError\n(fast reject, no call made)
+    OPEN_STATE --> OPEN_STATE : execute() called\n→ circuit-open error\n(fast reject, no call made)
     OPEN_STATE --> HALF_OPEN_STATE : resetTimeoutMs (30s)\nelapsed
     HALF_OPEN_STATE --> CLOSED_STATE : halfOpenMaxAttempts (3)\nsuccesses
     HALF_OPEN_STATE --> OPEN_STATE : Any failure\n→ reopen, reset timer
@@ -568,8 +568,8 @@ flowchart TB
 ### Design Decisions
 - **Per-external-call breaker scope** — each external dependency call path has its own breaker, and circuit state is not shared across unrelated integrations.
 - **In-process state** — breaker state remains in process memory with no cross-instance synchronization.
-- **Typed error** — `CircuitOpenError` carries a `retryAt` timestamp.
-- **Registry pattern** — `createCircuitBreakerRegistry` provides named breakers with isolated state and health snapshot support.
+- **Typed error** — circuit-open error carries a `retryAt` timestamp.
+- **Registry pattern** — the circuit breaker registry factory provides named breakers with isolated state and health snapshot support.
 - **Non-swallowing behavior** — wrapped errors propagate and are not hidden.
 - **Injectable clock** — `now` can be injected for deterministic transition testing.
 ---
@@ -635,7 +635,7 @@ sequenceDiagram
     IN_FLIGHT_REQUESTS-->>API_SERVER: All requests complete
     API_SERVER->>IN_PROCESS_QUEUE: Promise.allSettled([...runningTasks])\nDrain in-process background jobs
     IN_PROCESS_QUEUE-->>API_SERVER: All tasks settled
-    API_SERVER->>VALKEY_SERVICE: cache.close()\nDisconnect ioredis
+    API_SERVER->>VALKEY_SERVICE: cache.close()\nDisconnect Redis client library
     API_SERVER->>POSTGRES_SERVICE: db.close()\nRelease connection pool
     API_SERVER->>SURREAL_SERVICE: client.close()\nDisconnect WebSocket
     API_SERVER->>API_SERVER: process.exit(0)
@@ -659,12 +659,12 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ## Task Specifications
 ### Task DOCKER_COMPOSE: Docker Compose Infrastructure
 **What to do**:
-- Create the container orchestration manifest with all core services: Postgres (pgvector/pgvector), SurrealDB, MinIO, and Valkey.
-- Add minio-init service for automatic bucket creation (`safeagent`, `langfuse-media`).
+- Define the container orchestration infrastructure with all core services: Postgres (pgvector/pgvector), SurrealDB, MinIO, and Valkey.
+- Include storage initialization for automatic bucket provisioning (application bucket, media bucket).
 - Add Trigger.dev stack under profile `trigger`: webapp, supervisor, docker-proxy, electric, and local registry.
 - Add Langfuse stack under profile `langfuse`: ClickHouse, Redis (port 6380), langfuse-web (port 3100), and langfuse-worker.
 - Add a Postgres database initialization script for creating `langfuse` and `trigger` databases.
-- Add Postgres `max_connections=200` via command override.
+- Configure database connection pooling with an increased connection pool.
 - Add a LibreOffice sidecar container in Docker Compose as a separate service and configure API communication over the Compose network.
 - Declare persistent volumes: pg_data, surrealdb_data, minio_data, valkey_data, clickhouse_data.
 - Add health checks on every service with appropriate check probes.
@@ -693,11 +693,11 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **What to do**:
 - Create budget module with two-layer architecture: Valkey hot path for real-time decisions and Postgres cold path for audit.
 - Add Drizzle schema tables: `usage_events` (append-only) and `user_budget_limits` (per-user overrides).
-- Implement `checkTokenBudget` reading only from Valkey and returning `BudgetCheckResult` with allowed, daily, monthly, and resetsAt.
-- Implement `recordTokenUsage` with atomic counter updates and fire-and-forget Postgres persistence.
-- Implement `getUserBudget` reading limits and current spend from Postgres with Valkey cache and returning `BudgetRecord`.
-- Implement `setUserBudget` updating per-user limits and invalidating corresponding cache entry, with optional counter reset.
-- Implement `listUserBudgets` as paginated listing with optional `overBudget` filtering.
+- Implement budget admission checks that read only from Valkey and return budget decision details with allowance state, period usage, and reset timing.
+- Implement token usage recording with atomic counter updates and fire-and-forget Postgres persistence.
+- Implement an admin budget read capability that returns per-user limits and current spend from Postgres with Valkey cache.
+- Implement an admin budget update capability that persists per-user limits, invalidates cache entries, and optionally resets counters.
+- Implement paginated budget administration listing with optional over-budget filtering.
 - Daily keys auto-expire at midnight UTC and monthly keys at month end.
 - Per-user overrides are cached in Valkey with five-minute TTL and fall back to config defaults (1M daily, 20M monthly).
 - Budget exceeded responses return HTTP 429 with full `BudgetCheckResult` including Retry-After.
@@ -715,9 +715,9 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - `usage_events` receives append-only inserts for every recording.
 - Keys follow `budget:{userId}:daily:{YYYY-MM-DD}` and `budget:{userId}:monthly:{YYYY-MM}`.
 - Per-user overrides are cached and respected.
-- `getUserBudget` returns limits, current spend, and period metadata.
-- `setUserBudget` persists limits and invalidates cache.
-- `listUserBudgets` supports pagination and optional over-budget filtering.
+- Admin budget read returns limits, current spend, and period metadata.
+- Admin budget updates persist limits and invalidate cache.
+- Budget administration listing supports pagination and optional over-budget filtering.
 **QA Scenarios**:
 - Over-limit user is blocked with `allowed: false`, remaining clamped to 0, and usage event persistence.
 - Daily counters start fresh with TTL set to midnight.
@@ -728,13 +728,13 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ### Task KEY_POOL: API Key Pool
 **What to do**:
-- Create key pool module with `createKeyPool` factory and config object.
-- Read env var named by `KEY_POOL_ENV` (`GOOGLE_API_KEY`), parse comma-separated keys, and trim whitespace.
+- Build the key pool capability with a key pool factory and configuration object.
+- Read the key pool environment variable (`GOOGLE_API_KEY`), parse comma-separated keys, and trim whitespace.
 - Create one provider factory per key using AI SDK Google adapter.
 - Implement round-robin distribution with separate provider and embedder counters.
 - `getNextProvider` returns LanguageModel and `getNextEmbedder` returns EmbeddingModel.
 - `getConcurrencyLimit` returns key count multiplied by `perKeyConcurrency` (default 5).
-- `createKeyPoolFromEnv` returns `undefined` for missing or single key and returns pool for two or more keys.
+- The key pool env helper returns `undefined` for missing or single key values and returns a pool for two or more keys.
 - Add per-key health tracking where three consecutive failures mark a key unhealthy and 60-second re-probe allows recovery.
 - If all keys are unhealthy, enter degraded mode with full-key round-robin instead of hard stop.
 **Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
@@ -754,12 +754,12 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ### Task VALKEY_CACHE: Valkey Cache Module
 **What to do**:
-- Create cache module with `createCache` factory.
-- Valkey implementation uses ioredis with `redis://` URL from `VALKEY_URL`.
-- Cache interface includes `get`, `set`, `del`, `incr`, `incrBy`, `decrBy`, `expire`, `close`, `isHealthy`, and `getClient`.
-- `getClient` exposes raw ioredis client for sorted sets and transactional operations.
+- Build the cache capability with a cache factory.
+- Valkey implementation uses a Redis client library with a Redis connection URL from `VALKEY_URL`.
+- Cache interface includes `get`, `set`, `del`, `incr`, `incrBy`, `decrBy`, `expire`, `close`, `isHealthy`, and a raw client accessor.
+- The raw client accessor exposes the underlying Redis client library for sorted sets and transactional operations.
 - Add in-memory fallback with map-backed storage, read-time TTL checks, and periodic 60-second sweep.
-- In-memory `getClient` returns `null` so consumers can degrade to no-op or sequential fallback.
+- In-memory raw client accessor returns `null` so consumers can degrade to no-op or sequential fallback.
 - Include budget key helpers: `dailyKey`, `monthlyKey`, `secondsUntilMidnightUTC`, `secondsUntilMonthEndUTC`.
 - `get` returns `string | null`, where `null` means no key. Numeric consumers parse values, and general cache consumers store serialized JSON.
 **Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
@@ -780,9 +780,9 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ### Task TRIGGER_TASKS: Trigger.dev Task Definitions and QueueAdapter
 **What to do**:
 - Create trigger module with QueueAdapter implementations.
-- `createTriggerAdapter` dispatches via HTTP to Trigger.dev API.
-- `createInProcessAdapter` executes handlers in-process with fire-and-forget semantics and `runningTasks` tracking.
-- `createQueueAdapter` auto-selects adapter based on Trigger.dev env variables.
+- The remote queue adapter dispatches to Trigger.dev through its task endpoint.
+- The in-process queue adapter executes handlers in-process with fire-and-forget semantics and running-task tracking.
+- The queue adapter factory auto-selects an adapter based on Trigger.dev environment variables.
 - Define tasks: background-enrichment (retries 3, concurrency 10), budget-aggregation (every five minutes), cleanup (retries 3, concurrency 5).
 - Shared handlers include `processBackgroundStageJob`, `runBudgetAggregation`, and `runCleanup`.
 - Ensure handler idempotency through upsert keyed on `file_id + page_number`.
@@ -804,16 +804,16 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ### Task RATE_LIMITING: Rate Limiting Middleware
 **What to do**:
-- Create rate limiting module with `createRateLimiter` middleware factory.
+- Build rate limiting middleware with a rate limiter factory.
 - Implement sliding window algorithm using Valkey sorted sets.
 - Use single Lua script for prune, add, count, oldest-entry lookup, and expiration.
 - Default config: `windowMs` 60,000, `maxRequests` 60, key prefix `rl`.
-- Build per-user key as `rl:{userId}` using JWT auth context.
+- Build a per-user rate limit key using JWT auth context.
 - Ensure member uniqueness through `crypto.randomUUID`.
 - Return HTTP 429 with Retry-After and JSON body when limit exceeded.
 - Compute Retry-After from oldest in-window entry using ceiling and minimum one second.
 - Support custom `keyExtractor` for non-default route patterns.
-- No-op pass-through when `getClient` returns null in memory mode.
+- No-op pass-through when the raw client accessor returns null in memory mode.
 - Provide deterministic tests with fake clock for boundary conditions.
 **Depends on**: CORE_TYPES (types), VALKEY_CACHE (Cache or Valkey)
 **Acceptance Criteria**:
@@ -855,7 +855,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ### Task TTL_CLEANUP: TTL-Based Automatic Cleanup
 **What to do**:
-- Create cleanup module with `cleanupExpiredFiles`.
+- Build cleanup capability with an expired file cleanup function.
 - Query expired rows where `expires_at < NOW()` and `status != 'deleted'`, with optional batch limit.
 - Perform per-file cleanup with isolated try/catch: read metadata, delete object storage artifacts, delete `page_index` rows, delete vector chunks, release quota, and mark deleted with timestamp.
 - Ensure idempotent retries when objects or rows are already absent.
@@ -878,12 +878,12 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ### Task CIRCUIT_BREAKER: Circuit Breaker for External Calls
 **What to do**:
-- Create circuit breaker module with `createCircuitBreaker`.
-- Implement state machine: closed pass-through, open fast-reject with `CircuitOpenError`, and half-open limited probing.
+- Build the circuit breaker capability with a circuit breaker factory.
+- Implement state machine: closed pass-through, open fast-reject with circuit-open error, and half-open limited probing.
 - Default config includes threshold 5, reset timeout 30,000, and half-open max attempts 3.
 - `execute` wraps async functions and drives transitions from outcomes.
-- `CircuitOpenError` includes `retryAt` timestamp.
-- `createCircuitBreakerRegistry` provides named per-service breakers with isolated state.
+- Circuit-open error includes `retryAt` timestamp.
+- The circuit breaker registry factory provides named per-service breakers with isolated state.
 - Registry `snapshot` returns all breaker states for health endpoint.
 - Breakers are in-memory per process with no Valkey synchronization.
 - Clock function is injectable for deterministic tests.
@@ -904,7 +904,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 ---
 ## Capacity Planning
 ### Postgres at Scale
-A direct `max_connections=200` posture is insufficient for a ten-million-user system with bursty traffic and background workers. PgBouncer or equivalent connection pooling is required in front of Postgres at scale. Multiplexing large numbers of application connections onto a smaller database pool eliminates per-instance pool sizing pressure.
+A direct increased connection-pool posture is insufficient for a ten-million-user system with bursty traffic and background workers. PgBouncer or equivalent connection pooling is required in front of Postgres at scale. Multiplexing large numbers of application connections onto a smaller database pool eliminates per-instance pool sizing pressure.
 High-write tables (`page_index`, `file_uploads`, `usage_events`) should be range partitioned by `user_id` hash once row counts exceed tens of millions. Partitioning distributes write I/O, keeps B-tree and vector indexes smaller for better insert and query performance, and enables partition-level maintenance without full-table locking. Since application queries already include `user_id` filters, partition pruning applies without query-layer changes. Drizzle supports this through migration-level DDL while query builder behavior remains unchanged.
 ### Valkey Memory Budget
 Baseline per-user memory is roughly 500 bytes for sliding-window rate-limit sets plus roughly 100 bytes for budget counters, or around 600 bytes per active user. At ten million users with one percent daily activity, hot state is around 60MB. At ten percent concurrent activity under burst, hot state is around 600MB. Full-population concurrency would be roughly 6GB.

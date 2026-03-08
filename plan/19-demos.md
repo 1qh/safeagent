@@ -34,9 +34,9 @@ graph TD
   end
 
   subgraph SHARED_UI_LAYER[SHARED UI LAYER]
-    WEB_UI[@safeagent/ui]
-    MOBILE_UI[@safeagent/ui-native]
-    SHARED_REACT[@safeagent/react]
+    WEB_UI[Web Components Package]
+    MOBILE_UI[Native Components Package]
+    SHARED_REACT[React Hooks Package]
   end
 
   subgraph SERVER_TARGETS[SAFEAGENT-COMPATIBLE SERVERS]
@@ -161,7 +161,7 @@ It demonstrates the full safeagent web component surface inside a coherent shell
 - Routing model:
   - Uses Next.js App Router.
   - Initial page request is server-rendered for fast first paint.
-  - Interactive chat runtime is client-side because `useChat` is client-only.
+  - Interactive chat runtime is client-side because the chat hook is client-only.
 - Layout model:
   - Full-width shell.
   - Left sidebar for thread list and thread controls.
@@ -195,7 +195,7 @@ Custom composition components using `@safeagent/ui` primitives:
 - ServerSelector
 - VerbosityToggle
 - ThreadList
-- TraceTimeline
+- trace timeline component
 - MessageTimestamp
 - TypingIndicator
 - ErrorRetry
@@ -378,9 +378,9 @@ stateDiagram-v2
 When switching servers, the demos perform the following sequence:
 
 1. Current stream is aborted if a response is in progress.
-2. Existing `@safeagent/client` connection is closed.
+2. Existing client SDK connection is closed.
 3. New connection is established with the selected server URL and auth token.
-4. Thread state is reset and a fresh thread is created on the new server.
+4. Thread state is reset and a fresh thread is started on the new server.
 5. UI resets to an empty conversation view to avoid mixed-server context.
 
 ### UX Guardrails
@@ -413,11 +413,11 @@ It determines whether trace-step information is requested and rendered.
 ### Toggle Interaction Flow
 
 1. User activates the toggle.
-2. `useVerbosity` updates local verbosity state.
-3. Next chat request includes `verbosity=full` query parameter.
+2. The verbosity hook updates local verbosity state.
+3. Next chat request includes full verbosity mode metadata.
 4. Server responds with interleaved trace-step events.
-5. `useTraceSteps` accumulates trace-step payloads.
-6. TraceTimeline renders the evolving pipeline.
+5. The trace-steps hook accumulates trace-step payloads.
+6. The trace timeline component renders the evolving pipeline.
 
 Behavior boundary:
 - Mid-conversation toggle changes affect only subsequent requests.
@@ -488,7 +488,7 @@ Integration notes:
 - Build the Next.js demo application as a complete web reference for safeagent chat integration.
 
 **What To Do**
-- Create a Next.js App Router application consuming `@safeagent/ui` and `@safeagent/react`.
+- Create a Next.js demo application consuming the web components package and the React hooks package.
 - Implement sidebar thread list, main conversation panel, and optional trace timeline panel.
 - Implement multi-server switching with persistent server configuration.
 - Implement verbosity toggle with standard and full modes.
@@ -540,12 +540,12 @@ Integration notes:
 - Build the Expo demo application as a complete mobile reference for safeagent chat integration.
 
 **What To Do**
-- Create an Expo Router application consuming `@safeagent/ui-native` and `@safeagent/react`.
+- Create an Expo demo application consuming the native components package and the React hooks package.
 - Implement tab navigation with conversations and settings areas.
 - Implement conversation view with thread switching and bottom input.
 - Implement settings for server add, edit, remove, and active server selection.
 - Implement offline-first behavior with local SQLite persistence.
-- Implement offline queue behavior through `@safeagent/client`.
+- Implement offline queue behavior through the client SDK package.
 - Implement polyfills for structuredClone and TextEncoderStream through `expo/fetch`.
 - Implement verbosity toggle and trace display behavior.
 - Implement file picker upload flow with progress and attachment state.

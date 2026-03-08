@@ -151,7 +151,7 @@ Production enforcement:
 - Authentication never fails open in production.
 ---
 ## JWT Auth
-Authentication middleware is created through createAuthMiddleware in the server auth module. It composes Elysia lifecycle hooks and can be registered app-wide or per route group.
+Authentication middleware is created through auth middleware factory in the server auth module. It composes Elysia lifecycle hooks and can be registered app-wide or per route group.
 Token verification uses symmetric signing with HS256 and shared secret configuration. Verification includes signature and expiry, with optional issuer and audience constraints when configured.
 ```mermaid
 sequenceDiagram
@@ -176,7 +176,7 @@ sequenceDiagram
     AUTH_MIDDLEWARE->>AUTH_MIDDLEWARE: Continue request
 ```
 Role gating helper:
-- requireRole runs after authentication middleware on admin endpoints.
+- role authorization guard runs after authentication middleware on admin endpoints.
 - It reads resolved role from context and returns forbidden response when role mismatches.
 - Separation keeps auth failure and role failure as distinct error categories.
 Auth outcome table:
@@ -204,7 +204,7 @@ Async context carries a structured logging envelope through the full asynchronou
 ### Rate Limiting
 Rate limiting uses sliding windows backed by Valkey sorted sets. Keys are user-scoped and endpoint-group scoped. Endpoint groups are coarse buckets so related endpoints share limits.
 On exceed:
-- Return 429
+- Return a rate-limit response
 - Include retry-after header for seconds until reset
 ### Budget Check
 Budget enforcement reads daily and monthly token spend from atomic counters. Counters are user-scoped and period-scoped. Limits are loaded from persistent storage and cached briefly in Valkey.
@@ -219,7 +219,7 @@ Budget enforcement model:
 ## Agent Configuration
 The server defines all agent configuration content, while safeagent supplies factories and runtime behavior.
 ### Agent Definitions
-Server builds agents using createAgent and createOrchestratorAgent. Each definition includes:
+Server builds agents using agent factory and orchestrator agent factory. Each definition includes:
 - Stable id used by route parameters
 - Full system instructions text
 - Model selection from shared configuration constants
@@ -238,7 +238,7 @@ Server configures location enrichment through LocationToolConfig:
 - Max images limit with default of five
 Default geocoding can run without external API keys by using Nominatim plus Valkey-backed caching.
 Image search provider is server-supplied and can use ecosystem providers. Adapter helpers are available to simplify provider integration.
-Location tooling is opt-in and only active when createLocationTool is included in agent tool wiring.
+Location tooling is opt-in and only active when location tool factory is included in agent tool wiring.
 If image search provider is omitted, location events still include coordinates and metadata with empty image arrays.
 ### Model Configuration
 Model constants are loaded from shared configuration surfaces, not hardcoded in server definitions.
@@ -259,9 +259,9 @@ Required concept identifiers include:
 - hate_speech_detected for HATE_SPEECH_GUARD fallback behavior
 ### Factory Helpers
 Common helper factories:
-- createKeywordGuardrail
-- createRegexGuardrail
-- createLLMGuardrail
+- keyword guardrail factory
+- regex guardrail factory
+- LLM guardrail factory
 Topic boundary behavior is server composition, commonly via composite wiring of keyword, regex, and classifier guardrails.
 ### Language Guard Configuration
 LanguageGuardConfig defines supported output languages, fallback behavior, minimum text length, confidence threshold, and optional translation keyword overrides. The created language guard can enforce at both input and output stages.
@@ -308,7 +308,7 @@ Flow:
 1. Middleware chain executes in standard order.
 2. Handler resolves target agent from registry by requested agent id.
 3. Handler reads verbosity from query parameters (default `standard`).
-4. Handler delegates stream orchestration to createStreamHandler configured with server error map and verbosity level.
+4. Handler delegates stream orchestration to stream handler factory configured with server error map and verbosity level.
 5. Handler sets SSE response headers and starts stream piping.
 6. Stream emits typed events until completion or error. When verbosity is `full`, `trace-step` events are interleaved with user-facing events at their natural pipeline positions.
 7. Final usage accounting updates budget counters.
@@ -520,7 +520,7 @@ HTTP status behavior:
 ---
 ### Task SCAFFOLD_SERVER: Server Scaffolding
 What to do:
-Set up the Elysia server project, wire safeagent dependency integration for development and CI modes, implement server entrypoint with lifecycle stack registration, start listening on default port behavior, expose basic liveness health endpoint, and include container build support.
+Set up the HTTP server project, wire safeagent dependency integration for development and CI modes, implement server entrypoint with lifecycle stack registration, start listening on default port behavior, expose basic liveness health endpoint, and include container build support.
 Depends on: SPIKE_CORE_STACK
 Acceptance criteria:
 - Server starts and listens on configured port with default behavior.
@@ -558,9 +558,9 @@ QA scenarios:
 ---
 ### Task SERVER_ROUTES: Routes
 What to do:
-Implement all route handlers listed in this document with thin handler design: validate request, delegate to library function, map response. Register route groups with correct middleware and apply requireRole to admin routes.
-Define all routes with OpenAPI integration using Zod v4 request and response schemas and aligned schema mapping configuration. Serve OpenAPI JSON and Scalar UI from public endpoints.
-The chat streaming endpoint must accept an optional `verbosity` query parameter (`standard` or `full`, default `standard`) validated by VerbosityLevelSchema. The handler passes the verbosity value to createStreamHandler. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
+Build all route handlers described in this document with thin handler design: validate request, delegate to library function, map response. Organize route groups with appropriate middleware and apply role authorization guard to admin routes.
+Define all routes with API documentation integration using Zod v4 request and response schemas and aligned schema mapping configuration. Serve OpenAPI JSON and Scalar UI from public endpoints.
+The chat streaming endpoint must accept an optional verbosity control parameter (`standard` or `full`, default `standard`) validated by VerbosityLevelSchema. The handler passes the verbosity value to stream handler factory. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
 Depends on: SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING
 Acceptance criteria:
 - All mapped routes are registered on correct HTTP methods.
@@ -572,7 +572,7 @@ Acceptance criteria:
 - Every route documents request and response schemas.
 - Security requirements are documented per route.
 - SSE endpoint documents stream response behavior.
-- SSE endpoint accepts optional `verbosity` query parameter and passes it to createStreamHandler.
+- SSE endpoint accepts optional verbosity control parameter and passes it to stream handler factory.
 - Error responses use server error message map.
 QA scenarios:
 - Validate unauthorized behavior across protected routes.
@@ -686,16 +686,16 @@ QA scenarios:
 ---
 ### Task JWT_AUTH: JWT Auth
 What to do:
-Implement createAuthMiddleware and requireRole with JWT verification, user and role context resolution, and route group registration on protected routes.
+Implement auth middleware factory and role authorization guard with JWT verification, user and role context resolution, and route group registration on protected routes.
 Depends on: SCAFFOLD_SERVER
 Acceptance criteria:
-- createAuthMiddleware returns valid Elysia lifecycle wiring.
+- auth middleware factory returns valid Elysia lifecycle wiring.
 - Middleware resolves userId and role on success.
 - Missing authorization maps to missing_token.
 - Malformed bearer and invalid signature map to invalid_token.
 - Expired token maps to token_expired.
-- requireRole rejects non-admin role with insufficient_role.
-- requireRole passes admin role.
+- role authorization guard rejects non-admin role with insufficient_role.
+- role authorization guard passes admin role.
 - Log context is updated with user identity post-auth.
 QA scenarios:
 - Missing authorization returns missing_token.
@@ -708,7 +708,7 @@ QA scenarios:
 ---
 ### Task ADMIN_API: Admin API
 What to do:
-Implement admin budget detail, update, and list endpoints with requireRole enforcement and budget API delegation.
+Implement admin budget detail, update, and list endpoints with role authorization guard enforcement and budget API delegation.
 Depends on: SERVER_ROUTES, JWT_AUTH, COST_TRACKING
 Acceptance criteria:
 - All admin budget routes require admin role.

@@ -33,10 +33,10 @@ The terminal interface remains a separate consumer path that reads direct stream
 ```mermaid
 flowchart LR
     SAFEAGENT_ENGINE[safeagent\nEngine Runtime\nCanonical Events + Schemas]
-    SAFEAGENT_CLIENT[@safeagent/client\nSSE Transport + Parsing + Queue]
-    SAFEAGENT_REACT[@safeagent/react\nHooks + ChatTransport Adapter]
-    SAFEAGENT_UI[@safeagent/ui\nWeb Components]
-    SAFEAGENT_UI_NATIVE[@safeagent/ui-native\nNative Components]
+    SAFEAGENT_CLIENT[Client SDK\nSSE Transport + Parsing + Queue]
+    SAFEAGENT_REACT[React Hooks Package\nHooks + transport adapter]
+    SAFEAGENT_UI[Web Components Package\nWeb Components]
+    SAFEAGENT_UI_NATIVE[Native Components Package\nNative Components]
     WEB_DEMOS[Web Demos\nComponent Consumers]
     NATIVE_DEMOS[Native Demos\nComponent Consumers]
     TUI_CLIENT[TUI Consumer\nDirect Library Stream]
@@ -84,10 +84,10 @@ Each layer only depends on the public contracts of the previous layer.
 ```mermaid
 flowchart LR
     SAFEAGENT[safeagent\nExports SSE Event Types\nExports Zod v4 Schemas]
-    CLIENT[@safeagent/client\nConsumes Types\nRe-exports Types\nSSE Parsing\nOffline Queue]
-    REACT[@safeagent/react\nChatTransport Wrapper\nuseChat Integration\nTyped Hooks]
-    UI_WEB[@safeagent/ui\nDepends on React Hooks\nshadcn + ai-elements]
-    UI_NATIVE[@safeagent/ui-native\nDepends on React Hooks\nNativeWind Styling]
+    CLIENT[Client SDK\nConsumes Types\nRe-exports Types\nSSE Parsing\nOffline Queue]
+    REACT[React Hooks Package\nTransport Adapter Wrapper\nChat Hook Integration\nTyped Hooks]
+    UI_WEB[Web Components Package\nDepends on React Hooks\nshadcn + ai-elements]
+    UI_NATIVE[Native Components Package\nDepends on React Hooks\nNativeWind Styling]
 
     SAFEAGENT --> CLIENT
     CLIENT --> REACT
@@ -98,10 +98,10 @@ flowchart LR
 ```mermaid
 flowchart TD
     SAFEAGENT_CONTRACTS[safeagent Contracts]
-    CLIENT_LAYER[@safeagent/client]
-    REACT_LAYER[@safeagent/react]
-    WEB_LAYER[@safeagent/ui]
-    NATIVE_LAYER[@safeagent/ui-native]
+    CLIENT_LAYER[Client SDK]
+    REACT_LAYER[React Hooks Package]
+    WEB_LAYER[Web Components Package]
+    NATIVE_LAYER[Native Components Package]
     SERVER_ONLY_RULE[Engine Is Server-Only\nNo Direct Frontend Import]
 
     SAFEAGENT_CONTRACTS --> CLIENT_LAYER
@@ -122,7 +122,7 @@ Export and dependency guarantees:
 - No frontend package reaches into engine internals.
 
 Primary exported hook surface from `@safeagent/react`:
-- `useChat` passthrough compatibility with AI SDK transport expectations.
+- Chat-hook passthrough compatibility with AI SDK transport expectations.
 - `useSafeAgent` safe defaults for endpoint and auth alignment.
 - `useFeedback` for reaction and quality signals.
 - `useUpload` for attachment and upload flow.
@@ -160,8 +160,8 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant ENGINE as safeagent Engine
-    participant CLIENT as @safeagent/client
-    participant REACT as @safeagent/react
+    participant CLIENT as Client SDK
+    participant REACT as React Hooks Package
     participant UI as Component Layer
 
     ENGINE->>CLIENT: SSE event payload aligned to canonical contracts
@@ -188,20 +188,20 @@ Failure handling model:
 ## React Hooks (@safeagent/react)
 
 `@safeagent/react` is the central integration layer between AI SDK UI hooks and safeagent stream transport.
-It implements `ChatTransport` semantics so `useChat` from `@ai-sdk/react` can connect directly to safeagent-compatible servers.
+It implements transport adapter semantics so the chat hook from `@ai-sdk/react` can connect directly to safeagent-compatible servers.
 The transport delegates low-level SSE parsing to `@safeagent/client` while owning React-centric state transitions.
 
 Official references:
 - AI SDK React docs: https://ai-sdk.dev/docs/ai-sdk-ui/chatbot
 
-### ChatTransport alignment
+### Transport adapter alignment
 
 Transport responsibilities:
 - Open and manage streaming lifecycle for each chat request.
 - Serialize outgoing message context in AI SDK-compatible form.
 - Inject server URL, auth token, and verbosity controls into request metadata.
 - Delegate SSE parse and event normalization to `@safeagent/client`.
-- Surface message and status transitions in the shape expected by `useChat`.
+- Surface message and status transitions in the shape expected by the chat hook.
 - Handle stream cancellation, retry, and completion cleanup.
 
 Transport edge behavior:
@@ -214,8 +214,8 @@ Transport edge behavior:
 ### Hook exports and intent
 
 `useSafeAgent`:
-- Wraps `useChat` with safeagent defaults.
-- Auto-wires `ChatTransport` implementation.
+- Wraps the chat hook with safeagent defaults.
+- Auto-wires the transport adapter implementation.
 - Accepts server target from `useServerConnection` state.
 - Injects auth token policy consistently.
 - Enforces default user-facing verbosity behavior.
@@ -255,9 +255,9 @@ Transport edge behavior:
 flowchart LR
     UI_COMPONENT[UI Component]
     USE_SAFE_AGENT[useSafeAgent]
-    USE_CHAT[useChat from AI SDK]
-    CHAT_TRANSPORT[Safeagent ChatTransport]
-    CLIENT_PARSER[@safeagent/client Parser]
+    USE_CHAT[chat hook from AI SDK]
+    CHAT_TRANSPORT[Safeagent transport adapter]
+    CLIENT_PARSER[Client SDK parser]
     SSE_STREAM[Server SSE Stream]
 
     UI_COMPONENT --> USE_SAFE_AGENT
@@ -275,8 +275,8 @@ flowchart LR
 flowchart TD
     CONNECTION_STATE[useServerConnection]
     VERBOSITY_STATE[useVerbosity]
-    TRANSPORT_STATE[ChatTransport]
-    CHAT_STATE[useSafeAgent and useChat]
+    TRANSPORT_STATE[transport adapter]
+    CHAT_STATE[safe-agent hook and chat hook]
     TRACE_STATE[useTraceSteps]
     FEEDBACK_STATE[useFeedback]
     UPLOAD_STATE[useUpload]
@@ -419,7 +419,7 @@ flowchart TD
 
 These components are not provided by ai-elements and are built specifically for safeagent product requirements.
 
-`TraceTimeline`:
+trace timeline component:
 - Collapsible timeline of typed `trace-step` events.
 - Shows step icons, status badges, and latency bars.
 - Supports inline and sidebar layouts.
@@ -463,7 +463,7 @@ These components are not provided by ai-elements and are built specifically for 
 ```mermaid
 flowchart LR
     CUSTOM_COMPONENTS[Custom Component Set]
-    TRACE_TIMELINE_NODE[TraceTimeline]
+    TRACE_TIMELINE_NODE[trace timeline component]
     VERBOSITY_TOGGLE_NODE[VerbosityToggle]
     SERVER_SELECTOR_NODE[ServerSelector]
     THREAD_LIST_NODE[ThreadList]
@@ -542,7 +542,7 @@ Trace details panel:
 flowchart TD
     TRACE_EVENTS[trace-step Stream Events]
     TRACE_HOOK[useTraceSteps]
-    TRACE_TIMELINE[TraceTimeline]
+    TRACE_TIMELINE[trace timeline component]
     TRACE_STEP[TraceStep]
     TRACE_LATENCY_BAR[TraceLatencyBar]
     TRACE_DETAIL[TraceDetail]
@@ -585,7 +585,7 @@ Official references:
 - NativeWind docs: https://www.nativewind.dev
 
 Shared logic commitments:
-- Consume `useChat` integration through safeagent transport wrappers.
+- Consume chat-hook integration through safeagent transport wrappers.
 - Consume `useTraceSteps` for trace surfaces where enabled.
 - Consume `useFeedback`, `useUpload`, `useServerConnection`, and `useVerbosity`.
 - Preserve naming parity for component props where feasible.
@@ -616,8 +616,8 @@ Polyfill expectations:
 
 ```mermaid
 flowchart LR
-    REACT_HOOKS_LAYER[@safeagent/react Hooks]
-    NATIVE_UI_LAYER[@safeagent/ui-native Components]
+    REACT_HOOKS_LAYER[React Hooks Package Hooks]
+    NATIVE_UI_LAYER[Native Components Package Components]
     NATIVEWIND_LAYER[NativeWind Styling Translation]
     EXPO_RUNTIME[Expo Runtime Services]
     DEVICE_UI[Mobile App Surfaces]
@@ -919,9 +919,9 @@ Cross-section dependency notes:
 **Batch**: 9a
 
 **What to do**
-- Implement `ChatTransport` adapter compatible with AI SDK `useChat` expectations.
+- Implement a transport adapter compatible with AI SDK chat-hook expectations.
 - Integrate SSE lifecycle handling through `@safeagent/client` parser and queue behavior.
-- Implement `useSafeAgent` wrapper with safeagent defaults for transport, auth, and endpoint wiring.
+- Implement a safe-agent wrapper hook with safeagent defaults for transport, auth, and endpoint wiring.
 - Implement `useTraceSteps` for full-verbosity trace event projection.
 - Implement `useFeedback` with loading, success, and error transitions.
 - Implement `useUpload` with progress and typed file-reference handling.
@@ -935,7 +935,7 @@ Cross-section dependency notes:
 - `SCAFFOLD_FRONTEND`
 
 **Acceptance criteria**
-- `useChat` integration works through safeagent transport without adapter glue in consumer apps.
+- Chat-hook integration works through safeagent transport without adapter glue in consumer apps.
 - Stream messages, status changes, and completion events map to AI SDK expectations.
 - Trace steps appear only in full mode and remain empty in standard mode.
 - Feedback hook supports optimistic and failure transitions.
@@ -997,7 +997,7 @@ Cross-section dependency notes:
 **Batch**: 10
 
 **What to do**
-- Implement `TraceTimeline` and child primitives for step rows, latency bars, and detail panels.
+- Implement a trace timeline component and child primitives for step rows, latency bars, and detail panels.
 - Consume `useTraceSteps` typed output and render timeline entries in stable order.
 - Implement step icon mapping for all supported step categories.
 - Implement latency bar scaling and threshold-based color semantics.

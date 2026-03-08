@@ -47,11 +47,11 @@ graph TB
 
     subgraph QUERY_TIME["Query Time"]
         direction TB
-        SEARCH_TOOL["searchDocument tool\n(server-side, access-controlled)\n(created by createDocumentQueryTool)"]
+        SEARCH_TOOL["Document search tool\n(server-side, access-controlled)\n(created by document query tool factory)"]
         QUERY_EMBED["Embed query\n(EMBEDDING_PROVIDER)"]
         HYBRID_RETRIEVAL["Hybrid Search\n(RRF fusion)"]
-        CONTEXT_ASSEMBLY["getPageContextForPages\n(fetch S3 + summaries + chunks + page images)"]
-        EVIDENCE_BUNDLE["Evidence bundle:\n{ matchedPages: PageBundle[] }"]
+        CONTEXT_ASSEMBLY["Page context retrieval\n(fetch object storage assets + summaries + chunks + page images)"]
+        EVIDENCE_BUNDLE["Evidence bundle\ncontaining matched page bundles"]
         SEARCH_TOOL --> QUERY_EMBED --> HYBRID_RETRIEVAL --> CONTEXT_ASSEMBLY --> EVIDENCE_BUNDLE
     end
 
@@ -319,23 +319,23 @@ flowchart TD
 
 ## Query Tool and Per-Document Retrieval
 
-`searchDocument` is the single retrieval interface for file-grounded queries. It accepts query text and optional document constraints, while access filters are injected server-side.
+The document search tool is the single retrieval interface for file-grounded queries. It accepts query text and optional document constraints, while access filters are injected server-side.
 
 ### Server-Side Security Filter
 
-`createVectorQueryTool` is not used for tenant-bound document retrieval because it can expose filter control to model-generated input. `createDocumentQueryTool` is used so `userId` and `threadId` always come from trusted request context.
+A generic vector query tool factory is not used for tenant-bound document retrieval because it can expose filter control to model-generated input. The document query tool factory is used so `userId` and `threadId` always come from trusted request context.
 
 ```mermaid
 flowchart TD
-    subgraph UNSAFE_PATTERN["createVectorQueryTool (NOT used)"]
-        MODEL_FILTER["LLM controls filter\n{ userId: '...', threadId: '...' }"]
+    subgraph UNSAFE_PATTERN["Generic vector query tool factory (NOT used)"]
+        MODEL_FILTER["LLM controls tenant filter values"]
         FILTER_RISK["Risk: prompt injection\nmay attempt cross-user retrieval"]
         MODEL_FILTER --> FILTER_RISK
     end
 
-    subgraph SAFE_PATTERN["createDocumentQueryTool (used)"]
-        REQUEST_CONTEXT["requestContext\n{ userId, threadId }\n(from auth middleware)"]
-        MODEL_QUERY["LLM provides only\n{ query: '...' }"]
+    subgraph SAFE_PATTERN["Document query tool factory (used)"]
+        REQUEST_CONTEXT["Trusted request context\n(user and thread identity from auth middleware)"]
+        MODEL_QUERY["LLM provides only the query text"]
         SERVER_MERGE["Server merges\nquery + server-side filter"]
         SCOPED_RETRIEVAL["Hybrid retrieval\nscoped to userId + threadId\n(with global scope inclusion)"]
         REQUEST_CONTEXT --> SERVER_MERGE
@@ -349,25 +349,25 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant ORCHESTRATOR as Orchestrator Agent
-    participant SEARCH_TOOL as searchDocument
+    participant SEARCH_TOOL as Document Search Tool
     participant EMBEDDINGS as EMBEDDING_PROVIDER
     participant DATABASE as Postgres page_index
     participant OBJECT_STORAGE as Object Storage
 
-    ORCHESTRATOR->>SEARCH_TOOL: call({ query, document_id? })
+    ORCHESTRATOR->>SEARCH_TOOL: Call with query and optional document constraint
     Note over SEARCH_TOOL: Server injects userId + threadId\nfrom trusted requestContext
 
     SEARCH_TOOL->>EMBEDDINGS: embed(query)
     EMBEDDINGS-->>SEARCH_TOOL: queryEmbedding
 
-    SEARCH_TOOL->>DATABASE: hybridSearch(queryEmbedding, userId, threadId, topK=10)
+    SEARCH_TOOL->>DATABASE: Run hybrid retrieval with trusted scope filters
     Note over DATABASE: RRF fusion over available arms
     DATABASE-->>SEARCH_TOOL: top pages with scores
 
     SEARCH_TOOL->>OBJECT_STORAGE: fetch page images in parallel
     OBJECT_STORAGE-->>SEARCH_TOOL: page image parts
 
-    SEARCH_TOOL->>DATABASE: getPageContextForPages(matchedPages)
+    SEARCH_TOOL->>DATABASE: Page context retrieval for matched pages
     DATABASE-->>SEARCH_TOOL: summaries + matching chunks
 
     SEARCH_TOOL-->>ORCHESTRATOR: structured evidence bundle
@@ -381,7 +381,7 @@ One parameterized tool scales cleanly as document count grows. A tool-per-docume
 flowchart TD
     ORCHESTRATOR_AGENT["Orchestrator Agent"]
 
-    subgraph SEARCH_TOOL_SURFACE["searchDocument tool"]
+    subgraph SEARCH_TOOL_SURFACE["Document search tool"]
         PARAM_DOCUMENT["document_id parameter\n(resolved by FileRegistry)"]
         PARAM_QUERY["query parameter\n(rewritten by intent classifier)"]
         PARAM_TOPK["top_k parameter\n(default from IntentConfig)"]
@@ -455,7 +455,7 @@ flowchart TD
     subgraph BUNDLE_FLOW["Context Bundle to Generation"]
         ASSEMBLE_PAGE_BUNDLE["Assemble per-page bundle\n[image_part, summary_text, chunk_text]"]
         REPEAT_TOP_PAGES["Repeat for top pages\n(up to 10 bundles)"]
-        POST_GATE_GENERATE["generateAnswerFromEvidence\n(after gate opens)"]
+        POST_GATE_GENERATE["Evidence-based answer generation\n(after gate opens)"]
         ASSEMBLE_PAGE_BUNDLE --> REPEAT_TOP_PAGES --> POST_GATE_GENERATE
     end
 
@@ -475,7 +475,7 @@ S3 page fetches are parallelized so retrieval I/O stays small relative to genera
 
 ## Structured Citations and Attribute-First Generation
 
-Final responses include a typed `citations` array. Citation output is structured with `generateObject`, and the generation strategy is attribute-first: citations are planned before prose.
+Final responses include a typed `citations` array. Citation output uses structured output generation, and the generation strategy is attribute-first: citations are planned before prose.
 
 ```mermaid
 classDiagram
@@ -516,16 +516,16 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    subgraph STRUCTURED_GENERATION["generateObject Call"]
-        OUTPUT_SCHEMA["AnswerSchema\n{ answer: string, citations: Citation[] }"]
+    subgraph STRUCTURED_GENERATION["Structured Output Generation Call"]
+        OUTPUT_SCHEMA["Answer schema\nwith answer text and citations array"]
         MODEL_OUTPUT["Model returns structured output\nconforming to schema"]
         OUTPUT_SCHEMA --> MODEL_OUTPUT
     end
 
     subgraph CITATION_ENRICHMENT["Citation Construction"]
-        RAW_CITATION["Raw citation\n{ source, fileId, page, quote }"]
-        ENRICH_CITATION["Server enrichment\n+ scope metadata\n+ image refs\n+ presigned URLs"]
-        FINAL_CITATION["Final citation\n{ source, fileId, page, quote, scope, images }"]
+        RAW_CITATION["Raw citation fields\n(source, file, location, quote)"]
+        ENRICH_CITATION["Server enrichment\n+ scope metadata\n+ image references\n+ presigned URLs"]
+        FINAL_CITATION["Final citation\nwith source, location, quote, scope, and images"]
         RAW_CITATION --> ENRICH_CITATION --> FINAL_CITATION
     end
 
@@ -701,7 +701,7 @@ flowchart TD
     end
 
     subgraph QUERY_FILTER["Query Time"]
-        SCOPE_WHERE["WHERE user_id = :userId\nAND (thread_id = :threadId\nOR thread_id = '__global__')"]
+        SCOPE_WHERE["Filter by user ownership\nand include current-thread or global-scope rows"]
         THREAD_SCOPE_ROW & GLOBAL_SCOPE_ROW --> SCOPE_WHERE
     end
 ```
@@ -749,13 +749,13 @@ flowchart TD
     end
 
     subgraph USER_ALPHA_QUERY["User A query"]
-        FILTER_ALPHA["WHERE user_id = user_a\nAND (thread_id = current_thread\nOR thread_id = '__global__')"]
+        FILTER_ALPHA["Apply user-A ownership filter\nwith current-thread plus global scope"]
         RESULT_ALPHA["Sees own global + own current-thread docs"]
         FILTER_ALPHA --> RESULT_ALPHA
     end
 
     subgraph USER_BETA_QUERY["User B query"]
-        FILTER_BETA["WHERE user_id = user_b\nAND (thread_id = current_thread\nOR thread_id = '__global__')"]
+        FILTER_BETA["Apply user-B ownership filter\nwith current-thread plus global scope"]
         RESULT_BETA["Sees only user_b docs\nnever user_a docs"]
         FILTER_BETA --> RESULT_BETA
     end
@@ -1178,7 +1178,7 @@ flowchart TD
 | Component | Relationship |
 |-----------|-------------|
 | **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
-| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Orchestration registers `searchDocument`, applies context-aware file resolution, and invokes post-gate generation. |
+| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Orchestration registers the document search tool, applies context-aware file resolution, and invokes post-gate generation. |
 | **Documents** ([08 — Document Processing](./08-documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
 | **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
 
@@ -1188,13 +1188,13 @@ flowchart TD
 
 ### Task RAG_INFRA: Retrieval and Evidence Infrastructure
 
-**What to do**: Build the full PDF hybrid retrieval pipeline using `page_index`, including three-arm RRF fusion, `getPageContextForPages`, and `createDocumentQueryTool` with mandatory server-side `userId` and `threadId` filters. Implement `generateAnswerFromEvidence` using `generateObject` for `{ answer, citations }` after gate-open.
+**What to do**: Build the full PDF hybrid retrieval pipeline using `page_index`, including three-arm RRF fusion, page context retrieval, and a document query tool factory with mandatory server-side `userId` and `threadId` filters. Build evidence-based answer generation using structured output generation for `{ answer, citations }` after gate-open.
 
 **Depends on**: Storage wrapper, document processing pipeline.
 
 **Acceptance Criteria**:
 
-- Tool factory returns SDK-compatible `searchDocument` definition.
+- Document query tool factory returns an SDK-compatible document search tool definition.
 - Access filters are always injected server-side.
 - Hybrid retrieval runs all three arms with graceful zero-row behavior for unavailable raw arms.
 - RRF uses `k=50`, over-fetches 40 per arm, returns top 10 pages.
@@ -1202,7 +1202,7 @@ flowchart TD
 - Page-image retrieval runs in parallel.
 - Evidence bundles contain image, summary, and matching chunks when available.
 - Summary-only pages remain valid evidence bundles.
-- `generateObject` schema output includes typed `citations`.
+- Structured output generation includes typed `citations`.
 - Citation minimum fields include `source`, `fileId`, `page`, `quote` where applicable.
 - Visual citation references include presigned URL plus refresh fallback path.
 - Unit and integration tests validate retrieval correctness and citation attribution.
@@ -1300,9 +1300,9 @@ flowchart TD
 
 ---
 
-### Task DOC_SEARCH: Unified searchDocument Tool
+### Task DOC_SEARCH: Unified Document Search Tool
 
-**What to do**: Implement `searchDocument` as a stable interface for PDFs and TXT. PDFs use hybrid page retrieval; TXT uses chunk retrieval. Return structured evidence bundles for gating and post-gate response generation. Support configurable not-found behavior and parallel multi-document calls.
+**What to do**: Build a document search tool as a stable interface for PDFs and TXT. PDFs use hybrid page retrieval; TXT uses chunk retrieval. Return structured evidence bundles for gating and post-gate response generation. Support configurable not-found behavior and parallel multi-document calls.
 
 **Depends on**: FileRegistry, RAG_INFRA, EVIDENCE_GATE.
 

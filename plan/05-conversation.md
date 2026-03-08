@@ -11,7 +11,7 @@
 - [Phase 1: Non-Actionable Detection](#phase-1-non-actionable-detection)
 - [Phase 2: Context Assembly](#phase-2-context-assembly)
 - [Phase 3: Two-Stage Intent Classification with Integrated Signals](#phase-3-two-stage-intent-classification-with-integrated-signals)
-- [IntentConfig (Server-Defined)](#intentconfig-server-defined)
+- [Intent Configuration (Server-Defined)](#intent-configuration-server-defined)
 - [Embedding Router Cache Strategy](#embedding-router-cache-strategy)
 - [Fallback and Ambiguity Handling](#fallback-and-ambiguity-handling)
 - [Multi-Intent and Dependent Multi-Intent](#multi-intent-and-dependent-multi-intent)
@@ -167,7 +167,7 @@ flowchart TB
         EMBEDDING_HINT["Embedding guess"]
         INTENT_LIST["Available intents and topics"]
     end
-    subgraph LLM_CALL["generateObject PRIMARY_MODEL"]
+    subgraph LLM_CALL["structured output generation PRIMARY_MODEL"]
         SCHEMA["Intent, rewrite, language, temporal, multi-intent, dependency, negation, replay, correction, frustration, abandonment, ambiguity"]
     end
     subgraph OUTPUT["LLM Output"]
@@ -240,11 +240,11 @@ flowchart TB
 ```
 
 ---
-## IntentConfig (Server-Defined)
+## Intent Configuration (Server-Defined)
 The server defines all intents and topics; library includes no built-in business intents.
 ```mermaid
 graph TD
-    subgraph INTENT_CONFIG["Server IntentConfig"]
+    subgraph INTENT_CONFIG["Server intent configuration"]
         INTENT_CUSTOMER_SUPPORT["INTENT_CUSTOMER_SUPPORT"]
         INTENT_PRODUCT_INFO["INTENT_PRODUCT_INFO"]
         INTENT_HR_POLICY["INTENT_HR_POLICY"]
@@ -265,7 +265,7 @@ graph TD
     end
 ```
 
-### IntentConfig Type Shape
+### Intent Configuration Type Shape
 | Field | Type | Description |
 |-------|------|-------------|
 | `intents` | `Record<string, IntentDefinition>` | Named business intents |
@@ -284,14 +284,14 @@ graph TD
 - Typical scale: multiple intents and topics.
 - Cached vectors fit comfortably in Valkey at expected scale.
 - Per-query classification cost is one embedding call plus one structured LLM call.
-- IntentConfig update triggers full re-embedding.
+- Intent configuration update triggers full re-embedding.
 
 ---
 ## Embedding Router Cache Strategy
 ```mermaid
 flowchart TB
     subgraph STARTUP["Server Startup"]
-        CONFIG["IntentConfig"] --> EXTRACT["Extract topic examples"]
+        CONFIG["intent configuration"] --> EXTRACT["Extract topic examples"]
         EXTRACT --> BATCH["Batch embed examples"]
         BATCH --> STORE["Store vectors in Valkey hash"]
     end
@@ -302,7 +302,7 @@ flowchart TB
         SORT --> TOP["Return top match and score"]
     end
     subgraph INVALIDATION["Cache Invalidation"]
-        CHANGE["IntentConfig changes"] --> CLEAR["Delete Valkey hash"]
+        CHANGE["intent configuration changes"] --> CLEAR["Delete Valkey hash"]
         CLEAR --> REEMBED["Re-embed examples"]
     end
 ```
@@ -408,7 +408,7 @@ flowchart TB
         HINT["Create temporalHint"]
     end
     subgraph MEMORY_RECALL["Memory Recall with Temporal Filter"]
-        RECALL["memoryRecall(query, temporalHint)"]
+        RECALL["Memory recall retrieval with temporal hint"]
         FILTER["Filter by createdAt range"]
         SEMANTIC["Semantic rank inside filtered set"]
         RESULT["Return temporally aligned records"]
@@ -761,7 +761,7 @@ flowchart TB
 | EntityExtraction strategy module | Exports | Assigns to sources |
 | DenseKeywords strategy module | Exports | Assigns to sources |
 | Default strategy mapping | Provides | Overrides per topic |
-| Source priority execution engine | Provides | Configures via IntentConfig |
+| Source priority execution engine | Provides | Configures via intent configuration |
 | RAG retrieval client wrapper | Provides | Configures deployment values |
 | Chunk-to-citation mapping | Provides | N/A |
 | Priority weighting formula | Provides | N/A |
@@ -793,7 +793,7 @@ flowchart TB
 - Concatenate context, embed once, compare by cosine similarity.
 - Return top match + confidence.
 - High confidence resolves intent; low confidence flags ambiguity path.
-- Cache invalidates on IntentConfig changes.
+- Cache invalidates on intent configuration changes.
 - Unit tests with mocked embedding provider.
 - Integration tests with real Valkey.
 - Vague new-thread references remain classifiable with cross-thread context.
@@ -804,7 +804,7 @@ flowchart TB
 - Follow-up intent continuity is preserved.
 - Vague new-thread reference classifies using user short-term context.
 - Cache miss gracefully re-embeds.
-- Empty IntentConfig does not crash.
+- Empty intent configuration does not crash.
 
 ### Task LLM_INTENT: LLM Intent Validator + Base Rewriter
 **What to do**: Implement structured LLM authority for validation, conditional rewrite, and conversational signals.

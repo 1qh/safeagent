@@ -187,7 +187,7 @@ graph LR
 
 | Task | Description | Category |
 |------|-------------|----------|
-| SPIKE_RAG_DEPS | RAG dependencies spike (unpdf, pdf-lib, JIMP, pgvector, Bun.S3Client, LibreOffice, Trigger.dev, ioredis, p-limit) | `deep` |
+| SPIKE_RAG_DEPS | RAG dependencies spike (unpdf, pdf-lib, JIMP, pgvector, S3-compatible storage client, LibreOffice, Trigger.dev, Redis client library, p-limit) | `deep` |
 
 **Gate**: SPIKE_RAG_DEPS must confirm that all document processing and RAG dependencies work under Bun. Blocks DOC_PIPELINE (documents), RAG_INFRA (RAG), and FILE_STORAGE (file storage).
 
@@ -218,7 +218,7 @@ graph LR
 | SURREALDB_CLIENT | SurrealDB client via surqlize ORM + memory graph schema | `deep` | SCAFFOLD_LIB |
 | DOCKER_COMPOSE | Docker Compose (pgvector + MinIO + SurrealDB + Valkey + Trigger.dev + LibreOffice) | `quick` | SCAFFOLD_SERVER |
 | STRUCT_LOGGING | Structured logging (LogTape + AsyncLocalStorage context) | `quick` | SCAFFOLD_LIB |
-| SCAFFOLD_FRONTEND | Frontend workspace setup (@safeagent/react, @safeagent/ui, @safeagent/ui-native stubs, Storybook env) | `quick` | SCAFFOLD_LIB |
+| SCAFFOLD_FRONTEND | Frontend workspace setup (React hooks package, web components package, native components package stubs, Storybook env) | `quick` | SCAFFOLD_LIB |
 
 ---
 
@@ -231,7 +231,7 @@ graph LR
 | ZOD_SCHEMAS | Zod validation schemas | `quick` | CORE_TYPES |
 | MCP_CLIENT | MCP client via framework `MCPServerStdio`/`MCPServerSSE`/`MCPServerStreamableHttp` | `unspecified-high` | CORE_TYPES, MCP_HEALTH |
 | SHORT_TERM_MEM | Memory management wrapper | `unspecified-high` | CORE_TYPES, STORAGE_WRAPPER |
-| PROVIDER_FALLBACK | Provider fallback helper (createFallbackModel) | `quick` | PROVIDER_HELPERS |
+| PROVIDER_FALLBACK | Provider fallback helper (fallback model factory) | `quick` | PROVIDER_HELPERS |
 | TUI_CHAT | Chat message display (streaming markdown) | `visual-engineering` | TUI_SHELL |
 | TUI_INPUT | Input component (textarea + submit) | `visual-engineering` | TUI_SHELL |
 | TUI_COMMANDS | Command system (/help, /model, /clear, /quit) | `visual-engineering` | TUI_SHELL |
@@ -271,7 +271,7 @@ graph LR
 |------|-------------|----------|------------|
 | DOC_PIPELINE | Document processing pipeline (multimodal-first) | `deep` | SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS |
 | FILE_STORAGE | File storage (S3 + metadata tables + quota) | `deep` | DOCKER_COMPOSE, CONFIG_DEFAULTS |
-| AGENT_FACTORY | Agent creation factory wrapping `@openai/agents` framework (`createAgent` + `aisdk()` bridge) | `deep` | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS |
+| AGENT_FACTORY | Agent creation capability wrapping `@openai/agents` framework (agent factory + AI SDK bridge) | `deep` | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS |
 | STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
 
 **Critical path note**: AGENT_FACTORY still combines type definitions, validation schemas, configuration, storage, and provider resolution into a single factory. Most integration work remains blocked on AGENT_FACTORY completion.
@@ -289,7 +289,7 @@ graph LR
 | GUARD_PIPELINE | Guardrail pipeline orchestrator | `deep` | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY |
 | EVAL_CONFIG | Eval/scoring configuration helpers | `unspecified-high` | AGENT_FACTORY |
 | FACT_EXTRACTION | Fact extraction pipeline (stream completion callback + Gemini Flash) (+ humanlikeness enhancements) | `deep` | AGENT_FACTORY, SURREALDB_CLIENT |
-| MEMORY_RECALL | Memory recall tool (createMemoryRecallTool) (+ humanlikeness enhancements) | `deep` | AGENT_FACTORY, SURREALDB_CLIENT |
+| MEMORY_RECALL | Memory recall tool (memory recall tool factory) (+ humanlikeness enhancements) | `deep` | AGENT_FACTORY, SURREALDB_CLIENT |
 | RAG_INFRA | RAG infrastructure (Drizzle page_index + hybrid search RRF + exhaustive query tool) | `deep` | STORAGE_WRAPPER, DOC_PIPELINE |
 | CTA_STREAMING | CTA streaming tool + stream injection | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
 | LOCATION_TOOL | Location enrichment tool (geocoding + image enrichment + stream event suppression) | `deep` | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE |
@@ -331,12 +331,12 @@ graph LR
 | SERVER_AGENT_CFG | Server agent config (prompts, model, processors) | `quick` | SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL |
 | SERVER_MCP | Server MCP definitions | `quick` | SCAFFOLD_SERVER, MCP_CLIENT |
 | SERVER_GUARDRAILS | Server guardrail rules | `quick` | SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD |
-| CLIENT_SDK | Client SDK (@safeagent/client) | `unspecified-high` | SSE_STREAMING, CTA_STREAMING, CORE_TYPES |
+| CLIENT_SDK | Client SDK (Client SDK package) | `unspecified-high` | SSE_STREAMING, CTA_STREAMING, CORE_TYPES |
 | AGENT_ROUTER | Agent router — query classification + dispatch | `deep` | AGENT_FACTORY, SSE_STREAMING |
 | JWT_AUTH | JWT auth middleware | `unspecified-high` | SCAFFOLD_SERVER |
-| **LLM_INTENT** | **LLM Intent Validator + Query Rewriter (generateObject-based validation) (+ humanlikeness enhancements)** | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
+| **LLM_INTENT** | **LLM Intent Validator + Query Rewriter (structured validation) (+ humanlikeness enhancements)** | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
 | **SOURCE_ROUTER** | **Source Priority Router (parallel fan-out + weighted merge)** | `deep` | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS |
-| **DOC_SEARCH** | **Per-Document Search Tool (searchDocument — evidence bundle)** | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
+| **DOC_SEARCH** | **Per-Document Search Tool (document-search capability — evidence bundle)** | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
 | **VISUAL_GROUNDING** | **Visual Grounding — Multimodal LLM integration for charts/tables/images** | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
 | EXTRACTION_SAFEGUARDS | Fact extraction safeguards (attribution, sarcasm, hypothetical, hallucination filters) | `deep` | FACT_EXTRACTION |
 | STYLE_PREFERENCES | Communication style meta-preference extraction and storage | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
@@ -375,9 +375,9 @@ graph LR
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
-| SUBAGENT_FACTORY | Sub-Agent Factory (intent-scoped Agent + Handoff creation with tool assignment) | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
+| SUBAGENT_FACTORY | Sub-Agent Factory (intent-scoped agent + handoff assembly with tool assignment) | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 | SERVER_ROUTES | Server HTTP routes + SSE endpoints + auth + health + graceful shutdown | `unspecified-high` | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING |
-| REACT_HOOKS | React hooks package (@safeagent/react — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity) | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
+| REACT_HOOKS | React hooks package (React Hooks Package — transport adapter, safe-agent hook, trace-steps hook, feedback hook, upload hook, server-connection hook, verbosity hook) | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
 
 ---
 
@@ -390,8 +390,8 @@ graph LR
 | FEEDBACK_ENDPOINT | User feedback endpoint (feedback submission → Langfuse scores) | `quick` | SERVER_ROUTES, LANGFUSE_MODULE |
 | FILE_CRUD | File management CRUD endpoints | `unspecified-high` | SERVER_ROUTES, FILE_REGISTRY |
 | ADMIN_API | Admin API for budget management | `unspecified-high` | SERVER_ROUTES, COST_TRACKING, JWT_AUTH |
-| WEB_COMPONENTS | Web UI components (@safeagent/ui — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
-| RN_COMPONENTS | React Native components (@safeagent/ui-native — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
+| WEB_COMPONENTS | Web UI components (Web Components Package — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (Native Components Package — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
 > **Note**: BARREL_EXPORTS depends on ALL library module tasks (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, and STORYBOOK_FRONTEND). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
 
@@ -405,7 +405,7 @@ graph LR
 | PKG_PUBLISH | package publish preparation | `quick` | BARREL_EXPORTS |
 | SMOKE_TESTS | Server smoke tests + deployment config | `unspecified-high` | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API |
 | LOAD_TESTS | k6 load test scripts + smoke run | `unspecified-high` | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE |
-| TRACE_UI | Trace visualization components (TraceTimeline, TraceStep, TraceLatencyBar, TraceDetail) | `unspecified-high` | WEB_COMPONENTS |
+| TRACE_UI | Trace visualization components (trace timeline component, trace step component, trace latency bar component, trace detail component) | `unspecified-high` | WEB_COMPONENTS |
 | FRONTEND_CLI | Component installation CLI (registry, resolver, copier, validator) | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
 | STORYBOOK_FRONTEND | Storybook documentation (stories, mock generators, visual regression baseline) | `unspecified-high` | WEB_COMPONENTS |
 
@@ -1219,10 +1219,10 @@ The following 25 tasks were added from the expanded requirements (three-layer me
 | REWRITE_STRATEGIES | Rewrite Strategy Modules — HyDE, EntityExtraction, DenseKeywords | Document 05 | 3 | `quick` | CORE_TYPES |
 | FILE_REGISTRY | FileRegistry — temporal, ordinal, named resolution | Document 09 | 4 | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
 | EVIDENCE_GATE | Evidence Bundle Gate — sufficiency scoring + thresholds | Document 09 | 7 | `deep` | EMBED_ROUTER, RAG_INFRA, CORE_TYPES |
-| DOC_SEARCH | Per-Document Search Tool — searchDocument (evidence bundle) | Document 09 | 8a | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
+| DOC_SEARCH | Per-Document Search Tool — document search capability (evidence bundle) | Document 09 | 8a | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
 | VISUAL_GROUNDING | Visual Grounding — multimodal LLM for charts/tables/images | Document 09 | 8a | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
 | ORCHESTRATOR | Orchestrator Agent Framework — supervisor + parallel sub-agent synthesis | Document 06 | 8b | `deep` | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
-| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped Agent + Handoff creation with tool assignment | Document 06 | 9a | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
+| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped agent + handoff assembly with tool assignment | Document 06 | 9a | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 
 ### Engine Gap Tasks
 
@@ -1246,9 +1246,9 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
 | SCAFFOLD_FRONTEND | Frontend workspace setup | Document 18 | 2 | `quick` | SCAFFOLD_LIB |
-| REACT_HOOKS | React hooks package (@safeagent/react) | Document 18 | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
-| WEB_COMPONENTS | Web UI components (@safeagent/ui) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
-| RN_COMPONENTS | React Native components (@safeagent/ui-native) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
+| REACT_HOOKS | React hooks package (React Hooks Package) | Document 18 | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
+| WEB_COMPONENTS | Web UI components (Web Components Package) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (Native Components Package) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
 | TRACE_UI | Trace visualization components | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |
 | FRONTEND_CLI | Component installation CLI | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
 | STORYBOOK_FRONTEND | Storybook documentation | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |

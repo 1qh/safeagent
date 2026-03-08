@@ -60,7 +60,7 @@ flowchart TD
         DOCX_CONV["DOCX → PDF\n(LibreOffice headless)"]
         PDF_SPLIT["pdf-lib: split PDF\ninto per-page PDFs"]
         IMG_EXTRACT["pdfjs: extract raster images\nper page"]
-        GEMINI_SUM["Gemini generateObject\nper-page summarization"]
+        GEMINI_SUM["Gemini structured output generation\nper-page summarization"]
         EMBED_SUM["Embed summaries\n→ EMBEDDING_PROVIDER"]
         STORE_IDX["INSERT page_index rows\n(summary + vector)"]
         STORAGE_PAGE_PDFS["PUT per-page PDFs to S3"]
@@ -237,7 +237,7 @@ flowchart TD
 
     subgraph STEP_C["Step C: Gemini Summarization"]
         PLIMIT["p-limit concurrency\nConfigurable per-key limit\n(overrides KeyPool default\nfor summarization task)"]
-        GEMINI_CALL["generateObject call:\ninput: page PDF (base64) + extracted images\noutput: {summary, imageDescriptions[], hasVectorCharts}"]
+        GEMINI_CALL["Structured output generation call:\ninput: page PDF (base64) + extracted images\noutput: summary, image descriptions, and vector-chart signal"]
         DENSE_PARA["summary: dense paragraphs\n150–400 words\nEach summary = 1 RAG chunk"]
     end
 
@@ -281,7 +281,7 @@ This step is pure PDF parsing. No LLM is involved. The goal is to collect the vi
 
 ### Step C: Gemini Summarization
 
-Each page is summarized with a `generateObject` call. The call sends:
+Each page is summarized with a structured output generation call. The call sends:
 - The single-page PDF as base64
 - Any extracted raster images from that page
 - A schema requiring `{ summary: string, imageDescriptions: ImageDescription[], hasVectorCharts: boolean }`
@@ -351,7 +351,7 @@ unpdf may extract more text than the embedding model can handle. The raw text is
 
 ### Dev Mode
 
-When `TRIGGER_DEV_API_URL` and `TRIGGER_DEV_API_KEY` are absent, the background stage runs in-process immediately after the blocking stage, without requiring a Trigger.dev deployment. This makes local development possible without the full Docker Compose stack. The adapter selection is handled by `createQueueAdapter` (see 15-Infrastructure).
+When `TRIGGER_DEV_API_URL` and `TRIGGER_DEV_API_KEY` are absent, the background stage runs in-process immediately after the blocking stage, without requiring a Trigger.dev deployment. This makes local development possible without the full Docker Compose stack. The adapter selection is handled by a queue adapter factory (see 15-Infrastructure).
 
 ---
 
@@ -375,9 +375,9 @@ stateDiagram-v2
 
     ENRICHING --> READY : Background stage fails\n(file still queryable\nfrom summary entries)
 
-    READY --> DELETED : cleanupThread called
+    READY --> DELETED : thread cleanup function called
 
-    ENRICHED --> DELETED : cleanupThread called
+    ENRICHED --> DELETED : thread cleanup function called
 
     FAILED --> [*]
     DELETED --> [*]
@@ -493,7 +493,7 @@ flowchart TD
 
     subgraph DELIVERY["Image delivery"]
         API_ENDPOINT["Page Image Redirect Endpoint"]
-        REDIRECT["302 redirect\nto presigned S3 URL"]
+        REDIRECT["Redirect response\nto presigned S3 URL"]
         DIRECT_URL["Direct presigned URL\n(preferred, from metadata)"]
     end
 
@@ -515,7 +515,7 @@ flowchart TD
 
 ### Image Description Schema
 
-Each extracted image gets a structured description from Gemini's `generateObject` call. The `ImageDescription` type includes:
+Each extracted image gets a structured description from Gemini's structured output generation call. The `ImageDescription` type includes:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -534,7 +534,7 @@ Images that come from web search (Gemini's web grounding feature) are handled di
 
 ### Presigned URL Delivery
 
-Presigned URLs have a 7-day TTL. The page image redirect endpoint exists as a fallback for clients that don't have the presigned URL cached. It generates a fresh presigned URL and returns a 302 redirect. Clients that store the presigned URL from the `metadata` JSONB can skip the API call entirely.
+Presigned URLs have a 7-day TTL. The page image redirect endpoint exists as a fallback for clients that don't have the presigned URL cached. It generates a fresh presigned URL and returns a redirect response. Clients that store the presigned URL from the `metadata` JSONB can skip the API call entirely.
 
 ---
 
@@ -578,11 +578,11 @@ graph TD
 
 Page numbers are 1-indexed. Image indices are 0-indexed (matching the `ImageDescription.index` field).
 
-### Bun.S3Client
+### S3-Compatible Storage Client
 
-The system uses `Bun.S3Client` for all S3 operations. This is a zero-dependency S3 client built into the Bun runtime. The alternative (`@aws-sdk/client-s3`) adds approximately 15MB to the bundle. Since the server runs on Bun, the built-in client is always preferred.
+The system uses an S3-compatible storage client for all S3 operations. This is a zero-dependency client built into the Bun runtime. The alternative (`@aws-sdk/client-s3`) adds approximately 15MB to the bundle. Since the server runs on Bun, the built-in client is always preferred.
 
-`Bun.S3Client` supports presigned URL generation, multipart upload, and all standard S3 operations. It works with any S3-compatible endpoint, including MinIO.
+The S3-compatible storage client supports presigned URL generation, multipart upload, and all standard S3 operations. It works with any S3-compatible endpoint, including MinIO.
 
 ---
 
@@ -762,7 +762,7 @@ The optional distributed lock prevents two concurrent cleanup calls for the same
 
 ### TTL-Based Cleanup
 
-Files have an `expires_at` timestamp set at upload time. The Trigger.dev scheduled task runs daily, finds all expired files, and calls `cleanupFile` for each. This handles the case where a user never explicitly deletes their files.
+Files have an `expires_at` timestamp set at upload time. The Trigger.dev scheduled task runs daily, finds all expired files, and calls the file cleanup function for each. This handles the case where a user never explicitly deletes their files.
 
 ---
 
@@ -786,7 +786,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ### Task DOC_PIPELINE: Document Processing Pipeline
 
-**What to do**: Implement the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini `generateObject` summarizes each page with the `{ summary, imageDescriptions[], hasVectorCharts }` schema. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when `hasVectorCharts` is true and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.
+**What to do**: Build the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini structured output generation summarizes each page with a schema that includes summary text, image descriptions, and vector-chart detection. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when vector charts are detected and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.
 
 **Depends on**: SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS
 
@@ -810,23 +810,23 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ### Task FILE_STORAGE: File Storage
 
-**What to do**: Implement the S3 storage layer using `Bun.S3Client`. Implement the key naming scheme for original files, per-page PDFs, and extracted images. Implement presigned URL generation with 7-day TTL. Implement the page image redirect endpoint that generates a fresh presigned URL and returns a 302 redirect. Implement the `cleanupThread` function that lists and batch-deletes all S3 objects under a thread prefix.
+**What to do**: Build the S3 storage layer using an S3-compatible storage client. Build the key naming scheme for original files, per-page PDFs, and extracted images. Build presigned URL generation with 7-day TTL. Build the page image redirect endpoint that generates a fresh presigned URL and returns a redirect response. Build the thread cleanup capability that lists and batch-deletes all S3 objects under a thread prefix.
 
 **Depends on**: DOCKER_COMPOSE, CONFIG_DEFAULTS
 
 **Acceptance Criteria**:
 - All S3 keys follow a hierarchical structure organized by user, thread, and file identity
 - Presigned URLs expire after 7 days
-- The image delivery endpoint returns 302 to a valid presigned URL
-- `cleanupThread` deletes all objects under the thread prefix in a single batch operation
-- `Bun.S3Client` is used exclusively (no `@aws-sdk` dependency)
+- The image delivery endpoint returns a redirect response to a valid presigned URL
+- Thread-level cleanup deletes all objects under the thread prefix in a single batch operation
+- S3 operations use the Bun built-in S3-compatible client (no `@aws-sdk` dependency)
 
 **QA Scenarios**:
 - Upload a file, verify original stored at correct S3 key
-- Request image via API endpoint, verify 302 redirect to presigned URL
+- Request image via API endpoint, verify redirect response to presigned URL
 - Presigned URL is accessible without authentication
-- Call `cleanupThread`, verify all objects under the thread prefix are deleted
-- Call `cleanupThread` twice for the same thread, verify no error on second call (idempotent)
+- Run thread cleanup, verify all objects under the thread prefix are deleted
+- Run thread cleanup twice for the same thread, verify no error on second run (idempotent)
 
 ---
 

@@ -198,7 +198,7 @@ Policy notes:
 - One model policy applies across tasks.
 - Grounding mode is a capability toggle, not a model branch.
 - Terminal session model switching is development/testing only.
-- thinkingLevel remains optional in createAgent configuration.
+- thinkingLevel remains optional in agent creation factory configuration.
 - Constants are not duplicated outside config source.
 - Multi-key values rotate through round-robin pool logic.
 
@@ -313,7 +313,7 @@ flowchart TD
     STARTUP_VALIDATOR -->|error map incomplete| HALT_PROCESS["Process exits"]
     STARTUP_VALIDATOR -->|all checks pass| RUNTIME_CONFIG["Frozen runtime config"]
 
-    RUNTIME_CONFIG --> CFG_AGENT_FACTORY["createAgent"]
+    RUNTIME_CONFIG --> CFG_AGENT_FACTORY["Agent creation factory"]
     RUNTIME_CONFIG --> CFG_ORCHESTRATOR["Orchestrator"]
     RUNTIME_CONFIG --> CFG_EMBED_ROUTER["Embedding Router"]
     RUNTIME_CONFIG --> CFG_GUARDRAIL["Guardrail Pipeline"]
@@ -400,7 +400,7 @@ flowchart LR
 
 Auth hard-fail rule:
 
-- NODE_ENV production with missing JWT_SECRET must refuse startup.
+- Production environment mode with missing JWT_SECRET must refuse startup.
 - This is a fail-closed security boundary, not a warning path.
 
 ---
@@ -598,8 +598,8 @@ flowchart LR
 
 Configuration responsibilities:
 
-- createConfig merges and validates.
-- defineAgent merges per-agent overrides over library defaults.
+- Configuration builder merges and validates.
+- Agent definition helper merges per-agent overrides over library defaults.
 - Invalid config returns descriptive validation errors.
 - No hardcoded deployment prompt policy inside library defaults.
 - Library ships no built-in concept registry contents.
@@ -618,7 +618,7 @@ Storage factory chooses backend by explicit config or environment auto-detection
 
 ```mermaid
 flowchart TD
-    STORAGE_START["createStorage"]
+    STORAGE_START["Storage factory"]
     HAS_CONFIG{"config provided"}
     HAS_TYPE{"config type"}
 
@@ -724,7 +724,7 @@ Provider helper contracts:
 
 Fallback helper contracts:
 
-- createFallbackModel wraps primary model with ordered fallback chain.
+- Fallback model helper wraps the primary model with an ordered fallback chain.
 - Stream and generate paths both use fallback middleware.
 - onFallback callback can be invoked when fallback is used.
 
@@ -983,7 +983,7 @@ The foundation layer task specifications remain authoritative.
 | SCAFFOLD_SERVER | Server scaffold baseline and health shell | SPIKE_CORE_STACK | Canonical server task behavior aligns with server plan |
 | CORE_TYPES | Define all domain contracts and runtime-enumerable typed error code set | SCAFFOLD_LIB | Type-check pass, barrel import pass, DeepPartial behavior validated |
 | ZOD_SCHEMAS | Build schema layer mirroring core types with Zod v4 | CORE_TYPES | Schema tests pass, defaults apply, invalid config errors are descriptive |
-| CONFIG_DEFAULTS | Build createConfig and defineAgent merge+validate path | CORE_TYPES and ZOD_SCHEMAS | No-args defaults valid, partial nested overrides merge correctly |
+| CONFIG_DEFAULTS | Build configuration merge and validation capabilities for library defaults and per-agent overrides | CORE_TYPES and ZOD_SCHEMAS | Default configuration is valid with no overrides, and nested override behavior is correct and predictable |
 | STORAGE_WRAPPER | Build postgres/memory/custom factory with auto-detection | SCAFFOLD_LIB | Explicit and auto-detected selection paths validated |
 | MCP_HEALTH | Build MCP silent-failure detection wrapper | SCAFFOLD_LIB | Missing tools detected, throw and warn modes validated |
 | PROVIDER_HELPERS | Build model resolver and fallback middleware helpers | SCAFFOLD_LIB | String resolution, passthrough, fallback activation validated |

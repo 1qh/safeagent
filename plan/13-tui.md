@@ -39,7 +39,7 @@ The TUI is built with OpenTUI Solid, a SolidJS reconciler for OpenTUI's native Z
 
 The client supports two execution paths with the same UX contract:
 
-- Direct runtime mode: consumes `RunStreamEvent` from `Runner.run()` in-process.
+- Direct runtime mode: consumes `RunStreamEvent` from agent execution stream API in-process.
 - Remote SDK mode: uses `@safeagent/client` with transport-aligned stream semantics.
 
 Both modes preserve identical chat behavior, command behavior, upload behavior, and guardrail behavior.
@@ -488,7 +488,7 @@ The agent integration layer bridges TUI reactive state and safeagent execution. 
 
 ### Direct Runtime Path
 
-The TUI can import the runtime directly and call `Runner.run(agent, input, { stream: true })`. The returned `AsyncIterable<RunStreamEvent>` is consumed chunk by chunk and mapped to state updates.
+The TUI can import the runtime directly and call execute agent with streaming enabled. The returned `AsyncIterable<RunStreamEvent>` is consumed chunk by chunk and mapped to state updates.
 
 ### SDK Remote Path
 
@@ -592,9 +592,9 @@ The TUI consumes `RunStreamEvent` semantics directly in local mode and preserves
 
 Mutable state uses SolidJS signals: message history, streaming status, active model, pending attachments, error state, overlay visibility.
 
-Derived state uses `createMemo`.
+Derived state uses derived-state memo helper.
 
-Side effects such as stream lifecycle control and upload status tracking use `createEffect`.
+Side effects such as stream lifecycle control and upload status tracking use reactive side-effect helper.
 
 ### Terminal Resize
 
@@ -738,7 +738,7 @@ TUI_SHELL
 
 **What to do**:
 
-Wire TUI to safeagent in both direct and SDK modes. Implement stream lifecycle: start stream on submit, dispatch stream events, catch `InputGuardrailTripwireTriggered` and `OutputGuardrailTripwireTriggered` exceptions, handle cancellation on Ctrl+C, finalize message on completion, show spinner while streaming, and update token count when streaming completes.
+Connect the TUI to the library in both direct and SDK modes. Implement stream lifecycle: start stream on submit, dispatch stream events, catch `InputGuardrailTripwireTriggered` and `OutputGuardrailTripwireTriggered` exceptions, handle cancellation on Ctrl+C, finalize message on completion, show spinner while streaming, and update token count when streaming completes.
 
 **Depends on**:
 
