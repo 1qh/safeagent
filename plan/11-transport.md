@@ -810,6 +810,20 @@ classDiagram
     }
 ```
 
+### SSE Payload Security
+
+Structured SSE event payloads require validation at both the emit boundary on the server and the parse boundary on the client.
+
+**Server-side emit validation**:
+- Citation payloads validate URLs against trusted domains or user-owned document references. Arbitrary external URLs in citations are rejected to prevent URL-parameter exfiltration patterns.
+- Location payloads validate coordinate ranges before emission. Location image URLs must come from the configured image provider rather than arbitrary sources.
+- Trace-step payloads are sanitized so production streams do not leak internal system details through diagnostic data.
+
+**Client-side parse validation**:
+- All SSE event data is parsed with strict schema validation and unexpected fields are dropped.
+- URLs in citation and location events are validated again before rendering. The client never navigates to or embeds URLs that do not match expected patterns.
+- Text content in events is always treated as data and never interpolated as executable markup.
+
 ---
 
 ## Cross-References

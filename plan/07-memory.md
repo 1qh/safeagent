@@ -847,6 +847,23 @@ flowchart TB
     DEDUPLICATION_STAGE --> ELIGIBLE_STORAGE["Store eligible facts"]
 ```
 
+### Injection Resistance in Memory Pipeline
+
+Long-term memory creates a persistent indirect injection surface. If a user crafts messages designed to plant specific content as facts, that content can persist in the memory store and be recalled in future sessions, re-injecting the payload each time.
+
+Defense layers in the memory pipeline:
+
+**At extraction time**:
+- The same injection classifier used for input guardrails evaluates each candidate fact before storage. Facts containing instruction-like patterns, role-override language, or behavioral directives are rejected regardless of confidence score.
+- Attribution filtering already prevents assistant-originated assumptions from becoming memory. This also blocks injection attempts where attacker instructions are reframed as user preferences.
+
+**At recall time**:
+- Recalled facts are treated as zero-trust content in the context assembly pipeline, the same way retrieved external content is treated, and receive data-only boundary framing before entering the LLM context window.
+- If a recalled fact triggers content sanitization, it is redacted or flagged for review rather than silently injected.
+
+**At maintenance time**:
+- The periodic cleanup path that removes expired facts also scans stored facts for injection patterns and quarantines matches. This catches poisoning content that may have been stored before newer detection rules were deployed.
+
 ### Emotional context carry-forward with decay
 
 Extraction also captures short-lived emotional state as emotional-state facts.
@@ -1677,6 +1694,8 @@ Emotional carry-forward can over-persist if decay is too long.
 - Injects active emotional context when decay > 0.
 - Refreshes TTL metadata on returned records.
 - Returns formatted context string by category.
+- Recalled facts pass content sanitization before context injection.
+- Facts containing injection patterns are redacted or excluded from recall results.
 - Auto-trigger mode injects context before agent reasoning.
 - Agent-initiated mode returns tool output during reasoning.
 - Tool guidance text describes valid invocation conditions.

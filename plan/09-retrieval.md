@@ -344,6 +344,29 @@ flowchart TD
     end
 ```
 
+### Retrieved Content Sanitization
+
+Before any retrieved chunk enters the LLM context window, it passes through a content sanitization pipeline:
+
+1. **Injection pattern classifier**: Each retrieved chunk is evaluated by the same ML classifier used in input guardrails. Chunks flagged as containing instruction-like patterns (role overrides, system prompt mimicry, behavioral directives) are either redacted with a security marker or tagged as data-only content with explicit framing.
+
+2. **Exfiltration vector stripping**: Retrieved content is sanitized of potential data exfiltration vectors:
+   - External image embeds, including attack patterns that use image URLs with query parameters to exfiltrate conversation data
+   - Dynamic URL patterns with query parameters that could carry extracted data
+   - Hidden HTML or markdown that could contain invisible instructions
+
+3. **Content boundary framing**: Retrieved chunks are wrapped with explicit data-only boundaries in the context window. The wrapping reminds the model that this content is external data to be referenced, not instructions to be followed.
+
+This sanitization runs at retrieval time, after hybrid search and before context assembly, so the LLM never sees raw unsanitized external content. The latency cost is approximately 50 to 100 milliseconds per retrieval operation.
+
+```mermaid
+flowchart LR
+    RETRIEVED_CHUNKS["RETRIEVED_CHUNKS"] --> INJECTION_CLASSIFIER["INJECTION_CLASSIFIER"]
+    INJECTION_CLASSIFIER --> EXFILTRATION_STRIP["EXFILTRATION_STRIP"]
+    EXFILTRATION_STRIP --> BOUNDARY_WRAP["BOUNDARY_WRAP"]
+    BOUNDARY_WRAP --> CONTEXT_ASSEMBLY["CONTEXT_ASSEMBLY"]
+```
+
 ### Tool Flow
 
 ```mermaid
@@ -1202,6 +1225,9 @@ flowchart TD
 - Deduplication uses grouping by physical page before final scoring.
 - Page-image retrieval runs in parallel.
 - Evidence bundles contain image, summary, and matching chunks when available.
+- Retrieved chunks pass injection classification before context assembly.
+- Exfiltration vectors, including external images and dynamic URLs, are stripped from retrieved content.
+- Content boundary framing is applied to all zero-trust content.
 - Summary-only pages remain valid evidence bundles.
 - Structured output generation includes typed `citations`.
 - Citation minimum fields include `source`, `fileId`, `page`, `quote` where applicable.

@@ -120,6 +120,51 @@ Intent routing consumes three-layer context:
 
 Ordering guarantee: memory loading completes before intent detection. First-turn recall uses raw user message and does not depend on pre-classified intent. See [07 — Memory & Intelligence](./07-memory.md).
 
+### Context Boundary Enforcement
+
+All content assembled into the model context follows a strict trust hierarchy:
+
+- System instructions (highest trust): Delivered through Gemini's dedicated system instruction channel and treated as authoritative policy.
+- User messages (medium trust): Direct user input after input guardrail screening.
+- Retrieved content (zero trust): RAG chunks, recalled memories, and cross-thread message fragments treated as data only, never as executable instructions.
+
+Retrieved content is wrapped with reinforcement boundaries before context assembly. Security framing appears before and after untrusted content to reinforce that retrieved text is informational data, not behavioral instructions. This sandwich framing is mandatory because delimiters alone are not sufficient defense.
+
+When any zero-trust content contains instruction-like patterns, the retrieval and memory classifiers enforce one of two safe transforms before assembly: redact the risky segment with a security marker, or preserve it with explicit data-only framing. Unmarked zero-trust content is never inserted into instruction-adjacent positions.
+
+```mermaid
+flowchart TB
+    SYSTEM_LAYER[SYSTEM_INSTRUCTIONS_HIGHEST_TRUST]
+    USER_LAYER[USER_MESSAGES_MEDIUM_TRUST]
+    ZERO_TRUST_LAYER[RETRIEVED_CONTENT_ZERO_TRUST]
+
+    subgraph SANITIZATION_PATH[SANITIZATION_PATH]
+        CONTENT_CLASSIFIER[CONTENT_CLASSIFIER]
+        INSTRUCTION_PATTERN{INSTRUCTION_PATTERN_DETECTED}
+        REDACTED_CONTENT[REDACTED_WITH_SECURITY_MARKER]
+        DATA_ONLY_CONTENT[DATA_ONLY_FRAMED_CONTENT]
+        SANDWICH_PRE[SECURITY_BOUNDARY_PREFIX]
+        SANDWICH_POST[SECURITY_BOUNDARY_SUFFIX]
+    end
+
+    ASSEMBLED_CONTEXT[ASSEMBLED_CONTEXT_WINDOW]
+    INTENT_STAGE[INTENT_CLASSIFICATION_STAGE]
+
+    SYSTEM_LAYER --> ASSEMBLED_CONTEXT
+    USER_LAYER --> ASSEMBLED_CONTEXT
+    ZERO_TRUST_LAYER --> CONTENT_CLASSIFIER
+    CONTENT_CLASSIFIER --> INSTRUCTION_PATTERN
+    INSTRUCTION_PATTERN -->|YES| REDACTED_CONTENT
+    INSTRUCTION_PATTERN -->|NO_OR_LOW_RISK| DATA_ONLY_CONTENT
+    REDACTED_CONTENT --> SANDWICH_PRE
+    DATA_ONLY_CONTENT --> SANDWICH_PRE
+    SANDWICH_PRE --> ASSEMBLED_CONTEXT
+    REDACTED_CONTENT --> SANDWICH_POST
+    DATA_ONLY_CONTENT --> SANDWICH_POST
+    SANDWICH_POST --> ASSEMBLED_CONTEXT
+    ASSEMBLED_CONTEXT --> INTENT_STAGE
+```
+
 ---
 ## Phase 3: Two-Stage Intent Classification with Integrated Signals
 Two-stage model, one coherent flow:

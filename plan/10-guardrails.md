@@ -200,6 +200,58 @@ flowchart TB
 - When multiple guardrails return p0, the `conceptId` from the first p0 in the array order is used for the fallback message.
 - The abort action maps to a true tripwire flag in the framework guardrail return value, which causes the framework to throw the input tripwire exception.
 
+### Injection Detection Architecture
+
+Input defense uses a three-tier ensemble because no single detector catches the full attack surface. Each tier contributes a different strength profile, and all tiers run in parallel for full coverage under normal operation.
+
+- Tier 1 — Heuristic Pattern Layer (~0ms latency): Regex-driven detection of known injection signatures including role-override phrases, delimiter injection attempts, encoding obfuscation patterns such as base64 blobs and unicode homoglyphs, and imperative instruction-like patterns. This layer is the fast-reject filter with moderate recall (about 60 percent) and low false positive rate.
+- Tier 2 — ML Classification Layer (~30ms latency): A trained injection classifier evaluates the input with stronger recall (about 80 percent) than heuristics, but still misses adaptive and novel obfuscation strategies. This layer runs in parallel with Tier 3.
+- Tier 3 — LLM-as-Judge Layer (~300ms latency): A lightweight judge model returns structured classification output to determine whether the input attempts to override system instructions, impersonate system roles, or redirect agent behavior. This layer has the highest recall (about 85 percent and above) and captures novel attack phrasing. It runs in parallel with the main agent when tool side effects are read-only, and runs in blocking mode when tools can write or perform destructive actions.
+
+Decision logic:
+
+- Block if the LLM-as-judge layer triggers, even when it is the only triggered layer.
+- Flag for review if any two of the three layers trigger.
+- Pass if none trigger, or if only one non-LLM layer triggers.
+
+```mermaid
+flowchart TB
+    INPUT_TEXT[INPUT_TEXT]
+    TOOL_RISK{TOOL_RISK_LEVEL}
+
+    subgraph ENSEMBLE_RUN[ENSEMBLE_RUN]
+        TIER_ONE[TIER_ONE_HEURISTIC_PATTERN]
+        TIER_TWO[TIER_TWO_ML_CLASSIFIER]
+        TIER_THREE[TIER_THREE_LLM_JUDGE]
+    end
+
+    FAST_REJECT{FAST_REJECT_SIGNAL}
+    TIER_COUNT{TRIGGER_COUNT}
+    LLM_TRIGGER{LLM_JUDGE_TRIGGERED}
+
+    BLOCK[BLOCK_INPUT]
+    FLAG[FLAG_FOR_REVIEW]
+    PASS[PASS_INPUT]
+
+    INPUT_TEXT --> TOOL_RISK
+    TOOL_RISK -->|READ_ONLY_TOOLS| ENSEMBLE_RUN
+    TOOL_RISK -->|WRITE_OR_DESTRUCTIVE_TOOLS| ENSEMBLE_RUN
+
+    INPUT_TEXT --> TIER_ONE
+    INPUT_TEXT --> TIER_TWO
+    INPUT_TEXT --> TIER_THREE
+
+    TIER_ONE --> FAST_REJECT
+    FAST_REJECT --> TIER_COUNT
+    TIER_TWO --> TIER_COUNT
+    TIER_THREE --> LLM_TRIGGER
+    LLM_TRIGGER --> TIER_COUNT
+
+    LLM_TRIGGER -->|YES| BLOCK
+    TIER_COUNT -->|TWO_OR_MORE| FLAG
+    TIER_COUNT -->|NONE_OR_ONE_NON_LLM| PASS
+```
+
 ---
 
 ## Output Guardrails (OUTPUT_GUARD)
@@ -274,6 +326,11 @@ stateDiagram-v2
     VIOLATION_PROD --> [*]
     COMPLETE --> [*]
 ```
+
+### Output-Side Injection Detection
+
+- System prompt leakage detection: Output guardrails check for leaked system-prompt content using fingerprint-based matching so paraphrased leakage is caught in addition to exact fragments.
+- Attention collapse detection: Output guardrails flag responses that over-index on a single retrieved chunk while ignoring the user query, since this pattern can indicate indirect injection success through retrieved content.
 
 ---
 
@@ -816,6 +873,11 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 **Acceptance Criteria**:
 - All input guardrails run in parallel via promise-based fan-out
+- Injection detection ensemble runs all three tiers in parallel
+- Heuristic tier provides fast-reject before ML and LLM tiers complete
+- LLM-as-judge uses structured output with boolean injection flag and reasoning
+- Blocking versus parallel mode is configurable based on tool destructiveness
+- Multi-turn escalation monitor updates sliding-window score on each input
 - Worst-wins aggregation: p0 beats p1 beats p2
 - p0 → abort called, TripWire fires on stream
 - Multiple p0s → first p0's conceptId used

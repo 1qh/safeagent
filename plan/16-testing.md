@@ -509,6 +509,42 @@ Adversarial tests model attacker behavior. Each guardrail has bypass-attempt tes
 
 Unit-level adversarial cases run payloads against individual guardrail functions. Integration-level adversarial cases run payloads through full input-to-output pipelines. Newly discovered bypasses are converted into permanent regression tests.
 
+### Injection-Specific Test Categories
+
+Beyond the general attack categories listed above, prompt injection testing requires dedicated suites.
+
+**Direct injection tests**:
+- Role-override attempts.
+- System prompt extraction attempts.
+- Instruction override prompts that try to supersede prior constraints.
+- Delimiter injection that mimics higher-priority message formats.
+- Encoding evasion, including base64 payloads, unicode homoglyph substitution, and token-split instructions.
+- Multi-language injection attempts in non-primary languages.
+
+**Indirect injection tests via retrieval**:
+- Documents with embedded instructions hidden inside otherwise legitimate content.
+- Exfiltration payloads in document content, especially URL query strings intended to leak conversation data through image rendering.
+- Citation manipulation payloads that attempt to induce false or fabricated citations.
+- Gradual context poisoning distributed across multiple retrieved chunks.
+
+**Indirect injection tests via memory**:
+- Crafted conversational turns designed to plant instruction-like content as user facts.
+- Recall-triggered injection where poisoned memory activates on new-thread auto-recall.
+- Memory supersession attacks that attempt to overwrite legitimate memory with injected directives.
+
+**Multi-turn escalation tests**:
+- Gradual persona drift over multi-turn windows.
+- Privilege escalation sequences that attempt to activate elevated behavior.
+- Context window exhaustion followed by late-turn injection payloads.
+- Benign setup turns followed by a trigger turn that activates planted context.
+
+**Output-side injection tests**:
+- System prompt leakage attempts under multiple extraction prompt styles.
+- Attention collapse detection where responses prioritize injected content over the actual user query.
+- Exfiltration through generated tool arguments intended to leak sensitive data.
+
+Each test category runs at both unit level for guardrail behavior and integration level for the full input-to-output pipeline. The regression suite expands continuously as new bypass techniques are discovered.
+
 ### Security and Concurrency Scenarios
 
 - JWT algorithm confusion attempts are rejected.

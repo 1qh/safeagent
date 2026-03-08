@@ -102,6 +102,11 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_PROVIDER_AGNOSTIC | Provider-agnostic model configuration | No model-specific branching in core agent logic. Grounding mode is an explicit exception — it uses `@ai-sdk/google` directly because Gemini grounding is a Google-specific capability with no provider-neutral equivalent |
 | MH_CONFIG_OVERRIDABLE | All configs have defaults, all defaults are overridable | Every configuration surface has sensible fallbacks |
 | MH_NO_HARDCODED_PROMPTS | No hardcoded agent instructions/app-level prompts in library | Internal implementation prompts (extraction, tool descriptions) are acceptable — user-facing prompts are not |
+| MH_INJECTION_DETECTION | Multi-tier prompt injection detection | Input guardrails implement ensemble detection combining fast heuristic pattern matching, ML-based classification, and LLM-as-judge evaluation running in parallel. Single-layer detection is insufficient for production security |
+| MH_INDIRECT_INJECTION_DEFENSE | Retrieved content sanitization | All content from external sources (RAG chunks, recalled memories, document extracts) passes through injection classification before entering the LLM context window. Content flagged as containing instruction-like patterns is redacted or marked as data-only |
+| MH_SYSTEM_PROMPT_HARDENING | System prompt hardening with explicit trust hierarchy | System prompt uses Gemini's dedicated system instruction field for architectural trust separation, defines trust levels for system, user, and retrieved content, and includes constitutional prohibitions against behavior modification by retrieved content |
+| MH_TOOL_ARGUMENT_VALIDATION | Tool argument validation with intent consistency checks | All tool calls pass schema validation and semantic intent-consistency checks. Tool arguments that do not match the user's original request are flagged. Destructive tool calls require explicit user confirmation |
+| MH_ESCALATION_DETECTION | Multi-turn escalation detection | Multi-turn conversation monitoring uses sliding-window anomaly scoring with behavioral signals including privilege escalation phrases, topic drift from session intent, tool call velocity anomalies, and argument drift. Conditional deep analysis triggers when the window score exceeds threshold |
 
 ### Language and Content Safety
 
@@ -547,6 +552,9 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_LANGFUSE_CLOUD | Langfuse Cloud | Self-hosted only — no cloud dependency |
 | MN_LANGFUSE_DATASETS | Langfuse datasets/experiments | Promptfoo handles eval |
 | MN_LANG_GUARD_DEFAULT_ON | Language and hate-speech guardrails enabled by default | Both guardrails are opt-in and require explicit server configuration |
+| MN_SINGLE_LAYER_INJECTION | Single-layer prompt injection defense | A single classifier, single regex set, or single LLM check alone is insufficient. Ensemble detection is required |
+| MN_DELIMITER_ONLY_DEFENSE | Delimiter-only injection defense as sole protection | Delimiters alone do not prevent injection and must be combined with content classification and instruction hierarchy |
+| MN_UNSCOPED_TOOL_ACCESS | Unrestricted tool access regardless of request context | Agents must not have access to tools beyond what the current request requires. Dynamic tool scoping minimizes blast radius of successful injection |
 | MN_SSE_COMPRESSION | Application-level response compression (gzip/brotli) on SSE streams | Breaks real-time token-by-token streaming (gzip buffers chunks). Compression belongs at infrastructure layer (nginx, CDN) |
 | MN_CTA_SERVER_RENDER | CTA rendering on server side | Clients are responsible for UI |
 | MN_LOCATION_DEFAULT_IMAGES | Image search default provider for location enrichment | Image search must not have a library default provider. Server must explicitly configure an image search provider interface implementation with its own API key |
