@@ -1711,9 +1711,9 @@ Emotional carry-forward can over-persist if decay is too long.
 - Post-response detection identifies ordered result sets.
 - Detection uses structured output shape, not brittle text parsing.
 - Stores userId, originatingQuery, orderedResults, sourceThreadId, createdAt, expiresAt.
-- `RESULT_SET_TTL` defaults to seven days.
-- `getRecentResultSets(userId, limit)` returns latest sets.
-- `resolveOrdinalReference(userId, ordinal)` maps ordinal to item.
+- Result set TTL defaults to seven days.
+- A query retrieves the most recent result sets for a user with a configurable limit.
+- An ordinal resolution function maps ordinal references (e.g., "the second one") to specific items in recent result sets.
 - Scope is cross-thread at user level.
 - Expired sets are cleaned by background job.
 - Unit coverage validates storage, lookup, and TTL cleanup.

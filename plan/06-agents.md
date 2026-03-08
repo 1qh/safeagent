@@ -452,29 +452,29 @@ graph LR
         TOOL_SEARCH_DOCUMENT["searchDocument(document_id)"]
         TOOL_RAGFLOW["ragflowSearch"]
         TOOL_GROUNDING["groundingSearch"]
-        TOOL_MEMORY_RECALL["memoryRecall"]
-        TOOL_QUERY_REWRITE_SUB["queryRewrite"]
-        TOOL_EVIDENCE_GATE["evidenceGate"]
+        TOOL_MEMORY_RECALL["Memory Recall"]
+        TOOL_QUERY_REWRITE_SUB["Query Rewrite"]
+        TOOL_EVIDENCE_GATE["Evidence Gate"]
     end
 
     subgraph SPECIAL_TOOLS["Special Tools"]
-        TOOL_SUGGEST_CTA["suggest_cta"]
+        TOOL_SUGGEST_CTA["CTA Suggestion"]
     end
 ```
 
 | Tool | Description | Used By |
 |------|-------------|---------|
 | Document search tool | Search uploaded documents by document ID | Sub-agents, orchestrator (single intent) |
-| `ragflowSearch` | Query external knowledge source | Sub-agents |
-| `groundingSearch` | Google Search grounding (separate agent call, not LLM tool) | Orchestrator (parallel agent spawn) |
-| `memoryRecall` | Long-term semantic recall with auto-trigger on new threads | Sub-agents, auto-trigger on first turn |
-| `threadSummary` | Returns rolling summary for current thread | Orchestrator, sub-agents (on demand) |
-| `memoryInspect` | Returns paginated user memories by category | User-initiated via agent |
-| `memoryDelete` | Deletes specific memories after explicit user confirmation | User-initiated via agent |
-| `resolveOrdinal` | Resolves ordinal references against recent structured result sets | Sub-agents |
-| `queryRewrite` | Conditional query rewriting | Sub-agents, orchestrator |
-| `evidenceGate` | Evidence sufficiency scoring | Sub-agents |
-| `suggest_cta` | Call-to-action suggestions | Orchestrator only (end of response) |
+| RAG flow search | Query external knowledge source | Sub-agents |
+| Grounding search | Google Search grounding (separate agent call, not LLM tool) | Orchestrator (parallel agent spawn) |
+| Memory recall | Long-term semantic recall with auto-trigger on new threads | Sub-agents, auto-trigger on first turn |
+| Thread summary | Returns rolling summary for current thread | Orchestrator, sub-agents (on demand) |
+| Memory inspector | Returns paginated user memories by category | User-initiated via agent |
+| Memory deletion | Deletes specific memories after explicit user confirmation | User-initiated via agent |
+| Ordinal resolver | Resolves ordinal references against recent structured result sets | Sub-agents |
+| Query rewriter | Conditional query rewriting | Sub-agents, orchestrator |
+| Evidence gate | Evidence sufficiency scoring | Sub-agents |
+| CTA suggestion | Call-to-action suggestions | Orchestrator only (end of response) |
 
 ### Tool Assignment Flow
 

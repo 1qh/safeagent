@@ -44,8 +44,8 @@ flowchart TD
 
     subgraph STORE["Storage (synchronous)"]
         STORAGE_ORIGINAL_OBJECT["Store original object in S3\nusing a hierarchical key\norganized by user, thread, and file identity"]
-        PG_META["INSERT file_uploads\n(Drizzle ORM)\nstatus = 'uploading'"]
-        QUOTA_UP["UPDATE user_storage_quotas\n+byteSize"]
+        PG_META["Store file metadata\n(via ORM)\nstatus = uploading"]
+        QUOTA_UP["Increment storage quota\n+byteSize"]
     end
 
     RESPOND["Return {fileId, status: 'uploading'}\nto client (201 Created)"]
@@ -53,7 +53,7 @@ flowchart TD
     subgraph ROUTE["Routing decision (synchronous)"]
         DETECT_TYPE["Detect type + page count"]
         SET_MODE["Set mode:\ndirect / indexed / rag"]
-        STATUS_SUMM["UPDATE status = 'summarizing'\n(before blocking stage begins)"]
+        STATUS_SUMM["Set status to summarizing\n(before blocking stage begins)"]
     end
 
     subgraph PROCESS["Processing (blocking stage)"]
@@ -62,19 +62,19 @@ flowchart TD
         IMG_EXTRACT["pdfjs: extract raster images\nper page"]
         GEMINI_SUM["Gemini structured output generation\nper-page summarization"]
         EMBED_SUM["Embed summaries\n→ EMBEDDING_PROVIDER"]
-        STORE_IDX["INSERT page_index rows\n(summary + vector)"]
+        STORE_IDX["Store page index rows\n(summary + vector)"]
         STORAGE_PAGE_PDFS["PUT per-page PDFs to S3"]
         STORAGE_PAGE_IMAGES["PUT extracted images to S3"]
-        STATUS_READY["UPDATE status = 'ready'"]
+        STATUS_READY["Set status to ready"]
     end
 
     subgraph BACKGROUND["Background stage (Trigger.dev)"]
-        STATUS_ENRICHING["UPDATE status = 'enriching'"]
+        STATUS_ENRICHING["Set status to enriching"]
         UNPDF["unpdf: extract raw text\nper page"]
         TRUNC["Truncate to 1800 tokens"]
         EMBED_RAW["Embed raw text\n→ EMBEDDING_PROVIDER"]
-        STORE_RAW["UPDATE page_index rows\n(raw_text + raw_embedding + tsvector)"]
-        STATUS_ENRICHED["UPDATE status = 'enriched'"]
+        STORE_RAW["Store enrichment data\n(raw_text + embedding + search index)"]
+        STATUS_ENRICHED["Set status to enriched"]
     end
 
     CLIENT --> MAGIC --> SIZE --> QUOTA --> TYPE
@@ -107,7 +107,7 @@ flowchart TD
 
 **Size limits**: Each individual file must be ≤5MB. A single turn may include up to 5 files. These limits are enforced before any S3 write happens.
 
-**Quota enforcement**: `checkStorageQuota(userId)` reads the user's current storage usage from Postgres (`user_storage_quotas`) with a Valkey cache for speed and compares it against their limit (default 100MB). If the upload would exceed the quota, the request is rejected with a clear error before any storage write.
+**Quota enforcement**: The storage quota check reads the user's current storage usage from Postgres (`user_storage_quotas`) with a Valkey cache for speed and compares it against their limit (default 100MB). If the upload would exceed the quota, the request is rejected with a clear error before any storage write.
 
 **Quota reservation atomicity**: Storage quota enforcement uses atomic reservation. Before accepting file bytes, the system atomically increments the user's `used_bytes` counter. If the result exceeds quota, the upload is rejected immediately. On processing failure, the reservation is rolled back. This prevents concurrent uploads from exceeding quotas.
 
@@ -194,7 +194,7 @@ flowchart TD
 
     PDF_BYTES["Read PDF bytes\nfrom temporary processing output"]
     UPLOAD_PDF["Store converted PDF in S3\nusing the same hierarchical key\norganization"]
-    UPDATE_META["UPDATE file_uploads\nmimeType = 'application/pdf'\ns3Key = new PDF key"]
+    UPDATE_META["Update file metadata\nset PDF mime type\nstore converted file key"]
 
     FAIL_CONVERT["Mark status = 'failed'\nError: conversion failed"]
 
@@ -251,11 +251,11 @@ flowchart TD
         EMBED_SUMMARY["Embed summary text\n→ EMBEDDING_PROVIDER"]
         STORAGE_SINGLE_PAGE_PDF["PUT page-{N}.pdf to S3"]
         STORAGE_EXTRACTED_IMAGES["PUT page-{N}-img-{M}.{ext} to S3"]
-        INSERT_IDX["UPSERT page_index row\nsummary=page summary\nsummary_embedding=vector\nmetadata={images[]}"]
-        UPDATE_PROGRESS["UPDATE progress_current = N"]
+        INSERT_IDX["Store or update page index\nsummary + vector + image metadata"]
+        UPDATE_PROGRESS["Increment progress counter"]
     end
 
-    STATUS_READY["UPDATE file_uploads\nstatus = 'ready'"]
+    STATUS_READY["Set file status to ready"]
 
     PDF_INPUT --> LOAD_PDF --> COUNT_PAGES --> SPLIT_PAGES
     SPLIT_PAGES --> GET_OPS --> FILTER_IMGS --> DECODE_IMGS
@@ -324,10 +324,10 @@ flowchart TD
         UNPDF_EXTRACT["unpdf extractText\nraw text from page"]
         TRUNCATE["Truncate to 1800 tokens\n(EMBEDDING_MODEL limit: 2048\n200 token safety margin)"]
         EMBED_RAW["Embed raw text\n→ EMBEDDING_PROVIDER"]
-        INSERT_RAW["UPDATE page_index row\nraw_text=extracted text\nraw_embedding=vector\nraw_tsvector=generated"]
+        INSERT_RAW["Store enrichment data\nraw text + vector + search index"]
     end
 
-    STATUS_ENRICHED["UPDATE file_uploads\nstatus = 'enriched'"]
+    STATUS_ENRICHED["Set file status to enriched"]
 
     subgraph DEV_MODE["Dev mode fallback"]
         IN_PROCESS["Run in-process\n(no Trigger.dev required)\nSame logic, no queue"]
@@ -692,17 +692,17 @@ sequenceDiagram
     Note over API: Blocking stage begins
 
     loop Every page processed
-        API->>PG: UPDATE progress_current = N
+        API->>PG: Update processing progress
     end
 
     C->>API: Poll file status
-    API->>PG: SELECT status, progress_current, progress_total
-    PG-->>API: {status: "summarizing", progress_current: 15, progress_total: 50}
+    API->>PG: Query file processing status
+    PG-->>API: Processing status and progress
     API-->>C: {status: "summarizing", progress: "15/50"}
 
     Note over API: All pages done
 
-    API->>PG: UPDATE status = "ready"
+    API->>PG: Set file status to ready
 
     C->>API: Poll file status
     API-->>C: {status: "ready"}

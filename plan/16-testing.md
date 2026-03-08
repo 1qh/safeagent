@@ -203,7 +203,7 @@ flowchart TD
 
     subgraph MOCK_USAGE["Usage in tests"]
         MOCK_AGENT_CREATE["agent factory with mock model"]
-        MOCK_RUNNER_CALL["Runner.run for stream or non-stream"]
+        MOCK_RUNNER_CALL["Agent execution for stream or non-stream"]
         MOCK_ASSERTIONS["Assert chunks, tool calls, text output"]
     end
 

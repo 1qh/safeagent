@@ -853,7 +853,7 @@ Build stream handler factory that turns internal agent stream output into a well
   - `agent_updated_stream_event` → logged for tracing (handoff routing)
   - Stream start → `session-meta` SSE event (first event, carries traceId + threadId)
   - Stream end → `done` SSE event
-- Writing the stream through Elysia's `sse()` generator response path
+- Writing the stream through Elysia's SSE generator response path
 - Running a keepalive interval that writes SSE comment lines to prevent proxy timeouts
 - Catching framework guardrail tripwire exceptions and emitting a `tripwire` SSE event with `conceptId`, reason, and fallback message
 - Catching all other errors, looking up the error code in `errorMessageMap` to get the user-facing message, and emitting an `error` SSE event with `{ code, message }`

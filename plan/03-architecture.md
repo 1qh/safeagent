@@ -399,7 +399,7 @@ sequenceDiagram
     API->>S3: PUT original file → safeagent bucket
     S3-->>API: Object key + ETag
 
-    API->>PG: INSERT file_uploads record (Drizzle)
+    API->>PG: Store file upload record
     PG-->>API: fileId
 
     API->>VK: Update FileRegistry cache
@@ -407,7 +407,7 @@ sequenceDiagram
 
     Note over API: Blocking stage (in-process, synchronous)
 
-    API->>PG: UPDATE file_uploads (status: "summarizing")
+    API->>PG: Set file status to summarizing
 
     alt DOCX file
         API->>LO: Convert DOCX → PDF
@@ -423,8 +423,8 @@ sequenceDiagram
     LLM-->>API: Page summaries
     API->>LLM: Embed summaries (batch)
     LLM-->>API: Dense vectors
-    API->>PG: INSERT page_index rows (summary + vector)
-    API->>PG: UPDATE file_uploads (status: "ready")
+    API->>PG: Store page summaries and vectors
+    API->>PG: Set file status to ready
     API->>VK: Invalidate FileRegistry cache entry
 
     Note over API,TR: Background stage via Trigger.dev
@@ -435,9 +435,9 @@ sequenceDiagram
     TR->>TR: Extract raw text per page (unpdf)
     TR->>LLM: Embed raw text (batch)
     LLM-->>TR: Dense vectors
-    TR->>PG: UPDATE file_uploads (status: "enriching")
-    TR->>PG: UPDATE page_index rows (raw_text + raw_embedding + tsvector)
-    TR->>PG: UPDATE file_uploads (status: "enriched")
+    TR->>PG: Set file status to enriching
+    TR->>PG: Store raw text, embeddings, and search index
+    TR->>PG: Set file status to enriched
 ```
 
 The synchronous path (upload → S3 → metadata record) completes in under a second. The enrichment pipeline (conversion → splitting → embedding → indexing) runs in the background and can take seconds to minutes depending on file size. The client polls the file status endpoint when processing completes.

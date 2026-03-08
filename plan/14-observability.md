@@ -634,21 +634,21 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 **What to do**: Build the tracing exporter that implements the `@openai/agents` framework's `TracingExporter` interface. The exporter translates framework trace and span objects into Langfuse API calls via the direct `langfuse` SDK. Register it with the framework tracing processor pipeline. Build observability factory that sets up the exporter, score helper, and PII redaction. Return `{ exporter, scoreHelper }`. Implement scoring helper factory with `boolean` and `numeric` methods, with optional `spanId` for trace-level scores. Default to env vars. Enable the Presidio plus structured-output LLM redaction pipeline by default. Implement the full no-op path when `LANGFUSE_PUBLIC_KEY` is absent: disable tracing on the framework and return a score helper with silent no-op `boolean` and `numeric` methods. Dev mode uses `realtime: true`, production uses `realtime: false` with configurable ratio sampling.
 **Depends on**: CORE_TYPES (types — `ObservabilityConfig` type definition)
 **Acceptance Criteria**:
-- tracing exporter implements the framework's `TracingExporter` interface (`export(items: (Trace | Span)[]): Promise<void>`)
-- Exporter registered via `addTraceProcessor(new BatchTraceProcessor(exporter))` — framework handles batching and retry
+- tracing exporter implements the framework's tracing exporter interface (accepts trace and span items, returns a promise)
+- Exporter registered through the framework's batch trace processor registration — framework handles batching and retry
 - Framework auto-traces agent runs, LLM generations, tool calls, guardrail checks, and handoffs — all appear in Langfuse
 - observability factory returns `{ exporter, scoreHelper }` — both accessible
-- Graceful no-op when `LANGFUSE_PUBLIC_KEY` not set: `setTracingDisabled(true)` called, `scoreHelper.boolean` and `scoreHelper.numeric` silently do nothing
+- Graceful no-op when Langfuse public key not set: tracing is disabled, scoring helpers silently do nothing
 - PII redaction enabled by default, disableable via config
 - scoring helper factory returns helper with `boolean` and `numeric` methods
 - Config defaults read from env vars: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`
-- `realtime` defaults to `true` in development, `false` in production
+- Realtime mode defaults to enabled in development, disabled in production
 **QA Scenarios**:
 - Set Langfuse env vars → framework traces appear in Langfuse dashboard with correct hierarchy (trace → agent span → generation span → tool spans)
-- Unset Langfuse env vars → `setTracingDisabled(true)` called, no crash, no trace attempts
+- Unset Langfuse env vars → tracing is disabled, no crash, no trace attempts
 - Pass explicit config overriding env vars → explicit values take precedence
 - Set redaction disabled in config → no PII redaction in trace payloads
-- Framework `BatchTraceProcessor` batches and flushes correctly under Bun runtime (call `forceFlush()` on shutdown)
+- Framework batch trace processor batches and flushes correctly under Bun runtime (force flush on shutdown)
 ---
 ### Task CUSTOM_SPANS: Custom Observability Spans
 **What to do**: Instrument six high-value tracing points with custom spans and scores. (1) Input guardrail span in input guardrail processor factory — boolean score `guardrail_input_pass`, plus `guardrail_blocked` or `guardrail_flagged` scores on p0/p1. (2) Streaming output guardrail span in output guardrail processor factory — boolean score `guardrail_output_pass`, plus `guardrail_tripwire` if abort is called. (3) RAG pipeline spans: parent `rag.pipeline` with children `rag.embed_query`, `rag.hybrid_search` (indexed mode with arm scores) or `rag.vector_search` (RAG mode), `rag.fetch_context`, `rag.answer`. (4) File processing spans: parent `file.process` with children for blocking stage (`file.split_pages`, `file.summarize`, `file.embed_summaries`), background stage (`file.enrich`), RAG mode (`file.chunk`, `file.embed_chunks`), and DOCX conversion (`file.convert_docx`). (5) Memory operation spans: parent `memory.operation` with children `memory.store_fact`, `memory.search`, `memory.graph_traverse`, `memory.expire_stale`. (6) Export guardrail flag callback factory — returns a callback that emits a `guardrail.flagged` Langfuse span with p1 details, decoupling guardrail code from observability code. All spans are no-op when observability is not configured.

@@ -265,10 +265,10 @@ flowchart TB
     subgraph HOT_PATH["Hot Path (request-time)"]
         direction TB
         INCOMING_REQUEST["Incoming Request"]
-        BUDGET_CHECK_STEP["checkTokenBudget(cache, userId)\nReads Valkey counters\nsub-ms"]
+        BUDGET_CHECK_STEP["Check token budget\nReads Valkey counters\nsub-ms"]
         BUDGET_GATE{"Budget\nexceeded?"}
-        STREAM_EXECUTION["Runner.run(agent, input, { stream: true })\nLLM call proceeds"]
-        TOKEN_RECORD_STEP["recordTokenUsage(cache, db, userId, tokens)\nValkey INCR (atomic)\nPostgres INSERT (fire-and-forget)"]
+        STREAM_EXECUTION["Execute agent run (streaming)\nLLM call proceeds"]
+        TOKEN_RECORD_STEP["Record token usage\nValkey atomic increment\nPostgres fire-and-forget write"]
         BUDGET_REJECT["HTTP 429\nBudgetCheckResult JSON\nRetry-After header"]
         INCOMING_REQUEST --> BUDGET_CHECK_STEP
         BUDGET_CHECK_STEP --> BUDGET_GATE
@@ -278,10 +278,10 @@ flowchart TB
     end
     subgraph COLD_PATH["Cold Path (every 5 minutes)"]
         direction TB
-        SCHEDULED_AGG_TASK["Trigger.dev Scheduled Task\nbudget-aggregation"]
-        AGGREGATION_QUERY["SELECT user_id, SUM(tokens_used)\nFROM usage_events\nGROUP BY user_id, DATE(created_at)"]
+        SCHEDULED_AGG_TASK["Scheduled aggregation task\n(via job queue)"]
+        AGGREGATION_QUERY["Aggregate token usage\nper user per day\n(via ORM query)"]
         DRIFT_CHECK{"Drift > 1%\nor key missing?"}
-        RECONCILE_STEP["cache.set(dailyKey, postgresTotal, ttl)"]
+        RECONCILE_STEP["Reconcile cache with\npersistent totals"]
         SCHEDULED_AGG_TASK --> AGGREGATION_QUERY
         AGGREGATION_QUERY --> DRIFT_CHECK
         DRIFT_CHECK -->|Yes| RECONCILE_STEP
@@ -373,7 +373,7 @@ The queue adapter interface exposes immediate dispatch. The adapter is created o
 ### In-Process Adapter Details
 The in-process adapter tracks running tasks in a `Set<Promise<void>>`. Handler failures are caught and logged and never propagate to callers. `getRunningCount` exposes in-flight tasks for health monitoring. During graceful shutdown, the server awaits `Promise.allSettled` to drain running jobs.
 ### Handler Idempotency
-The background enrichment handler uses `UPSERT` keyed on `file_id + page_number`. Since `page_index` has exactly one row per physical page with nullable enrichment columns populated during processing, retries after partial failure update existing rows without creating duplicates.
+The background enrichment handler uses an upsert operation keyed on `file_id + page_number`. Since `page_index` has exactly one row per physical page with nullable enrichment columns populated during processing, retries after partial failure update existing rows without creating duplicates.
 ---
 ## Rate Limiting
 The rate limiter factory produces per-route rate limiting using Valkey sorted sets and a sliding window algorithm. Each request adds a timestamped entry, expired entries are pruned on every check, and all operations execute in a single Lua script for atomicity at scale.
@@ -762,8 +762,8 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - The raw client accessor exposes the underlying Redis client library for sorted sets and transactional operations.
 - Add in-memory fallback with map-backed storage, read-time TTL checks, and periodic 60-second sweep.
 - In-memory raw client accessor returns `null` so consumers can degrade to no-op or sequential fallback.
-- Include budget key helpers: `dailyKey`, `monthlyKey`, `secondsUntilMidnightUTC`, `secondsUntilMonthEndUTC`.
-- `get` returns `string | null`, where `null` means no key. Numeric consumers parse values, and general cache consumers store serialized JSON.
+- Include budget key helpers for daily keys, monthly keys, seconds until midnight UTC, and seconds until month-end UTC.
+- The cache getter returns a string or null, where null means no key. Numeric consumers parse values, and general cache consumers store serialized JSON.
 **Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
 **Acceptance Criteria**:
 - Valkey implementation connects and handles get/set/increment operations.
