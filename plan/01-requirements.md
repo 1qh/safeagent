@@ -114,7 +114,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_LONG_TERM_MEMORY | Long-term memory (SurrealDB) | Graph + vector storage, LLM fact extraction, agent recall tool |
 | MH_MEMORY_RECALL_TOOL | `createMemoryRecallTool` | Agent-initiated long-term memory search |
 | MH_USERID_SCOPING | `userId` scoping on all memory operations | Server passes direct `userId` parameters — every operation scoped |
-| MH_NO_WRITES_WITHOUT_USER | Must not write memory, doc chunks, or file metadata without userId | Conversation and document operations require both threadId AND userId. Per-file operations (CRUD, cleanup) require fileId AND userId. Long-term memory operations require userId only (cross-thread by design — see [07](./07-memory.md) Two-Tier Responsibilities). |
+| MH_NO_WRITES_WITHOUT_USER | Must not write memory, doc chunks, or file metadata without userId | Conversation and document operations require both threadId AND userId. Per-file operations (CRUD, cleanup) require fileId AND userId. Long-term memory operations require userId only (cross-thread by design — see [07 — Memory & Intelligence](./07-memory.md) Two-Tier Responsibilities). |
 
 ### Auth & Transport
 
@@ -229,7 +229,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 ### Complete Must-Have → Task Ownership Mapping
 
-Every must-have requirement maps to one or more implementation tasks in the [execution plan](./17-execution.md). This table is the definitive traceability matrix — no must-have is unowned.
+Every must-have requirement maps to one or more implementation tasks in the [17 — Execution Plan](./17-execution.md). This table is the definitive traceability matrix — no must-have is unowned.
 
 #### Agent Core
 
@@ -397,7 +397,7 @@ Every must-have requirement maps to one or more implementation tasks in the [exe
 | MH_TOPIC_ABANDONMENT | LLM_INTENT (enhancement — topic abandon intent type) |
 | MH_PROACTIVE_CLARIFICATION | CLARIFICATION_MODEL |
 
-Production-scale infrastructure (PgBouncer deployment, table partitioning, multi-region topology) is documented as operational guidance in [15 — Infrastructure & Operations § Capacity Planning](./15-infrastructure.md#capacity-planning). These are deployment-time provisioning decisions, not code implementation tasks — the application code is topology-agnostic by design.
+Production-scale infrastructure (PgBouncer deployment, table partitioning, multi-region topology) is documented as operational guidance in [15 — Infrastructure § Capacity Planning](./15-infrastructure.md#capacity-planning). These are deployment-time provisioning decisions, not code implementation tasks — the application code is topology-agnostic by design.
 
 ```mermaid
 flowchart LR
@@ -648,4 +648,4 @@ flowchart TD
 
 ---
 
-*Previous: [Overview](./overview.md) | Next: [02 — Research & Decisions](./02-research.md)*
+*Previous: [safeagent — System Plan Overview](./overview.md) | Next: [02 — Research & Decisions](./02-research.md)*

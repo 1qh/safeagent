@@ -189,7 +189,7 @@ graph LR
 
 ## Docker Compose Service Map
 
-Services are grouped into runtime profiles. The default profile starts the recommended local development stack. Only Postgres is strictly required to boot — all other services degrade gracefully when absent (see [15 — Infrastructure & Operations](./15-infrastructure.md) for the degradation model). Optional profiles add observability and background job infrastructure.
+Services are grouped into runtime profiles. The default profile starts the recommended local development stack. Only Postgres is strictly required to boot — all other services degrade gracefully when absent (see [15 — Infrastructure](./15-infrastructure.md) for the degradation model). Optional profiles add observability and background job infrastructure.
 
 ```mermaid
 graph TB
@@ -243,7 +243,7 @@ graph TB
 
 All model, provider, and environment constants are defined in the single source of truth: [04 — Foundation](./04-foundation.md). No constants are duplicated here — refer to file 04 for the authoritative table.
 
-**Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [15 — Infrastructure & Operations](./15-infrastructure.md) for the complete service list.
+**Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [15 — Infrastructure](./15-infrastructure.md) for the complete service list.
 
 **Langfuse profile** adds six services for full agent observability. Langfuse Web and Worker share the Postgres server (using a separate `langfuse` database) and the MinIO server (using a separate `langfuse-media` bucket). ClickHouse stores trace event data. A dedicated Redis instance (on port 6380 to avoid collision with Valkey on 6379) handles Langfuse's internal queue.
 
@@ -532,7 +532,7 @@ Each API instance uses three separate connection pools targeting the same Postgr
 - **Custom pgvector pool**: RAG embedding queries. Moderate concurrency during file processing.
 - **Drizzle ORM pool**: All schema-managed tables. Highest concurrency — file metadata, usage events, page index queries all go here.
 
-The total per-instance connection count must stay low enough that `N instances × connections_per_instance + worker_connections + langfuse_connections < max_connections`. At 10 API instances with 20 connections each, that's 200 connections consumed by API alone — zero headroom for workers or Langfuse. **PgBouncer (or equivalent connection pooler) is required in any deployment beyond single-instance development** (see [15 — Infrastructure & Operations § Postgres at Scale](./15-infrastructure.md#postgres-at-scale)). PgBouncer multiplexes hundreds of application connections onto a smaller pool of actual Postgres connections, eliminating the per-instance pool sizing constraint entirely. The `max_connections=200` value in Docker Compose is a local development default — production Postgres behind PgBouncer can serve thousands of application-side connections.
+The total per-instance connection count must stay low enough that `N instances × connections_per_instance + worker_connections + langfuse_connections < max_connections`. At 10 API instances with 20 connections each, that's 200 connections consumed by API alone — zero headroom for workers or Langfuse. **PgBouncer (or equivalent connection pooler) is required in any deployment beyond single-instance development** (see [15 — Infrastructure § Postgres at Scale](./15-infrastructure.md#postgres-at-scale)). PgBouncer multiplexes hundreds of application connections onto a smaller pool of actual Postgres connections, eliminating the per-instance pool sizing constraint entirely. The `max_connections=200` value in Docker Compose is a local development default — production Postgres behind PgBouncer can serve thousands of application-side connections.
 
 **SurrealDB** uses a persistent WebSocket connection per API instance. The TypeScript SDK manages reconnection automatically.
 

@@ -249,8 +249,8 @@ graph LR
 
 | Metric | Target |
 |--------|--------|
-| Total users | 10,000,000 (capacity-planned at 1% DAU = 100K daily active, with burst headroom to 10% — see [03](./03-architecture.md) and [15](./15-infrastructure.md) capacity planning sections) |
-| Request latency (p50) | < 200ms to first token (standard streaming mode). Buffered guardrail mode intentionally delays TTFT by the buffer fill window — this is a deliberate safety trade-off, not a performance failure (see [10](./10-guardrails.md)) |
+| Total users | 10,000,000 (capacity-planned at 1% DAU = 100K daily active, with burst headroom to 10% — see [03 — System Architecture](./03-architecture.md) and [15 — Infrastructure](./15-infrastructure.md) capacity planning sections) |
+| Request latency (p50) | < 200ms to first token (standard streaming mode). Buffered guardrail mode intentionally delays TTFT by the buffer fill window — this is a deliberate safety trade-off, not a performance failure (see [10 — Guardrails & Safety](./10-guardrails.md)) |
 | Intent classification | < 50ms (embedding), < 100ms (LLM validation) |
 | Source queries | Parallel, < 500ms total |
 | Document upload (50 pages) | ~10s (single key), ~2s (10-key pool) |
