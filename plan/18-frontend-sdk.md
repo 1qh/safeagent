@@ -124,12 +124,12 @@ Export and dependency guarantees:
 
 Primary exported hook surface from the React hooks module:
 - Chat-hook passthrough compatibility with AI SDK transport expectations.
-- `useSafeAgent` safe defaults for endpoint and auth alignment.
-- `useFeedback` for reaction and quality signals.
-- `useUpload` for attachment and upload flow.
-- `useTraceSteps` for typed pipeline event projection.
-- `useServerConnection` for endpoint switching and auth state.
-- `useVerbosity` for standard and full stream detail modes.
+- the main chat hook for safe defaults on endpoint and auth alignment.
+- the feedback hook for reaction and quality signals.
+- the upload hook for attachment and upload flow.
+- the trace steps hook for typed pipeline event projection.
+- the server connection hook for endpoint switching and auth state.
+- the verbosity hook for standard and full stream detail modes.
 
 ## Type Safety Flow
 
@@ -214,39 +214,39 @@ Transport edge behavior:
 
 ### Hook exports and intent
 
-`useSafeAgent`:
+Main chat hook:
 - Wraps the chat hook with safeagent defaults.
 - Auto-wires the transport adapter implementation.
-- Accepts server target from `useServerConnection` state.
+- Accepts server target from the server connection hook state.
 - Injects auth token policy consistently.
 - Enforces default user-facing verbosity behavior.
 
-`useTraceSteps`:
+Trace steps hook:
 - Collects `trace-step` stream events from current conversation run.
 - Returns a typed array with stable order.
 - Emits empty state in standard verbosity mode.
 - Emits live appends in full verbosity mode.
 - Supports reset and replacement on thread switch.
 
-`useFeedback`:
+Feedback hook:
 - Wraps feedback submission client call.
 - Exposes loading, success, and error states.
 - Supports optimistic UI for simple positive or negative signals.
 - Supports metadata association with message identifiers.
 
-`useUpload`:
+Upload hook:
 - Wraps upload flow from the client SDK module.
 - Exposes progress transitions suitable for UI progress indicators.
 - Maintains typed file references for prompt attachments.
 - Surfaces upload failure and retry affordances.
 
-`useServerConnection`:
+Server connection hook:
 - Manages active server endpoint selection.
 - Tracks auth token and connectivity state.
 - Supports switching among multiple configured servers.
 - Exposes explicit connected, connecting, and disconnected states.
 
-`useVerbosity`:
+Verbosity hook:
 - Owns standard and full modes for stream detail.
 - Synchronizes mode changes with transport query metadata.
 - Exposes simple toggle semantics for UI components.
@@ -315,7 +315,7 @@ Official references:
 Design principles:
 - All components accept `className` for external style extension.
 - All components support children-based slot override when meaningful.
-- Controllable state pattern follows `open`, `defaultOpen`, `onOpenChange` where applicable.
+- Controllable state pattern follows explicit controlled/uncontrolled open-state props where applicable.
 - Keyboard and screen-reader behavior is required parity for adopted and custom components.
 - Transport state is consumed via hooks, not direct event subscriptions in view components.
 
@@ -325,68 +325,68 @@ Adoption scope includes forty-eight components across conversation, input, tooli
 The intent is to accelerate delivery and preserve behavioral consistency with AI SDK ecosystem patterns.
 
 Conversation layer:
-- `Conversation` provides root semantic surface for stream transcript.
-- `ConversationContent` renders ordered message flow.
-- `ConversationEmptyState` covers cold-start UI.
-- `ConversationScrollButton` assists with long transcript recovery.
-- `ConversationDownload` supports export interaction.
+- the conversation root component provides the semantic surface for stream transcript.
+- the conversation content component renders ordered message flow.
+- the conversation empty-state component covers cold-start UI.
+- the conversation scroll button component assists with long transcript recovery.
+- the conversation download component supports export interaction.
 
 Message layer:
-- `Message` wraps a single utterance with role-specific semantics.
-- `MessageContent` provides rich content container.
-- `MessageResponse` streams markdown via Streamdown with math, mermaid, CJK, and code support.
-- `MessageActions` groups interaction affordances.
-- `MessageAction` enables discrete action extension.
-- `MessageToolbar` provides clustered controls.
-- `MessageBranch` supports alternate response branch views.
+- the message container component wraps a single utterance with role-specific semantics.
+- the message content component provides a rich content container.
+- the message response component streams markdown via Streamdown with math, mermaid, CJK, and code support.
+- the message actions group component bundles interaction affordances.
+- the single message action component enables discrete action extension.
+- the message toolbar component provides clustered controls.
+- the message branch component supports alternate response branch views.
 
 Input layer:
-- `PromptInput` anchors composer state.
-- `PromptInputTextarea` handles multiline input.
-- `PromptInputSubmit` adapts icon and behavior from chat status.
-- `PromptInputTools` hosts composer utility actions.
-- `PromptInputButton` supports tool action entry points.
-- `PromptInputActionMenu` handles file and screenshot attachments.
+- the prompt input root component anchors composer state.
+- the prompt textarea component handles multiline input.
+- the prompt submit component adapts icon and behavior from chat status.
+- the prompt tools component hosts composer utility actions.
+- the prompt input button component supports tool action entry points.
+- the prompt action menu component handles file and screenshot attachments.
 
 Tool-call layer:
-- `Tool` displays a single tool invocation envelope.
-- `ToolHeader` summarizes tool identity and state.
-- `ToolContent` renders step detail.
-- `ToolInput` captures invocation payload.
-- `ToolOutput` renders result payload.
+- the tool invocation container component displays a single tool envelope.
+- the tool header component summarizes tool identity and state.
+- the tool content component renders step detail.
+- the tool input component captures invocation payload.
+- the tool output component renders result payload.
 - Tool rendering supports all seven AI SDK tool states.
 
 Reasoning and chain-of-thought layer:
-- `Reasoning` wraps expandable reasoning surface.
-- `ReasoningTrigger` controls reveal state.
-- `ReasoningContent` presents streamed reasoning text.
-- `ChainOfThought` renders timeline-like reasoning progress.
+- the reasoning container component wraps an expandable reasoning surface.
+- the reasoning trigger component controls reveal state.
+- the reasoning content component presents streamed reasoning text.
+- the chain-of-thought component renders timeline-like reasoning progress.
 - Reasoning auto-opens while active and auto-closes after completion when configured.
 
 Attachments and sources:
-- `Attachments` supports grid, inline, and list rendering modes.
-- `Attachment` renders individual file card behavior.
-- `AttachmentPreview` supports rich preview affordances.
-- `Sources` groups source references.
-- `SourcesTrigger` reveals source panel.
-- `Source` renders per-reference details.
-- `InlineCitation` provides in-message citation anchors with hover-card carousel behavior.
+- the attachments container component supports grid, inline, and list rendering modes.
+- the attachment item component renders individual file-card behavior.
+- the attachment preview component supports rich preview affordances.
+- the sources container component groups source references.
+- the sources trigger component reveals the source panel.
+- the source item component renders per-reference details.
+- the inline citation component provides in-message citation anchors with hover-card carousel behavior.
 
 Code and terminal utilities:
-- `CodeBlock` supports syntax highlighting with Shiki and dual-theme behavior.
-- `CodeBlockCopyButton` supports clipboard flow.
-- `Terminal` renders ANSI-compatible terminal output.
+- the code block component supports syntax highlighting with Shiki and dual-theme behavior.
+- the code block copy button component supports clipboard flow.
+- the terminal output component renders ANSI-compatible terminal output.
 
 Context and model surfaces:
-- `Context` displays token usage summary.
-- `ContextTrigger` toggles context detail panel.
-- `ContextContent` shows per-category usage splits.
-- `ModelSelector` supports command-palette model pickers with model logos.
+- the context summary component displays token usage summary.
+- the context trigger component toggles the context detail panel.
+- the context content component shows per-category usage splits.
+- the model selector component supports command-palette model pickers with model logos.
 
 Assistive interaction surfaces:
-- `Suggestions` renders horizontal suggestion list.
-- `Suggestion` is individual suggestion action.
-- `Confirmation` supports human approval workflow for tool calls.
+- the suggestions container component renders a horizontal suggestion list.
+- the suggestion item component is an individual suggestion action.
+- the confirmation component supports human approval workflow for tool calls.
 - Pipeline primitives support plan, task, and queue visualization patterns.
 
 Adoption policies:
@@ -426,37 +426,37 @@ trace timeline component:
 - Supports inline and sidebar layouts.
 - Supports detail expansion for each step.
 
-`VerbosityToggle`:
+Verbosity toggle component:
 - Switches between standard and full modes.
 - Indicates developer mode when full is active.
 - Exposes assistive labels for mode semantics.
 
-`ServerSelector`:
+Server selector component:
 - Supports multi-server endpoint switching.
 - Shows per-server connection state.
 - Supports keyboard command-style search.
 
-`ThreadList`:
+Thread list component:
 - Displays thread previews and message recency.
 - Includes unread indicator affordance.
 - Supports selection and focus restoration.
 
-`MessageTimestamp`:
+Message timestamp component:
 - Renders relative and absolute time forms.
 - Supports localized formatting.
 - Provides machine-readable time text for assistive tools.
 
-`TypingIndicator`:
+Typing indicator component:
 - Displays animated generation feedback.
 - Composes with ai-elements shimmer visual primitives.
 - Avoids announcing noisy status updates to screen readers.
 
-`ErrorRetry`:
+Error retry component:
 - Renders recoverable stream failure panel.
 - Exposes retry action and contextual error detail.
 - Supports transport and parser error categories.
 
-`OfflineIndicator`:
+Offline indicator component:
 - Shows offline state and pending queue count.
 - Integrates with client queue replay status.
 - Persists visibility until reconnection clears pending items.
@@ -587,8 +587,8 @@ Official references:
 
 Shared logic commitments:
 - Consume chat-hook integration through safeagent transport wrappers.
-- Consume `useTraceSteps` for trace surfaces where enabled.
-- Consume `useFeedback`, `useUpload`, `useServerConnection`, and `useVerbosity`.
+- Consume the trace steps hook for trace surfaces where enabled.
+- Consume the feedback hook, upload hook, server connection hook, and verbosity hook.
 - Preserve naming parity for component props where feasible.
 
 Native-specific constraints:
@@ -612,8 +612,8 @@ Offline-first requirements:
 - Visual state communicates queued and syncing transitions clearly.
 
 Polyfill expectations:
-- `structuredClone` is available in runtime.
-- `TextEncoderStream` support is provided through Expo fetch capabilities.
+- Runtime deep-clone support is available.
+- Streaming text-encoder support is provided through Expo fetch capabilities.
 
 ```mermaid
 flowchart LR
@@ -923,11 +923,11 @@ Cross-section dependency notes:
 - Implement a transport adapter compatible with AI SDK chat-hook expectations.
 - Integrate SSE lifecycle handling through the client SDK module parser and queue behavior.
 - Implement a safe-agent wrapper hook with safeagent defaults for transport, auth, and endpoint wiring.
-- Implement `useTraceSteps` for full-verbosity trace event projection.
-- Implement `useFeedback` with loading, success, and error transitions.
-- Implement `useUpload` with progress and typed file-reference handling.
-- Implement `useServerConnection` for multi-endpoint selection and auth token state.
-- Implement `useVerbosity` for standard and full mode state management.
+- Implement the trace steps hook for full-verbosity trace event projection.
+- Implement the feedback hook with loading, success, and error transitions.
+- Implement the upload hook with progress and typed file-reference handling.
+- Implement the server connection hook for multi-endpoint selection and auth token state.
+- Implement the verbosity hook for standard and full mode state management.
 - Re-export hook and type surface for downstream component modules.
 - Add unit and integration tests for stream lifecycle, error handling, and type shape stability.
 
@@ -999,7 +999,7 @@ Cross-section dependency notes:
 
 **What to do**
 - Implement a trace timeline component and child primitives for step rows, latency bars, and detail panels.
-- Consume `useTraceSteps` typed output and render timeline entries in stable order.
+- Consume typed output from the trace steps hook and render timeline entries in stable order.
 - Implement step icon mapping for all supported step categories.
 - Implement latency bar scaling and threshold-based color semantics.
 - Implement collapsible panel behavior for sidebar and inline display modes.

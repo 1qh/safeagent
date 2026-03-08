@@ -196,7 +196,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 |---|---|---|
 | MH_CTA_STREAMING | CTA streaming | CTA tool factory enables model-decided, context-aware call-to-action suggestions emitted as a custom `cta` data event at end of stream |
 | MH_CTA_SCHEMA | CTA schema | `{ id, label, action: 'deeplink' | 'callback' | 'dismiss', url, icon? }`, max 3 per response |
-| MH_CTA_HIDDEN | CTA tool hidden from client | `suggest_cta` tool-call events suppressed from stream, only clean `cta` data event emitted |
+| MH_CTA_HIDDEN | CTA tool hidden from client | CTA suggestion tool-call events are suppressed from stream, and only a clean `cta` data event is emitted |
 | MH_CTA_SERVER_CATALOG | CTA catalog defined in server config | Library provides the tool factory + stream injection — catalog is thin server config |
 
 ### Location Enrichment
@@ -206,14 +206,14 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_LOCATION_TOOL | Location enrichment tool (opt-in) | Location tool factory with pluggable geocoding and image-search providers. Default geocoding uses Nominatim with Valkey cache. Image provider must be configured by server. Emits `location` SSE events with coordinates and images per place. Location enrichment failures degrade silently (log + continue); unresolved places do not emit `location` events |
 | MH_GEOCODE_PLUGGABLE | Geocoding provider is pluggable | Default is Nominatim. Server can override with any geocoding provider function |
 | MH_GEOCODE_CACHED | Geocoding cached in Valkey | Geocoding results use thirty-day TTL. When Valkey is unavailable, caching falls back to in-memory (per-process) and cache effectiveness is reduced |
-| MH_LOCATION_SUPPRESSED | Location tool hidden from client stream | `search_locations` tool-call and tool-result events are suppressed from SSE output. Client receives only clean `location` data events |
+| MH_LOCATION_SUPPRESSED | Location tool hidden from client stream | Location-search tool-call and tool-result events are suppressed from SSE output. Client receives only clean `location` data events |
 
 ### Infrastructure
 
 | ID | Requirement | Detail |
 |---|---|---|
 | MH_RATE_LIMITING | Rate limiting | Rate limiter factory — Valkey sliding-window sorted sets, configurable window and max, 429 with `Retry-After` |
-| MH_STRUCTURED_LOGGING | Structured logging | LogTape with hierarchical categories — library uses `getLogger`, server calls `configure` once at startup. AsyncLocalStorage request context (requestId, userId, threadId). `@logtape/redaction` for sensitive fields, `@logtape/otel` for Langfuse correlation |
+| MH_STRUCTURED_LOGGING | Structured logging | LogTape with hierarchical categories — library uses the logger accessor, and the server runs one-time logger setup at startup. AsyncLocalStorage request context (requestId, userId, threadId). `@logtape/redaction` for sensitive fields, `@logtape/otel` for Langfuse correlation |
 | MH_FILE_CRUD | File management CRUD | File list, file detail, and file delete server endpoints |
 | MH_TTL_CLEANUP | TTL-based automatic cleanup | Trigger.dev scheduled task finds expired files, deletes S3 + PgVector chunks + metadata |
 | MH_CIRCUIT_BREAKER | Circuit breaker | Circuit breaker factory — closed/open/half-open states, wraps asynchronous operations with configurable failure threshold and reset timeout |
@@ -270,7 +270,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_OFFLINE_QUEUE | Client SDK offline message queue | The client SDK module queues messages when the server is unreachable, persists to local storage, and auto-syncs on reconnect with deduplication |
 | MH_SURQLIZE | SurrealDB via surqlize ORM | All SurrealDB operations use the surqlize ORM — no raw SurrealQL queries |
 | MH_SECRET_MANAGEMENT | Secret management through typed env flow | Secrets are loaded through validated typed environment configuration, never hardcoded, never logged in clear text, and redacted at logging and tracing sinks |
-| MH_TYPED_ENV | Typed environment configuration | `@t3-oss/env-core` validates and types all environment variables at startup — runtime access is fully typed with no raw `process.env` reads |
+| MH_TYPED_ENV | Typed environment configuration | `@t3-oss/env-core` validates and types all environment variables at startup — runtime access is fully typed with no direct global environment reads |
 | MH_TYPED_ERRORS | Typed error handling with neverthrow | Result type pattern (`ok`/`err`) for all boundary operations — no thrown exceptions at module boundaries, every error path is typed |
 | MH_NO_RAW_SQL | No raw database query strings | All PostgreSQL operations use Drizzle ORM's type-safe query builder and all SurrealDB operations use surqlize's typed API. Raw SQL and raw SurrealQL query strings are banned and enforced through linting and review gates to prevent injection-prone query paths |
 | MH_PRECOMMIT_HOOKS | Pre-commit quality gates | Husky + lint-staged run formatting, linting, and type-checking on staged files before every commit |
@@ -524,13 +524,13 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_GROUNDING_TOOL_CONFLICT | Gemini grounding + custom tools in same agent call | Mutually exclusive (AI SDK bug) |
 | MN_PROMPTFOO_DIRECT_IMPORT | Direct Promptfoo import in Bun runtime | `better-sqlite3` crashes |
 | MN_SHARP | `sharp` for image processing | NOT Bun-compatible (native libvips) — use JIMP instead |
-| MN_JIMP_LEGACY | JIMP legacy positional resize API (`image.resize(width, height)`) | Ban legacy positional arguments; require modern named-options form (`image.resize({ w: width, h: height })`) |
+| MN_JIMP_LEGACY | JIMP legacy positional resize API (resize call with positional width and height arguments) | Ban legacy positional arguments; require modern named-options resize form with explicit width and height keys |
 | MN_AWS_SDK_REDUNDANT | `@aws-sdk/client-s3` if Bun.S3Client works | Avoid 15MB dependency overhead — validate in spike |
 | MN_LANGFUSE_OTEL | `@langfuse/otel` / `@langfuse/tracing` | Use direct `langfuse` SDK — `@langfuse/otel` adds unnecessary OTel complexity |
 | MN_VERCEL_OTEL | `@vercel/otel` | Incompatible with OTel SDK required by Langfuse |
-| MN_MCP_NAMESPACE_COLLISION | Mixed MCP namespacing (`listTools` + `listToolsets`) | Namespace collision |
-| MN_MCP_DUPLICATE_INSTANCES | Multiple `MCPClient` instances with identical config | Memory leak |
-| MN_OPENTUI_ONKEYPRESS | `onKeyPress` on OpenTUI TextareaRenderable | Typed but never fires |
+| MN_MCP_NAMESPACE_COLLISION | Mixed MCP namespacing (conflicting tool-listing API naming conventions) | Namespace collision |
+| MN_MCP_DUPLICATE_INSTANCES | Multiple MCP client instances with identical config | Memory leak |
+| MN_OPENTUI_ONKEYPRESS | Key-press handler property on OpenTUI TextareaRenderable | Typed but never fires |
 
 ### Architecture Constraints (Design Decisions)
 
@@ -549,7 +549,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_LANG_GUARD_DEFAULT_ON | Language and hate-speech guardrails enabled by default | Both guardrails are opt-in and require explicit server configuration |
 | MN_SSE_COMPRESSION | Application-level response compression (gzip/brotli) on SSE streams | Breaks real-time token-by-token streaming (gzip buffers chunks). Compression belongs at infrastructure layer (nginx, CDN) |
 | MN_CTA_SERVER_RENDER | CTA rendering on server side | Clients are responsible for UI |
-| MN_LOCATION_DEFAULT_IMAGES | Image search default provider for location enrichment | Image search must not have a library default provider. Server must explicitly configure an `ImageSearchProvider` with its own API key |
+| MN_LOCATION_DEFAULT_IMAGES | Image search default provider for location enrichment | Image search must not have a library default provider. Server must explicitly configure an image search provider interface implementation with its own API key |
 
 ### Out of Scope (Different Products/Paradigms)
 
@@ -580,7 +580,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 |---|---|---|
 | MN_ASSISTANT_UI | assistant-ui library | Not adopted — use official shadcn and Vercel ai-elements only |
 | MN_CUSTOM_THEME | Custom CSS variable theme system beyond shadcn | Tailwind and shadcn color variables is the opinionated styling choice. No custom theming layer, no design token abstraction |
-| MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. The client SDK module is the primary SDK, while Eden Treaty SSE data is `Record<string, unknown>` and untyped |
+| MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. The client SDK module is the primary SDK, while Eden Treaty SSE data remains an untyped key-value object |
 | MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via the React hooks module. JSX and styling stay split between the web components module and native components module, with no universal component abstraction |
 
 ---
@@ -611,7 +611,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 
 ### Subpath Barrel Export Convention
 
-When a task adds a new public function, type, or class to a module directory, add the corresponding `export` to that module's barrel export file. Subpath barrels are each task's responsibility. The top-level barrel is handled separately and only aggregates subpath exports.
+When a task adds a new public function, type, or class to a module directory, add the corresponding barrel re-export entry to that module's barrel export file. Subpath barrels are each task's responsibility. The top-level barrel is handled separately and only aggregates subpath exports.
 
 ### TDD: RED-GREEN-REFACTOR
 
@@ -631,7 +631,7 @@ ALL verification is agent-executed. No exceptions. Acceptance criteria requiring
 
 ### Integration Test Isolation
 
-ALL integration test files MUST use conditional skip as the outermost describe block. A test that fails because of a missing API key is a test infrastructure bug, not a test failure. Unit tests pass with zero secrets. Integration tests use `describe.skipIf` or a `describeIf` helper for deterministic behavior.
+ALL integration test files MUST use conditional skip as the outermost describe block. A test that fails because of a missing API key is a test infrastructure bug, not a test failure. Unit tests pass with zero secrets. Integration tests use conditional suite guards for deterministic behavior.
 
 Every QA scenario that calls a real LLM or external API must be in the integration suite, not the unit suite.
 

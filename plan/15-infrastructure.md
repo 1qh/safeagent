@@ -199,9 +199,9 @@ flowchart LR
 ### Key Concepts
 - **Comma-separated env var** — the key pool environment variable resolves to the `GOOGLE_API_KEY` environment variable (see [04 — Foundation](./04-foundation.md)). That variable contains API keys separated by commas. Whitespace is trimmed. A single key with no comma means no pool is created, and callers use the provider directly.
 - **Independent counters** — provider and embedder calls cycle through keys independently. Summarization may call the provider first and the embedder later, and separate counters distribute load evenly across both paths.
-- **Per-key concurrency** — default is 5 concurrent requests per key. With 3 keys, the system supports 15 concurrent API calls. This is configurable through `perKeyConcurrency`.
+- **Per-key concurrency** — default is 5 concurrent requests per key. With 3 keys, the system supports 15 concurrent API calls. This is configurable through a per-key concurrency setting.
 - **Health checking** — each key tracks consecutive failures. After 3 failures, the key is marked unhealthy and skipped. A background probe re-tests unhealthy keys every 60 seconds. If all keys are unhealthy, the pool falls back to round-robin across all keys in degraded mode.
-- **Factory from env** — the key pool env helper reads the env var, returns `undefined` for missing or single-key scenarios, and returns a key pool for two or more keys.
+- **Factory from env** — the key pool env helper reads the env var, returns undefined for missing or single-key scenarios, and returns a key pool for two or more keys.
 ---
 ## Valkey Cache
 Valkey provides sub-millisecond read and write for budget counters, rate limiting sorted sets, and general-purpose caching. The connection uses a Redis connection URL. When Valkey is unavailable, an in-memory fallback satisfies the same interface for development and testing.
@@ -301,7 +301,7 @@ flowchart TB
 ### Budget Check Flow
 1. Read daily and monthly counters from Valkey with zero Postgres queries on the hot path.
 2. Load per-user budget limits from Valkey cache with a five-minute TTL. On cache miss, query `user_budget_limits`, cache both daily and monthly caps, and fall back to config defaults if no override exists.
-3. Compare counters against limits and return `BudgetCheckResult` with `allowed`, `daily`, `monthly`, and `resetsAt`.
+3. Compare counters against limits and return a budget check result with `allowed`, `daily`, `monthly`, and `resetsAt`.
 4. Daily keys auto-expire at midnight UTC, and monthly keys expire at month end. Fresh counters start at zero for each new period.
 ### Token Recording
 Token recording uses Redis client library transactional atomicity where increment and expiration are committed as one unit. This prevents orphaned keys that never expire if one operation succeeds and the other fails. In memory mode, sequential operations are acceptable for development. The Postgres insert into `usage_events` is fire-and-forget and never blocks the response.
@@ -315,7 +315,7 @@ Budget enforcement uses a pessimistic reservation pattern on accumulating spend 
 ### Fail-Open Policy
 If Valkey is unavailable during budget checks, the system returns `{ allowed: true }` and emits a warning log. Budget enforcement is a soft operational control, not a hard security boundary.
 ### Budget Admin API
-Beyond `checkTokenBudget` and `recordTokenUsage`, the module exposes admin functions: `getUserBudget` reads per-user limits and current spend from Postgres with Valkey cache and returns `BudgetRecord`; `setUserBudget` updates `user_budget_limits` and invalidates cache; `listUserBudgets` returns paginated budget records with optional `overBudget` filtering.
+Beyond budget-check and token-recording operations, the module exposes admin capabilities: a budget-detail read operation pulls per-user limits and current spend from Postgres with Valkey cache and returns a budget record; a budget-update operation writes `user_budget_limits` and invalidates cache; and a budget-list operation returns paginated budget records with optional over-budget filtering.
 ---
 ## Trigger.dev Integration
 Trigger.dev handles all background job execution. In production, tasks run in isolated containers with retries and dashboard visibility. In development, a transparent in-process fallback executes the same handlers directly.
@@ -371,7 +371,7 @@ Each registered task maps to a shared handler function. The document enrichment 
 ### QueueAdapter Interface
 The queue adapter interface exposes immediate dispatch. The adapter is created once at server startup and injected into route handlers and pipeline functions.
 ### In-Process Adapter Details
-The in-process adapter tracks running tasks in a `Set<Promise<void>>`. Handler failures are caught and logged and never propagate to callers. `getRunningCount` exposes in-flight tasks for health monitoring. During graceful shutdown, the server awaits `Promise.allSettled` to drain running jobs.
+The in-process adapter tracks running tasks in an in-memory set of pending async jobs. Handler failures are caught and logged and never propagate to callers. A running-task count accessor exposes in-flight tasks for health monitoring. During graceful shutdown, the server waits for all tasks to settle before completing drain.
 ### Handler Idempotency
 The background enrichment handler uses an upsert operation keyed on `file_id + page_number`. Since `page_index` has exactly one row per physical page with nullable enrichment columns populated during processing, retries after partial failure update existing rows without creating duplicates.
 ---
@@ -429,7 +429,7 @@ flowchart LR
 - **Retry-After calculation** — derived from the oldest in-window entry using `ceil`, clamped to a minimum of one second.
 ---
 ## Structured Logging
-All logging uses LogTape via `@logtape/logtape`. The library calls `getLogger` with hierarchical categories, while the consuming server calls `configure` at startup. Request context (`requestId`, `userId`, `threadId`, `agentId`, `traceId`) propagates through AsyncLocalStorage and enriches every log line automatically.
+All logging uses LogTape via `@logtape/logtape`. The library uses a logger accessor with hierarchical categories, while the consuming server applies logger configuration at startup. Request context (`requestId`, `userId`, `threadId`, `agentId`, `traceId`) propagates through AsyncLocalStorage and enriches every log line automatically.
 ```mermaid
 flowchart TB
     subgraph LOGGER_CREATION["Logger Creation"]
@@ -480,11 +480,11 @@ flowchart LR
     end
 ```
 ### Context API
-- **`runWithLogContext`** wraps an async function with context that persists through awaited operations.
-- **`getLogContext`** retrieves active context from anywhere in the async call stack.
-- **`getLogger`** returns a category-scoped logger that includes active AsyncLocalStorage fields.
+- **log-context runner** wraps an async function with context that persists through awaited operations.
+- **log-context accessor** retrieves active context from anywhere in the async call stack.
+- **logger accessor** returns a category-scoped logger that includes active AsyncLocalStorage fields.
 ### Elysia Lifecycle Hooks
-The logger lifecycle hook reads or generates `requestId` from the `x-request-id` header, extracts `userId` and `threadId` from Elysia context when available, and wraps the request handler in `runWithLogContext`. Every log line emitted during request processing includes these fields automatically.
+The logger lifecycle hook reads or generates `requestId` from the `x-request-id` header, extracts `userId` and `threadId` from Elysia context when available, and wraps the request handler in the log-context runner. Every log line emitted during request processing includes these fields automatically.
 LogTape configuration is applied only in the server entry point or test setup, never inside the library. Sensitive field scrubbing uses `@logtape/redaction`, and OpenTelemetry or Langfuse correlation uses `@logtape/otel`.
 ### Development Watch Mode
 Hot-reload mode has known issues with native modules and debugger attachment. The development workflow uses full process restart on file change:
@@ -569,10 +569,10 @@ flowchart TB
 ### Design Decisions
 - **Per-external-call breaker scope** — each external dependency call path has its own breaker, and circuit state is not shared across unrelated integrations.
 - **In-process state** — breaker state remains in process memory with no cross-instance synchronization.
-- **Typed error** — circuit-open error carries a `retryAt` timestamp.
+- **Typed error** — circuit-open error carries a retry-at timestamp.
 - **Registry pattern** — the circuit breaker registry factory provides named breakers with isolated state and health snapshot support.
 - **Non-swallowing behavior** — wrapped errors propagate and are not hidden.
-- **Injectable clock** — `now` can be injected for deterministic transition testing.
+- **Injectable clock** — the current-time source can be injected for deterministic transition testing.
 ---
 ## Health Checks
 The system exposes an aggregated health endpoint that checks critical and non-critical services independently. Overall status is `ok` when all services are up, `degraded` when only non-critical services are down, and `down` when the critical dependency Postgres is down.
@@ -644,7 +644,7 @@ sequenceDiagram
 ### Shutdown Order
 1. **Stop accepting connections** — HTTP server stops listening.
 2. **Drain in-flight requests** — wait up to 30 seconds for active requests.
-3. **Drain background tasks** — `Promise.allSettled` waits for in-process jobs.
+3. **Drain background tasks** — wait-until-settled behavior drains in-process jobs.
 4. **Close external connections** — Valkey, Postgres, and SurrealDB disconnect cleanly.
 5. **Exit** — process exits with code 0.
 This ordering avoids data loss by allowing counters to flush, usage events to persist, and enrichment jobs to complete or remain safely retryable.
@@ -701,10 +701,10 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Implement paginated budget administration listing with optional over-budget filtering.
 - Daily keys auto-expire at midnight UTC and monthly keys at month end.
 - Per-user overrides are cached in Valkey with five-minute TTL and fall back to config defaults (1M daily, 20M monthly).
-- Budget exceeded responses return HTTP 429 with full `BudgetCheckResult` including Retry-After.
+- Budget exceeded responses return HTTP 429 with the full budget check result including Retry-After.
 - Fail open when Valkey is unavailable and log warning.
 - Middleware checks budget after `userId` extraction and before agent stream.
-- Post-stream recording uses `onUsage` callback in stream handler with fire-and-forget semantics.
+- Post-stream recording uses a usage callback in the stream handler with fire-and-forget semantics.
 - Scheduled aggregation task reconciles Valkey counters with Postgres every five minutes.
 **Depends on**: FILE_STORAGE (Drizzle schema), SSE_STREAMING (stream handler), VALKEY_CACHE (Cache module)
 **Acceptance Criteria**:
@@ -734,9 +734,9 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Read the key pool environment variable (`GOOGLE_API_KEY`), parse comma-separated keys, and trim whitespace.
 - Create one provider factory per key using AI SDK Google adapter.
 - Implement round-robin distribution with separate provider and embedder counters.
-- `getNextProvider` returns LanguageModel and `getNextEmbedder` returns EmbeddingModel.
-- `getConcurrencyLimit` returns key count multiplied by `perKeyConcurrency` (default 5).
-- The key pool env helper returns `undefined` for missing or single key values and returns a pool for two or more keys.
+- The provider selector returns a language model and the embedder selector returns an embedding model.
+- The concurrency-limit accessor returns key count multiplied by the per-key concurrency setting (default 5).
+- The key pool environment helper returns undefined for missing or single key values and returns a pool for two or more keys.
 - Add per-key health tracking where three consecutive failures mark a key unhealthy and 60-second re-probe allows recovery.
 - If all keys are unhealthy, enter degraded mode with full-key round-robin instead of hard stop.
 **Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
@@ -746,7 +746,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Embedder rotation remains independent from provider sequence.
 - Concurrency limit calculation is correct.
 - Empty or blank key lists fail fast.
-- Env helper returns `undefined` for missing or single key values.
+- Environment helper returns undefined for missing or single key values.
 - Whitespace trimming yields clean key arrays.
 **QA Scenarios**:
 - Round-robin provider sequence cycles deterministically.
@@ -758,7 +758,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **What to do**:
 - Build the cache capability with a cache factory.
 - Valkey implementation uses a Redis client library with a Redis connection URL from `VALKEY_URL`.
-- Cache interface includes `get`, `set`, `del`, `incr`, `incrBy`, `decrBy`, `expire`, `close`, `isHealthy`, and a raw client accessor.
+- Cache interface includes read, write, delete, increment, decrement, expiration, close, health-check, and raw client-accessor operations.
 - The raw client accessor exposes the underlying Redis client library for sorted sets and transactional operations.
 - Add in-memory fallback with map-backed storage, read-time TTL checks, and periodic 60-second sweep.
 - In-memory raw client accessor returns `null` so consumers can degrade to no-op or sequential fallback.
@@ -786,15 +786,15 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - The in-process queue adapter executes handlers in-process with fire-and-forget semantics and running-task tracking.
 - The queue adapter factory auto-selects an adapter based on Trigger.dev environment variables.
 - Define tasks: background-enrichment (retries 3, concurrency 10), budget-aggregation (every five minutes), cleanup (retries 3, concurrency 5).
-- Shared handlers include `processBackgroundStageJob`, `runBudgetAggregation`, and `runCleanup`.
+- Shared handlers include the background-stage processor, budget-aggregation runner, and cleanup runner.
 - Ensure handler idempotency through upsert keyed on `file_id + page_number`.
 **Depends on**: CORE_TYPES (types), RAG_INFRA (RAG functions), FILE_STORAGE (FileStorage), VALKEY_CACHE (Cache)
 **Acceptance Criteria**:
 - In-process adapter executes registered handlers.
 - Unregistered task IDs fail with explicit error.
 - Handler failures do not propagate to caller.
-- `getRunningCount` reflects active tasks.
-- `runningTasks` empties after completion.
+- Running-task count reflects active tasks.
+- The in-memory running-task set empties after completion.
 - Trigger adapter sends authenticated dispatch payloads to correct endpoint.
 - Queue adapter auto-selection behaves correctly by environment.
 - Background enrichment remains idempotent under retries.
@@ -814,7 +814,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Ensure member uniqueness through `crypto.randomUUID`.
 - Return HTTP 429 with Retry-After and JSON body when limit exceeded.
 - Compute Retry-After from oldest in-window entry using ceiling and minimum one second.
-- Support custom `keyExtractor` for non-default route patterns.
+- Support custom key-extraction behavior for non-default route patterns.
 - No-op pass-through when the raw client accessor returns null in memory mode.
 - Provide deterministic tests with fake clock for boundary conditions.
 **Depends on**: CORE_TYPES (types), VALKEY_CACHE (Cache or Valkey)
@@ -838,14 +838,14 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Default redaction covers `req.headers.authorization`, `*.apiKey`, and `*.jwtSecret`.
 - Implement AsyncLocalStorage request context propagation.
 - Context shape includes `requestId`, `userId`, `threadId`, and optional `agentId`.
-- API includes `runWithLogContext`, `getLogContext`, and `getLogger`.
-- `getLogger` returns category-scoped logger enriched with active async context.
+- API includes a log-context runner, log-context accessor, and logger accessor.
+- The logger accessor returns a category-scoped logger enriched with active async context.
 - Hierarchical sub-categories inherit parent sink configuration.
 - Elysia lifecycle helper reads or generates request ID from `x-request-id` and wraps request execution in context.
 **Depends on**: SCAFFOLD_LIB (scaffolding)
 **Acceptance Criteria**:
-- `getLogger` yields logger scoped to requested category array.
-- `runWithLogContext` and `getLogContext` persist context across async boundaries.
+- Logger accessor yields a logger scoped to requested category array.
+- Log-context runner and accessor persist context across async boundaries.
 - Emitted logs include active request and user context.
 - Sub-category loggers inherit parent configuration and context.
 - Redaction covers configured sensitive fields by default.
@@ -884,10 +884,10 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Build the circuit breaker capability with a circuit breaker factory.
 - Implement state machine: closed pass-through, open fast-reject with circuit-open error, and half-open limited probing.
 - Default config includes threshold 5, reset timeout 30,000, and half-open max attempts 3.
-- `execute` wraps async functions and drives transitions from outcomes.
-- Circuit-open error includes `retryAt` timestamp.
+- The execution wrapper wraps async functions and drives transitions from outcomes.
+- Circuit-open error includes a retry-at timestamp.
 - The circuit breaker registry factory provides named per-service breakers with isolated state.
-- Registry `snapshot` returns all breaker states for health endpoint.
+- Registry health snapshot returns all breaker states for the health endpoint.
 - Breakers are in-memory per process with no Valkey synchronization.
 - Clock function is injectable for deterministic tests.
 - Wrapped errors propagate without swallowing.
@@ -900,7 +900,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Successful half-open trials close breaker and reset counters.
 - Failed half-open trial reopens breaker and resets timer.
 - Registry provides isolated per-service instances.
-- `forceClose` resets breaker to closed state.
+- Manual close/reset operation returns the breaker to the closed state.
 **QA Scenarios**:
 - With threshold 2, two failures open breaker and third call fast-rejects without function invocation.
 - After timeout elapses, successful probe closes breaker and normal calls resume.

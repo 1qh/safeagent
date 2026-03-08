@@ -87,7 +87,7 @@ stream handler factory is an Elysia route handler factory exported by the librar
 
 The handler executes the agent with streaming enabled and receives an async stream of framework events. Event families include model text chunks, run item events (tool calls, messages, handoffs), and agent update events for handoff switches. The handler maps these to the eight SSE event types. Framework guardrail tripwire exceptions are caught at the boundary and emitted as `tripwire` SSE events.
 
-The factory accepts an `errorMessageMap` parameter — a plain object keyed by error code string, where values are either a static message string or a function `(metadata) => string` for dynamic messages. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [12 — Server Implementation](./12-server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
+The factory accepts an error-message mapping parameter — a plain object keyed by error code string, where values are either a static message string or a function that derives a message from metadata. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [12 — Server Implementation](./12-server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
 
 ```mermaid
 flowchart TB
@@ -124,11 +124,11 @@ flowchart TB
 
 ### contextProvider DI Hook
 
-The server passes a `contextProvider` function when constructing the handler. The function signature is:
+The server passes a context provider function when constructing the handler. The function signature is:
 
-**`contextProvider: (ctx: { userId: string, threadId: string, messageId: string }) => Promise<AdditionalContext | null>`**
+**A context provider that receives request identity fields and returns optional additional system messages.**
 
-Where `AdditionalContext` is `{ role: 'system', content: string | MessageContentPart[] }[]` — an array of message objects to prepend to the agent's message list. Returning `null` or an empty array means no additional context is injected.
+The returned value is an optional array of system messages to prepend to the agent's message list, where each message can carry plain text or structured multimodal parts. Returning null or an empty array means no additional context is injected.
 
 Its primary use is injecting file context in direct mode, where the user has uploaded files that should be visible to the agent without going through the full RAG pipeline. The server implements the function to fetch file content from storage, read from a local cache, or return nothing based on whether the request includes file references.
 
@@ -136,7 +136,7 @@ The hook is dependency-injected so the library stays agnostic about how the serv
 
 ### userId Flow
 
-The JWT auth lifecycle hook extracts `userId` from the bearer token and attaches it to Elysia context via `derive` or `resolve`. stream handler factory reads `userId` from context and passes it into the agent call via `requestContext` along with the `threadId` from the request body. The agent and all its tools receive `userId` through this channel. Nothing in the library reads `userId` from anywhere else.
+The JWT auth lifecycle hook extracts `userId` from the bearer token and attaches it to Elysia context via lifecycle context augmentation hooks. stream handler factory reads `userId` from context and passes it into the agent call via the request context object along with the `threadId` from the request body. The agent and all its tools receive `userId` through this channel. Nothing in the library reads `userId` from anywhere else.
 
 ```mermaid
 sequenceDiagram
@@ -256,9 +256,9 @@ sequenceDiagram
     HANDLER->>CLIENT: event: done
 ```
 
-The `traceId` is a server-generated UUID created before the agent run begins and passed to Langfuse as the trace identifier. The `threadId` is the conversation thread ID for the conversation. The `agentId` is optional and identifies which agent handled the request when the server runs multiple agents.
+The trace identifier is a server-generated UUID created before the agent run begins and passed to Langfuse as the trace identifier. The `threadId` is the conversation thread ID for the conversation. The agent identifier is optional and identifies which agent handled the request when the server runs multiple agents.
 
-The client SDK stores `traceId` automatically so feedback submissions (thumbs up/down) can attach it without the application code tracking it manually.
+The client SDK stores the trace identifier automatically so feedback submissions (thumbs up/down) can attach it without the application code tracking it manually.
 
 ### trace_owners Table Schema
 
@@ -270,7 +270,7 @@ The `trace_owners` Postgres table (managed by Drizzle ORM) enables feedback owne
 | userId | text | NOT NULL |
 | createdAt | timestamp | NOT NULL, DEFAULT now() |
 
-No additional indexes beyond the primary key — lookups are always by `traceId`.
+No additional indexes beyond the primary key — lookups are always by trace identifier.
 
 ---
 
@@ -365,7 +365,7 @@ sequenceDiagram
 
 ### Relationship to Langfuse
 
-Trace-step events are a real-time subset of the data that Langfuse captures asynchronously. They share the same `traceId` (from `session-meta`). The key differences:
+Trace-step events are a real-time subset of the data that Langfuse captures asynchronously. They share the same trace identifier (from `session-meta`). The key differences:
 
 | Aspect | Trace-Step Events | Langfuse Traces |
 |--------|------------------|----------------|
@@ -373,9 +373,9 @@ Trace-step events are a real-time subset of the data that Langfuse captures asyn
 | Audience | Developers debugging via frontend UI | Analytics and observability dashboards |
 | Detail level | Summary per pipeline step | Full span tree with nested children and metadata |
 | Persistence | Ephemeral (client memory only) | Permanent (Langfuse storage) |
-| Correlation | Same `traceId` from `session-meta` | Same `traceId` |
+| Correlation | Same trace identifier from `session-meta` | Same trace identifier |
 
-A developer can watch trace-step events in real-time during a conversation, then switch to Langfuse for deep post-hoc analysis of the same request using the shared `traceId`. See [14 — Observability](./14-observability.md) for the full Langfuse tracing architecture.
+A developer can watch trace-step events in real-time during a conversation, then switch to Langfuse for deep post-hoc analysis of the same request using the shared trace identifier. See [14 — Observability](./14-observability.md) for the full Langfuse tracing architecture.
 
 ### Trace-Step Collector
 
@@ -629,7 +629,7 @@ The client exposes a file upload method that posts files to the server's upload 
 
 ### Feedback Submission
 
-The client stores the `traceId` from the most recent `session-meta` event. When the application calls `submitFeedback`, the client attaches the stored `traceId` automatically. The application doesn't need to track trace IDs.
+The client stores the trace identifier from the most recent `session-meta` event. When the application calls the feedback submission method, the client attaches the stored trace identifier automatically. The application doesn't need to track trace IDs.
 
 ```mermaid
 sequenceDiagram
@@ -656,17 +656,17 @@ All event types are shared between the server (emitter) and the client (consumer
 
 | Event Type | Payload | Description |
 |---|---|---|
-| `session-meta` | `SSESessionMetaEvent` | First event on every stream. Carries trace and thread IDs. |
-| `text-delta` | `SSETextDeltaEvent` | Incremental text chunk from the LLM. |
-| `trace-step` | `SSETraceStepEvent` | Pipeline step visibility event. Only emitted when verbosity is `full`. Carries step type, step-specific data, and timing. |
-| `cta` | `SSECTAEvent` | Call-to-action suggestions from the CTA tool. |
-| `citation` | `SSECitationEvent` | Source citation metadata for grounded output. |
-| `location` | `SSELocationEvent` | Location enrichment data for a place mentioned by the agent. Emitted progressively as places are geocoded and enriched. Client renders map pins and inline image galleries. |
-| `tripwire` | `SSETripwireEvent` | Guardrail p0 violation. Stream ends after this. |
-| `done` | `SSEDoneEvent` | Stream completed normally. |
-| `error` | `SSEErrorEvent` | Unexpected error. Stream ends after this. |
+| `session-meta` | Session metadata payload | First event on every stream. Carries trace and thread IDs. |
+| `text-delta` | Text delta payload | Incremental text chunk from the LLM. |
+| `trace-step` | Trace-step payload | Pipeline step visibility event. Only emitted when verbosity is `full`. Carries step type, step-specific data, and timing. |
+| `cta` | CTA payload | Call-to-action suggestions from the CTA tool. |
+| `citation` | Citation payload | Source citation metadata for grounded output. |
+| `location` | Location payload | Location enrichment data for a place mentioned by the agent. Emitted progressively as places are geocoded and enriched. Client renders map pins and inline image galleries. |
+| `tripwire` | Tripwire payload | Guardrail p0 violation. Stream ends after this. |
+| `done` | Done payload | Stream completed normally. |
+| `error` | Error payload | Unexpected error. Stream ends after this. |
 
-For `location`, `type` is one of `city`, `neighborhood`, `restaurant`, `landmark`, `region`, or `country`. `ImageResult` has the shape `{ url: string, thumbnail: string, attribution?: string, source?: string }`.
+For `location`, `type` is one of `city`, `neighborhood`, `restaurant`, `landmark`, `region`, or `country`. The image metadata object has the shape `{ url: string, thumbnail: string, attribution?: string, source?: string }`.
 
 ### SSESessionMetaEvent
 
@@ -719,7 +719,7 @@ classDiagram
     SSE_TRACE_STEP_EVENT --> TRACE_STEP_TYPE
 ```
 
-`TraceStepData` is a discriminated union keyed by `step`. Each step type carries a step-specific payload described in the [Trace-Step Events](#trace-step-events) section.
+The trace-step data payload is a discriminated union keyed by `step`. Each step type carries a step-specific payload described in the [Trace-Step Events](#trace-step-events) section.
 
 ### SSECTAEvent
 
@@ -821,7 +821,7 @@ classDiagram
 | **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the framework stream event sequence consumed by this SSE transport layer. |
 | **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
 | **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
-| **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share `traceId` with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
+| **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share the trace identifier with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
 | **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
 | **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
 
@@ -837,26 +837,26 @@ classDiagram
 
 Build stream handler factory that turns internal agent stream output into a well-formed SSE response. This includes:
 
-- Accepting an `errorMessageMap` parameter from the server — a plain object mapping error codes to user-facing messages (string or function). Used by the error boundary to populate the `message` field in `error` SSE events.
-- Extracting `userId` from the JWT auth context and combining it with `threadId` from the request body to form `requestContext`
+- Accepting an error-message mapping parameter from the server — a plain object mapping error codes to user-facing messages (string or function). Used by the error boundary to populate the `message` field in `error` SSE events.
+- Extracting `userId` from the JWT auth context and combining it with `threadId` from the request body to form the request context object
 - Inserting a `{ traceId, userId }` row into the `trace_owners` Postgres table before emitting the first SSE event (enables feedback ownership verification — see FEEDBACK_ENDPOINT)
-- Calling the `contextProvider` DI hook to inject file context before invoking the agent
+- Calling the context provider DI hook to inject file context before invoking the agent
 - Executing the agent with streaming enabled to get the internal async event stream
 - Accepting a verbosity control parameter (`standard` or `full`) from the route handler. When `standard`, only user-facing events are emitted. When `full`, `trace-step` events are also emitted alongside user-facing events.
 - Running the trace-step collector in the processor chain to capture pipeline milestone data (intent classification, guardrail verdicts, memory recall, retrieval results, tool execution, context budget) as `trace-step` data events
 - Iterating internal framework stream events and mapping them to the nine SSE event types:
-  - `raw_model_stream_event` (text delta) → `text-delta` SSE event
-  - `run_item_stream_event` with tool call for `suggest_cta` → `cta` SSE event (tool chunks suppressed)
-  - `run_item_stream_event` with tool call for `search_locations` → `location` SSE event (tool chunks suppressed)
+  - Raw model stream event (text delta) → `text-delta` SSE event
+  - Run-item stream event with CTA-suggestion tool call → `cta` SSE event (tool chunks suppressed)
+  - Run-item stream event with location-search tool call → `location` SSE event (tool chunks suppressed)
   - Citation metadata from tool results → `citation` SSE event
   - Pipeline milestones (from trace-step collector) → `trace-step` SSE events (only when verbosity is `full`)
-  - `agent_updated_stream_event` → logged for tracing (handoff routing)
+  - Agent-updated stream event → logged for tracing (handoff routing)
   - Stream start → `session-meta` SSE event (first event, carries traceId + threadId)
   - Stream end → `done` SSE event
 - Writing the stream through Elysia's SSE generator response path
 - Running a keepalive interval that writes SSE comment lines to prevent proxy timeouts
 - Catching framework guardrail tripwire exceptions and emitting a `tripwire` SSE event with `conceptId`, reason, and fallback message
-- Catching all other errors, looking up the error code in `errorMessageMap` to get the user-facing message, and emitting an `error` SSE event with `{ code, message }`
+- Catching all other errors, looking up the error code in the error-message mapping to get the user-facing message, and emitting an `error` SSE event with code and message fields
 - Closing the stream cleanly in all exit paths
 
 **Depends on**:
@@ -868,18 +868,18 @@ Build stream handler factory that turns internal agent stream output into a well
 **Acceptance Criteria**:
 
 - The chat streaming endpoint returns a response with the SSE content type
-- The first event on every stream is `session-meta` with non-empty `traceId` and `threadId`
+- The first event on every stream is `session-meta` with non-empty trace identifier and `threadId`
 - A `trace_owners` row is inserted before the first SSE event (traceId + userId)
 - Text deltas arrive as `text-delta` events in order
 - A `done` event closes the stream after normal completion
 - A p0 guardrail violation produces a `tripwire` event and no further text deltas
-- An unexpected thrown error produces an `error` event with a `message` from the `errorMessageMap` and closes the stream
+- An unexpected thrown error produces an `error` event with a mapped user-facing message and closes the stream
 - Error codes not in the map produce a generic fallback message
 - Keepalive comment lines appear at the configured interval during long responses
 - The TUI can consume the same processor chain output without going through the HTTP handler
 - When verbosity is `full`, `trace-step` events are interleaved with user-facing events at their natural pipeline positions
 - When verbosity is `standard`, zero `trace-step` events appear in the stream
-- `userId` extracted from JWT is present in the agent's `requestContext` for every call
+- `userId` extracted from JWT is present in the agent's request context for every call
 
 **QA Scenarios**:
 - Normal chat response → `session-meta` → N × `text-delta` → `done`
@@ -887,7 +887,7 @@ Build stream handler factory that turns internal agent stream output into a well
 - p0 guardrail mid-stream → `session-meta` → some `text-delta` → `tripwire` → stream closes
 - Agent throws unexpected error → `session-meta` → `error` → stream closes
 - Response takes 45 seconds → keepalive comments appear and connection stays open
-- `contextProvider` returns file content → agent receives file content prepended to messages
+- Context provider returns file content → agent receives file content prepended to messages
 - Missing or invalid JWT → 401 before stream opens (auth middleware, not handler)
 - Verbosity `full` → `trace-step` events interleaved with user-facing events showing pipeline activity
 - Verbosity `standard` → zero `trace-step` events in stream, identical to pre-trace behavior
@@ -902,7 +902,7 @@ Build stream handler factory that turns internal agent stream output into a well
 Build the CTA tool and stream processor pair:
 
 - The CTA tool factory — takes a CTA catalog definition and returns a framework-compatible tool. The tool input is constrained by the catalog so the LLM can only reference valid CTA IDs. The tool execution returns the selected CTAs.
-- The CTA stream processor factory — returns a stream processor that intercepts `suggest_cta` tool-call events, suppresses them from the output stream, and emits a `cta` data event in their place. All other chunks pass through unchanged.
+- The CTA stream processor factory — returns a stream processor that intercepts CTA-suggestion tool-call events, suppresses them from the output stream, and emits a `cta` data event in their place. All other chunks pass through unchanged.
 - Define CTA data with `id`, `label`, `action` (`deeplink`, `callback`, or `dismiss`), and optional `url` and `icon` fields.
 - Enforce the max-3-CTAs constraint at the tool schema level
 - Document the catalog configuration shape for server authors
@@ -917,16 +917,16 @@ Build the CTA tool and stream processor pair:
 - The CTA tool factory returns a valid framework-compatible tool
 - The LLM cannot suggest a CTA ID that isn't in the catalog (schema validation rejects it)
 - A response with CTAs produces exactly one `cta` SSE event
-- No `tool-call` or `tool-result` events for `suggest_cta` appear in the SSE stream
+- No raw tool-call or tool-result events for CTA suggestion appear in the SSE stream
 - A response without CTAs produces no `cta` event
 - The processor passes all non-CTA chunks through without modification
 - Guardrail processor runs before CTA processor — a blocked response emits no CTA events
 - The catalog is defined in server config; the library has no hardcoded CTAs
 
 **QA Scenarios**:
-- LLM calls `suggest_cta` with 2 valid CTAs → `cta` event has 2 items and no raw tool-call event appears
-- LLM calls `suggest_cta` with an invalid CTA ID → tool schema validation error and no `cta` event
-- LLM calls `suggest_cta` with 4 CTAs → schema rejects the call (max-3 constraint)
+- LLM calls the CTA-suggestion tool with 2 valid CTAs → `cta` event has 2 items and no raw tool-call event appears
+- LLM calls the CTA-suggestion tool with an invalid CTA ID → tool schema validation error and no `cta` event
+- LLM calls the CTA-suggestion tool with 4 CTAs → schema rejects the call (max-3 constraint)
 - Response has no CTA tool call → no `cta` event appears in the stream
 - p0 guardrail fires before CTA tool call → `tripwire` event with no `cta` event
 - Empty catalog passed to CTA tool factory → tool is created but the LLM has no valid CTA options to suggest
@@ -942,11 +942,11 @@ Build the client SDK module as a zero-dependency TypeScript package:
 - SSE connection management using Fetch API streaming
 - Incremental SSE line parser (handles chunked delivery, multi-line data fields)
 - Typed event dispatch: register callbacks for each of the nine event types (including `trace-step`)
-- `trace-step` event dispatch with step-type discrimination: the `onTraceStep` callback receives a discriminated union payload typed by `step` field, allowing consumers to handle each pipeline step differently
+- `trace-step` event dispatch with step-type discrimination: the trace-step callback receives a discriminated union payload typed by `step` field, allowing consumers to handle each pipeline step differently
 - Auto-reconnection with exponential backoff and jitter; respect `Last-Event-ID`
-- Offline message queue: enabled via `offline: { enabled: true, maxQueueSize: N }` config; queues `sendMessage` calls when offline; drains FIFO on reconnect; emits a client-local `overflow` callback (NOT an SSE event) when queue is full and drops oldest
+- Offline message queue: enabled via offline-queue config; queues send-message calls when offline; drains FIFO on reconnect; emits a client-local overflow callback (NOT an SSE event) when queue is full and drops oldest
 - File upload: multipart upload request with progress callback; returns file reference
-- Feedback submission: `submitFeedback` — attaches stored `traceId` automatically
+- Feedback submission: the feedback submission method attaches the stored trace identifier automatically
 - JWT auth: accept token at construction or via async refresh callback
 - Full TypeScript types for all events, config, and public methods
 - No runtime dependencies — zero production dependencies
@@ -961,28 +961,28 @@ Build the client SDK module as a zero-dependency TypeScript package:
 
 - Package installs with zero production dependencies
 - All nine event types are handled with typed callbacks (including `trace-step`)
-- `onSessionMeta` fires before `onTextDelta` on every stream
-- `traceId` from `session-meta` is stored and attached to `submitFeedback` automatically
+- Session-meta callback fires before text-delta callback on every stream
+- The trace identifier from `session-meta` is stored and attached to feedback submission automatically
 - Connection drops trigger reconnection with backoff; `Last-Event-ID` is sent
-- `sendMessage` while offline enqueues the message; it sends after reconnect
-- Queue overflow fires `onOverflow` and drops the oldest message
+- Send-message calls while offline enqueue the message; it sends after reconnect
+- Queue overflow fires the overflow callback and drops the oldest message
 - File upload reports progress via callback and returns a file reference
 - JWT refresh callback is called before each request
 - Works in browser (Bun-compatible web APIs only in the main bundle)
 - TypeScript strict mode passes with no errors
 
 **QA Scenarios**:
-- Normal stream → `onSessionMeta` → N × `onTextDelta` → `onDone`
-- Server sends `tripwire` → `onTripwire` fires with `conceptId`, reason, and `fallbackMessage`
-- Server sends `cta` → `onCTA` fires with a typed CTA array
-- Server sends `citation` → `onCitation` fires with typed source citation data
-- Server sends `location` → `onLocation` fires with typed place, coordinates, and image metadata
-- Server sends `trace-step` (verbosity full) → `onTraceStep` fires with discriminated union payload; step type and step-specific data are fully typed
+- Normal stream → session-meta callback → N × text-delta callback → done callback
+- Server sends `tripwire` → tripwire callback fires with `conceptId`, reason, and fallback message text
+- Server sends `cta` → CTA callback fires with a typed CTA array
+- Server sends `citation` → citation callback fires with typed source citation data
+- Server sends `location` → location callback fires with typed place, coordinates, and image metadata
+- Server sends `trace-step` (verbosity full) → trace-step callback fires with discriminated union payload; step type and step-specific data are fully typed
 - Connection drops mid-stream → client reconnects with backoff and sends `Last-Event-ID`
-- Max retries exceeded → `onError` fires and no further reconnect attempts are made
-- `sendMessage` while offline → message is queued and sent after reconnect
-- Queue reaches `maxQueueSize` → `onOverflow` fires and oldest message is dropped
-- `submitFeedback` after stream → request includes trace identifier from the last `session-meta`
+- Max retries exceeded → error callback fires and no further reconnect attempts are made
+- Send-message call while offline → message is queued and sent after reconnect
+- Queue reaches max size → overflow callback fires and oldest message is dropped
+- Feedback submission after stream → request includes trace identifier from the last `session-meta`
 - JWT refresh callback provided → callback runs before each request and fresh token is used
 - File upload → progress callback fires and a file reference is returned on completion
 

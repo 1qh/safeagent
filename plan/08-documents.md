@@ -275,7 +275,7 @@ pdf-lib loads the full PDF and extracts each page as a standalone single-page PD
 
 ### Step B: Image Extraction
 
-pdfjs `getOperatorList` returns the raw drawing operations for each page. Image operations are filtered to extract raster images. Images smaller than 100×100 pixels are discarded as decorative (bullets, icons, dividers). The remaining images are decoded with JIMP to get raw bytes and dimensions.
+pdfjs operator-list extraction returns the raw drawing operations for each page. Image operations are filtered to extract raster images. Images smaller than 100×100 pixels are discarded as decorative (bullets, icons, dividers). The remaining images are decoded with JIMP to get raw bytes and dimensions.
 
 This step is pure PDF parsing. No LLM is involved. The goal is to collect the visual evidence that Gemini will need to produce an accurate summary.
 
@@ -284,24 +284,24 @@ This step is pure PDF parsing. No LLM is involved. The goal is to collect the vi
 Each page is summarized with a structured output generation call. The call sends:
 - The single-page PDF as base64
 - Any extracted raster images from that page
-- A schema requiring `{ summary: string, imageDescriptions: ImageDescription[], hasVectorCharts: boolean }`
+- A schema requiring summary text, an image-description array, and a vector-chart presence flag
 
 The `summary` field must be a dense paragraph of 150–400 words. This density is intentional: sparse summaries lose retrieval precision. Each summary becomes exactly one RAG chunk in `page_index`.
 
-`imageDescriptions` is an array of structured descriptions for each image on the page. These are stored in the `metadata` JSONB column and used by the visual grounding pipeline.
+The image-description array contains structured descriptions for each image on the page. These are stored in the `metadata` JSONB column and used by the visual grounding pipeline.
 
-`hasVectorCharts` signals that the page contains charts drawn as PDF vector graphics (not raster images). These can't be extracted by pdfjs image operations.
+The vector-chart presence flag signals that the page contains charts drawn as PDF vector graphics (not raster images). These can't be extracted by pdfjs image operations.
 
-**Concurrency**: p-limit controls how many Gemini calls run in parallel. The limit is configurable via `summarizationConcurrencyPerKey` in the upload config (default: 50). This value overrides KeyPool's default `perKeyConcurrency` for the summarization task only. Operators with higher Google AI API rate limits can increase this value (e.g., 150 for paid-tier keys). With a pool of 10 keys and a higher per-key limit, very large PDFs can be processed quickly in benchmark scenarios (e.g., ~200 pages when the upload size limit is increased for internal load testing).
+**Concurrency**: p-limit controls how many Gemini calls run in parallel. The limit is configurable via the summarization per-key concurrency setting in the upload config (default: 50). This value overrides the key pool's default per-key concurrency for the summarization task only. Operators with higher Google AI API rate limits can increase this value (e.g., 150 for paid-tier keys). With a pool of 10 keys and a higher per-key limit, very large PDFs can be processed quickly in benchmark scenarios (e.g., ~200 pages when the upload size limit is increased for internal load testing).
 
 ### Step D: Vector Chart Fallback
 
-If `hasVectorCharts` is true and no raster images were extracted in Step B, the page is rendered to a PNG using pdfjs canvas. This PNG is then included in the Gemini call as a supplementary image. The fallback only fires when needed — most pages with charts have raster images already.
+If the vector-chart presence flag is true and no raster images were extracted in Step B, the page is rendered to a PNG using pdfjs canvas. This PNG is then included in the Gemini call as a supplementary image. The fallback only fires when needed — most pages with charts have raster images already.
 
 ### Step E: Store
 
 For each page:
-1. The summary is embedded via `EMBEDDING_PROVIDER`
+1. The summary is embedded via the configured embedding provider
 2. The per-page PDF is uploaded to S3
 3. Extracted images are uploaded to S3
 4. A `page_index` row is inserted or updated with the `summary`, `summary_embedding`, and a `metadata` JSONB object containing image descriptions and S3 keys
@@ -515,16 +515,16 @@ flowchart TD
 
 ### Image Description Schema
 
-Each extracted image gets a structured description from Gemini's structured output generation call. The `ImageDescription` type includes:
+Each extracted image gets a structured description from Gemini's structured output generation call. The image-description structure includes:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `index` | number | Position of this image on the page (0-indexed) |
-| `s3Key` | string | S3 object key for the image |
-| `description` | string | Gemini's natural language description |
-| `type` | string | Inferred type: `chart`, `table`, `photo`, `diagram`, `other` |
-| `width` | number | Pixel width |
-| `height` | number | Pixel height |
+| index | number | Position of this image on the page (0-indexed) |
+| object key | string | S3 object key for the image |
+| description | string | Gemini's natural language description |
+| kind | string | Inferred type: chart, table, photo, diagram, other |
+| width | number | Pixel width |
+| height | number | Pixel height |
 
 These descriptions are stored in the `metadata` JSONB column of `page_index` and are used by the visual grounding pipeline when a user asks about charts or images.
 
@@ -576,7 +576,7 @@ graph TD
 | Per-page PDF | Hierarchical key organized by user, thread, file identity, and page number in a page-artifacts segment |
 | Extracted image | Hierarchical key organized by user, thread, file identity, page number, and image index |
 
-Page numbers are 1-indexed. Image indices are 0-indexed (matching the `ImageDescription.index` field).
+Page numbers are 1-indexed. Image indices are 0-indexed (matching the image-description index field).
 
 ### S3-Compatible Storage Client
 
@@ -604,7 +604,7 @@ The `page_index` table stores all retrieval artifacts for document pages. It's m
 | `raw_text` | text (nullable) | Background extracted text; null before enrichment |
 | `raw_embedding` | vector(EMBEDDING_DIMS) (nullable) | Dense embedding of `raw_text`; null before enrichment (dimension from configuration constants) |
 | `raw_tsvector` | tsvector (nullable, GENERATED) | Generated from `raw_text` for full-text search |
-| `metadata` | jsonb | `{ images: ImageDescription[], s3PageKey: string }` |
+| `metadata` | jsonb | `{ images: image descriptions, page object key }` |
 | `created_at` | timestamptz | Row creation time |
 
 > **Note**: The CROSS_CONV_RAG task (document 09) adds a non-nullable `scope` column (`TEXT`, values `'thread'` or `'global'`) to this table. The column is not listed above because it does not exist until CROSS_CONV_RAG is implemented. See document 09 for the full cross-conversation retrieval design.
@@ -791,11 +791,11 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 **Depends on**: SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS
 
 **Acceptance Criteria**:
-- Large-PDF benchmark (e.g., ~200 pages when the upload size limit is increased for internal load testing) processes in under 15 seconds with a 10-key pool at elevated `summarizationConcurrencyPerKey`
+- Large-PDF benchmark (e.g., ~200 pages when the upload size limit is increased for internal load testing) processes in under 15 seconds with a 10-key pool at elevated summarization per-key concurrency
 - Each page produces exactly one `page_index` row with populated `summary` and `summary_embedding`
 - All `page_index` inserts and updates use Drizzle type-safe queries
 - Images smaller than 100×100px are not extracted
-- `hasVectorCharts=true` pages without raster images trigger the PNG render fallback
+- Pages marked with vector-chart presence and no raster images trigger the PNG render fallback
 - `progress_current` increments after each page completes
 - `status` transitions to `'ready'` only after all pages complete
 - A single failed page doesn't abort the entire document

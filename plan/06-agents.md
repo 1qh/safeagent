@@ -266,12 +266,12 @@ Before reasoning starts, the engine assembles full context in strict priority or
 6. Auto-recalled facts
 7. User short-term context
 
-After assembly, a token estimator (`character_count / 4`) computes budget usage and compares it against `CONTEXT_WINDOW_BUDGET`.
+After assembly, a token estimator (character count divided by four) computes budget usage and compares it against the context window budget.
 
 If assembled context exceeds budget, truncation runs in reverse priority order:
 
 1. Drop user short-term context first
-2. Cap auto-recalled facts to `MAX_RECALL_TOKENS`
+2. Cap auto-recalled facts to the configured recall token ceiling
 3. Compact rolling summary
 4. Drop oldest thread turns
 
@@ -331,7 +331,7 @@ Short casual messages bias toward concise responses; detailed prompts bias towar
 
 ### Thread Resurrection Handling and Conversation Resumption
 
-When the time gap between current and previous thread message exceeds `THREAD_RESURRECTION_GAP`, the orchestrator treats the turn as resurrection.
+When the time gap between current and previous thread message exceeds the configured resurrection gap threshold, the orchestrator treats the turn as resurrection.
 
 On resurrection, the orchestrator auto-triggers memory recall using key entities from rolling summary and injects a staleness notice into context:
 
@@ -426,13 +426,13 @@ Sequential flow:
 
 Detection: The intent validator detects dependent structures such as “the one I mentioned is bad, find another” or “I do not like Y, what about Z.”
 
-Constraint passing: After first stage completes, orchestrator extracts a structured constraint object with shape `{ type, entities, metadata }` and passes it through handoff `inputFilter` so dependent sub-agent must respect it during planning and tool usage.
+Constraint passing: After first stage completes, the orchestrator extracts a structured constraint object containing type, entities, and metadata, then passes it through handoff input filtering so the dependent sub-agent must respect it during planning and tool usage.
 
 | Constraint type | When produced | What it carries |
 |----------------|---------------|-----------------|
-| `exclusion` | Feedback identifies disliked entity | `entities`: names or IDs to exclude from later results |
-| `refinement` | Context intent narrows scope | `entities`: scope qualifiers; `metadata`: additional filters |
-| `context` | Context-establishing intent provides background | `entities`: key mentions; `metadata`: grounding facts |
+| exclusion | Feedback identifies disliked entity | entities: names or IDs to exclude from later results |
+| refinement | Context intent narrows scope | entities: scope qualifiers; metadata: additional filters |
+| context | Context-establishing intent provides background | entities: key mentions; metadata: grounding facts |
 
 ---
 
@@ -499,13 +499,13 @@ flowchart TB
 
 ## Location Enrichment Tool (LOCATION_TOOL)
 
-**Purpose**: When the model discusses places, it may call `search_locations` so each place is enriched with coordinates and optional images. Client applications can render interactive maps and inline place visuals from these events.
+**Purpose**: When the model discusses places, it may call the location enrichment tool so each place is enriched with coordinates and optional images. Client applications can render interactive maps and inline place visuals from these events.
 
-**Factory**: The location tool factory accepts a `LocationToolConfig` and returns an AI SDK tool definition.
+**Factory**: The location tool factory accepts a location tool configuration and returns an AI SDK tool definition.
 
-**Tool name**: `search_locations`.
+**Tool name**: the location search tool.
 
-**Suppression pattern**: Tool-call and tool-result stream chunks for `search_locations` are suppressed using the same mechanism as `suggest_cta`. A location stream processor factory intercepts `search_locations` chunks, suppresses them from outbound stream, and emits clean `location` events derived from tool result.
+**Suppression pattern**: Tool-call and tool-result stream chunks for the location search tool are suppressed using the same mechanism as the CTA suggestion tool. A location stream processor factory intercepts location-tool chunks, suppresses them from outbound stream, and emits clean `location` events derived from tool result.
 
 **Input contract**: Model passes a place list and optional context text. Context clarifies ambiguous names and improves provider relevance.
 
@@ -517,7 +517,7 @@ flowchart TB
 4. Cache enrichment payloads in Valkey with configured TTL rules.
 5. Emit a `location` SSE event per resolved place. If geocoding returns null, skip that place (degrade silently: log and continue).
 
-**LLM autonomy**: Model decides when to call `search_locations`. Typical triggers include recommendations, directions, and venue-anchored responses. Generic responses do not require this tool.
+**LLM autonomy**: Model decides when to call the location search tool. Typical triggers include recommendations, directions, and venue-anchored responses. Generic responses do not require this tool.
 
 ```mermaid
 flowchart LR
@@ -557,32 +557,32 @@ sequenceDiagram
 
 ### Task LOCATION_TOOL: Location Enrichment Tool
 
-**What to do**: Build the location tool factory that accepts `LocationToolConfig` and returns an AI SDK tool definition named `search_locations`. The tool receives place names and optional context, resolves each place through configured `GeocodeProvider` (Nominatim default), optionally fetches images via configured `ImageSearchProvider`, and returns `LocationResult[]`. Build Valkey caching for resolved locations with configurable TTL. Build the location stream processor factory that intercepts `search_locations` tool-call and tool-result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Build a places image provider factory helper that wraps Google Places Photos as `ImageSearchProvider` including place imagery and coordinate support.
+**What to do**: Build the location tool factory that accepts location tool configuration and returns an AI SDK tool definition for location search. The tool receives place names and optional context, resolves each place through a configured geocoding provider (Nominatim default), optionally fetches images via a configured image search provider, and returns a list of location results. Build Valkey caching for resolved locations with configurable TTL. Build the location stream processor factory that intercepts location-tool call and result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Build a places image provider factory helper that wraps Google Places Photos as an image search provider, including place imagery and coordinate support.
 
 **Depends on**: CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE
 
 **Acceptance Criteria**:
 
-- Location tool factory returns valid AI SDK tool definition with name `search_locations`
+- Location tool factory returns a valid AI SDK tool definition with the location-search name
 - Tool resolves place names through configured geocode provider
 - Valkey cache is checked before geocode provider call; cache hits skip provider call
 - Cache entries use configurable TTL
-- Location stream processor factory suppresses `search_locations` tool-call and tool-result chunks from outbound stream
-- Each resolved place emits `location` SSE event with `name`, `type`, `lat`, `lng`, `images`, and optional `context`
+- Location stream processor factory suppresses location-tool call and result chunks from outbound stream
+- Each resolved place emits `location` SSE event with name, type, latitude, longitude, images, and optional context
 - Unresolved places (geocode returns null) are silently skipped with warning log
-- When no `ImageSearchProvider` is configured, `images` defaults to empty array
-- `GeocodeProvider` and `ImageSearchProvider` are pluggable so server can substitute custom implementations
-- Places image provider factory helper returns a valid `ImageSearchProvider` implementation
+- When no image search provider is configured, images defaults to empty array
+- Geocoding and image-search provider interfaces are pluggable so server can substitute custom implementations
+- Places image provider factory helper returns a valid image-search provider implementation
 
 **QA Scenarios**:
 
-- Call tool with known city name -> `LocationResult` includes valid lat/lng coordinates
+- Call tool with known city name -> returned location result includes valid latitude and longitude coordinates
 - Call tool with same city twice -> second call hits Valkey cache, no geocode invocation
 - Call tool with nonexistent place -> geocode returns null, no location event, no client error
-- Call tool with `ImageSearchProvider` configured -> images array populated
-- Call tool without `ImageSearchProvider` -> images array empty
-- Stream response that triggers `search_locations` -> tool-call/tool-result chunks hidden from SSE output, location events present
-- Configure custom `GeocodeProvider` -> tool uses custom provider instead of default
+- Call tool with image-search provider configured -> images array populated
+- Call tool without image-search provider -> images array empty
+- Stream response that triggers location search -> tool-call/tool-result chunks hidden from SSE output, location events present
+- Configure custom geocoding provider -> tool uses custom provider instead of default
 
 ---
 
@@ -690,22 +690,22 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task AGENT_FACTORY: Agent Creation Factory + Framework Adapter
 
-**What to do**: Build the core agent creation factory that wraps `@openai/agents` framework agent class with safeagent-specific configuration. Use the SDK model bridge from `@openai/agents-extensions` to connect Gemini into the framework model interface. Configure guardrail arrays, register tools (custom + MCP), and connect memory integration. Agent execution uses the framework's execution method to handle tool loop, `maxTurns`, retries, and streaming.
+**What to do**: Build the core agent creation factory that wraps `@openai/agents` framework agent class with safeagent-specific configuration. Use the SDK model bridge from `@openai/agents-extensions` to connect Gemini into the framework model interface. Configure guardrail arrays, register tools (custom + MCP), and connect memory integration. Agent execution uses the framework's execution method to handle tool loop, maximum turn limits, retries, and streaming.
 
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Schemas), CONFIG_DEFAULTS (Config), STORAGE_WRAPPER (Storage), PROVIDER_HELPERS (Provider)
 
 **Acceptance Criteria**:
 
 - Agent creation factory returns configured framework agent class instance wrapped with safe defaults
-- SDK model bridge for `PRIMARY_PROVIDER` produces a valid framework model
+- SDK model bridge for the primary provider produces a valid framework model
 - Agent modes (chat, grounding, tools, structured) each return non-empty response through the framework's execution method
 - Guardrails are wired as guardrail arrays
 - Memory integration includes conversation store with configurable window
 - Tool binding includes custom tools and MCP tools
-- `thinkingLevel` is passed to provider
-- `guardMode` controls active guardrails
-- `requestContext` propagation (user ID, thread ID) reaches tools via runner context
-- Unit tests use `MockLanguageModel` from `ai/test` wrapped via the SDK bridge helper
+- Thinking level configuration is passed to provider
+- Guard mode configuration controls active guardrails
+- Request context propagation (user ID, thread ID) reaches tools via runner context
+- Unit tests use the AI SDK test mock model from the test utilities package, wrapped via the SDK bridge helper
 
 **QA Scenarios**:
 
@@ -747,8 +747,8 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 **Acceptance Criteria**:
 
-- Classification uses primary model with `thinkingLevel: 'minimal'`
-- `output: 'enum'` mode is used for single-token classification
+- Classification uses primary model with minimal thinking level
+- Enum output mode is used for single-token classification
 - Per-thread Valkey caching keeps same thread on same agent
 - Cache invalidation available on explicit user request
 - New threads with no cache handled gracefully
@@ -798,7 +798,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 **Acceptance Criteria**:
 
-- `mode: 'grounding'` creates agent configured for Google Search grounding
+- Grounding mode creates an agent configured for Google Search grounding
 - Grounding responses include structured metadata for used sources
 - Citation formatter converts grounding metadata into consistent citation output
 - Grounding mode works in streaming and non-streaming paths
@@ -829,7 +829,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Multiple independent intents -> parallel sub-agent runs via handoffs, one per intent
 - Multiple dependent intents -> sequential runs with constraint passing through handoff-scoped context
 - Sub-agents execute independently with their own tool sets
-- Auto-trigger `memoryRecall` on first turn before reasoning
+- Auto-trigger memory recall on first turn before reasoning
 - Recalled context injected alongside thread short-term and user short-term context
 - After first turn, recall returns to agent-initiated mode
 - Live synthesis streams as handoffs complete

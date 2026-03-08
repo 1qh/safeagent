@@ -143,7 +143,7 @@ sequenceDiagram
 
 ### Sliding window behavior
 
-The active window is controlled by `lastMessages` and defaults to ten turns.
+The active window is controlled by the configurable recent-message window setting and defaults to ten turns.
 
 - Turns leaving the active window are dropped from context.
 - Dropped turns remain persisted.
@@ -355,7 +355,7 @@ Summary excludes:
 
 ### Rolling summary cap
 
-`ROLLING_SUMMARY_MAX_TOKENS` enforces a hard summary budget.
+A rolling-summary maximum token setting enforces a hard summary budget.
 
 ```mermaid
 flowchart TB
@@ -377,14 +377,14 @@ Stable user preferences and explicit decisions are retained.
 
 ### Thread summary retrieval
 
-`threadSummary` returns the current rolling summary so direct user requests like "what did we discuss" do not require replaying large raw histories.
+The thread summary retrieval operation returns the current rolling summary so direct user requests like "what did we discuss" do not require replaying large raw histories.
 
 ### Thread resurrection handling
 
-If thread inactivity exceeds `THREAD_RESURRECTION_GAP` (default seven days), resurrection mode runs:
+If thread inactivity exceeds the configured resurrection gap (default seven days), resurrection mode runs:
 
 - Extract key entities from rolling summary.
-- Trigger `memoryRecall` with entity set.
+- Trigger memory recall with the extracted entity set.
 - Rehydrate available long-term records.
 - Inject a staleness note indicating possible memory expiry.
 
@@ -448,8 +448,8 @@ graph LR
 | Config | Value | Notes |
 |--------|-------|-------|
 | SurrealDB connection endpoint | WebSocket endpoint | Supports credentials in URL |
-| Namespace | `safeagent` | Shared namespace |
-| Database | `memory` | Dedicated logical database |
+| Namespace | safeagent | Shared namespace |
+| Database | memory | Dedicated logical database |
 
 ### Vector indexing decision
 
@@ -460,16 +460,16 @@ No MTREE index is required for bounded per-user memory volume. Sequential scan w
 Long-term memory client provides typed SurrealDB operations only:
 
 - user node creation helper
-- `storeFact`
-- `storeInteraction`
-- `storeMediaFact`
-- `findSimilarFacts`
-- `getFactsByUser`
-- `refreshFactTTL`
-- `deleteExpiredFacts`
-- `deleteFactById`
-- `getFactsForInspection`
-- `supersedeFact`
+- fact storage operation
+- interaction storage operation
+- media-fact storage operation
+- similar-fact lookup operation
+- user-fact retrieval operation
+- fact TTL refresh operation
+- expired-fact cleanup operation
+- fact deletion by identifier operation
+- fact inspection retrieval operation
+- fact supersession operation
 
 Long-term scope is user-level and cross-thread by design.
 
@@ -624,13 +624,13 @@ erDiagram
 
 | factType | Description | Example |
 |----------|-------------|---------|
-| `preference` | User taste or preference | user prefers indoor football fields |
-| `style_preference` | Communication style preference | user prefers concise responses with examples |
-| `attribute` | Stable user attribute | user works_at Acme Corp |
-| `derived` | Inferred from related facts | Acme Corp located_in Berlin |
-| `behavioral` | Behavior pattern over time | user often searches sports venues |
-| `sentiment` | Opinion polarity toward target | user dislikes Sân bóng X |
-| `emotional_state` | Decaying emotional context for tone calibration | user currently frustrated about commute |
+| preference | User taste or preference | user prefers indoor football fields |
+| style_preference | Communication style preference | user prefers concise responses with examples |
+| attribute | Stable user attribute | user works_at Acme Corp |
+| derived | Inferred from related facts | Acme Corp located_in Berlin |
+| behavioral | Behavior pattern over time | user often searches sports venues |
+| sentiment | Opinion polarity toward target | user dislikes Sân bóng X |
+| emotional_state | Decaying emotional context for tone calibration | user currently frustrated about commute |
 
 ### Temporal state on facts
 
@@ -646,9 +646,9 @@ This state is set during extraction and used in recall ranking and formatting.
 
 | Record Type | Default TTL | Rationale |
 |-------------|-------------|-----------|
-| `fact` | 90 days | Durable user memory with refresh-on-access |
-| `interaction` | 30 days | Recent activity context |
-| `media_fact` | 30 days | Visual context with shorter relevance horizon |
+| fact | 90 days | Durable user memory with refresh-on-access |
+| interaction | 30 days | Recent activity context |
+| media_fact | 30 days | Visual context with shorter relevance horizon |
 
 ```mermaid
 flowchart LR
@@ -849,7 +849,7 @@ flowchart TB
 
 ### Emotional context carry-forward with decay
 
-Extraction also captures short-lived emotional state as `emotional_state` facts.
+Extraction also captures short-lived emotional state as emotional-state facts.
 
 - Purpose: response tone calibration, not analytics.
 - Each emotional state receives a decay counter (default five turns).
@@ -985,7 +985,7 @@ flowchart TB
 ### Fire-and-forget guarantee
 
 - Extraction failures are logged, not user-visible.
-- Partial/errored streams set `streamError` and skip extraction.
+- Partial or errored streams set an internal stream error marker and skip extraction.
 - Short-term persistence still occurs for continuity.
 - This avoids memory pollution from incomplete or malformed outputs.
 
@@ -1242,8 +1242,8 @@ Records returned by recall receive updated `lastAccessedAt` and refreshed `expir
 
 Memory control is required for trust and user agency.
 
-- `memoryInspect`: what is remembered.
-- `memoryDelete`: remove specific memory scope.
+- memory inspection tool: shows what is remembered.
+- memory deletion tool: removes a specific memory scope.
 
 ### Inspect flow
 
@@ -1362,7 +1362,7 @@ flowchart TB
 
 ### Memory source in source-priority routing
 
-`memory_recall` participates as a source in source-priority fan-out.
+Memory recall participates as a source in source-priority fan-out.
 
 ```mermaid
 flowchart LR
@@ -1390,7 +1390,7 @@ Fact extraction runs once after orchestrator final synthesis, not per sub-agent.
 
 ## Context Window Budget Management
 
-The engine enforces `CONTEXT_WINDOW_BUDGET` with strict priority trimming.
+The engine enforces the configured context window budget with strict priority trimming.
 
 Priority order:
 
@@ -1399,7 +1399,7 @@ Priority order:
 3. Tool definitions (never truncated)
 4. Last ten thread turns (drop oldest first)
 5. Rolling summary (compaction when above cap)
-6. Recalled long-term memory (`MAX_RECALL_TOKENS` cap)
+6. Recalled long-term memory (configured recall-token cap)
 7. User short-term cross-thread context (reduce first, then drop)
 
 Token estimation uses character-length heuristic for low-cost overflow prevention.
@@ -1488,24 +1488,24 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task SHORT_TERM_MEM: Thread Short-Term Memory + Mandatory Rolling Summaries
 
-**What to do**: Wire a conversation store-backed short-term module into the agent factory with strict `userId` + `threadId` scoping, ten-turn sliding window, mandatory rolling summaries, and thread summary retrieval.
+**What to do**: Wire a conversation store-backed short-term module into the agent factory with strict `userId` + `threadId` scoping, ten-turn sliding window, mandatory rolling summaries, and a thread summary retrieval capability.
 
 **Depends on**: CORE_TYPES, STORAGE_WRAPPER
 
 **Acceptance Criteria**:
 
 - Thread short-term memory capability returns a configured memory module backed by conversation store.
-- `lastMessages` default is ten and remains configurable.
+- The recent-message window default is ten and remains configurable.
 - Memory scope is enforced by `userId` + `threadId`.
 - `userId` enters only through request context.
 - Rolling summarization is always enabled.
 - Overflow turns trigger incremental summary update.
-- Summary uses `ROLLING_SUMMARY_MODEL` with minimal thinking.
+- Summary uses the configured rolling-summary model with minimal thinking.
 - Summary retains topics, entities, decisions, unresolved items.
 - Summary omits verbatim quotes, full assistant content, repetition, superseded preferences.
 - Summary persists by `userId` + `threadId`.
 - Summary injects as leading system context block.
-- `threadSummary` returns active thread summary.
+- The thread summary retrieval capability returns the active thread summary.
 - Agent factory wiring uses provided memory instance.
 - Different thread IDs remain isolated.
 - Same thread ID across different users remains isolated by ownership.
@@ -1520,7 +1520,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - Ten-turn thread injects all ten turns.
 - Eleven-turn thread injects last ten and summarizes dropped turn.
 - Fifty-turn thread injects last ten plus rolled history summary.
-- "What did we discuss" uses `threadSummary` output.
+- "What did we discuss" uses the thread summary retrieval output.
 - Multi-topic thread summary reflects old and new topics.
 - Same thread ID, different users do not leak context.
 - Summarization outage logs error and preserves prior summary.
@@ -1538,8 +1538,8 @@ Emotional carry-forward can over-persist if decay is too long.
 
 - Query scope is `userId`, excluding current thread.
 - Loads user turns only.
-- Ordered by recency, limited by `USER_SHORTTERM_LIMIT`.
-- Fade-out controlled by `USER_SHORTTERM_FADEOUT`.
+- Ordered by recency, limited by the configured user short-term limit.
+- Fade-out controlled by the configured user short-term fade-out threshold.
 - Injection framing restricts proactive mention.
 - Injection order is system prompt, rolling summary, cross-thread, thread turns, current message.
 - Uses shared Postgres pool and efficient indexing.
@@ -1588,14 +1588,14 @@ Emotional carry-forward can over-persist if decay is too long.
 
 - Server mode connection initializes correctly.
 - User node creation helper is idempotent.
-- `storeFact` creates fact + relation edge.
-- `storeInteraction` creates interaction + relation edge.
-- `storeMediaFact` creates media + relation edge.
+- Fact storage operation creates a fact and relation edge.
+- Interaction storage operation creates an interaction and relation edge.
+- Media-fact storage operation creates a media record and relation edge.
 - Similarity search applies recency weighting.
 - Date-range search respects temporal bounds.
 - Unrelated query returns empty or low-confidence set.
-- `supersedeFact` links old and new correctly.
-- `deleteFactById` removes record, edges, and cache residue.
+- Fact supersession operation links old and new records correctly.
+- Fact deletion-by-identifier operation removes the record, edges, and cache residue.
 - Inspection pagination returns stable pages.
 - TTL refresh updates access and expiry fields.
 - Expiry cleanup removes stale records only.
@@ -1750,7 +1750,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - Deletion requires explicit user confirmation.
 - Confirmed deletion removes records, edges, cache entries, and related result sets.
 - Deletion remains atomic per record.
-- Feature registration is controlled by `MEMORY_INSPECTION_ENABLED`.
+- Feature registration is controlled by the memory-inspection enablement flag.
 - Unit coverage validates inspect and delete behavior.
 - Integration coverage validates end-to-end inspect/delete lifecycle.
 

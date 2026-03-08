@@ -91,7 +91,7 @@ First gate: pleasantries, acknowledgments, and single-emoji-only messages.
 
 Second gate: gibberish via entropy and language reliability signals.
 
-Return shape: `non_actionable` with subtype (`pleasantry`, `acknowledgment`, `emoji`, `gibberish`).
+Return shape: non-actionable classification with subtype values for pleasantry, acknowledgment, emoji-only, or gibberish.
 
 Short-circuit path skips embedding, LLM intent, rewriting, source routing, and fact extraction. Mixed actionable turns do not short-circuit. Tuning prioritizes false-positive avoidance for short valid tokens, abbreviations, and non-Latin scripts.
 ```mermaid
@@ -155,10 +155,10 @@ flowchart LR
 The LLM always runs and receives embedding guess as hint.
 
 Single structured output includes:
-- `validatedIntent`, `validatedTopics`, `rewrittenQuery`, `needsClarification`, `detectedIntentsCount`.
-- `intendedOutputLanguage`, `hasTranslationIntent`, `translationTargetLanguage`.
-- `temporalReferences`, `dependentIntents`, `intentDependencyOrder`.
-- `attributeNegations`, `queryReplay`.
+- validated intent, validated topics, rewritten query, clarification requirement, and detected intent count.
+- intended output language, translation-intent signal, and translation target language.
+- temporal references, dependent intents, and dependency order.
+- attribute-level negations and query replay structure.
 - Correction, frustration, topic abandonment, and ambiguity signals.
 ```mermaid
 flowchart TB
@@ -268,17 +268,17 @@ graph TD
 ### Intent Configuration Type Shape
 | Field | Type | Description |
 |-------|------|-------------|
-| `intents` | `Record<string, IntentDefinition>` | Named business intents |
-| `IntentDefinition.description` | `string` | LLM-readable domain description |
-| `IntentDefinition.topics` | `Record<string, TopicDefinition>` | Named topics |
-| `TopicDefinition.examples` | `string[]` | Embedding router examples |
-| `TopicDefinition.sourcesPriority` | `string[]` | Ordered source list |
-| `TopicDefinition.datasetIds?` | `string[]` | Topic-level dataset override |
-| `TopicDefinition.rewriteStrategies?` | `Record<string, string>` | Per-source strategy override |
-| `TopicDefinition.evidenceThreshold?` | `EvidenceConfig` | Topic-specific evidence behavior |
-| `TopicDefinition.emptyResultBehavior?` | `Record<string, 'normal' \| 'suspicious'>` | Empty result handling by source |
-| `confidenceThreshold?` | `number` | Embedding confidence cutoff |
-| `fallbackBehavior` | `'clarify'` | No-match fallback behavior |
+| intents | map of intent names to intent definitions | Named business intents |
+| intent description field | text | LLM-readable domain description |
+| intent topics field | map of topic names to topic definitions | Named topics |
+| topic examples field | list of text | Embedding router examples |
+| topic source priority field | ordered list of source names | Ordered source list |
+| topic dataset override field (optional) | list of text | Topic-level dataset override |
+| topic rewrite strategy override field (optional) | map from source to strategy label | Per-source strategy override |
+| topic evidence threshold field (optional) | evidence threshold configuration object | Topic-specific evidence behavior |
+| topic empty-result behavior field (optional) | map from source to empty-result status | Empty result handling by source |
+| embedding confidence threshold field (optional) | numeric value | Embedding confidence cutoff |
+| fallback behavior field | clarify | No-match fallback behavior |
 
 ### Scale Considerations
 - Typical scale: multiple intents and topics.
@@ -328,7 +328,7 @@ flowchart TB
 
 ---
 ## Multi-Intent and Dependent Multi-Intent
-Classifier outputs `detectedIntentsCount` and decomposition for multi-intent turns.
+Classifier outputs detected intent count and decomposition for multi-intent turns.
 ```mermaid
 flowchart LR
     MSG["Message with multiple intents"]
@@ -341,7 +341,7 @@ flowchart LR
     SUBAGENT_ONE --> MERGE["Orchestrator live synthesis merge"]
     SUBAGENT_TWO --> MERGE
 ```
-Dependent intents set `dependentIntents` and ordered `intentDependencyOrder`.
+Dependent intents include a dependency list and explicit dependency order.
 ```mermaid
 flowchart TB
     subgraph INDEPENDENT["Independent Intents"]
@@ -375,14 +375,14 @@ flowchart TB
 | Negation + alternative | Not that one, show different | Alternative depends on negation target |
 
 ### Attribute Negation Detection
-LLM emits `attributeNegations[]` for property-level exclusion (for example, without parking). This differs from entity exclusion constraints used in dependent-intent flows.
+LLM emits attribute-negation entries for property-level exclusion (for example, without parking). This differs from entity exclusion constraints used in dependent-intent flows.
 
 ### Query Replay Detection
-LLM emits `queryReplay` with parameter substitutions for replay turns (for example, same search but different location). Detection uses thread short-term context to recover referenced prior query.
+LLM emits a query-replay structure with parameter substitutions for replay turns (for example, same search but different location). Detection uses thread short-term context to recover the referenced prior query.
 
 ---
 ## Language Validation Piggyback
-`intendedOutputLanguage`, `hasTranslationIntent`, and `translationTargetLanguage` are returned by intent classification. Post-intent policy checks supported output language and resolves translation edge cases correctly.
+Intended output language, translation-intent signal, and translation target language are returned by intent classification. Post-intent policy checks supported output language and resolves translation edge cases correctly.
 
 ---
 ## Temporal Expression Resolution
@@ -581,20 +581,20 @@ flowchart TB
 Attribute negations apply during retrieval query formulation.
 | Source | Negation stage | Negation form | Benefit |
 |--------|----------------|---------------|---------|
-| `grounding_search` | Before request | Minus-prefixed negatives | Avoids pages dominated by excluded properties |
-| `ragflow` | Before request | Contextual negative clause | Reduces irrelevant chunk retrieval |
-| `document_qa` | Before request | Adapter-specific negative clause | Reduces page-level noise |
-| `memory_recall` | Recall formulation | Negation-aware recall context | Avoids conflicting memories |
-| `direct_answer` | Synthesis framing | Negative preference framing | Aligns generated answer with dislikes |
+| grounding search source | Before request | Minus-prefixed negatives | Avoids pages dominated by excluded properties |
+| RAG retrieval source | Before request | Contextual negative clause | Reduces irrelevant chunk retrieval |
+| document question-answering source | Before request | Adapter-specific negative clause | Reduces page-level noise |
+| memory recall source | Recall formulation | Negation-aware recall context | Avoids conflicting memories |
+| direct answer source | Synthesis framing | Negative preference framing | Aligns generated answer with dislikes |
 
 ### Priority Configuration
 | Source | Description |
 |--------|-------------|
-| `ragflow` | External read-only chunk retrieval |
-| `document_qa` | Uploaded document retrieval |
-| `grounding_search` | Web search grounding |
-| `memory_recall` | Memory retrieval returned as context string |
-| `direct_answer` | Direct model answer without retrieval |
+| RAG retrieval source | External read-only chunk retrieval |
+| document question-answering source | Uploaded document retrieval |
+| grounding search source | Web search grounding |
+| memory recall source | Memory retrieval returned as context string |
+| direct answer source | Direct model answer without retrieval |
 
 All sources execute in parallel; priority affects weighting at merge time.
 ```mermaid
@@ -678,30 +678,30 @@ sequenceDiagram
 ### API Details
 | Request Field | Type | Description |
 |---------------|------|-------------|
-| `question` | `string` | Query text |
-| `dataset_ids` | `string[]` | Datasets to search |
-| `top_k` | `number` | Max chunks returned |
-| `similarity_threshold` | `number` | Minimum similarity score |
-| `vector_similarity_weight` | `number` | Blend vector and keyword matching |
+| question field | text | Query text |
+| dataset IDs field | list of text | Datasets to search |
+| top-k field | numeric value | Max chunks returned |
+| similarity threshold field | numeric value | Minimum similarity score |
+| vector similarity weight field | numeric value | Blend vector and keyword matching |
 
 | Response Field | Type | Description |
 |----------------|------|-------------|
-| `content` | `string` | Chunk text |
-| `similarity` | `number` | Combined similarity score |
-| `document_keyword` | `string` | Document identifier |
-| `positions` | `number[][]` | Character positions |
-| `important_keywords` | `string[]` | Extracted keywords |
+| content field | text | Chunk text |
+| similarity field | numeric value | Combined similarity score |
+| document identifier field | text | Document identifier |
+| positions field | list of number pairs | Character positions |
+| important keywords field | list of text | Extracted keywords |
 
 Constraint: one request must not mix dataset embeddings that are incompatible.
 
 ### Configuration
 | Config Key | Description |
 |------------|-------------|
-| `RAGFLOW_BASE_URL` | RAGFlow base URL |
-| `RAGFLOW_API_KEY` | Bearer key |
-| `RAGFLOW_DATASET_IDS` | Global dataset default |
+| RAGFlow base URL setting | RAGFlow base URL |
+| RAGFlow API key setting | Bearer key |
+| RAGFlow dataset IDs setting | Global dataset default |
 
-`TopicDefinition.datasetIds` overrides global defaults per topic.
+Topic-level dataset overrides take precedence over global defaults.
 
 ### Chunk to Citation Mapping
 ```mermaid
@@ -895,7 +895,7 @@ flowchart TB
 
 **Acceptance Criteria**:
 - All sources execute concurrently.
-- Weight formula is `1 - index/totalSources`.
+- Weight formula is one minus source index divided by total source count.
 - Weighted score merge and descending rank are stable.
 - Source errors propagate immediately.
 - Empty result behavior honors `normal` vs `suspicious`.

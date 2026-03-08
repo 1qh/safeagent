@@ -562,7 +562,7 @@ QA scenarios:
 What to do:
 Build all route handlers described in this document with thin handler design: validate request, delegate to library function, map response. Organize route groups with appropriate middleware and apply role authorization guard to admin routes.
 Define all routes with API documentation integration using Zod v4 request and response schemas and aligned schema mapping configuration. Serve OpenAPI JSON and Scalar UI from public endpoints.
-The chat streaming endpoint must accept an optional verbosity control parameter (`standard` or `full`, default `standard`) validated by VerbosityLevelSchema. The handler passes the verbosity value to stream handler factory. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
+The chat streaming endpoint must accept an optional verbosity control parameter (`standard` or `full`, default `standard`) validated by the verbosity-level schema. The handler passes the verbosity value to the stream handler factory. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
 Depends on: SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING
 Acceptance criteria:
 - All mapped routes are registered on correct HTTP methods.

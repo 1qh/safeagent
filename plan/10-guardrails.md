@@ -97,17 +97,17 @@ flowchart TB
 
 ### Core Types
 
-**`GuardrailSeverity`** is a three-level enum (`p0`, `p1`, `p2`) that drives all branching decisions in the pipeline.
+**Guardrail severity enum** is a three-level enum (`p0`, `p1`, `p2`) that drives all branching decisions in the pipeline.
 
-**`GuardrailVerdict`** is what every guardrail function returns — a structure containing a `severity` (GuardrailSeverity) and a `conceptId` (string). The `conceptId` is a server-defined string key that maps to a fallback message in the `ConceptRegistry`. For clean passes, `conceptId` is always `'PASS'`.
+**Guardrail verdict structure** is what every guardrail function returns — a structure containing a `severity` (guardrail severity enum) and a `conceptId` (string). The `conceptId` is a server-defined string key that maps to a fallback message in the concept registry. For clean passes, `conceptId` is always `'PASS'`.
 
-**Guardrail function type** is the unified interface for both input and output guardrails — an async function that takes a text string and returns a `GuardrailVerdict`. The same function signature works in both positions. A regex guardrail written for input can be reused on output without modification.
+**Guardrail function type** is the unified interface for both input and output guardrails — an async function that takes a text string and returns a guardrail verdict. The same function signature works in both positions. A regex guardrail written for input can be reused on output without modification.
 
-**`ConceptRegistry`** is a server-defined mapping (record) from concept ID strings to `ConceptConfig` objects.
+**Concept registry** is a server-defined mapping (record) from concept ID strings to concept-configuration objects.
 
-`ConceptConfig` holds at minimum the fallback message to inject when a p0 triggers in production mode. The server owns this registry entirely. The library never ships default concept definitions.
+The concept configuration holds at minimum the fallback message to inject when a p0 triggers in production mode. The server owns this registry entirely. The library never ships default concept definitions.
 
-**`GuardMode`** controls how the pipeline behaves when a violation is detected:
+**Guard mode** controls how the pipeline behaves when a violation is detected:
 
 Either `'development'` or `'production'`.
 
@@ -198,7 +198,7 @@ flowchart TB
 - All guardrails run in parallel regardless of intermediate results. There's no short-circuit on the first p0 — all verdicts are collected before aggregating.
 - Worst-wins: if any guardrail returns p0, the aggregate is p0. If no p0 but any p1, aggregate is p1.
 - When multiple guardrails return p0, the `conceptId` from the first p0 in the array order is used for the fallback message.
-- The `abort` maps to `tripwireTriggered: true` in the framework guardrail return value, which causes the framework to throw the input tripwire exception.
+- The abort action maps to a true tripwire flag in the framework guardrail return value, which causes the framework to throw the input tripwire exception.
 
 ---
 
@@ -370,13 +370,13 @@ Runs one or more regular expressions against the text. If any pattern matches, r
 Case-insensitive keyword matching. Simpler than regex but sufficient for blocklist enforcement. Runs synchronously.
 
 **LLM guardrail factory**
-Calls a small classifier model (uses `PRIMARY_MODEL` by default) to evaluate the text. Returns a verdict based on the model's output. Slower than regex but catches semantic violations that patterns miss. The `classifier` argument is a function the server provides — it receives the text and returns a severity.
+Calls a small classifier model (uses the primary model by default) to evaluate the text. Returns a verdict based on the model's output. Slower than regex but catches semantic violations that patterns miss. The classifier callback is a function the server provides — it receives the text and returns a severity.
 
 **External moderation guardrail factory**
 Sends the text to an external moderation endpoint and maps the response to a verdict. Enables integration with third-party moderation APIs (OpenAI Moderation, AWS Comprehend, custom services). The endpoint contract is defined by the server. Accepts a `failMode` config field: `'open'` (default — network errors return `p2 PASS`, logging a warning) or `'closed'` (network errors return `p0` with the configured conceptId, treating unreachable moderation as a block). The `failMode` field is required in the factory config object.
 
 **Composite guardrail factory**
-Combines multiple guardrail function type instances into one. The `aggregation` strategy determines how verdicts are combined. Default aggregation is worst-wins.
+Combines multiple guardrail function type instances into one. The aggregation strategy determines how verdicts are combined. Default aggregation is worst-wins.
 
 ### Composite Guardrail Composition
 
@@ -438,7 +438,7 @@ LanguageGuardConfig fields:
 - fallbackMessage: safe response used when p0 blocks.
 - minTextLength: skip very short text checks below threshold.
 - confidenceThreshold: minimum eld confidence for direct stage decision.
-- translationKeywords: `Record<string, string[]>` keyed by language code, covering both translation commands and language-instruction patterns (for example, translate, respond in X, answer in X, write in X, noi bang X) so ambiguous requests route to the Post-Intent Gate.
+- translationKeywords: a language-keyed map of keyword lists, covering both translation commands and language-instruction patterns (for example, translate, respond in X, answer in X, write in X, noi bang X) so ambiguous requests route to the Post-Intent Gate.
 
 ### End-to-end flow
 
@@ -572,10 +572,10 @@ Hate Speech Guard runs only when enabled is true in HateSpeechGuardConfig. Disab
 
 ## Memory Deletion Guardrail
 
-When facts are deleted from SurrealDB via the `memoryDelete` tool, the guardrail system ensures cached embeddings in Valkey that reference those facts are also purged. Without this, deleted facts could resurface through stale cache entries during the next recall query.
+When facts are deleted from SurrealDB via the memory deletion tool, the guardrail system ensures cached embeddings in Valkey that reference those facts are also purged. Without this, deleted facts could resurface through stale cache entries during the next recall query.
 
 The deletion guardrail:
-- Triggers after any `memoryDelete` tool execution
+- Triggers after any memory deletion tool execution
 - Queries Valkey for cached embedding entries referencing the deleted fact IDs
 - Purges matching cache entries
 - Logs the purge for audit trail
@@ -634,11 +634,11 @@ The ordering of guardrails in the pipeline array matters only for tie-breaking w
 
 ## Pipeline Orchestrator (GUARD_PIPELINE)
 
-The pipeline orchestrator wires all guardrails into the `@openai/agents` framework's guardrail system. It's the glue between the library's guardrail functions and the agent's `inputGuardrails` / `outputGuardrails` arrays.
+The pipeline orchestrator wires all guardrails into the `@openai/agents` framework's guardrail system. It's the glue between the library's guardrail functions and the agent's framework guardrail arrays.
 
 ### Pipeline Configuration
 
-`GuardrailPipelineConfig` is the top-level configuration object with these fields: `input` (an array of guardrail function type instances, run before the agent in parallel), `output` (an array of guardrail function type instances, run on each output chunk), `concepts` (a ConceptRegistry mapping conceptId to fallback message), `guardMode` (a GuardMode value — either `'development'` or `'production'`), and `onFlag` (a callback invoked on p1 verdicts for Langfuse logging).
+The guardrail pipeline configuration is the top-level configuration object with these fields: input guardrails (an array of guardrail function type instances, run before the agent in parallel), output guardrails (an array of guardrail function type instances, run on each output chunk), concepts (a concept registry mapping conceptId to fallback message), guard mode (either `'development'` or `'production'`), and `onFlag` (a callback invoked on p1 verdicts for Langfuse logging).
 
 ### GuardMode Precedence
 
@@ -684,7 +684,7 @@ flowchart TB
     FRAMEWORK_OUTPUT_GUARDRAILS -->|wired as| AGENT_OUTPUT_GUARDRAILS["agent.outputGuardrails[]"]
 ```
 
-The guardrail pipeline factory takes a `GuardrailPipelineConfig` and returns framework-compatible input and output guardrail arrays ready to be passed to the agent constructor. The agent factory (AGENT_FACTORY) accepts these guardrails and wires them into the framework agent constructor.
+The guardrail pipeline factory takes the guardrail pipeline configuration and returns framework-compatible input and output guardrail arrays ready to be passed to the agent constructor. The agent factory (AGENT_FACTORY) accepts these guardrails and wires them into the framework agent constructor.
 
 ### Full Pipeline Flow
 
@@ -789,7 +789,7 @@ p0 violations in production mode are also logged via `onFlag` before the fallbac
 
 Output guardrails hook into the same SSE stream that delivers tokens to the client. In production mode, the guardrail's fallback injection is itself a `text-delta` chunk — it looks identical to a normal LLM response from the client's perspective. The client never knows a violation occurred.
 
-In development mode, the TripWire exception carries `conceptId`, `reason`, and `fallbackMessage` (matching the `SSETripwireEvent` shape from file 11). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
+In development mode, the TripWire exception carries `conceptId`, `reason`, and fallback message fields (matching the tripwire event payload shape from file 11). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
 
 ---
 
@@ -810,14 +810,14 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task INPUT_GUARD: Input Guardrails
 
-**What to do**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls `abort` on p0 or `onFlag` on p1.
+**What to do**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls abort on p0 or `onFlag` on p1.
 
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
 **Acceptance Criteria**:
-- All input guardrails run in parallel via `Promise.all`
+- All input guardrails run in parallel via promise-based fan-out
 - Worst-wins aggregation: p0 beats p1 beats p2
-- p0 → `abort` called, TripWire fires on stream
+- p0 → abort called, TripWire fires on stream
 - Multiple p0s → first p0's conceptId used
 - p1 → `onFlag` called, message passes to agent
 - p2 → message passes to agent silently
@@ -843,13 +843,13 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 **Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
 **Acceptance Criteria**:
-- Output guardrail `execute` called on every `text-delta` chunk
+- Output guardrail execution hook called on every `text-delta` chunk
 - Sliding window accumulates recent text, trimmed to configured size
 - All output guardrails run on window text after each chunk
 - p2 → chunk emitted to client unchanged
 - p1 → `onFlag` called, chunk emitted unchanged
-- p0 + development → `tripwireTriggered: true` returned (framework throws the output tripwire exception), handler catches and emits a tripwire SSE event with concept, reason, and fallback details
-- p0 + production → all remaining chunks suppressed, fallback text-delta injected from `ConceptRegistry[conceptId]`
+- p0 + development → tripwire flag returned (framework throws the output tripwire exception), handler catches and emits a tripwire SSE event with concept, reason, and fallback details
+- p0 + production → all remaining chunks suppressed, fallback text-delta injected from the concept-registry entry for conceptId
 - Once p0 fires in production, no further chunks emitted (suppression is permanent for that stream)
 - Non-text-delta chunk types (tool calls, etc.) pass through without guardrail evaluation
 - p1 and p0 events provide auditable security telemetry through `onFlag` without exposing sensitive detection details to end users
@@ -867,28 +867,28 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task GUARD_FACTORY: Guardrail Authoring Factories
 
-**What to do**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose `execute` function evaluates input or output and returns `tripwireTriggered` plus `outputInfo`. The `tripwireTriggered` field maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when `tripwireTriggered: true`; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
+**What to do**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose execution hook evaluates input or output and returns a tripwire flag plus supplemental output details. The tripwire flag maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when the tripwire flag is true; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
 
 **Depends on**: CORE_TYPES (Types)
 
 **Acceptance Criteria**:
-- Regex guardrail factory → matches any pattern → returns verdict with `tripwireTriggered` based on severity
+- Regex guardrail factory → matches any pattern → returns verdict with tripwire flag based on severity
 - Keyword guardrail factory → case-insensitive match → returns verdict
 - LLM guardrail factory → calls classifier function → maps result to verdict
 - External moderation guardrail factory → sends text to external moderation endpoint → maps response to verdict
 - Composite guardrail factory → runs all guardrails in parallel → aggregates (worst-wins)
 - All factories return objects conforming to the framework guardrail interfaces
-- `outputInfo` field carries the full `GuardrailVerdict` (severity, conceptId, reason)
+- Supplemental output details carry the full guardrail verdict structure (severity, conceptId, reason)
 - No match or clean result returns a pass-state verdict with no tripwire trigger
-- External moderation guardrail factory handles network errors based on `failMode` config: `'open'` returns pass with warning log, `'closed'` returns `tripwireTriggered: true` with the configured conceptId
+- External moderation guardrail factory handles network errors based on `failMode` config: `'open'` returns pass with warning log, `'closed'` returns a tripwire flag with the configured conceptId
 - Unit tests for each factory with representative inputs
 
 **QA Scenarios**:
-- Regex factory: pattern matches → p0 returns `tripwireTriggered: true`; no match → `false`
+- Regex factory: pattern matches → p0 returns a true tripwire flag; no match → false
 - Keyword factory: keyword present (mixed case) → verdict; absent → pass
 - LLM factory: classifier returns severity → correct verdict; classifier throws → error propagated
 - External factory with `failMode: 'open'`: endpoint 500 → returns pass with warning log
-- External factory with `failMode: 'closed'`: endpoint 500 → returns `tripwireTriggered: true`
+- External factory with `failMode: 'closed'`: endpoint 500 → returns a true tripwire flag
 - Composite factory: inner guardrails return mixed verdicts → worst wins
 
 ---
@@ -949,7 +949,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task GUARD_PIPELINE: Guardrail Pipeline Orchestrator
 
-**What to do**: Build the pipeline orchestrator that takes a `GuardrailPipelineConfig` and produces framework-compatible input and output guardrail arrays, handling GuardMode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework agent constructor. The framework runs input guardrails in parallel with the agent by default (`runInParallel: true`). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
+**What to do**: Build the pipeline orchestrator that takes the guardrail pipeline configuration and produces framework-compatible input and output guardrail arrays, handling guard-mode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework agent constructor. The framework runs input guardrails in parallel with the agent by default (parallel-run mode enabled). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
 
 **Depends on**: INPUT_GUARD (Input Guardrails), OUTPUT_GUARD (Output Guardrails), GUARD_FACTORY (Guardrail Factories)
 
@@ -958,9 +958,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - Both arrays contain framework-compatible guardrail objects
 - GuardMode precedence: pipeline config > agent config > default `'development'`
 - `onFlag` callback wired to both input and output guardrails
-- `ConceptRegistry` accessible to output guardrails for fallback injection
-- Empty `input[]` → empty `inputGuardrails` array
-- Empty `output[]` → empty `outputGuardrails` array
+- Concept registry accessible to output guardrails for fallback injection
+- Empty input-guardrail list → empty framework input-guardrails array
+- Empty output-guardrail list → empty framework output-guardrails array
 - Guardrails returned by the pipeline are passed directly to the agent constructor with input and output guardrail arrays
 - Pipeline wiring preserves deterministic security ordering: input guardrails before intent/orchestration, output guardrails on streamed synthesis before client delivery
 - Integration test: full pipeline with mock agent, mock guardrails, mock LLM stream
@@ -977,12 +977,12 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 ### Task ZERO_LEAK_GUARD: Zero-Leak Buffered Mode
 
-**What to do**: Extend the output guardrail processor with a `mode: 'buffered'` option that holds all output in a server-side buffer before emitting anything to the client, guaranteeing zero partial content delivery on violation.
+**What to do**: Extend the output guardrail processor with a buffered-mode option that holds all output in a server-side buffer before emitting anything to the client, guaranteeing zero partial content delivery on violation.
 
 **Depends on**: OUTPUT_GUARD (Output Guardrails)
 
 **Acceptance Criteria**:
-- `mode: 'buffered'` on output guardrail config activates buffered mode
+- Buffered mode on output guardrail config activates buffered mode
 - Default buffer size: 50 tokens (configurable)
 - During buffer phase: no chunks emitted to client
 - Guardrails run on buffer contents after each new token

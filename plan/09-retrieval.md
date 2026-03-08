@@ -589,7 +589,7 @@ The sufficiency score is deterministic:
 | Confidence | 0.0–1.0 | Mean normalized similarity of top retrieved evidence units. | 0.4 |
 | Completeness | 0.0 or 1.0 | `1.0` if enough distinct passages are present, else `0.0`. | 0.2 |
 
-`MIN_DISTINCT_PASSAGES`, weights, thresholds, and gate-closed behavior are configured per topic through `IntentConfig`.
+The minimum-distinct-passages setting, weights, thresholds, and gate-closed behavior are configured per topic through the intent configuration.
 
 ### Gate-Closed Behaviors
 
@@ -1188,7 +1188,7 @@ flowchart TD
 
 ### Task RAG_INFRA: Retrieval and Evidence Infrastructure
 
-**What to do**: Build the full PDF hybrid retrieval pipeline using `page_index`, including three-arm RRF fusion, page context retrieval, and a document query tool factory with mandatory server-side `userId` and `threadId` filters. Build evidence-based answer generation using structured output generation for `{ answer, citations }` after gate-open.
+**What to do**: Build the full PDF hybrid retrieval pipeline using the page-level retrieval table, including three-arm RRF fusion, page context retrieval, and a document query tool factory with mandatory server-side `userId` and `threadId` filters. Build evidence-based answer generation using structured output generation for an answer-plus-citations response structure after gate-open.
 
 **Depends on**: Storage wrapper, document processing pipeline.
 
@@ -1278,7 +1278,7 @@ flowchart TD
 
 ### Task EVIDENCE_GATE: Sufficiency and Policy-Controlled Outcomes
 
-**What to do**: Implement deterministic sufficiency scoring with coverage, confidence, and completeness components. Enforce gate-open prerequisite for prose generation. Use per-topic `IntentConfig` to control threshold and closed-gate behavior. Run attribute-first citation planning before generation.
+**What to do**: Implement deterministic sufficiency scoring with coverage, confidence, and completeness components. Enforce gate-open prerequisite for prose generation. Use per-topic intent configuration to control threshold and closed-gate behavior. Run attribute-first citation planning before generation.
 
 **Depends on**: Embed routing, retrieval infrastructure, core types.
 

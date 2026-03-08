@@ -180,7 +180,7 @@ flowchart TD
 
 ### Rules
 
-**Unit tests** run with zero secrets and no external dependencies. Model behavior is mocked with `MockLanguageModel`. External systems are replaced with stubs or fakes.
+**Unit tests** run with zero secrets and no external dependencies. Model behavior is mocked with the AI SDK test mock model. External systems are replaced with stubs or fakes.
 
 **Integration tests** require real keys. Primary provider key is mandatory, secondary keys optional. Every integration test file uses conditional skip at the outermost describe block. A plain outer describe in integration scope is a test infrastructure defect.
 
@@ -190,7 +190,7 @@ flowchart TD
 
 ## Mock Model Pattern
 
-All unit tests use `MockLanguageModel` from AI SDK test utilities. The mock supports text streaming, tool calls, and structured outputs without external traffic.
+All unit tests use the AI SDK test mock model from AI SDK test utilities. The mock supports text streaming, tool calls, and structured outputs without external traffic.
 
 ```mermaid
 flowchart TD
@@ -231,7 +231,7 @@ flowchart TD
 
 ### How Streaming Is Mocked
 
-`doStream` returns an object containing a `ReadableStream`. Chunks are typed deltas (`text-delta`, `tool-call-delta`, `tool-call`). Stream close marks completion. `rawCall` can be stubbed for metadata assertions.
+The mock stream handler returns an object containing a readable stream. Chunks are typed deltas (`text-delta`, `tool-call-delta`, `tool-call`). Stream close marks completion. The raw provider-call payload can be stubbed for metadata assertions.
 
 ### How Tool Calls Are Mocked
 
@@ -273,7 +273,7 @@ Unit tests are the foundation: fast, deterministic, and infrastructure-independe
 
 Every external boundary is mocked:
 
-- **Model calls**: controlled `MockLanguageModel` behaviors.
+- **Model calls**: controlled AI SDK test mock model behaviors.
 - **Database**: in-memory adapters or query-shape assertions.
 - **Object storage**: deterministic buffer-return stubs.
 - **Cache**: in-memory map-like adapter.
@@ -996,7 +996,7 @@ All verification is automated and agent-executed.
 - Unit gate: always green with zero secrets.
 - Integration gate: conditional skip for missing-key environments.
 - Evidence gate: every QA scenario emits evidence artifact.
-- Mocking standard: `MockLanguageModel` from AI SDK test utilities.
+- Mocking standard: the AI SDK test mock model from AI SDK test utilities.
 - Separation: distinct unit, integration, and end-to-end scopes.
 - Regression policy: every bug fix adds permanent regression coverage.
 - Adversarial policy: every guardrail has bypass-attempt coverage.
