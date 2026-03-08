@@ -24,7 +24,7 @@
 
 The system is organized into two independently managed codebases that are deployed together: one for reusable agent capabilities and one for HTTP serving.
 
-The shared library codebase contains core agent intelligence: agent definitions built on `@openai/agents` (with Gemini via `aisdk()` bridge), memory adapters, file processing pipelines, budget enforcement, and tool implementations. It also includes a terminal application and a client SDK.
+The shared library codebase contains core agent intelligence: agent definitions built on `@openai/agents` (with Gemini via `aisdk()` bridge), memory adapters, file processing pipelines, budget enforcement, and tool implementations. It also includes a terminal application, a client SDK, and a frontend SDK stack (`@safeagent/react` hooks, `@safeagent/ui` web components, `@safeagent/ui-native` React Native components).
 
 The API-serving codebase remains intentionally thin: it imports the shared library, applies deployment-specific configuration, and exposes capabilities over HTTP via Elysia. This boundary keeps core logic reusable and testable in isolation while keeping transport concerns separate.
 
@@ -33,7 +33,10 @@ graph LR
     subgraph SAFEAGENT_WORKSPACE["safeagent workspace"]
         CORE_LIBRARY["Core Library\nAgent logic · Memory · Tools · File processing"]
         TUI_APP["TUI App\nTerminal UI"]
-        CLIENT_SDK["Client SDK\nHTTP SDK"]
+        CLIENT_SDK["Client SDK\nSSE Transport"]
+        REACT_HOOKS_PKG["@safeagent/react\nHooks + ChatTransport"]
+        UI_WEB_PKG["@safeagent/ui\nWeb Components"]
+        UI_NATIVE_PKG["@safeagent/ui-native\nRN Components"]
     end
 
     subgraph SERVER_REPO["server repo"]
@@ -43,6 +46,9 @@ graph LR
     CORE_LIBRARY --> ELYSIA_SERVER
     CORE_LIBRARY --> TUI_APP
     CLIENT_SDK -.->|"HTTP"| ELYSIA_SERVER
+    CLIENT_SDK --> REACT_HOOKS_PKG
+    REACT_HOOKS_PKG --> UI_WEB_PKG
+    REACT_HOOKS_PKG --> UI_NATIVE_PKG
 ```
 
 ---
@@ -54,8 +60,8 @@ Every service the system depends on is shown below. Arrows indicate the directio
 ```mermaid
 graph TB
     subgraph CLIENTS["Clients"]
-        BROWSER_CLIENT["Browser / Web App"]
-        SDK_CONSUMER["SDK Consumer"]
+        BROWSER_CLIENT["Browser / Web App\n(incl. Next.js Demo)"]
+        SDK_CONSUMER["SDK Consumer\n(incl. Expo Demo)"]
     end
 
     subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
