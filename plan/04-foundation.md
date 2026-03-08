@@ -435,7 +435,7 @@ flowchart TB
         STREAM_CONFIG["StreamConfig"]; SSE_CONFIG["SSEConfig"]; STREAM_REQUEST_BODY["StreamRequestBody"]; SESSION_META_DELIVERY["SessionMetaDelivery"]
     end
     subgraph SSE_EVENTS_DOMAIN["SSE Events Domain"]
-        SSE_TEXT_DELTA_EVENT["SSETextDeltaEvent"]; SSE_SESSION_META_EVENT["SSESessionMetaEvent"]; SSE_CTA_EVENT["SSECTAEvent"]; SSE_CITATION_EVENT["SSECitationEvent"]; SSE_LOCATION_EVENT["SSELocationEvent"]; SSE_TRIPWIRE_EVENT["SSETripwireEvent"]; SSE_DONE_EVENT["SSEDoneEvent"]; SSE_ERROR_EVENT["SSEErrorEvent"]
+        SSE_TEXT_DELTA_EVENT["SSETextDeltaEvent"]; SSE_SESSION_META_EVENT["SSESessionMetaEvent"]; SSE_TRACE_STEP_EVENT["SSETraceStepEvent"]; SSE_CTA_EVENT["SSECTAEvent"]; SSE_CITATION_EVENT["SSECitationEvent"]; SSE_LOCATION_EVENT["SSELocationEvent"]; SSE_TRIPWIRE_EVENT["SSETripwireEvent"]; SSE_DONE_EVENT["SSEDoneEvent"]; SSE_ERROR_EVENT["SSEErrorEvent"]; TRACE_STEP_TYPE["TraceStepType"]; TRACE_STEP_DATA["TraceStepData"]
     end
     subgraph UPLOAD_DOMAIN["Upload Domain"]
         DIRECT_FILE_CONTEXT["DirectFileContext"]; UPLOAD_CONFIG["UploadConfig"]; UPLOAD_RESULT["UploadResult"]; FILE_RESULT["FileResult"]; BLOCKING_STAGE_CONFIG["BlockingStageConfig"]; DOCUMENT_PROCESSING_MODE["DocumentProcessingMode"]
@@ -480,7 +480,8 @@ flowchart TB
 
 ## Domain Type Contracts
 
-Foundation contracts cover agent, guardrail, MCP, config, storage, memory, stream, SSE events, upload, documents, RAG, files, eval, model, key-pool, cache, location, queue, budget, and memory-support types (temporal references, preference updates, memory control actions, interaction signals, and media facts).
+Foundation contracts cover agent, guardrail, MCP, config, storage, memory, stream, SSE events (including trace-step events for pipeline visibility), upload, documents, RAG, files, eval, model, key-pool, cache, location, queue, budget, and memory-support types (temporal references, preference updates, memory control actions, interaction signals, and media facts).
+SSE event types — including SSETraceStepEvent, TraceStepType, and TraceStepData — are defined in the core library and consumed by `@safeagent/client`, `@safeagent/react`, and frontend component packages. TraceStepType is a discriminated union covering intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite steps. TraceStepData is a corresponding discriminated union where each step type carries step-specific payload fields plus a common `latencyMs` timing field. See [11 — Streaming & Transport](./11-transport.md) for the full SSE event protocol.
 GuardMode is canonical in guardrail contracts and resolves by precedence: pipeline override, then agent override, then development default.
 RAG contracts include StructuredResultSet and ResultItem for persisted ranked outputs.
 File contracts include FileRecord lifecycle metadata.
@@ -556,6 +557,8 @@ Key schemas:
 - MemoryConfigSchema.
 - ModelConfigSchema.
 - EvalConfigSchema.
+- SSETraceStepEventSchema (discriminated by step field, used by `@safeagent/client` for runtime event parsing).
+- VerbosityLevelSchema (standard or full, used by server route to configure stream handler).
 
 Validation helpers:
 
@@ -995,6 +998,8 @@ Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespac
 - System layout context: [03 — System Architecture](./03-architecture.md)
 - Conversation pipeline consumers: [05 — Conversation Pipeline](./05-conversation.md)
 - Memory architecture consumers: [07 — Memory & Intelligence](./07-memory.md)
+- SSE event protocol and trace-step events: [11 — Streaming & Transport](./11-transport.md)
+- Frontend SDK consuming foundation types: [18 — Frontend SDK](./18-frontend-sdk.md)
 ---
 
 *Previous: [03 — System Architecture](./03-architecture.md) | Next: [05 — Conversation Pipeline](./05-conversation.md)*
