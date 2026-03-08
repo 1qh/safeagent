@@ -530,6 +530,52 @@ Eval tests measure response quality rather than only functional correctness. Res
 - Memory recall accuracy.
 - CTA relevance.
 
+### Evaluation Thresholds and Baselines
+
+Eval tests compare against defined minimum thresholds. Initial baselines are established during the first evaluation run and tightened as the system matures. Score regression greater than five percentage points from previous baseline triggers test failure regardless of absolute threshold.
+
+| Quality Dimension | Minimum Threshold | Target | Measurement Method |
+|---|---|---|---|
+| Response relevance | 0.70 | 0.85 | LLM-as-judge scoring against query intent |
+| Citation accuracy | 0.80 | 0.95 | Automated verification of cited page content match |
+| Guardrail precision | 0.90 | 0.98 | True positive rate on known-safe inputs (no false blocks) |
+| Guardrail recall | 0.85 | 0.95 | Detection rate on known-malicious inputs |
+| Grounding quality | 0.75 | 0.90 | Factual accuracy of web-grounded responses |
+| Memory recall accuracy | 0.70 | 0.85 | Correct fact retrieval for known-user scenarios |
+| CTA relevance | 0.65 | 0.80 | Contextual appropriateness of suggested actions |
+| Retrieval precision at ten | 0.75 | 0.90 | Relevant pages in top ten hybrid search results |
+| Evidence sufficiency | 0.70 | 0.85 | Gate correctly opens for answerable queries and closes for unanswerable |
+| Hallucination rate | Below 0.05 | Below 0.03 | Unsupported claims in generated responses per anti-hallucination architecture |
+| Extraction accuracy | 0.75 | 0.90 | Correctly extracted facts from known-fact conversations |
+| Rewrite fidelity | 0.85 | 0.95 | All original entities preserved in rewritten queries |
+
+Threshold enforcement:
+
+- Scores below minimum threshold produce test failure that blocks release.
+- Scores between minimum and target produce test pass with improvement annotation.
+- Scores above target produce clean pass.
+- Score regression greater than five points from previous baseline produces failure regardless of absolute threshold.
+
+### Golden Dataset Requirements
+
+- Minimum fifty test cases per quality dimension.
+- Cases sourced from real production scenarios where possible.
+- Cases reviewed and approved by human evaluator before inclusion.
+- Dataset version-controlled alongside test configuration.
+- New cases added when production failures reveal gaps not covered by existing cases.
+- Dataset refresh cadence: monthly review, quarterly expansion, immediate addition for critical failures.
+
+### Scorer Categories
+
+Scorers are organized into four categories with different sampling strategies:
+
+| Category | Sampling in Production | Purpose |
+|---|---|---|
+| Safety scorers | Higher sampling rate (up to every request) | Guardrail precision, injection detection, output safety |
+| Relevance scorers | Moderate sampling rate | Response relevance, retrieval quality, evidence sufficiency |
+| Quality scorers | Lower sampling rate | Citation accuracy, grounding quality, rewrite fidelity |
+| Behavioral scorers | Moderate sampling rate | Memory recall, CTA relevance, humanlikeness dimensions |
+
 ### Promptfoo Integration
 
 The library provides a Promptfoo provider factory to expose compatible evaluation interfaces. A self-test runner starts an ephemeral service layer, emits evaluation configuration, and evaluation runs externally. Result artifacts are collected for threshold comparison. Custom scorer helpers integrate specialized metrics into the same evaluation pipeline.
@@ -595,6 +641,49 @@ Initial smoke runs provide informational baselines:
 - Streaming route establishes connections and emits measurable first-token timing.
 - Upload route accepts requests and initiates processing.
 - Budget enforcement denies post-limit requests without concurrency leaks.
+
+### Production-Scale Scenarios
+
+Beyond smoke baselines, load tests scale to production-representative levels for deployment confidence. These scenarios run in staging environments with production-like infrastructure.
+
+| Scenario | Smoke Scale | Production Scale | Metric Focus |
+|---|---|---|---|
+| Streaming chat | 10 concurrent users | 1000 concurrent users | First-token latency p95, stream completion rate |
+| File upload | 5 concurrent uploads | 200 concurrent uploads | Acceptance latency, queue depth, processing throughput |
+| Retrieval query | 10 concurrent queries | 500 concurrent queries | Hybrid search latency p95, result quality under load |
+| Budget enforcement | 50 rapid requests | 5000 rapid requests per second | Counter accuracy, denial consistency, race condition detection |
+| Health baseline | 100 requests per second | 10000 requests per second | p50, p95, p99 latency, error rate |
+| Mixed workload | Combined above at ten percent | Combined above at fifty percent | System stability, resource contention, degradation patterns |
+
+### Production-Scale Measurement Targets
+
+Production-scale load tests measure:
+
+- Latency percentiles under sustained load (p50, p95, p99) for each route category.
+- Error rate under load with target below 0.1 percent for non-rate-limit errors.
+- Resource utilization including CPU, memory, and connection pool usage.
+- Degradation curve showing performance change as load increases from ten percent to one hundred percent of target capacity.
+- Recovery time measuring how quickly latency returns to baseline after load spike removal.
+- Connection pool behavior including exhaustion thresholds, queuing depth, and rejection patterns.
+- Cache hit ratio under concurrent access to shared cache keys.
+- Budget counter accuracy under concurrent spend with no over-admission beyond one-request tolerance.
+
+### Scalability Breakpoint Detection
+
+- Ramp load linearly from baseline to two times target capacity.
+- Identify the inflection point where latency degrades non-linearly.
+- Identify the saturation point where error rate exceeds acceptable threshold.
+- Document system capacity ceiling for deployment planning.
+- Validate horizontal scaling by running the same ramp against two, four, and eight API instances.
+
+### Streaming Load Specifics
+
+Streaming endpoints require specialized load testing because each connection holds server resources for the duration of the response:
+
+- Measure maximum concurrent SSE connections per API instance before resource exhaustion.
+- Validate that connection cleanup occurs correctly when clients disconnect mid-stream.
+- Test interleaved short and long streams to detect resource contention patterns.
+- Verify backpressure behavior when slow consumers accumulate.
 
 ## Adversarial Tests
 
@@ -698,6 +787,65 @@ Property testing validates truths that must hold for all valid inputs, not only 
 - Citation extraction never yields page values outside document bounds.
 - File signature validation avoids false negatives for supported formats.
 - Memory truncation always preserves system context and most recent turns.
+
+### Extended Target Properties
+
+Beyond the foundational seven properties, property-based testing covers all modules with domain-specific invariants.
+
+**Conversation Pipeline Properties**:
+
+- Intent classification produces valid intent enum values for all generated inputs.
+- Rewrite triggers preserve all original entities (names, codes, dates, identifiers) in rewritten output.
+- Source priority weighting formula produces weights between zero and one for all source counts.
+- RRF fusion scores are non-negative and bounded for all rank combinations.
+- Multi-intent decomposition produces at least one sub-query per detected intent count.
+- Temporal resolution produces valid date ranges for all temporal phrase patterns with arbitrary timezone offsets.
+- Embedding router cosine similarity scores fall between negative one and one for all vector pairs.
+
+**Memory Properties**:
+
+- Fact extraction from user-only content never produces facts attributed to assistant.
+- Supersession always preserves audit trail: superseded record exists after every supersession operation.
+- Deduplication threshold boundary: similarity exactly at 0.92 produces consistent duplicate detection across repeated evaluations.
+- Recency boost multipliers are applied in correct order: 24-hour multiplier greater than 7-day multiplier greater than default.
+- Rolling summary token count never exceeds configured maximum after any number of compaction cycles.
+- TTL refresh always extends expiry by full TTL duration regardless of current remaining time.
+- Emotional context decay counter decrements exactly once per user turn and never goes negative.
+- Cross-thread user short-term loading returns at most the configured limit regardless of thread count.
+
+**Document Processing Properties**:
+
+- PDF splitting produces exactly one output per input page for all valid PDFs.
+- Chunk overlap is exactly the configured overlap amount for all text lengths above minimum.
+- Quota arithmetic never produces negative used_bytes values regardless of operation ordering.
+- File status state machine transitions are always unidirectional: no backward transitions for any event sequence.
+- Image size filtering correctly accepts at exactly 100 pixels and rejects at 99 pixels for both dimensions.
+- Page progress counter increments monotonically and reaches progress_total exactly once.
+
+**Guardrail Properties**:
+
+- Worst-wins aggregation always returns the highest severity in any verdict set regardless of order or count.
+- Parallel guardrail execution produces same aggregate result regardless of individual completion order.
+- Sliding window buffer size never exceeds configured maximum for any chunk sequence.
+- Zero-leak buffer mode never emits bytes to client before buffer reaches configured size or violation is detected.
+- Composite guardrail aggregation produces same result regardless of constituent grouping order.
+- External guardrail factory with failMode open never blocks requests on network errors.
+- External guardrail factory with failMode closed always blocks requests on network errors.
+
+**Infrastructure Properties**:
+
+- Rate limiter sliding window calculations produce correct Retry-After for arbitrary timestamp sequences within any window size.
+- Circuit breaker state transitions follow valid state machine paths: only closed-to-open, open-to-half-open, half-open-to-closed, and half-open-to-open.
+- Budget counter operations maintain atomicity: no intermediate state visible between increment and expiry setting.
+- Budget pessimistic reservation followed by reconciliation produces correct final counter value for all estimate-vs-actual combinations.
+- Cache TTL expiry is consistent regardless of read access pattern: a key with TTL N expires at the same absolute time whether read zero or one hundred times.
+
+**Transport Properties**:
+
+- SSE event serialization produces valid SSE format for all nine event type variants with arbitrary payload content.
+- Verbosity filtering never removes events that should be visible at the configured level and never includes events that should be hidden.
+- Stream chunk ordering is preserved through all transformation stages for any interleaving of event types.
+- Session-meta event is always emitted exactly once as the first event in any stream regardless of agent behavior.
 
 ### Approach
 
