@@ -9,13 +9,13 @@
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
-- [SSE Streaming Layer (SSE_STREAMING)](#sse-streaming-layer-ssestreaming)
+- [SSE Streaming Layer (SSE_STREAMING)](#sse-streaming-layer-sse_streaming)
 - [Stream Format Boundary](#stream-format-boundary)
 - [Session Metadata Delivery](#session-metadata-delivery)
 - [Trace-Step Events](#trace-step-events)
 - [Verbosity Levels](#verbosity-levels)
-- [CTA Streaming (CTA_STREAMING)](#cta-streaming-ctastreaming)
-- [Client SDK (CLIENT_SDK)](#client-sdk-clientsdk)
+- [CTA Streaming (CTA_STREAMING)](#cta-streaming-cta_streaming)
+- [Client SDK (CLIENT_SDK)](#client-sdk-client_sdk)
 - [SSE Event Type Reference](#sse-event-type-reference)
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)

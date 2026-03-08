@@ -23,7 +23,7 @@
 - [QA Policy](#qa-policy)
 - [Task Specifications](#task-specifications)
 - [Coverage Map](#coverage-map)
-- [Requirement-Level Coverage (MH_*, MN_*)](#requirement-level-coverage-mh-mn)
+- [Requirement-Level Coverage (MH_*, MN_*)](#requirement-level-coverage-mh_-mn_)
 - [Verification Strategy Summary](#verification-strategy-summary)
 - [Cross-Plan References](#cross-plan-references)
 - [External References](#external-references)

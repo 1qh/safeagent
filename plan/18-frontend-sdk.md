@@ -14,7 +14,7 @@
 - [Web Components (@safeagent/ui)](#web-components-safeagentui)
 - [ai-elements Adoption](#ai-elements-adoption)
 - [Custom Components](#custom-components)
-- [Trace Visualization (TRACE_UI)](#trace-visualization-traceui)
+- [Trace Visualization (TRACE_UI)](#trace-visualization-trace_ui)
 - [React Native Components (@safeagent/ui-native)](#react-native-components-safeagentui-native)
 - [Component Installation CLI](#component-installation-cli)
 - [Storybook Documentation](#storybook-documentation)
