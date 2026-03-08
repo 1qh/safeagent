@@ -629,8 +629,8 @@ graph TB
     BARREL_EXPORTS --> PKG_PUBLISH["PKG_PUBLISH Publish"]
 
     END_TO_END_TESTS --> FINAL_AUDIT_BLOCK["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
-    DEMO_WEB --> F
-    DEMO_MOBILE --> F
+    DEMO_WEB --> FINAL_AUDIT_BLOCK
+    DEMO_MOBILE --> FINAL_AUDIT_BLOCK
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold

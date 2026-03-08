@@ -269,11 +269,11 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_TYPED_ERRORS | Typed error handling with neverthrow | Result type pattern (`ok`/`err`) for all boundary operations — no thrown exceptions at module boundaries, every error path is typed |
 | MH_NO_RAW_SQL | No raw SQL — Drizzle only | All Postgres operations use Drizzle ORM query builder — raw SQL strings are banned and enforced via ESLint rule |
 | MH_PRECOMMIT_HOOKS | Pre-commit quality gates | Husky + lint-staged run formatting, linting, and type-checking on staged files before every commit |
-| MH_WATCH_ONLY | Development watch mode | `bun --watch` for automatic restart during development — no manual rebuild step required |
+| MH_WATCH_ONLY | Development watch mode | Automatic file-watching restart during development — no manual rebuild step required |
 | MH_OPENAPI_DOCS | OpenAPI documentation from Elysia | Elysia auto-generates OpenAPI specification from route definitions — always in sync with actual endpoints |
 | MH_SEED_DATA | Seed data for testing | Reproducible seed data fixtures for smoke tests and end-to-end tests — deterministic test state |
 | MH_TYPEDOC | API documentation generation | TypeDoc generates API reference documentation from source TypeScript — published alongside the package |
-| MH_BUN_LINK | Local development linking | `bun link` workflow for developing safeagent library and server project simultaneously without publishing |
+| MH_BUN_LINK | Local development linking | Symlink-based local development workflow for developing safeagent library and server project simultaneously without publishing |
 
 ### Complete Must-Have → Task Ownership Mapping
 
