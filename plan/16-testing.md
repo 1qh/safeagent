@@ -183,7 +183,7 @@ flowchart LR
     RUN_REQUEST["Run tests"]
     SCOPE_FILTER["Filter by scope or pattern"]
     TEST_DISCOVERY["Discover test files"]
-    TEST_EXECUTION["Execute describe and it blocks"]
+    TEST_EXECUTION["Execute test suites and cases"]
     RESULT_REPORT["Report pass, fail, skip\nand coverage when enabled"]
     EVIDENCE_CAPTURE["Save evidence artifacts"]
 
@@ -292,7 +292,7 @@ flowchart TD
 
 **Unit tests** run with zero secrets and no external dependencies. Model behavior is mocked with the AI SDK test mock model. External systems are replaced with stubs or fakes.
 
-**Integration tests** require real keys. Primary provider key is mandatory, secondary keys optional. Every integration test file uses conditional skip at the outermost describe block. A plain outer describe in integration scope is a test infrastructure defect.
+**Integration tests** require real keys. Primary provider key is mandatory, secondary keys optional. Every integration test file uses conditional skip at the outermost test group. A plain outer test group in integration scope is a test infrastructure defect.
 
 **End-to-end tests** require complete environment setup: data services, object storage, cache, and at least one provider key. End-to-end suites run in dedicated scope and are not part of the default invocation.
 
@@ -305,9 +305,9 @@ All unit tests use the AI SDK test mock model from AI SDK test utilities. The mo
 ```mermaid
 flowchart TD
     subgraph MOCK_SETUP["Mock model setup"]
-        MOCK_IMPORT["Import MockLanguageModel"]
-        MOCK_CONFIGURE["Configure doStream or doGenerate"]
-        MOCK_STREAM_DEFINE["Define ReadableStream\nwith text deltas"]
+        MOCK_IMPORT["Import test mock model"]
+        MOCK_CONFIGURE["Configure streaming or generation mock"]
+        MOCK_STREAM_DEFINE["Define streaming response\nwith text deltas"]
         MOCK_TOOL_DEFINE["Define tool-call chunks"]
     end
 
@@ -538,7 +538,8 @@ Eval tests compare against defined minimum thresholds. Initial baselines are est
 |---|---|---|---|
 | Response relevance | 0.70 | 0.85 | LLM-as-judge scoring against query intent |
 | Citation accuracy | 0.80 | 0.95 | Automated verification of cited page content match |
-| Guardrail precision | 0.90 | 0.98 | True positive rate on known-safe inputs (no false blocks) |
+| Safe-input pass-through rate | 0.90 | 0.98 | Rate at which known-safe inputs pass without false blocks |
+| Guardrail precision | 0.85 | 0.95 | True positive rate on labeled mixed-safety dataset (correctly identified threats among all flagged inputs) |
 | Guardrail recall | 0.85 | 0.95 | Detection rate on known-malicious inputs |
 | Grounding quality | 0.75 | 0.90 | Factual accuracy of web-grounded responses |
 | Memory recall accuracy | 0.70 | 0.85 | Correct fact retrieval for known-user scenarios |
@@ -790,7 +791,7 @@ Property testing validates truths that must hold for all valid inputs, not only 
 
 ### Extended Target Properties
 
-Beyond the foundational seven properties, property-based testing covers all modules with domain-specific invariants.
+Beyond the foundational seven properties, property-based testing covers the modules with deterministic invariants suitable for randomized validation.
 
 **Conversation Pipeline Properties**:
 
@@ -829,8 +830,8 @@ Beyond the foundational seven properties, property-based testing covers all modu
 - Sliding window buffer size never exceeds configured maximum for any chunk sequence.
 - Zero-leak buffer mode never emits bytes to client before buffer reaches configured size or violation is detected.
 - Composite guardrail aggregation produces same result regardless of constituent grouping order.
-- External guardrail factory with failMode open never blocks requests on network errors.
-- External guardrail factory with failMode closed always blocks requests on network errors.
+- External guardrail factory with open failure mode never blocks requests on network errors.
+- External guardrail factory with closed failure mode always blocks requests on network errors.
 
 **Infrastructure Properties**:
 
@@ -1131,11 +1132,11 @@ flowchart TD
 Structural snapshots validate that output shape is correct without asserting exact content:
 
 - Agent response objects contain all required fields with correct types.
-- Citation objects contain source, fileId, page, and quote fields.
+- Citation objects contain source, file identifier, page, and quote fields.
 - SSE events conform to their type-specific schemas.
 - Tool call sequences match expected tool names and argument shapes.
-- Guardrail verdicts contain severity and conceptId fields.
-- Memory extraction results contain factType, confidence, and temporal state fields.
+- Guardrail verdicts contain severity and concept identifier fields.
+- Memory extraction results contain fact category, confidence, and temporal state fields.
 - Error responses contain error code and message fields matching typed error union.
 
 ### Behavioral Snapshots
@@ -1207,7 +1208,7 @@ flowchart TD
 - Trace-step events appear only when verbosity is set to full.
 - CTA events contain valid schema: id, label, action type, and optional URL and icon, with maximum three per response.
 - Location events contain coordinate data without exposing internal tool call details.
-- Tripwire events contain conceptId and fallback text.
+- Tripwire events contain concept identifier and fallback text.
 
 ### Mid-Stream Failure Tests
 
@@ -1230,10 +1231,12 @@ flowchart TD
 ### Reconnection Tests
 
 - Client SDK reconnects automatically after connection drop.
-- Reconnected client receives events from interruption point without duplicates or gaps.
+- Reconnected client starts a fresh stream from current state; no mid-stream resume is supported.
 - Client SDK offline queue persists messages during disconnection and syncs on reconnect.
 - Multiple rapid disconnects and reconnects do not create duplicate connections or leak resources.
 - Reconnection with expired authentication token: client re-authenticates before resuming.
+
+Note: Resumable streaming with replay identifiers is not part of the current transport protocol. Reconnection always starts a new stream.
 
 ### Concurrent Stream Tests
 
@@ -1656,14 +1659,17 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 - Auto-detection uses database URL presence.
 - Selection path is logged for debugging.
 - SurrealDB storage uses surqlize typed APIs with no raw query strings.
+- Retrieval-source disablement: unavailable retrieval dependencies disable that source path without disabling unrelated sources.
 
 **MCP health check**:
 
 - Tool key parsing extracts server names using underscore-prefix ownership with greedy matching.
-- Per-server status: has_matching_tools yields connected, zero tools with allowEmptyTools yields empty, missing tools yields failed.
-- onFailure callback invoked with warn or throw behavior.
+- Per-server status: matching tools yield connected, zero tools with explicit empty-tool allowance yield empty, and missing tools yield failed.
+- Failure callback is invoked with warn or throw behavior.
 - Periodic health check scheduling functions correctly.
 - No duplicate client creation when wrapper augments existing client.
+- Initial status is unknown before the first check attempt.
+- Connected status enforces configured minimum tool-count expectations.
 
 **Provider resolution**:
 
@@ -1671,7 +1677,7 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 - Direct provider model instances pass through unchanged.
 - Factory functions pass through unchanged.
 - Fallback model wraps primary with ordered fallback chain.
-- onFallback callback invoked when fallback is used.
+- Fallback callback is invoked when fallback is used.
 - Both stream and generate paths use fallback middleware.
 
 **Environment validation**:
@@ -1684,6 +1690,8 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 - S3_ENDPOINT: missing disables upload path.
 - TRIGGER_DEV_API_URL: missing runs jobs in-process.
 - LANGFUSE variables: missing disables observability.
+- Primary provider credentials missing: LLM-dependent features are disabled with explicit degraded behavior.
+- Object-storage credentials missing: upload features are disabled while non-upload flows remain available.
 
 **Numeric configuration constants**:
 
@@ -1698,7 +1706,7 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Fast language detection for clear allow and block paths.
 - Ambiguous or mixed-language content proceeds to intent classification.
 - Clear unsupported language triggers p0 tripwire block.
-- Post-intent gate checks intendedOutputLanguage support.
+- Post-intent gate checks intended output language support.
 - Translation edge cases: input in one language with intent to translate to another.
 
 **Phase 1 — non-actionable detection**:
@@ -1712,6 +1720,8 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 **Phase 2 — context assembly**:
 
 - Three-layer context loading: thread short-term, user short-term, long-term recall.
+- Memory-load barrier: context assembly completes before intent classification begins.
+- First-turn recall uses the raw incoming user message before any rewrite stage exists.
 - Trust hierarchy enforcement: system instruction highest, user messages medium, retrieved content zero trust.
 - Retrieved content wrapped with reinforcement boundaries (sandwich framing, not delimiters alone).
 - Zero-trust content containing instruction-like patterns: redacted or preserved with data-only framing.
@@ -1727,6 +1737,7 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Topic abandonment: flushes stale topic context.
 - Multi-intent decomposition: sub-queries with parallel or sequential processing.
 - Dependent intents: dependency ordering with constraint passing between intents.
+- Low-confidence or no-match intent outcomes trigger clarification behavior.
 - Attribute negation: property-level exclusion distinct from entity exclusion.
 - Query replay: parameter substitution with thread context recovery.
 - Temporal resolution: phrases resolved to concrete ranges using user timezone with UTC fallback.
@@ -1736,8 +1747,11 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Seven rewrite triggers: pronoun referent, short query expansion, multi-intent separation, specific identifier preservation, jargon alignment, ordinal resolution, query replay reconstruction.
 - Entity preservation guardrail: all original entities appear verbatim in rewrite, guardrail failure discards rewrite.
 - Source priority: parallel fan-out across all configured sources with priority weighting at merge.
+- Fail-fast source error handling: a failing source stops that source path while other sources continue.
 - Result merging: weight formula application, priority as scaling factor not absolute gate.
 - Attribute negation application: per-source negation strategies (minus-prefix, contextual clause, negation-aware recall, negative preference framing).
+- Dependent-intent exclusion filtering is applied before merged ranking.
+- Topic-level rewrite-strategy override takes precedence over library defaults.
 - Empty result handling: normal versus suspicious empties with logging.
 
 **RAGFlow integration**:
@@ -1780,7 +1794,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Thread short-term memory**:
 
-- Load last ten turns from conversation store scoped by userId and threadId.
+- Load last ten turns from conversation store scoped by user and thread identity.
 - Persist new turn after stream completes.
 - Drop turns outside sliding window from context but keep in storage.
 - Roll dropped turns into mandatory rolling summary.
@@ -1788,7 +1802,8 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **User short-term memory**:
 
-- Cross-thread loading: load messages from other threads scoped by userId.
+- Cross-thread loading: load messages from other threads scoped by user identity.
+- User-turn-only constraint: assistant messages are excluded from cross-thread loading.
 - Fade-out: injection stops after configured turn threshold.
 - Framing: injected context strictly for ambiguity resolution, not proactive mention.
 - Edge cases: no prior threads returns empty, user with many threads returns only configured limit.
@@ -1800,6 +1815,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Compaction priority: remove resolved items, collapse old detail, merge topics.
 - Summary preserves topic trajectory, decisions, entities, and open loops.
 - Summary excludes verbatim transcript and obsolete preferences.
+- Thread-summary retrieval operation returns current rolling summary for direct recap requests.
 
 **Thread resurrection**:
 
@@ -1818,6 +1834,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Temporal classification: PAST, PRESENT, FUTURE states.
 - Contradiction detection: attribute match plus semantic check triggers supersession.
 - Deduplication: cosine similarity at 0.92 threshold with exact boundary behavior.
+- Low-confidence fact rejection: extracted candidates below threshold are discarded.
 - Emotional context: extraction with decay counter, turn-by-turn decrement.
 - Interaction signals: search queries, discussed entities, user actions, temporal markers.
 - Media facts: vision description plus entity extraction from shared images.
@@ -1845,14 +1862,24 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Memory control tools**:
 
-- Inspect: loads active facts grouped by type, excludes superseded.
-- Delete: search, show candidates, require confirmation, remove records and edges, purge cache.
+- Inspect: loads active facts grouped by type, excludes superseded, and covers interactions, media, and result sets.
+- Delete: search, show candidates, require confirmation, remove records and edges, purge cache, and delete related result sets.
 - Edge cases: zero matches returns explicit message, user decline cancels deletion.
+
+**Structured result memory**:
+
+- Result-set detection runs after responses that contain structured ordered outputs.
+- Structured result storage includes user scope, originating query, ordered results, source thread, and expiry metadata.
+- Seven-day TTL is applied to stored result sets with scheduled expiry cleanup.
+- Ordinal resolution maps phrases such as second and last to concrete items from recent result sets.
+- Out-of-range ordinal references return typed out-of-range errors.
+- Missing recent result set returns typed clarification guidance.
+- Cross-thread resolution is user-scoped and uses the most recent valid set.
 
 **Context window budget**:
 
 - Track usage across all layers.
-- Priority-based truncation: thread history highest, then user short-term, then long-term, then sources.
+- Priority-based truncation order: system prompt (non-truncatable), current user message (non-truncatable), tool definitions (non-truncatable), last ten thread turns, rolling summary, recalled long-term memory, then user short-term cross-thread context.
 - Budget enforcement prevents context overflow.
 
 **Memory poisoning defense**:
@@ -1869,6 +1896,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Size limit: 5MB per file exactly at boundary.
 - Turn limit: 5 files per turn exactly at boundary.
 - Quota check: reject if result exceeds user maximum.
+- Atomic quota reservation occurs before processing begins.
 - Supported types: PDF, DOCX, TXT, PNG, JPG, JPEG, WEBP.
 - .doc legacy binary rejected with clear error message.
 - Quota reservation rollback on processing failure.
@@ -1883,6 +1911,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **DOCX conversion**:
 
 - LibreOffice sidecar invocation over Docker network.
+- Local non-container fallback uses host LibreOffice process when containerized converter is unavailable in local development.
 - Thirty-second timeout handling.
 - Converted PDF stored in S3 with updated metadata.
 - Temp file cleanup after conversion.
@@ -1894,6 +1923,8 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Image extraction with 100px minimum dimension filter.
 - Gemini structured output: summary 150-400 words, image descriptions, vector-chart flag.
 - Embedding generation per page.
+- Progress total is set from page count before page loop execution.
+- User-facing progress messages reflect stage and completed-page count.
 - Vector-chart fallback: PNG render when flag is true and no raster images.
 - Concurrency control with configurable limit and round-robin key distribution.
 - Retry failed pages up to three times with exponential backoff.
@@ -1921,8 +1952,8 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Cleanup**:
 
-- Per-file: requires both fileId and userId, removes S3 objects, page_index rows, vector chunks, marks deleted, releases quota.
-- Per-thread: iterates all files for thread plus user.
+- Per-file: requires both file identifier and user identity, removes S3 objects, page-index rows, vector chunks, marks deleted, releases quota.
+- Per-thread: iterates all files for thread plus user, excluding global-scope files.
 - TTL: scheduled daily, finds expired non-deleted files.
 - Idempotent: safe to run twice with same input.
 
@@ -1953,7 +1984,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Structured citations**:
 
 - Attribute-first generation: plan citations before prose.
-- Citation fields: source, fileId, page, quote, scope, images.
+- Citation fields: source, file identifier, page, quote, scope, images.
 - Presigned URLs with seven-day TTL.
 - Quotes verbatim from raw text when available, summary-derived when summary-only.
 
@@ -1995,7 +2026,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 - All guardrails run in parallel, all verdicts collected before aggregation.
 - Worst-wins aggregation: p0 > p1 > p2.
-- p0 triggers abort and tripwire, p1 triggers onFlag with message pass-through, p2 passes silently.
+- p0 triggers abort and tripwire, p1 triggers flag callback with message pass-through, p2 passes silently.
 - Empty guardrail array means message always passes.
 - No short-circuit on first p0 (all verdicts collected).
 - Error in individual guardrail propagates, stream terminates.
@@ -2006,6 +2037,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Tier two ML classification: trained injection classifier.
 - Tier three LLM-as-judge: lightweight judge model with structured output.
 - All tiers run in parallel.
+- Tool-risk-dependent judge execution: read-only side effects allow parallel judge execution, write or destructive risk enforces blocking judge execution.
 - Decision logic: LLM-alone blocks, two-tier triggers flag, single non-LLM passes.
 - Edge cases: only tier one triggers yields pass, tier one plus tier two yields flag, tier three alone yields block.
 
@@ -2027,27 +2059,30 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Buffer phase holds configured token count server-side.
 - Violation during buffer: suppress entire buffer, zero bytes sent, inject fallback.
 - Buffer full with no violation: flush and switch to streaming with sliding window.
+- Zero buffer size behaves equivalently to unbuffered streaming mode.
 
 **Guardrail factories**:
 
 - Regex: patterns plus concept plus severity yields guardrail function.
 - Keyword: keywords plus concept plus severity yields guardrail function, case-insensitive matching.
 - LLM: classifier callback plus concept yields guardrail function.
-- External moderation: endpoint plus concept plus failMode yields guardrail function.
-- External failMode open: network errors return p2 with warning.
-- External failMode closed: network errors return p0.
+- External moderation: endpoint plus concept plus failure mode yields guardrail function.
+- External open failure mode: network errors return p2 with warning.
+- External closed failure mode: network errors return p0.
 - Composite: constituents run in parallel, worst-wins aggregation.
 - All factories return identical function signature.
 
 **Language guard**:
 
+- Opt-in behavior: disabled by default and only active when explicitly configured.
 - Fast detect: eld detection with confidence threshold.
-- Post-intent gate: read intendedOutputLanguage from intent result.
+- Post-intent gate: read intended output language from intent result.
 - Output scanner: catch unsupported-language drift mid-stream with dominance thresholding.
 - Edge cases: translation intent, mixed language with place names, short text below minimum length.
 
 **Hate speech guard**:
 
+- Opt-in behavior: disabled by default and only active when explicitly configured.
 - English engine: obscenity library with leet-speak, Unicode confusables, repetition handling.
 - Multilingual engine: profanity library with Unicode word boundaries across supported languages.
 - LDNOOBW supplement for thinner language coverage.
@@ -2056,7 +2091,11 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Escalation detection**:
 
 - Sliding window anomaly scoring across turns.
-- Behavioral signals: persona drift, privilege escalation sequences, context exhaustion.
+- Behavioral signals: privilege escalation phrases, topic drift from session intent, tool call velocity anomalies, argument drift.
+
+**Memory-deletion cache purge**:
+
+- After memory deletion, Valkey embedding-cache entries referencing deleted facts are purged before subsequent recall.
 
 ### Module: Streaming and Transport (11)
 
@@ -2086,8 +2125,12 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 - SSE parsing with correct line buffering for incomplete chunks.
 - Event type discrimination and typed event object construction.
-- Reconnection with automatic resume.
-- Offline queue: persist messages locally, sync on reconnect.
+- Reconnection with backoff and jitter; reconnect starts a fresh stream rather than mid-stream resume.
+- Offline queue: bounded in-memory queue with overflow callback and oldest-item drop policy.
+- Feedback flow attaches the stored trace identifier from session metadata.
+- File-upload flow sends multipart payload with progress callbacks and returns file reference.
+- Authentication refresh callback runs before requests when configured for short-lived tokens.
+- Payload-security validation is enforced at server emit boundary and client parse boundary.
 
 ### Module: Server Implementation (12)
 
@@ -2120,11 +2163,11 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Route handlers**:
 
 - Chat streaming: SSE response, agent resolution, verbosity control, usage accounting after stream.
-- File upload: multipart handling, validation, blocking preparation, background enrichment enqueue.
+- File upload: multipart handling, validation, per-thread or global scope handling, blocking preparation, background enrichment enqueue.
 - File management: list, detail, delete, status, page image redirect with signed URLs.
 - Feedback: trace ownership validation, binary score, rate limiting.
 - Admin budget: detail, update with optional reset, list with over-budget filter.
-- Health: unauthenticated, parallel probes, five-second timeout, ok/degraded/down status.
+- Health: unauthenticated, parallel probes, five-second timeout, ok/degraded/down status, uptime, build metadata, and per-service connectivity details.
 
 **Error handling**:
 
@@ -2132,9 +2175,14 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Missing error code mapping causes startup failure.
 - Mid-stream errors emit typed error event and close stream.
 
+**Verbosity authorization**:
+
+- Full-detail verbosity is restricted to developer-authorized users.
+
 **Graceful shutdown**:
 
 - Stop accepting new connections on termination signal.
+- Active streams receive shutdown signal before dependency closure.
 - Active streams signaled to drain with thirty-second timeout.
 - Tracing backend flushed with ten-second timeout.
 - Database and cache connections closed.
@@ -2144,7 +2192,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Setup and rendering**:
 
-- Correct jsxImportSource for OpenTUI Solid compilation.
+- Correct JSX import-source configuration for OpenTUI Solid compilation.
 - Preload configuration for reactive state updates.
 - Full-screen layout with four persistent panels.
 - Terminal resize reflow.
@@ -2208,7 +2256,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Trace lifecycle**:
 
 - Every agent interaction produces trace.
-- traceId shared between SSE events and Langfuse traces.
+- Trace identifier is shared between SSE events and Langfuse traces.
 - Verbosity controls SSE emission only, Langfuse always receives full trace.
 
 **PII redaction**:
@@ -2249,6 +2297,23 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Trigger profile adds five services.
 - Port conflict resolution: Valkey on 6379, Langfuse Redis on 6380, ClickHouse native on 9100, Langfuse web on 3100.
 
+**API key pool**:
+
+- Round-robin distribution uses independent provider and embedder counters.
+- Exhaustion handling marks unhealthy keys, probes recovery, and degrades to full-key rotation when all keys are unhealthy.
+
+**Cache module**:
+
+- Valkey-backed cache behavior is validated alongside in-memory fallback semantics when unavailable.
+
+**TTL cleanup scheduler**:
+
+- Scheduled cleanup behavior validates expiry targeting, idempotency, and continuation on per-file failures.
+
+**Health-check module**:
+
+- Dependency probes are aggregated into overall health state with service-level detail.
+
 **Degradation model**:
 
 - Postgres unavailable: hard failure, HTTP 503.
@@ -2278,8 +2343,13 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Three-state machine: closed, open, half-open.
 - Closed to open: after configured consecutive failures.
 - Open to half-open: after reset timeout elapsed.
-- Half-open to closed: probe succeeds.
+- Half-open to closed: limited successful probes complete before closing.
 - Half-open to open: probe fails.
+
+**Breaker registry and snapshots**:
+
+- Registry returns isolated named breakers.
+- Health snapshot includes all breaker states for endpoint reporting.
 
 **Trigger.dev integration**:
 
@@ -2287,10 +2357,14 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Development in-process fallback executes same handlers.
 - Registered tasks: background-enrichment, budget-aggregation, cleanup, expired-file-cleanup.
 
+**Graceful shutdown sequencing**:
+
+- Shutdown order validates admission stop, stream drain, telemetry flush, then dependency disconnect.
+
 **Structured logging**:
 
 - Hierarchical categories with async context propagation.
-- Request correlation through requestId.
+- Request correlation through request identifier.
 
 ### Module: Execution Plan (17)
 
@@ -2300,15 +2374,20 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 ### Module: Frontend SDK (18)
 
+**Module boundaries and scaffolding**:
+
+- Frontend subpath exports resolve correctly for client SDK, React hooks, web components, and native components.
+- Module boundaries prevent server-only runtime imports into frontend packages.
+
 **Transport adapter**:
 
 - SSE parsing with correct line buffering.
 - Event type discrimination producing typed event objects.
-- Reconnection with automatic resume and deduplication.
+- Reconnection follows transport semantics without mid-stream resume assumptions.
 
 **React hooks**:
 
-- Six hooks with correct behavior for chat, streaming state, feedback submission, trace display, file upload, and offline mode.
+- Hook set coverage includes chat transport compatibility, feedback behavior, file-upload behavior, trace-step projection, connection selection, and detail-mode control.
 - Hooks integrate with AI SDK ChatTransport interface.
 
 **Web components**:
@@ -2316,6 +2395,14 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - 48 ai-elements based components render correctly with proper ARIA attributes.
 - Eight custom components (trace timeline, verbosity toggle, server switch, and others) function correctly.
 - Component installation CLI provides individual component installation.
+
+**Native components**:
+
+- Native component module coverage is validated separately from web components with shared hook parity.
+
+**Trace UI**:
+
+- Dedicated trace visualization behavior tests cover timeline rendering, step typing, and detail-mode transitions.
 
 **Type safety**:
 
@@ -2331,13 +2418,17 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Offline queue**:
 
 - Messages queued when server unreachable.
-- Local persistence across app restarts.
 - Auto-sync on reconnect with no duplicate delivery.
 
 **Storybook**:
 
 - Usage examples for all web components.
-- Usage examples for React Native components.
+- Storybook scope remains web-component documentation only.
+
+**Component installer**:
+
+- Dependency validation blocks unsupported installs with clear diagnostics.
+- Conflict detection prevents unintended overwrite of existing local component artifacts.
 
 ### Module: Demos (19)
 
@@ -2357,6 +2448,23 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Eden Treaty integration**:
 
 - Type-safe API calls through Elysia Eden Treaty client.
+
+### Module: Testing Strategy (16)
+
+**Testing infrastructure self-validation**:
+
+- Test mock model emits expected streaming response shapes for deterministic assertions.
+- Conditional skip behavior correctly detects missing required keys in keyed suites.
+- Evidence capture writes expected artifact outputs for executed scenarios.
+
+**Eval tooling validation**:
+
+- Promptfoo provider helper produces valid evaluation requests.
+- Custom scorer interface accepts evaluation inputs and returns numeric scores.
+
+**Seed reproducibility**:
+
+- Repeated seed-data runs are idempotent and produce identical resulting state.
 
 ## Coverage Map
 
@@ -2394,12 +2502,22 @@ Every Must Have feature area maps to one or more testing layers.
 | Circuit breaker | ✓ |  |  |  |  |  |
 | Structured logging | ✓ |  |  |  |  |  |
 | Observability tracing | ✓ | ✓ | ✓ |  |  |  |
+| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ |
+| CORS allowlist enforcement | ✓ | ✓ | ✓ |  |  |  |
+| Role-based authorization | ✓ | ✓ | ✓ |  |  | ✓ |
+| Audit logging | ✓ | ✓ | ✓ |  | ✓ | ✓ |
 | User feedback linkage | ✓ |  | ✓ |  |  |  |
 | ORM and migrations | ✓ | ✓ |  |  |  |  |
+| Injection detection ensemble | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| Content sanitization | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| Memory poisoning defense | ✓ | ✓ | ✓ |  |  | ✓ |
+| Structured result memory | ✓ | ✓ | ✓ |  |  |  |
 | Cross-conversation retrieval | ✓ | ✓ | ✓ |  |  |  |
 | Admin API | ✓ |  |  |  |  |  |
 | Prompt management | ✓ | ✓ |  |  |  |  |
 | Client offline queue | ✓ |  |  |  |  |  |
+| Frontend type safety | ✓ | ✓ | ✓ |  |  |  |
+| OpenAPI documentation | ✓ | ✓ | ✓ |  |  |  |
 | Correction handling | ✓ |  | ✓ | ✓ |  |  |
 | Emotional context carry-forward | ✓ |  | ✓ | ✓ |  |  |
 | Frustration escalation detection | ✓ |  | ✓ | ✓ |  | ✓ |
@@ -2450,8 +2568,13 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Circuit breaker | ✓ |  | ✓ |  |  | ✓ |
 | Structured logging |  |  |  |  |  |  |
 | Observability tracing | ✓ |  |  | ✓ |  |  |
+| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ |
+| CORS allowlist enforcement |  | ✓ |  |  |  |  |
+| Role-based authorization |  | ✓ | ✓ |  |  |  |
+| Audit logging | ✓ | ✓ | ✓ |  |  |  |
 | User feedback linkage |  | ✓ |  |  |  |  |
 | ORM and migrations | ✓ |  |  |  |  |  |
+| Structured result memory |  | ✓ |  | ✓ |  |  |
 | Cross-conversation retrieval |  |  |  |  |  | ✓ |
 | Admin API |  | ✓ |  |  |  |  |
 | Prompt management | ✓ |  |  |  |  |  |
@@ -2481,6 +2604,8 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Frontend SDK transport |  | ✓ |  | ✓ | ✓ |  |
 | React hooks |  | ✓ |  |  |  |  |
 | Web components |  |  |  | ✓ |  |  |
+| Frontend type safety |  | ✓ |  | ✓ |  |  |
+| OpenAPI documentation |  | ✓ |  | ✓ |  |  |
 | Accessibility |  |  |  |  |  |  |
 
 ## Requirement-Level Coverage (MH_*, MN_*)
@@ -2505,14 +2630,21 @@ Coverage is additionally mapped directly to requirement IDs in `01 — Requireme
 | Location enrichment | MH_LOCATION_TOOL, MH_GEOCODE_PLUGGABLE, MH_GEOCODE_CACHED, MH_LOCATION_SUPPRESSED | Unit, End-to-End |
 | Infrastructure | MH_RATE_LIMITING, MH_STRUCTURED_LOGGING, MH_FILE_CRUD, MH_TTL_CLEANUP, MH_CIRCUIT_BREAKER, MH_AUTH_MIDDLEWARE | Unit, Integration, End-to-End, Load |
 | Humanlikeness | MH_CORRECTION_HANDLING, MH_EMOTIONAL_CONTEXT, MH_FRUSTRATION_DETECTION, MH_REPEATED_QUESTION_DIFF, MH_STYLE_MEMORY, MH_TEMPORAL_FACTS, MH_FACT_SUPERSESSION, MH_IMPLICIT_REFS, MH_RESPONSE_ENERGY, MH_CONVERSATION_RESUMPTION, MH_CLARIFICATION_PATIENCE, MH_TOPIC_ABANDONMENT, MH_PROACTIVE_CLARIFICATION | Unit, Integration, End-to-End, Eval, Adversarial |
+| Security and trust | MH_INJECTION_DETECTION, MH_INDIRECT_INJECTION_DEFENSE, MH_SYSTEM_PROMPT_HARDENING, MH_TOOL_ARGUMENT_VALIDATION, MH_ESCALATION_DETECTION, MH_BOUNDARY_INPUT_VALIDATION, MH_ROLE_AUTHZ_REQUIRED, MH_CORS_POLICY, MH_AUDIT_LOGGING | Unit, Integration, End-to-End, Adversarial, Mutation |
+| Frontend SDK | MH_REACT_HOOKS, MH_WEB_COMPONENTS, MH_RN_COMPONENTS, MH_TRACE_STEP_EVENTS, MH_VERBOSITY_FILTER, MH_TRACE_UI, MH_VERBOSITY_TOGGLE, MH_FRONTEND_TYPE_SAFETY, MH_AI_ELEMENTS, MH_FRONTEND_A11Y | Unit, Integration, End-to-End, Snapshot |
+| Frontend tooling | MH_COMPONENT_CLI, MH_STORYBOOK | Unit, End-to-End |
+| Demos | MH_SERVER_SWITCH, MH_DEMO_WEB, MH_DEMO_MOBILE, MH_OFFLINE_MOBILE | End-to-End, Snapshot |
+| Type safety and ORM | MH_SURQLIZE, MH_TYPED_ENV, MH_TYPED_ERRORS, MH_NO_RAW_SQL, MH_SECRET_MANAGEMENT | Unit, Integration, audit scans |
+| Additional platform | MH_CROSS_CONV_RAG, MH_ADMIN_API, MH_PROMPT_MGMT, MH_ZERO_LEAK, MH_OFFLINE_QUEUE | Unit, Integration, End-to-End |
+| Build and development | MH_PRECOMMIT_HOOKS, MH_WATCH_ONLY, MH_OPENAPI_DOCS, MH_SEED_DATA, MH_TYPEDOC, MH_BUN_LINK | Unit, audit scans, End-to-End |
 
 ### Must Not (MN_*) Guardrail Coverage Groups
 
 | Exclusion Group | Representative IDs | Detection Layers |
 |---|---|---|
-| Runtime and compatibility exclusions | MN_BUN_SQLITE_PROD, MN_PROMPTFOO_DIRECT_IMPORT, MN_SHARP, MN_JIMP_LEGACY, MN_AWS_SDK_REDUNDANT, MN_LANGFUSE_OTEL, MN_VERCEL_OTEL | Unit static checks, audit scans, regression |
-| Architecture exclusions | MN_LLM_CONTROLLED_ACCESS, MN_MAMMOTH, MN_SUMMARIES_ONLY, MN_CHUNKS_WITHOUT_SUMMARIES, MN_LOCAL_FILESYSTEM, MN_CROSS_USER_SHARING, MN_MULTI_PROVIDER_ROUTING, MN_HEAVY_ORM, MN_LANGFUSE_CLOUD, MN_LANGFUSE_DATASETS, MN_LANG_GUARD_DEFAULT_ON, MN_SSE_COMPRESSION, MN_CTA_SERVER_RENDER, MN_LOCATION_DEFAULT_IMAGES | Unit, Integration, End-to-End, audit scans |
-| Scope exclusions | MN_WORKFLOW_ENGINE, MN_REDIS_STORAGE, MN_UNSUPPORTED_MEDIA, MN_VOICE_AGENT, MN_WEB_DASHBOARD, MN_COMPLEX_MULTI_AGENT, MN_WEBSOCKET, MN_EDGE_RUNTIME, MN_CUSTOM_EMBEDDINGS, MN_WEBHOOKS, MN_AUTO_PROMPT_OPT, MN_CTA_AB_TESTING, MN_COMPLEX_CTA, MN_TUI_IDE_FEATURES, MN_BUN_HOT, MN_RAW_SURREALQL, MN_DIRECT_ENV_ACCESS | Plan audit, scope audit, code audit |
+| Runtime and compatibility exclusions | MN_BUN_SQLITE_PROD, MN_PROMPTFOO_DIRECT_IMPORT, MN_SHARP, MN_JIMP_LEGACY, MN_AWS_SDK_REDUNDANT, MN_LANGFUSE_OTEL, MN_VERCEL_OTEL, MN_GROUNDING_TOOL_CONFLICT, MN_MCP_NAMESPACE_COLLISION, MN_MCP_DUPLICATE_INSTANCES, MN_OPENTUI_ONKEYPRESS | Unit static checks, audit scans, regression |
+| Architecture exclusions | MN_LLM_CONTROLLED_ACCESS, MN_MAMMOTH, MN_SUMMARIES_ONLY, MN_CHUNKS_WITHOUT_SUMMARIES, MN_LOCAL_FILESYSTEM, MN_CROSS_USER_SHARING, MN_MULTI_PROVIDER_ROUTING, MN_HEAVY_ORM, MN_LANGFUSE_CLOUD, MN_LANGFUSE_DATASETS, MN_LANG_GUARD_DEFAULT_ON, MN_SSE_COMPRESSION, MN_CTA_SERVER_RENDER, MN_LOCATION_DEFAULT_IMAGES, MN_SINGLE_LAYER_INJECTION, MN_DELIMITER_ONLY_DEFENSE, MN_UNSCOPED_TOOL_ACCESS, MN_RAW_SQL | Unit, Integration, End-to-End, audit scans |
+| Scope exclusions | MN_WORKFLOW_ENGINE, MN_REDIS_STORAGE, MN_UNSUPPORTED_MEDIA, MN_VOICE_AGENT, MN_WEB_DASHBOARD, MN_COMPLEX_MULTI_AGENT, MN_WEBSOCKET, MN_EDGE_RUNTIME, MN_CUSTOM_EMBEDDINGS, MN_WEBHOOKS, MN_AUTO_PROMPT_OPT, MN_CTA_AB_TESTING, MN_COMPLEX_CTA, MN_TUI_IDE_FEATURES, MN_BUN_HOT, MN_RAW_SURREALQL, MN_DIRECT_ENV_ACCESS, MN_ASSISTANT_UI, MN_CUSTOM_THEME, MN_EDEN_PRIMARY, MN_SHARED_JSX | Plan audit, scope audit, code audit |
 
 ## Verification Strategy Summary
 
@@ -2534,7 +2666,7 @@ All verification is automated and agent-executed. The fourteen testing types for
 - Mutation policy: safety-critical paths (guardrails, budget enforcement, rate limiting, injection detection) validated through mutation testing with ninety-five percent kill rate target.
 - Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
 - Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
-- Property policy: invariant validation through randomized input generation covering all modules with at least one hundred iterations per property.
+- Property policy: invariant validation through randomized input generation covering modules with deterministic invariants with at least one hundred iterations per property.
 - Per-module coverage: every plan document (01 through 19) has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
@@ -2568,6 +2700,6 @@ Testing strategy aligns with and validates every plan document in the structure:
 - AI SDK testing utilities: https://sdk.vercel.ai/docs/ai-sdk-core/testing
 - Pact contract testing: https://docs.pact.io/
 - fast-check property testing: https://fast-check.dev/
-- Toxiproxy fault injection: https://github.com/Shopify/toxiproxy
+- Toxiproxy fault injection: https://github.com/Shopify/toxiproxy#readme
 
 *Previous: [15 — Infrastructure](./15-infrastructure.md) | Next: [17 — Execution Plan](./17-execution.md)*
