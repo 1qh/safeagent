@@ -2414,6 +2414,75 @@ Every Must Have feature area maps to one or more testing layers.
 | Topic abandonment | ✓ |  | ✓ | ✓ |  |  |
 | Proactive clarification | ✓ |  | ✓ | ✓ |  |  |
 
+## Extended Coverage Map
+
+The six new testing categories provide additional coverage layers beyond the original six-column map.
+
+| Feature Area | Chaos | Contract | Mutation | Snapshot | Streaming | Property-Based |
+|---|---|---|---|---|---|---|
+| Agent creation and defaults |  | ✓ |  | ✓ |  | ✓ |
+| Input guardrails | ✓ |  | ✓ | ✓ |  | ✓ |
+| Streaming output guardrails | ✓ |  | ✓ |  | ✓ | ✓ |
+| Zero-leak buffered mode |  |  | ✓ |  | ✓ | ✓ |
+| Guardrail factories |  |  | ✓ |  |  | ✓ |
+| MCP client wrapper | ✓ | ✓ |  |  |  |  |
+| Streaming transport | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Grounding search mode |  |  |  | ✓ |  |  |
+| Short-term memory | ✓ |  |  |  |  | ✓ |
+| Long-term memory | ✓ |  | ✓ | ✓ |  | ✓ |
+| Memory recall tool |  |  |  | ✓ |  | ✓ |
+| Auth middleware |  | ✓ | ✓ |  |  |  |
+| Trace and thread delivery |  | ✓ |  | ✓ | ✓ |  |
+| Provider-agnostic configuration |  | ✓ |  |  |  | ✓ |
+| TUI streaming display |  |  |  |  | ✓ |  |
+| Promptfoo provider helper |  |  |  |  |  |  |
+| Custom evaluation scorers |  |  |  | ✓ |  |  |
+| File upload pipeline | ✓ | ✓ | ✓ |  |  | ✓ |
+| Multimodal document processing | ✓ |  |  | ✓ |  | ✓ |
+| Hybrid retrieval | ✓ |  | ✓ | ✓ |  | ✓ |
+| Structured citations |  |  |  | ✓ |  |  |
+| Object storage | ✓ |  |  |  |  |  |
+| File signature validation |  |  | ✓ |  |  | ✓ |
+| CTA streaming |  | ✓ |  | ✓ | ✓ |  |
+| Location enrichment |  |  |  |  | ✓ |  |
+| Rate limiting | ✓ |  | ✓ |  |  | ✓ |
+| Token budget | ✓ |  | ✓ |  |  | ✓ |
+| Circuit breaker | ✓ |  | ✓ |  |  | ✓ |
+| Structured logging |  |  |  |  |  |  |
+| Observability tracing | ✓ |  |  | ✓ |  |  |
+| User feedback linkage |  | ✓ |  |  |  |  |
+| ORM and migrations | ✓ |  |  |  |  |  |
+| Cross-conversation retrieval |  |  |  |  |  | ✓ |
+| Admin API |  | ✓ |  |  |  |  |
+| Prompt management | ✓ |  |  |  |  |  |
+| Client offline queue |  |  |  |  | ✓ |  |
+| Correction handling |  |  |  | ✓ |  |  |
+| Emotional context carry-forward |  |  |  |  |  | ✓ |
+| Frustration escalation detection |  |  | ✓ |  |  |  |
+| Repeated question differentiation |  |  |  | ✓ |  |  |
+| Communication style memory |  |  |  |  |  | ✓ |
+| Temporal fact markers |  |  |  |  |  | ✓ |
+| Fact supersession |  |  | ✓ |  |  | ✓ |
+| Implicit reference resolution |  |  |  | ✓ |  |  |
+| Response energy matching |  |  |  | ✓ |  |  |
+| Conversation resumption | ✓ |  |  |  |  |  |
+| Clarification patience model |  |  |  | ✓ |  |  |
+| Topic abandonment |  |  |  |  |  |  |
+| Proactive clarification |  |  |  | ✓ |  |  |
+| Injection detection ensemble | ✓ |  | ✓ |  |  | ✓ |
+| Content sanitization |  |  | ✓ |  |  |  |
+| Memory poisoning defense |  |  | ✓ |  |  |  |
+| Evidence bundle gate |  |  | ✓ |  |  | ✓ |
+| SSE event types |  | ✓ |  | ✓ | ✓ | ✓ |
+| Verbosity filtering |  | ✓ |  |  | ✓ | ✓ |
+| Health endpoint | ✓ |  |  |  |  |  |
+| Graceful shutdown | ✓ |  |  |  | ✓ |  |
+| Error message mapping |  | ✓ |  |  |  |  |
+| Frontend SDK transport |  | ✓ |  | ✓ | ✓ |  |
+| React hooks |  | ✓ |  |  |  |  |
+| Web components |  |  |  | ✓ |  |  |
+| Accessibility |  |  |  |  |  |  |
+
 ## Requirement-Level Coverage (MH_*, MN_*)
 
 Coverage is additionally mapped directly to requirement IDs in `01 — Requirements & Constraints`.
@@ -2447,7 +2516,7 @@ Coverage is additionally mapped directly to requirement IDs in `01 — Requireme
 
 ## Verification Strategy Summary
 
-All verification is automated and agent-executed.
+All verification is automated and agent-executed. The fourteen testing types form a comprehensive strategy governed by the testing philosophy: we sacrifice speed of development to ensure nothing breaks when we move forward.
 
 - Infrastructure baseline: Bun test runner.
 - Delivery discipline: RED to GREEN to REFACTOR per task.
@@ -2458,12 +2527,19 @@ All verification is automated and agent-executed.
 - Separation: distinct unit, integration, and end-to-end scopes.
 - Regression policy: every bug fix adds permanent regression coverage.
 - Adversarial policy: every guardrail has bypass-attempt coverage.
-- Load policy: k6 scripts exist for critical routes, run manually, capture baselines.
-- Eval policy: Promptfoo plus custom scorers validate quality dimensions.
+- Load policy: k6 scripts exist for critical routes with smoke baselines and production-scale scenarios.
+- Eval policy: Promptfoo plus custom scorers validate quality dimensions against defined thresholds.
+- Chaos policy: systematic fault injection for all external dependencies verifying graceful degradation and recovery.
+- Contract policy: consumer-driven contracts between library and server repositories verifying interface stability on every commit.
+- Mutation policy: safety-critical paths (guardrails, budget enforcement, rate limiting, injection detection) validated through mutation testing with ninety-five percent kill rate target.
+- Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
+- Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
+- Property policy: invariant validation through randomized input generation covering all modules with at least one hundred iterations per property.
+- Per-module coverage: every plan document (01 through 19) has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
 
-Testing strategy aligns with and validates these plan documents in the new 17-file structure:
+Testing strategy aligns with and validates every plan document in the structure:
 
 - Requirements source of truth: [01 — Requirements & Constraints](./01-requirements.md)
 - System architecture: [03 — System Architecture](./03-architecture.md)
@@ -2479,6 +2555,9 @@ Testing strategy aligns with and validates these plan documents in the new 17-fi
 - Terminal interface expectations: [13 — TUI App](./13-tui.md)
 - Observability behavior: [14 — Observability](./14-observability.md)
 - Infrastructure operations and capacity planning: [15 — Infrastructure](./15-infrastructure.md)
+- Execution plan and task ordering: [17 — Execution Plan](./17-execution.md)
+- Frontend SDK components and transport: [18 — Frontend SDK](./18-frontend-sdk.md)
+- Demo applications: [19 — Demos](./19-demos.md)
 
 ## External References
 
@@ -2487,5 +2566,8 @@ Testing strategy aligns with and validates these plan documents in the new 17-fi
 - k6 streaming and realtime APIs: https://grafana.com/docs/k6/latest/javascript-api/k6-experimental/websockets/
 - Promptfoo: https://promptfoo.dev/docs
 - AI SDK testing utilities: https://sdk.vercel.ai/docs/ai-sdk-core/testing
+- Pact contract testing: https://docs.pact.io/
+- fast-check property testing: https://fast-check.dev/
+- Toxiproxy fault injection: https://github.com/Shopify/toxiproxy
 
 *Previous: [15 — Infrastructure](./15-infrastructure.md) | Next: [17 — Execution Plan](./17-execution.md)*
