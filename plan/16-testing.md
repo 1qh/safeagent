@@ -3690,11 +3690,155 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Hierarchical categories with async context propagation.
 - Request correlation through request identifier.
 
+**Docker Compose service-level guarantees**:
+
+- Postgres container boots with pgvector extension available for application queries.
+- MinIO health endpoint reports healthy state before dependent upload checks run.
+- MinIO bucket initialization creates required application bucket automatically.
+- MinIO bucket initialization creates required media bucket automatically.
+- SurrealDB health probe responds healthy before memory-enabled paths are marked ready.
+- Valkey ping health check returns healthy status and expected pong semantics.
+- Trigger profile exposes web interface on port 3040 without collision.
+- Langfuse profile exposes web interface on port 3100 without collision.
+- Langfuse analytics endpoint remains reachable on port 8123 in profile mode.
+- LibreOffice sidecar health probe reports ready before DOCX conversion routes enable.
+- Startup initialization script creates langfuse database automatically on first boot.
+- Startup initialization script creates trigger database automatically on first boot.
+- Environment template includes complete variable set for S3, SurrealDB, Valkey, Trigger, Langfuse, and LibreOffice.
+
+**Key pool deterministic behavior**:
+
+- Pool size equals parsed non-empty key count from configured comma-separated source.
+- Parsed keys trim leading and trailing whitespace before pool construction.
+- Empty key list fails fast with explicit validation error.
+- Blank-only key entries fail fast and never create placeholder providers.
+- Provider selector rotates keys in strict round-robin sequence.
+- Embedder selector rotates keys independently from provider sequence.
+- Concurrency limit equals active key count multiplied by per-key concurrency setting.
+- Missing key configuration returns undefined pool from environment helper.
+- Single-key configuration returns undefined pool from environment helper.
+
+**Valkey cache interface completeness**:
+
+- Cache factory selects Redis-backed implementation when redis-style URL is configured.
+- Cache factory selects in-memory fallback implementation when cache URL is absent.
+- Redis-backed cache supports read operation across string and serialized payload values.
+- Redis-backed cache supports write operation with optional TTL.
+- Redis-backed cache supports delete operation for explicit key invalidation.
+- Redis-backed cache supports increment operation for counters.
+- Redis-backed cache supports decrement operation for counters.
+- Redis-backed cache supports explicit expiration update operation.
+- Redis-backed cache close operation releases client resources cleanly.
+- Redis-backed cache health operation reports connectivity status.
+- Raw client accessor exposes Redis client for sorted sets and transactional units.
+- In-memory fallback stores entries in map-backed storage.
+- In-memory fallback enforces TTL expiration at read time.
+- In-memory fallback periodic sweep removes expired entries every sixty seconds.
+
+**Cost tracking hot-path and persistence semantics**:
+
+- Budget checks read only Valkey counters on request hot path.
+- Budget checks avoid Postgres queries on hot path when limit cache is warm.
+- Daily counter keys auto-expire at UTC midnight boundary.
+- Monthly counter keys auto-expire at UTC month-end boundary.
+- Counter updates and expiration assignments execute atomically in same transaction unit.
+- Usage-event persistence path is append-only and never mutates prior events.
+- Token-recording persistence is non-blocking relative to response streaming path.
+- Budget exceeded response returns HTTP 429 with descriptive denial payload.
+- Key format for daily counters matches `budget:{userId}:daily:{YYYY-MM-DD}`.
+- Key format for monthly counters matches `budget:{userId}:monthly:{YYYY-MM}`.
+- Per-user limit overrides are cached and reused before TTL expiry.
+- Override-cache invalidation occurs immediately after admin limit update.
+- Admin detail path returns user limits, current spend, and period metadata.
+- Admin update path persists overrides and reports updated values.
+- Admin listing path enforces pagination boundaries.
+- Admin listing path supports over-budget filter behavior.
+
+**Rate limiting algorithm guarantees**:
+
+- Sliding window uses sorted sets for in-window request accounting.
+- Lua execution keeps prune, insert, count, oldest-read, and expiry operations atomic.
+- Member identity includes UUID segment to guarantee uniqueness for same-millisecond requests.
+- Retry-After derives from oldest in-window entry age.
+- Retry-After values are clamped to minimum one-second guidance.
+- Per-user keying defaults to authenticated user identity.
+- Custom key extraction path supports alternate route-level identity derivation.
+- Development fallback path degrades to no-op when raw Redis client is unavailable.
+
+**Degradation and fallback reliability**:
+
+- Valkey outage triggers in-memory cache fallback without server crash.
+- Valkey outage switches rate limiting to per-instance behavior.
+- Valkey outage keeps budget checks fail-open while emitting warning logs.
+- Trigger absence routes background jobs through in-process adapter.
+- Langfuse absence disables tracing while preserving core request flow.
+
+**Trigger and scheduled-task behavior**:
+
+- Registered background enrichment task dispatches expected payload contract.
+- Registered budget aggregation task runs on configured five-minute cadence.
+- Registered cleanup task handles isolated per-file failures and continues batch.
+- Registered expired-file-cleanup task executes schedule-based TTL sweeps.
+
+**Connection and shutdown safeguards**:
+
+- Cache close operation is invoked during graceful shutdown.
+- Postgres pool close operation is invoked after stream drain window.
+- SurrealDB connection close operation runs during shutdown teardown.
+- In-process running-task drain waits for settle before process exit.
+
 ### Module: Execution Plan (17)
 
 - Task dependency graph: all dependencies correctly specified with no circular dependencies.
 - Task ordering: batches contain only tasks whose dependencies are satisfied by prior batches.
 - Acceptance criteria: each task has verifiable criteria that can be mechanically checked.
+
+**Graph integrity checks**:
+
+- Dependency graph traversal confirms every declared task node is reachable from batch ordering roots.
+- Circular dependency detection flags any cycle in direct or transitive dependency paths.
+- Self-dependency edges are rejected as invalid graph definitions.
+- Unknown dependency identifiers fail validation against task registry.
+- Duplicate dependency edges are normalized without altering dependency semantics.
+
+**Batch scheduling correctness**:
+
+- Every task appears in exactly one batch assignment.
+- Batch index ordering is monotonic with dependency depth.
+- A task is scheduled only when all dependencies are in strictly earlier batches.
+- No task is placed in a batch with unmet dependency from same or later batch.
+- Parallel tasks in one batch remain dependency-independent within that batch.
+- Critical-path tasks preserve required sequential ordering across batches.
+
+**Acceptance-criteria mechanical verifiability**:
+
+- Each task includes explicit acceptance criteria entries.
+- Acceptance criteria statements are testable as pass/fail outcomes, not vague intent.
+- Acceptance criteria can map to one or more concrete QA scenarios.
+- Tasks lacking measurable acceptance criteria are rejected by plan validation.
+- Criteria phrasing avoids ambiguous qualifiers that prevent mechanical verification.
+
+**Registry and mapping consistency**:
+
+- Complete task registry count matches declared total task count.
+- Dependency matrix contains entries for each task in the registry.
+- Agent dispatch map references only valid task identifiers.
+- Batch timeline labels correspond to existing batch definitions.
+- New-task registry links align with main registry identifiers.
+
+**Execution safety constraints**:
+
+- Blocking spike tasks are validated as strict prerequisites for downstream batches.
+- Final audit batch is validated as dependent on completion of all implementation batches.
+- Publish and release-prep tasks are validated as post-feature gates, not mid-plan tasks.
+- Demo tasks are validated as downstream of required frontend and server dependencies.
+
+**Plan-evolution regression checks**:
+
+- Adding a new task requires dependency and batch placement validation before acceptance.
+- Changing a dependency edge triggers re-validation of all affected downstream batches.
+- Removing a task triggers orphan-dependency detection for remaining tasks.
+- Renaming a task requires synchronized updates across timeline, registry, graph, and dispatch sections.
 
 ### Module: Frontend SDK (18)
 
