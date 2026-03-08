@@ -592,7 +592,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | **Promptfoo** | Its own process | External CLI tool for offline eval regression testing. Not imported by our code. Operator installs and runs it separately |
 | **MCP server processes** | Varies | Some MCP servers use external command launchers. These are external processes spawned by configured commands — safeagent just starts them and communicates over stdio/HTTP |
 
-**README must document**: "Bun required. Promptfoo and MCP servers are external tools with their own runtime requirements."
+**Project documentation must state**: "Bun required. Promptfoo and MCP servers are external tools with their own runtime requirements."
 
 ---
 
