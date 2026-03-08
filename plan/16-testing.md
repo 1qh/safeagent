@@ -3416,6 +3416,79 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Cleanup on /clear command.
 - Edge cases: oversize file, excess files, quota exceeded, unsupported type.
 
+**Runtime-preload and keyboard invariants**:
+
+- Runtime preload wiring is limited to TUI runtime context and never leaks into non-TUI execution contexts.
+- Preload registration remains active through startup, stream lifecycle, and overlay transitions.
+- Keyboard handling scans confirm no shell-level key-press handler property usage in any render path.
+- Root keyboard router ignores unsupported key combinations without blocking child handlers.
+- Global shortcuts continue functioning while overlays are open unless overlay explicitly captures focus.
+
+**Markdown rendering depth**:
+
+- Emphasis rendering distinguishes bold, italic, and combined emphasis markers visually.
+- Inline code rendering preserves monospace styling and contrast distinct from body text.
+- Ordered list rendering preserves numbering continuity across streamed chunks.
+- Unordered list rendering preserves bullet hierarchy and indentation depth.
+- Blockquote rendering preserves quote indicator styling and text wrapping behavior.
+- Mixed markdown blocks in one assistant turn maintain stable ordering as chunks append.
+- Partially streamed markdown tokens recover into correct final formatting when closing delimiters arrive later.
+
+**Scroll and long-output behavior**:
+
+- Long assistant responses remain scrollable beyond terminal viewport height without truncation.
+- Scroll position stays anchored correctly while new chunks append to very long messages.
+- User-initiated upward scrolling suppresses auto-follow even during heavy chunk bursts.
+- Returning to bottom re-enables auto-follow and catches up with accumulated output.
+- Terminal-height changes during long messages preserve readable viewport state.
+
+**Input submission and history correctness**:
+
+- Empty input submission is rejected with no command dispatch and no agent call side effect.
+- Whitespace-only input submission is rejected without adding history entries.
+- History order is most-recent-first on upward traversal after multiple submissions.
+- Downward traversal returns entries in reverse traversal order and clears at history boundary.
+- Duplicate consecutive submissions are stored as separate history entries in original submit order.
+
+**Command behavior fidelity**:
+
+- `/model` with argument sets active model immediately and surfaces confirmation in status bar.
+- `/model` argument parsing trims surrounding whitespace before model match.
+- `/model` unknown argument produces non-destructive error feedback without mutating active model.
+- `/clear` emits explicit confirmation as system message after message-state reset.
+- `/clear` during pending attachments clears attachments and confirms cleared attachment count.
+- `/upload` with inline path argument bypasses picker and starts validation path immediately.
+- Tab completion cycles deterministically through multiple matching commands on repeated Tab presses.
+- Tab completion wraps from last candidate back to first candidate.
+
+**Agent stream event display guarantees**:
+
+- Tool-call events always render as system messages with tool identity and call context.
+- Tool-result events always render as follow-up system messages mapped to originating tool call.
+- Tool-call and tool-result rendering order remains consistent under interleaved text deltas.
+- Stream-finish handling finalizes assistant message and status indicators exactly once.
+- Session state remains recoverable after transport interruption mid-stream.
+
+**Error-state resilience**:
+
+- Tripwire handling always shows fallback assistant text and error banner together in one failure path.
+- Rate-limit error surfaces retry guidance and countdown when retry metadata exists.
+- Countdown state updates at one-second cadence until retry eligibility.
+- Transport error mid-stream transitions UI into recoverable idle state with input re-enabled.
+- Recoverable transport error preserves already streamed partial assistant content.
+- Escape dismissal clears visible error banner without deleting preserved chat history.
+
+**Picker and attachment constraint enforcement**:
+
+- Supported picker types are listed visibly while unsupported entries remain visible but greyed out.
+- Oversize file above five-megabyte limit shows inline picker error on selection attempt.
+- Selecting more than five files shows inline footer error and blocks confirmation.
+- Mismatched magic bytes against declared type yields clear rejection message.
+- Invalid inline-path upload with unsupported type yields explicit validation failure state.
+- Status bar shows `N files ready` once all selected files reach ready state.
+- Ready-state indicator clears after next successful message submission includes attachments.
+- Canceling picker leaves pending attachment state unchanged unless explicit clear action occurs.
+
 ### Module: Observability (14)
 
 **Langfuse integration**:
@@ -3459,6 +3532,85 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Promptfoo subprocess spawning with ephemeral server.
 - Config generation and result parsing.
 - Clean dependency boundary: no Promptfoo library import.
+
+**Framework tracing and exporter registration**:
+
+- Framework auto-traces agent runs and exports them into Langfuse under the active trace.
+- Framework auto-traces model generations with token and latency metadata.
+- Framework auto-traces tool calls and tool outcomes with proper parent linkage.
+- Framework auto-traces guardrail checks and severity outcomes.
+- Framework auto-traces handoff transitions with source and destination identities.
+- Exporter is registered through framework batch trace processor path rather than ad-hoc per-event flush wiring.
+- Batch processor registration honors lifecycle flush on process shutdown.
+
+**Realtime mode and sampling policy**:
+
+- Realtime flushing defaults enabled in development mode.
+- Realtime flushing defaults disabled in production mode.
+- Explicit realtime override in config takes precedence over environment default.
+- Ratio sampling accepts valid probability ranges and rejects invalid ranges.
+- Ratio sampling honors configured probability under repeated request sampling runs.
+- Custom sampling mode invokes caller sampler function per trace-decision point.
+- Always sampling mode traces every eligible request without skipping.
+
+**Custom span and score specifics**:
+
+- Input guardrail span records boolean pass score true for safe outcomes.
+- Input guardrail span records boolean pass score false for blocked outcomes.
+- Input guardrail blocked path emits blocked score signal with concept metadata.
+- Input guardrail flagged path emits flagged score signal with concept metadata.
+- Streaming guardrail span records boolean pass score on safe stream completion.
+- Streaming guardrail tripwire path emits tripwire score when abort path is triggered.
+- RAG parent span emits child span set matching indexed query mode.
+- RAG parent span emits child span set matching rag query mode.
+- File processing parent span emits child spans matching indexed processing path.
+- File processing parent span emits child spans matching rag-mode processing path.
+- DOCX conversion emits dedicated conversion span with conversion duration metadata.
+- Memory-operation parent span emits store-fact child span when extraction persists facts.
+- Memory-operation parent span emits search child span for recall lookups.
+- Memory-operation parent span emits graph-traverse child span when relation traversal occurs.
+- Memory-operation parent span emits expire-stale child span when cleanup path runs.
+- Guardrail flag callback factory output is compatible with guardrail pipeline flag callback contract.
+- Span helpers perform no-op behavior when score helper is undefined.
+
+**Feedback endpoint robustness**:
+
+- Trace-owner check prevents score submission across user boundaries.
+- Feedback rate limit enforces ten requests per user per minute.
+- Rate-limit response returns deterministic denial without partial score write.
+- Langfuse-disabled mode returns success with `traced` false indicator and no error.
+- Langfuse-enabled mode returns success with score attached to trace.
+
+**Prompt management reliability**:
+
+- Startup preload fetches all configured prompt keys before first request handling.
+- Missing configured prompt key at preload records warning and keeps fallback availability.
+- Prompt interpolation succeeds when all required variables are provided.
+- Missing interpolation variable triggers strict failure rather than silent placeholder leakage.
+- Cache entry remains fresh until TTL boundary and serves cached compiled prompt.
+- Expired cache entry triggers refresh attempt and updates cache on success.
+- Network fetch failure falls back to local prompt without blocking request path.
+- Repeated upstream failures trigger circuit-breaker open behavior.
+- Circuit-open state avoids repeated high-latency remote attempts.
+- Secret-bearing values are redacted from logs and surfaced errors.
+
+**Eval configuration and provider factory**:
+
+- Scorer-config builder outputs valid scorer config for ratio sampling mode.
+- Scorer-config builder outputs valid scorer config for always mode.
+- Scorer-config builder outputs valid scorer config for custom predicate mode.
+- Eval-provider factory wraps agent in Promptfoo-compatible provider contract.
+- Provider call executes agent run and returns output with usage metadata.
+- Evaluation runner starts HTTP service on random assigned port.
+- Generated Promptfoo config references correct ephemeral HTTP provider URL.
+- Runner shuts down HTTP service cleanly on completion or timeout.
+
+**Self-test runner integration**:
+
+- Self-test runner generates valid Promptfoo config from provided test-case matrix.
+- Generated self-test config preserves per-case assertions and expected output fields.
+- Self-test flow parses Promptfoo output into structured pass and fail result shape.
+- Self-test flow cleans temporary artifacts and ephemeral server resources after completion.
 
 ### Module: Infrastructure (15)
 
