@@ -81,7 +81,7 @@ graph TB
     SERVER_PROJECT -->|imports| SAFEAGENT_LIBRARY
     SAFEAGENT_LIBRARY --> INFRASTRUCTURE_LAYER
     ORCH --> SUB_A & SUB_B & SUB_N
-    SUB_A & SUB_B & SUB_N --> Tools
+    SUB_A & SUB_B & SUB_N --> TOOLS
 ```
 
 ## Request Lifecycle
@@ -174,9 +174,9 @@ Each document below is a self-contained reference for its domain. Files are numb
 
 | # | Document | Description |
 |---|----------|-------------|
-| 14 | [Observability & Evaluation](./14-observability.md) | Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering |
-| 15 | [Infrastructure & Operations](./15-infrastructure.md) | Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning |
-| 16 | [Testing Strategy](./16-testing.md) | Test pyramid, coverage map, CI pipeline, audit tasks, QA policy |
+| 14 | [Observability](./14-observability.md) | Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering |
+| 15 | [Infrastructure](./15-infrastructure.md) | Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning |
+| 16 | [Testing](./16-testing.md) | Test pyramid, coverage map, CI pipeline, audit tasks, QA policy |
 
 ### Execution
 

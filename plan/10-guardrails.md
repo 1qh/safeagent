@@ -797,12 +797,12 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines non-negotiable safety constraints, policy boundaries, and quality targets that this guardrail architecture must enforce. |
-| **Conversation** ([05](./05-conversation.md)) | Provides the conversation lifecycle and intent-stage outputs that LANG_GUARD Post-Intent Gate uses for intended output language enforcement. |
-| **Agents** ([06](./06-agents.md)) | Wires guardrail processors into agent creation and orchestrator synthesis so safety checks run before and during responses. |
-| **Retrieval & Evidence** ([09](./09-retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
-| **Streaming & Transport** ([11](./11-transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
-| **Server** ([12](./12-server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines non-negotiable safety constraints, policy boundaries, and quality targets that this guardrail architecture must enforce. |
+| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides the conversation lifecycle and intent-stage outputs that LANG_GUARD Post-Intent Gate uses for intended output language enforcement. |
+| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Wires guardrail processors into agent creation and orchestrator synthesis so safety checks run before and during responses. |
+| **Retrieval & Evidence** ([09 — Retrieval & Evidence](./09-retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
+| **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
+| **Server** ([12 — Server Implementation](./12-server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
 
 ---
 

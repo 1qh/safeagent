@@ -770,11 +770,11 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 | Document | Relationship |
 |----------|-------------|
-| **System Architecture** ([03](./03-architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
-| **Foundation** ([04](./04-foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
-| **RAG & Retrieval** ([09](./09-retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
-| **Server Implementation** ([12](./12-server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
-| **Infrastructure** ([15](./15-infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
+| **System Architecture** ([03 — System Architecture](./03-architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
+| **Foundation** ([04 — Foundation](./04-foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
+| **RAG & Retrieval** ([09 — Retrieval & Evidence](./09-retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
+| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
+| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
 
 ---
 

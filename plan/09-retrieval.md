@@ -1177,10 +1177,10 @@ flowchart TD
 
 | Component | Relationship |
 |-----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
-| **Conversation** ([05](./05-conversation.md)) | Orchestration registers `searchDocument`, applies context-aware file resolution, and invokes post-gate generation. |
-| **Documents** ([08](./08-documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
-| **Transport** ([11](./11-transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
+| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Orchestration registers `searchDocument`, applies context-aware file resolution, and invokes post-gate generation. |
+| **Documents** ([08 — Document Processing](./08-documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
+| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
 
 ---
 

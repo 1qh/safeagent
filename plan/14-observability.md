@@ -611,11 +611,11 @@ This provider is used in the direct in-process path (when Promptfoo runs in Bun)
 ## Cross-References
 | Component | Interaction |
 |-----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines reliability, safety, privacy, and quality targets that observability validates continuously. |
-| **Conversation Pipeline** ([05](./05-conversation.md)) | Trace and span taxonomy maps directly to pipeline stages and classification outcomes. |
-| **Agents** ([06](./06-agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
-| **Server** ([12](./12-server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
-| **Infrastructure** ([15](./15-infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines reliability, safety, privacy, and quality targets that observability validates continuously. |
+| **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Trace and span taxonomy maps directly to pipeline stages and classification outcomes. |
+| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
+| **Server** ([12 — Server Implementation](./12-server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
+| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
 | **Circuit Breaker** (CIRCUIT_BREAKER) | Prompt manager wraps remote fetches with the circuit breaker to avoid repeated latency spikes during Langfuse outages. |
 ---
 ## Task Specifications

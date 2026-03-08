@@ -503,12 +503,12 @@ HTTP status behavior:
 ## Cross-References
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines user and operational constraints this server enforces through route security, runtime behavior, and failure semantics. |
-| **Foundation** ([04](./04-foundation.md)) | Supplies shared runtime contracts, environment assumptions, and configuration baselines consumed by startup and middleware. |
-| **Agents** ([06](./06-agents.md)) | Defines agent factories and orchestration capabilities that the server configures and exposes through HTTP and SSE routes. |
-| **Guardrails** ([10](./10-guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
-| **Streaming & Transport** ([11](./11-transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
-| **Infrastructure** ([15](./15-infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines user and operational constraints this server enforces through route security, runtime behavior, and failure semantics. |
+| **Foundation** ([04 — Foundation](./04-foundation.md)) | Supplies shared runtime contracts, environment assumptions, and configuration baselines consumed by startup and middleware. |
+| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines agent factories and orchestration capabilities that the server configures and exposes through HTTP and SSE routes. |
+| **Guardrails** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
+| **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
+| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
 ---
 ## Task Specifications
 ---

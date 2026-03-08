@@ -606,9 +606,9 @@ OpenTUI handles terminal resize natively. Layout reflows automatically and chat 
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines baseline behavior and client parity targets that this TUI must satisfy. |
-| **Transport** ([11](./11-transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
-| **Server Implementation** ([12](./12-server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines baseline behavior and client parity targets that this TUI must satisfy. |
+| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
+| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
 
 ---
 

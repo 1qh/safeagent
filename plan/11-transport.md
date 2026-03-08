@@ -410,7 +410,7 @@ stateDiagram-v2
     BACKOFF --> CLOSED: max retries exceeded
     CLOSED --> [*]
 
-    note right of Backoff
+    note right of BACKOFF
         delay = min(base * 2^attempt + jitter, maxDelay)
     end note
 ```
@@ -611,10 +611,10 @@ classDiagram
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01](./01-requirements.md)) | Defines platform requirements and transport expectations that this SSE boundary and client SDK must satisfy. |
-| **Agents** ([06](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the `RunStreamEvent` stream consumed by this SSE transport layer. |
-| **Guardrails & Safety** ([10](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
-| **Server Implementation** ([12](./12-server.md)) | Owns the Elysia route wiring and HTTP boundary where this document's `createStreamHandler` and SSE event protocol are applied. |
+| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines platform requirements and transport expectations that this SSE boundary and client SDK must satisfy. |
+| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the `RunStreamEvent` stream consumed by this SSE transport layer. |
+| **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
+| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring and HTTP boundary where this document's `createStreamHandler` and SSE event protocol are applied. |
 
 ---
 
