@@ -2758,6 +2758,93 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **File edge cases**: all 28 documented scenarios across six categories (content Q&A, cross-reference, visual, ambiguity, conversational, format-specific) each have corresponding test coverage.
 
+**RRF scoring and deduplication detail**:
+
+- Candidate union from all retrieval arms is grouped by file and page before score aggregation.
+- Grouped-page score is the sum of reciprocal-rank contributions from each arm where that page appears.
+- Pages missing in an arm contribute zero from that arm without penalizing other contributions.
+- Tie-breaking across equal aggregate scores is deterministic and stable across repeated runs.
+
+**Sanitization latency and variance**:
+
+- Retrieval-time sanitization latency is measured with lower bound near 50 milliseconds and upper bound near 100 milliseconds.
+- Variance across repeated runs stays within defined operational tolerance and does not exceed service-level budgets.
+- Latency instrumentation isolates classifier, stripping, and boundary-framing sub-steps.
+- Sanitization cost remains additive and bounded regardless of summary-only versus enriched mode.
+
+**Citation URL lifetime and expiry handling**:
+
+- Citation image URLs are generated with seven-day time-to-live.
+- Image redirect fallback endpoint returns fresh signed URL when cached URL expires.
+- Expired or invalid image URL requests return typed not-found or expiry-safe response behavior.
+- Citation payload always includes refresh-capable path metadata for URL renewal.
+
+**File reference timezone behavior**:
+
+- Temporal resolution reads timezone from request header when provided.
+- UTC fallback is used when timezone header is absent or invalid.
+- Day-boundary calculations for references like yesterday honor resolved timezone.
+- Daylight-saving transitions resolve temporal windows without off-by-one-day drift.
+
+**Ambiguity and clarification contracts**:
+
+- Ambiguous file matches return explicit candidate list payload with enough metadata for user disambiguation.
+- Candidate-list ordering is deterministic and auditable.
+- Resolver never picks an arbitrary candidate when multiple plausible matches exist.
+- Clarification response format remains consistent across temporal, ordinal, and named ambiguity sources.
+
+**Cross-conversation ranking behavior**:
+
+- Global-scope evidence is included alongside thread-scope evidence for same-user queries.
+- Default global ranking multiplier is 0.85x and is configurable.
+- Setting multiplier to 1.0 yields equal treatment for thread and global evidence.
+- Mixed-scope result sets preserve scope metadata in ranking outputs and citations.
+
+**Large text chunking boundaries**:
+
+- Large text chunking uses 4000-character chunks with 800-character overlap.
+- Boundary-adjacent concepts remain retrievable across chunk edges due to overlap continuity.
+- First and last chunk boundaries handle short tail segments without data loss.
+- Chunk position metadata supports citation anchoring for text retrieval responses.
+
+**Evidence scoring determinism**:
+
+- Sufficiency formula applies coverage 0.4, confidence 0.4, and completeness 0.2 weights exactly.
+- Equivalent evidence inputs always produce identical sufficiency outputs.
+- Topic-level configuration can override weights and thresholds without code-path changes.
+- Completeness component remains binary and tied to minimum distinct-passage requirement.
+
+**Evidence-gate passage thresholds**:
+
+- Minimum distinct passages threshold is configurable per topic policy.
+- Gate closes when distinct-passage count is below configured threshold even with high similarity.
+- Gate opens only when threshold and weighted sufficiency requirements are both satisfied.
+- Threshold updates apply predictably at configuration reload boundaries.
+
+**Twenty-eight file edge-case suites**:
+
+- Content Q&A suite covers page-specific questions, location queries, contains checks, ordinal references, temporal references, and full-document summarization.
+- Cross-reference suite covers internet comparisons, document-to-document comparisons, merged findings, topic-source identification, and revision diffs.
+- Visual suite covers show-images requests, chart-and-table question answering, and extracted-table question answering.
+- Ambiguity and negative suite covers source disambiguation, critique requests, OCR fallback, deleted-file handling, never-uploaded handling, corrupted-file handling, too-large handling, and poor-OCR handling.
+- Conversational suite covers session-context references, page navigation follow-ups, deepening follow-ups, mid-conversation file switching, and multilingual file queries.
+- Format-specific suite covers code-aware file handling behavior with syntax-sensitive retrieval expectations.
+
+**Visual grounding reliability**:
+
+- Visual interpretation occurs at query time against page images rather than precomputed static answers.
+- OCR-failure paths route to multimodal visual interpretation when images are available.
+- Missing visual assets and missing fallback text produce explicit no-visual-content outcomes.
+- Low-confidence visual interpretations return caveated responses instead of confident assertions.
+
+**Anti-hallucination layer interactions**:
+
+- Layer-one file resolution failure blocks downstream retrieval and generation.
+- Layer-two evidence gate blocks prose when evidence is insufficient regardless of prompt intent.
+- Layer-three citation planning prevents uncited claims from entering final prose.
+- Layer-four transparency guarantees explicit refusal or caveat instead of silent degradation.
+- Combined-layer architecture targets lower hallucination rates than gate-only and prompt-only baselines.
+
 ### Module: Guardrails and Safety (10)
 
 **Input guardrail pipeline**:
@@ -2834,6 +2921,118 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Memory-deletion cache purge**:
 
 - After memory deletion, Valkey embedding-cache entries referencing deleted facts are purged before subsequent recall.
+
+**Escalation monitor turn-window behavior**:
+
+- Escalation monitor updates sliding-window risk score on every user turn.
+- Risk score window evicts oldest turn signals when window length is exceeded.
+- Privilege-escalation phrases, topic drift, tool-call velocity spikes, and argument drift each contribute to score updates.
+- Repeated medium-risk turns can accumulate into higher-severity outcomes through window aggregation.
+
+**Injection fast-reject timing**:
+
+- Heuristic tier executes as fast-reject path before waiting on slower classifier tiers.
+- Fast-reject signaling is observable in timing metrics and short-circuits dangerous payload progression.
+- Fast-reject behavior remains active even when ML or judge tiers are degraded.
+- Fast-reject does not bypass final worst-wins aggregation semantics.
+
+**Tier performance and recall targets**:
+
+- Heuristic tier recall target is approximately 60 percent for known pattern families.
+- ML tier recall target is approximately 80 percent for broader injection families.
+- Judge tier recall target is approximately 85 percent or better for adaptive attacks.
+- Test datasets include adversarial and benign sets to verify target behavior ranges.
+
+**Blocking versus parallel judge modes**:
+
+- Read-only tool plans allow judge tier to run in parallel mode.
+- Write-capable or destructive tool plans force blocking judge mode before execution.
+- Mode selection is configurable and testable per tool-risk category.
+- Configuration mistakes cannot silently downgrade destructive paths to parallel mode.
+
+**Three-tier decision matrix coverage**:
+
+- Judge-only trigger returns block even when other tiers pass.
+- Any two-tier trigger combination returns flag when judge tier is not blocking.
+- Single non-judge trigger returns pass with optional telemetry.
+- Zero-tier trigger returns clean pass.
+- Matrix tests cover all eight boolean trigger combinations.
+
+**Output sliding window guarantees**:
+
+- Output window default is fifty tokens and can be overridden per pipeline configuration.
+- Window trimming keeps latest text slice only and preserves detection continuity across chunk boundaries.
+- Window-size overrides do not alter severity semantics or fallback behavior.
+- Non-text chunks bypass scanning without mutating text window state.
+
+**Buffered-mode latency behavior**:
+
+- Buffer fill delay follows buffer-size divided by token-throughput estimate.
+- Measured first-token delay aligns with configured buffer size and observed stream rate.
+- Latency overhead is bounded and reported in buffered-mode performance tests.
+- Buffer-size tuning tests validate security versus latency trade-off table claims.
+
+**Production suppression permanence**:
+
+- Once production output p0 fires, all subsequent model chunks for that stream remain permanently suppressed.
+- Fallback injection occurs once per violating stream and no additional unsafe chunks leak afterward.
+- Suppression permanence holds even if later chunks would have passed guardrails.
+
+**Zero-leak buffer invariants**:
+
+- Default zero-leak buffer size is fifty tokens unless explicitly overridden.
+- Any p0 during preflush buffer phase guarantees zero model bytes are emitted to clients.
+- Buffer-size zero mode is behaviorally equivalent to standard unbuffered streaming.
+- Concurrent zero-leak streams maintain isolated buffers with no cross-stream contamination.
+
+**Factory behavior contracts**:
+
+- Regex-based factory executes synchronously with near-zero added latency.
+- Keyword-based factory executes synchronously with case-insensitive matching.
+- Judge-based factory defaults to primary model when no alternate classifier model is configured.
+- External moderation factory enforces explicit fail-open or fail-closed behavior on transport errors.
+- Composite factory default aggregation mode is worst-wins when no custom strategy is provided.
+
+**Language-guard enforcement specifics**:
+
+- Language detection uses eld for both fast input check and streaming output drift check.
+- Input fast stage may constrain detection language subset to supported outputs.
+- Post-intent language gate is enforced as a separate gate after intent resolution and before orchestration.
+- Output drift stage uses unrestricted detection and compares dominant language against supported list.
+- Dominance threshold requires unsupported language to exceed fifty percent of window characters before p0.
+- Short unsupported fragments inside supported-language output do not trigger blocking.
+- Translation-intent, mixed-language ambiguity, named-entity foreign fragments, and short-text cases each have dedicated matrix tests.
+
+**Hate-speech engine specifics**:
+
+- English engine includes 70 pattern families with confusable, leet, and repetition normalization.
+- Multilingual engine includes 3739-word profanity corpus coverage.
+- Vietnamese seed additions are loaded and enforced with the same blocking semantics.
+- English and multilingual engines run in parallel for both input and output scans.
+- Any single-engine match returns p0 block.
+
+**Pipeline orchestrator guarantees**:
+
+- Orchestrator supports framework parallel-run mode for input guardrails by default.
+- Guard-mode precedence is pipeline-level override, then agent-level setting, then default development.
+- Default behavior without explicit mode remains development.
+- Returned input and output arrays remain framework-compatible for direct wiring.
+- Security ordering is invariant: input checks before orchestration, output checks before client emission.
+
+**Memory deletion guardrail lifecycle**:
+
+- Guardrail triggers after successful memory-deletion execution.
+- Deleted fact identifiers are used to query cache keys requiring purge.
+- Matching cache entries are purged before next recall cycle can run.
+- Purge action writes auditable log record with deletion context.
+- Guardrail runs as post-execution output-stage enforcement.
+
+**Multi-guardrail p0 tie-breaking**:
+
+- Worst-severity aggregation selects p0 over p1 and p2 in all mixed-result sets.
+- If multiple p0 verdicts exist, concept identifier comes from first p0 by configured guardrail array order.
+- Server-controlled guardrail ordering therefore controls deterministic p0 concept selection.
+- Tie-breaking is identical for input and output aggregation paths.
 
 ### Module: Streaming and Transport (11)
 
