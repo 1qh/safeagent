@@ -2197,6 +2197,185 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Grounding mode: separate agent mode for web-grounded responses with grounding metadata.
 - Provider-agnostic configuration: no model-specific branching in core agent logic.
 
+**Agent factory — configuration, wiring, and mode guarantees**:
+
+- Factory output is a configured agent instance with safe defaults and override support.
+- Identity fields and instruction content are required and validated before agent creation.
+- Provider bridge wiring produces valid model interface object for execution runtime.
+- Guardrails are wired through input and output guard arrays for every created agent.
+- Memory integration wiring includes conversation-store support with configurable history window.
+- Tool wiring supports custom tools and external tool registrations in one agent configuration.
+- Thinking-level input is forwarded to provider configuration when set.
+- Guard mode controls active guardrail behavior according to configured mode.
+- Request context fields such as user identity and thread identity propagate into tool runtime context.
+- Default chat mode returns non-empty response output.
+- Grounding mode returns non-empty response output and grounding metadata when applicable.
+- Tools mode returns non-empty response output with working tool loop.
+- Structured-output mode returns schema-conforming typed JSON result.
+- Grounding mode and custom tool mode are mutually exclusive within one agent call.
+- Factory creates separate agent instances when both grounding and tool use are needed.
+- Concurrent execution calls with different thread identifiers do not leak stream or memory state.
+
+**Agent factory — validation and constraints**:
+
+- Missing required config fields fail fast with descriptive validation errors.
+- Invalid guardrail config shape fails validation before runtime execution.
+- Invalid memory config shape fails validation before runtime execution.
+- Invalid tool definitions fail validation before runtime execution.
+- Invalid structured output schema definition fails at setup path.
+- Grounding plus custom tools in one config is rejected by mutual-exclusion validation.
+- Structured-output and normal-chat execution return type contracts remain distinct and reliable.
+
+**Orchestrator pattern — supervisor and handoff behavior**:
+
+- Orchestrator is configured as supervisor agent with handoffs to intent-scoped sub-agents.
+- Handoffs are exercised through agent-transfer control path with explicit ownership transfer.
+- Single-intent requests follow direct tool path without handoff overhead.
+- Multi-intent requests split into sub-queries and route to sub-agents.
+- Independent multi-intent requests run sub-agent executions in parallel.
+- Dependent multi-intent requests run in dependency order.
+- Handoff context filtering limits each sub-agent to intent-relevant history.
+- Routing callbacks record handoff decisions for observability.
+- Sub-agent execution results stream back to orchestrator for synthesis.
+- Sub-agent failures degrade gracefully when at least one sibling path succeeds.
+- All-sub-agent failure path propagates explicit user-facing error.
+- Handoff spans are emitted for tracing across orchestrated paths.
+
+**Sub-agent lifecycle and scoped execution**:
+
+- Sub-agent instances are created per intent with isolated tool scope.
+- Sub-agent prompt context includes intent-specific framing for focused reasoning.
+- Tool scope is derived from topic source-priority configuration.
+- Source entries map to expected tool capabilities for retrieval and synthesis.
+- Rewrite strategy assignment per source is passed into sub-agent tool config.
+- Evidence sufficiency tool is attached with topic threshold configuration.
+- Handoff-scoped context excludes irrelevant conversation turns.
+- Sub-agent result collection includes partial completions when sibling sub-agents are still running.
+
+**Context assembly and budgeting in orchestration layer**:
+
+- Context assembly order is system prompt, current message, tool definitions, thread turns, rolling summary, recalled facts, then user short-term context.
+- Token estimation uses character-count divided-by-four approximation.
+- Estimated usage is compared against configured context window budget before reasoning begins.
+- Budget overflow triggers truncation in reverse priority order.
+- User short-term context is dropped first under budget pressure.
+- Auto-recalled facts are capped at configured recall-token ceiling under budget pressure.
+- Rolling summary is compacted before thread-turn truncation.
+- Oldest thread turns are dropped after higher-truncation-priority layers are reduced.
+- System prompt is non-truncatable.
+- Current user message is non-truncatable.
+- Tool definitions are non-truncatable.
+
+**Implicit references, energy calibration, resumption, and clarification policy**:
+
+- Anaphoric phrases trigger implicit-reference candidate injection before reasoning.
+- Referent candidate set includes recent turns and recalled candidates.
+- Referent candidates outside active window trigger expanded recall from summary and longer-term layers.
+- Reference handling remains retrieval-first and does not force pre-resolution.
+- Response-energy hint is computed from length, formality markers, and complexity.
+- Short casual inputs bias toward concise response style.
+- Detailed inputs bias toward fuller response style.
+- Safety and correctness needs can override brevity-biased calibration.
+- Resurrection gap detection marks long-inactive threads for resumption handling.
+- Resurrection handling injects staleness notice with readable inactivity duration.
+- Resumption metadata includes time delta and last-topic summary.
+- Resurrection path still runs fresh intent analysis for current turn.
+- Clarification policy asks one concise clarifying question for genuine ambiguity.
+- Clarification loop counter tracks consecutive clarification rounds by thread.
+- When clarification limit is reached, orchestrator returns best-effort response with explicit assumptions.
+
+**Auto-trigger memory recall policy**:
+
+- First turn in a new thread triggers memory recall before agent reasoning starts.
+- Auto-trigger recall results are injected alongside thread short-term and user short-term context.
+- Auto-trigger recall uses raw incoming message as recall query.
+- Existing-thread turns use agent-initiated recall decisions rather than unconditional recall.
+- First-turn auto-trigger improves vague-context handling for new-thread openings.
+- Later-turn agent-initiated mode avoids unnecessary recall token spend.
+
+**Live synthesis streaming behavior**:
+
+- Multi-agent live synthesis starts streaming on first completed sub-agent result.
+- First completion content is expressed naturally instead of as detached fragment.
+- Later sub-agent completions are woven into ongoing stream.
+- Final output is coherent unified narrative rather than concatenated outputs.
+- Time to first token is bounded by fastest sub-agent completion.
+- Progress visibility is preserved while slower sub-agents continue.
+- Stream completion emits clean terminal event after synthesis finalization.
+
+**Dependent intent coordination and constraint passing**:
+
+- Dependent-intent structures are detected from validator output and trigger sequential orchestration path.
+- Feedback-first stage produces structured constraints before dependent search stage starts.
+- Constraint object includes constraint type, entities, and metadata.
+- Dependent stage receives constraints through handoff-scoped context.
+- Dependent search planning respects exclusion constraints from prior stage.
+- Independent intents continue parallel execution and are not forced into sequential mode.
+- Mixed sets with one dependent chain and one independent intent schedule appropriately.
+- Constraint-aware filtering removes disliked entities from downstream result set.
+- Partial failures in dependent chains still return available successful outputs with partial-failure signaling.
+
+**Tool registry and assignment flow**:
+
+- Orchestrator tool set includes handoff controls, rewrite capability, and source-execution tools for direct single-intent path.
+- Sub-agent tool set includes source-specific retrieval tools, recall tools, rewrite capability, and evidence-scoring tool.
+- CTA suggestion capability is restricted to orchestrator end-of-response scope.
+- Topic source-priority entries map deterministically to tool assignments.
+- External retrieval source maps to external retrieval tool with topic dataset configuration.
+- Document retrieval source maps to document-search tool.
+- Grounding-search source maps to grounding path with configured rewrite strategy.
+- Memory-recall source maps to memory-recall tool.
+- Direct-answer source maps to no-tool synthesis path.
+- Sub-agent receives only selected scoped tools and no extra global leakage.
+
+**Location enrichment tool behavior**:
+
+- Location tool factory returns valid tool definition with location-search naming.
+- Tool input contract accepts place list with optional contextual text for disambiguation.
+- Tool-call and tool-result chunks for location enrichment are suppressed from outbound stream.
+- Stream processor emits clean location events derived from location tool results.
+- Cache is checked before geocoding call for each requested place.
+- Cache hit path skips geocoding provider call.
+- Cache miss path calls configured geocoding provider with place and optional context.
+- Optional image-search provider is called when configured.
+- Missing image-search provider yields empty images array without failure.
+- Enrichment payloads are cached with configured TTL.
+- One location event is emitted per successfully resolved place.
+- Geocoding null result skips place silently with warning log.
+- Geocoding failure degrades silently for that place while continuing other places.
+- Geocoding and image-search provider interfaces remain pluggable for deployment substitution.
+- Place-image provider helper returns compatible image-search implementation.
+
+**Agent router behavior and caching**:
+
+- Router classifies query to dispatch target for multi-agent deployments.
+- Classification runs with minimal-thinking profile for low-latency routing.
+- Enum output mode is used for compact routing output.
+- Per-thread cache keeps agent continuity across turns.
+- Cache miss triggers fresh classification and subsequent cache write.
+- Cache hit bypasses classifier call and dispatches cached target.
+- Explicit user reclassification request invalidates cached routing decision.
+- New threads with no cache route correctly via fresh classification path.
+- Concurrent requests on same thread avoid duplicate classifier work.
+- Latency measurements cover classifier call and cache hit paths.
+- Deployment profile differences in available agents are respected by router dispatch.
+
+**Provider fallback behavior**:
+
+- Primary provider success returns primary result with no fallback call.
+- Primary provider failure triggers fallback attempt when fallback is configured.
+- Fallback success returns fallback result.
+- Primary and fallback failure rethrows original primary error for caller context.
+- Primary timeout path can engage fallback within total timeout budget.
+- Sequential fallback order is deterministic and test-covered.
+
+**Queue-scaling orchestration modes**:
+
+- Development mode runs orchestrated execution in-process without queue overhead.
+- Production simple mode allows single-intent in-process and multi-intent queued execution.
+- Production full mode routes all requests through queue for uniform scaling.
+- Queue mode preserves orchestration semantics and result synthesis behavior.
+
 ### Module: Memory and Intelligence (07)
 
 Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
