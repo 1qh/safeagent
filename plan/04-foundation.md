@@ -50,6 +50,7 @@ Foundation responsibilities:
 - Define model constants and thinking-level policy.
 - Define startup environment behavior, including mandatory production auth fail-closed behavior.
 - Select storage backend through explicit and auto-detected factory behavior.
+- Enforce typed database access boundaries: Drizzle for PostgreSQL and surqlize for SurrealDB, with no raw query-string paths.
 - Detect silent MCP server failures.
 - Resolve provider model configuration and fallback behavior.
 
@@ -650,11 +651,12 @@ flowchart TD
 Factory guarantees:
 
 - Explicit config always wins over auto-detection.
-- Postgres branch returns SQL-backed store.
+- Postgres branch returns a Drizzle-backed store using type-safe query construction only.
 - Memory branch returns in-memory development store.
 - Custom branch returns user-supplied storage implementation.
 - Auto-detection uses database URL presence.
 - Selection path is logged.
+- Storage implementations that target SurrealDB use surqlize typed APIs; raw query strings are excluded by design.
 
 ---
 
@@ -990,6 +992,8 @@ The foundation layer task specifications remain authoritative.
 | BARREL_EXPORTS | Aggregate top-level exports from subpath barrels | Foundation and downstream public modules | Public surface complete, no private leaks, no circular warnings |
 
 Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespaced tool detection, grounding and session metadata delivery, storage fallback and explicit selection, model fallback behavior, schema defaults and error messaging, hybrid retrieval ranking with thread isolation, object storage round-trip, and workspace baseline integrity.
+
+All database-oriented task acceptance in this foundation layer assumes type-safe data access only: Drizzle for PostgreSQL paths and surqlize for SurrealDB paths, with raw query strings treated as plan violations.
 
 ---
 

@@ -29,7 +29,7 @@
 
 ## Upload Pipeline Overview
 
-The upload pipeline runs in two phases. The synchronous phase (client through S3 storage) completes in under a second and returns a `fileId` to the client. The processing phase runs on the server and may take seconds to minutes depending on file size and page count.
+The upload pipeline runs in two phases. The synchronous phase (client through S3 storage) completes in under a second and returns a `fileId` to the client. The processing phase runs on the server and may take seconds to minutes depending on file size and page count. All PostgreSQL operations in this flow use Drizzle's type-safe query builder; raw SQL query strings are not part of the design.
 
 ```mermaid
 flowchart TD
@@ -674,7 +674,7 @@ Tracks per-user storage consumption.
 
 ### Quota Safety
 
-When a file is deleted, the quota is released with `GREATEST`. This prevents the `used_bytes` column from going negative due to race conditions or double-deletes. The `GREATEST` guard is applied at the SQL level, not in application code.
+When a file is deleted, quota release uses a non-negative floor guard in the Drizzle-managed update expression. This prevents the `used_bytes` column from going negative due to race conditions or double-deletes while keeping mutation logic in typed query paths.
 
 ---
 
@@ -714,7 +714,7 @@ The client polls the file status endpoint. The response includes:
 - `progress_total`: total pages
 - A human-readable `message` field: `"Summarizing 15/50 pages"`
 
-Polling interval is left to the client. A 2-second interval is reasonable for most use cases. The endpoint is cheap: a single indexed Postgres read.
+Polling interval is left to the client. A 2-second interval is reasonable for most use cases. The endpoint is cheap: a single indexed Postgres read through Drizzle.
 
 ---
 
@@ -793,6 +793,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 **Acceptance Criteria**:
 - Large-PDF benchmark (e.g., ~200 pages when the upload size limit is increased for internal load testing) processes in under 15 seconds with a 10-key pool at elevated `summarizationConcurrencyPerKey`
 - Each page produces exactly one `page_index` row with populated `summary` and `summary_embedding`
+- All `page_index` inserts and updates use Drizzle type-safe queries
 - Images smaller than 100×100px are not extracted
 - `hasVectorCharts=true` pages without raster images trigger the PNG render fallback
 - `progress_current` increments after each page completes
@@ -844,6 +845,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - DOCX files are routed to LibreOffice conversion before page count detection
 - Mode is set correctly for all type/size combinations
 - `file_uploads` record is created with correct initial status
+- All file metadata and quota reads or writes in Postgres use Drizzle type-safe queries
 
 **QA Scenarios**:
 - Upload a `.pdf` file that is actually a ZIP archive → rejected at magic bytes check

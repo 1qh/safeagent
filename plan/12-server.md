@@ -24,7 +24,7 @@
 - [OpenAPI Documentation](#openapi-documentation)
 ---
 ## Thin Server Philosophy
-The server has one job: accept HTTP requests, authenticate them, and hand off to safeagent with the correct configuration. It does not implement agent reasoning, guardrail execution internals, streaming internals, memory internals, or RAG internals. Those concerns remain in the library.
+The server has one job: accept HTTP requests, authenticate them, and hand off to safeagent with the correct configuration. It does not implement agent reasoning, guardrail execution internals, streaming internals, memory internals, or RAG internals. Those concerns remain in the library. This keeps the server stateless and horizontally scalable behind load balancers.
 What the server owns:
 - Prompts: full system prompt text per agent
 - Intent definitions: available intents, sample utterances, and source priority
@@ -45,7 +45,7 @@ Module ownership alignment:
 - all are re-exported via BARREL_EXPORTS
 ---
 ## Server Startup Sequence
-Before accepting traffic, the server runs validation and dependency initialization. Startup fails fast when critical conditions are missing, rather than serving partial unsafe behavior.
+Before accepting traffic, the server runs validation and dependency initialization. Startup fails fast when critical conditions are missing, rather than serving partial unsafe behavior. Connection pools are initialized with explicit limits so scale-out replicas can share database capacity predictably.
 ```mermaid
 sequenceDiagram
     participant PROCESS as PROCESS
@@ -110,6 +110,7 @@ Ordering rationale:
 - Auth before rate limit so limits are user-scoped.
 - Rate limit before budget so budget checks are not spent on already-rejected traffic.
 - Budget check late because it is the most expensive middleware check.
+- Middleware remains stateless per request so any healthy instance can serve any request without sticky sessions.
 ---
 ## Route Map
 ```mermaid
@@ -414,6 +415,7 @@ Chat validation:
 - Input message length is capped by MAX_INPUT_MESSAGE_LENGTH, default thirty-two thousand characters.
 - Exceeding the cap returns bad-request with mapped explanation.
 - This prevents context domination and protects token budget behavior.
+- Message and metadata payloads are schema-sanitized at boundary parsing time to prevent unsafe field shapes and malformed nested content from reaching orchestration logic.
 Upload validation:
 - Multipart structure must be valid.
 - Type allowlist is enforced.

@@ -419,7 +419,8 @@ SurrealDB runs in server mode with persistent WebSocket connections. Embedded mo
 
 - Shared multi-instance memory consistency requires server mode.
 - surqlize provides typed query and schema safety.
-- No raw untyped querying path is the default.
+- All SurrealDB reads, writes, traversal, and cleanup operations run through surqlize's typed API surface.
+- Raw SurrealQL query strings are prohibited in both runtime code paths and maintenance workflows.
 
 ```mermaid
 graph LR
@@ -456,7 +457,7 @@ No MTREE index is required for bounded per-user memory volume. Sequential scan w
 
 ### Client API surface
 
-Long-term memory client provides:
+Long-term memory client provides typed SurrealDB operations only:
 
 - user node creation helper
 - `storeFact`
@@ -1570,6 +1571,7 @@ Emotional carry-forward can over-persist if decay is too long.
 
 - Connects via the SurrealDB connection endpoint.
 - Uses surqlize with typed schema and query helpers.
+- All SurrealDB operations in this task flow through surqlize typed APIs; raw query strings are not permitted.
 - Namespace and database are set for memory domain.
 - Persistent connection auto-recovers after drop.
 - Schema includes user, fact, interaction, media_fact, knows, performed, observed, related_to, supersedes.

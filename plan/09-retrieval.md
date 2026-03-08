@@ -33,7 +33,7 @@
 
 Retrieval and evidence form one continuous system. Retrieval finds candidate material from user documents. Evidence validation decides whether that material is strong enough to support claims. Generation is downstream and conditional: no sufficient evidence, no claim generation.
 
-For PDFs, the system centers on `page_index`, where each row represents one page. Upload returns quickly with file metadata and processing status; summarization and enrichment continue asynchronously. Query-time retrieval fuses multiple signals and assembles per-page evidence bundles.
+For PDFs, the system centers on `page_index`, where each row represents one page. Upload returns quickly with file metadata and processing status; summarization and enrichment continue asynchronously. Query-time retrieval fuses multiple signals and assembles per-page evidence bundles. PostgreSQL retrieval and mutation paths are built through Drizzle's type-safe query layer, with no raw SQL query strings.
 
 ```mermaid
 graph TB
@@ -171,7 +171,7 @@ Summaries contribute semantic abstraction, including chart and table interpretat
 
 ## Hybrid Search with RRF
 
-RRF is rank-based fusion. It avoids score normalization across heterogeneous retrieval arms by using each arm's ranking position. Score per page is the sum of `1 / (k + rank)` for each arm where the page appears.
+RRF is rank-based fusion. It avoids score normalization across heterogeneous retrieval arms by using each arm's ranking position. Score per page is the sum of `1 / (k + rank)` for each arm where the page appears. All three retrieval arms are executed through Drizzle-composed PostgreSQL queries for consistent typing and injection-safe filtering.
 
 ### Three-Arm Fusion
 
@@ -1197,6 +1197,7 @@ flowchart TD
 - Document query tool factory returns an SDK-compatible document search tool definition.
 - Access filters are always injected server-side.
 - Hybrid retrieval runs all three arms with graceful zero-row behavior for unavailable raw arms.
+- Hybrid retrieval, ranking, and page-context lookups on PostgreSQL all use Drizzle type-safe queries.
 - RRF uses `k=50`, over-fetches 40 per arm, returns top 10 pages.
 - Deduplication uses grouping by physical page before final scoring.
 - Page-image retrieval runs in parallel.

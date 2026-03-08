@@ -161,7 +161,7 @@ Development mode surfaces violations visibly so engineers can tune detection thr
 
 ## Input Guardrails (INPUT_GUARD)
 
-Input guardrails run before intent detection. They protect against prompt injection, jailbreak attempts, and policy violations before the LLM ever processes the message.
+Input guardrails run before intent detection. They protect against prompt injection, jailbreak attempts, and policy violations before the LLM ever processes the message. This pre-model boundary is also where malformed or unsafe user payloads are blocked early, reducing downstream security risk and preserving stable latency under load.
 
 ### Input Guardrail Flow
 
@@ -204,7 +204,7 @@ flowchart TB
 
 ## Output Guardrails (OUTPUT_GUARD)
 
-Output guardrails run on the orchestrator's synthesis stream via the framework's output guardrail interface. They see every streaming chunk as it arrives from the LLM.
+Output guardrails run on the orchestrator's synthesis stream via the framework's output guardrail interface. They see every streaming chunk as it arrives from the LLM. In production they operate as a last-mile response security layer, preventing unsafe content leaks, feeding auditable `onFlag` events, and aligning with sensitive-data redaction in observability sinks.
 
 ### Sliding Window Buffer
 
@@ -823,6 +823,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - p2 → message passes to agent silently
 - Empty guardrail array → message always passes
 - Guardrail integrates with the framework's input guardrail interface
+- Input-stage enforcement is evaluated before orchestrator execution so unsafe payloads are rejected before model or tool calls
 - Unit tests with mocked guardrail function type instances
 
 **QA Scenarios**:
@@ -851,6 +852,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - p0 + production → all remaining chunks suppressed, fallback text-delta injected from `ConceptRegistry[conceptId]`
 - Once p0 fires in production, no further chunks emitted (suppression is permanent for that stream)
 - Non-text-delta chunk types (tool calls, etc.) pass through without guardrail evaluation
+- p1 and p0 events provide auditable security telemetry through `onFlag` without exposing sensitive detection details to end users
 - Unit tests with mocked guardrails and streaming fixtures
 
 **QA Scenarios**:
@@ -960,6 +962,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and `
 - Empty `input[]` → empty `inputGuardrails` array
 - Empty `output[]` → empty `outputGuardrails` array
 - Guardrails returned by the pipeline are passed directly to the agent constructor with input and output guardrail arrays
+- Pipeline wiring preserves deterministic security ordering: input guardrails before intent/orchestration, output guardrails on streamed synthesis before client delivery
 - Integration test: full pipeline with mock agent, mock guardrails, mock LLM stream
 
 **QA Scenarios**:

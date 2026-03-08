@@ -70,6 +70,7 @@ graph TB
 - **Stateless API** — every API server instance is replaceable. All durable state lives in Postgres, SurrealDB, MinIO, or Valkey. Horizontal scaling is adding more API instances behind a load balancer.
 - **Graceful degradation** — Valkey down means in-memory fallback. Trigger.dev absent means in-process execution. Langfuse missing means silent no-op tracing. Only Postgres is truly required at the infrastructure service level, and the server will not start without a working Postgres connection (see the degradation model below for the full criticality matrix).
 - **Profile isolation** — default startup runs only the core development services. Langfuse and Trigger.dev are activated through optional profile selectors.
+- **Typed data access boundaries** — PostgreSQL infrastructure operations (budgets, cleanup metadata, lifecycle updates) run through Drizzle type-safe queries, and SurrealDB operations run through surqlize typed APIs. Raw query strings are excluded.
 ### Degradation Model (Canonical)
 - **Postgres unavailable**: hard failure. Core persistence is unavailable, so the instance is `down` and should return HTTP 503 for health checks.
 - **JWT secret absent in production** (`NODE_ENV=production`): hard failure. Authentication is a security boundary, and auth fail-open would allow unauthorized data access. The server refuses to start. This is the only non-Postgres hard failure (see [12 — Server Implementation](./12-server.md)).
@@ -258,7 +259,7 @@ The memory cache implements the identical `Cache` interface using a `Map`. TTL i
 The `VALKEY_URL` environment variable must use a Redis connection URL scheme. Using `valkey://` causes a connection error.
 ---
 ## Cost Tracking and Budget Enforcement
-Budget enforcement follows an event-sourced design with two layers: a hot path through Valkey for real-time decisions and a cold path through Postgres for audit and reconciliation.
+Budget enforcement follows an event-sourced design with two layers: a hot path through Valkey for real-time decisions and a cold path through Postgres for audit and reconciliation. Postgres reads and writes in this module are executed through Drizzle type-safe queries.
 ```mermaid
 flowchart TB
     subgraph HOT_PATH["Hot Path (request-time)"]
@@ -492,7 +493,7 @@ Hot-reload mode has known issues with native modules and debugger attachment. Th
 - Debug sessions run watch mode with debugger attachment and avoid hot reload.
 ---
 ## TTL Cleanup
-Expired files are cleaned up by a scheduled Trigger.dev task. The process finds files past expiration, removes associated storage and search indexes, releases storage quota, and marks metadata as deleted.
+Expired files are cleaned up by a scheduled Trigger.dev task. The process finds files past expiration, removes associated storage and search indexes, releases storage quota, and marks metadata as deleted. Metadata lookup and status updates are performed through Drizzle-managed typed operations.
 ```mermaid
 flowchart TB
     subgraph TRIGGER_SCHEDULE["Trigger.dev Schedule"]
@@ -713,6 +714,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Budget exceeded returns descriptive 429 response.
 - Token recording never blocks response.
 - `usage_events` receives append-only inserts for every recording.
+- Postgres audit writes and limit reads use Drizzle type-safe query paths.
 - Keys follow `budget:{userId}:daily:{YYYY-MM-DD}` and `budget:{userId}:monthly:{YYYY-MM}`.
 - Per-user overrides are cached and respected.
 - Admin budget read returns limits, current spend, and period metadata.
@@ -868,6 +870,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Expired query targets only current time threshold and non-deleted status.
 - Cleanup removes storage assets, page-index rows, and vector chunks.
 - Metadata is updated to deleted status with timestamp after successful cleanup.
+- Expired-file metadata queries and updates use Drizzle type-safe operations.
 - Per-file failures are recorded while batch continues.
 - Re-running cleanup is idempotent.
 - Scheduled task registration invokes cleanup handler.

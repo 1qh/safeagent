@@ -124,7 +124,7 @@ graph TB
 
 ## Storage Architecture
 
-Each storage system has a specific, non-overlapping responsibility. Nothing is stored in two places unless one is a cache of the other (and the cache is always the secondary source of truth).
+Each storage system has a specific, non-overlapping responsibility. Nothing is stored in two places unless one is a cache of the other (and the cache is always the secondary source of truth). All PostgreSQL access goes through Drizzle's type-safe query builder, and all SurrealDB access goes through surqlize's typed API. Raw query strings are excluded from the architecture.
 
 ```mermaid
 graph LR
@@ -176,7 +176,7 @@ graph LR
 
 ### Storage Responsibilities in Detail
 
-**PostgreSQL + pgvector** carries the most diverse workload. It hosts four logically separate concerns under one connection pool:
+**PostgreSQL + pgvector** carries the most diverse workload. It hosts four logically separate concerns under one connection pool, with Drizzle as the mandatory query surface for all application-managed tables and vector lookups:
 
 - **Conversation store** (via Drizzle ORM + bun-sql): stores short-term conversational memory as serialized thread state. Schema ownership is application-managed.
 - **Custom pgvector** (via Drizzle): stores dense vector embeddings for large plain-text documents, queried with approximate nearest-neighbor search.
@@ -185,7 +185,7 @@ graph LR
 - **Usage and budget tables** (`usage_events`, `user_budget_limits`): append-only event log plus per-user limit configuration.
 - **Langfuse database**: a completely separate Postgres database (same server, different `PGDATABASE`) used exclusively by Langfuse services.
 
-**SurrealDB** runs in server mode (Docker container, WebSocket transport). It stores long-term memory as a graph: entities are nodes, relationships are edges created with `RELATE`. Vector similarity search runs as a sequential scan over stored embeddings — no MTREE index is needed at this scale because the long-term memory corpus per user is bounded.
+**SurrealDB** runs in server mode (Docker container, WebSocket transport). It stores long-term memory as a graph: entities are nodes, relationships are edges created with `RELATE`. All application operations use surqlize typed models and typed relation queries. Vector similarity search runs as a sequential scan over stored embeddings — no MTREE index is needed at this scale because the long-term memory corpus per user is bounded.
 
 **MinIO** stores all binary objects. The main `safeagent` bucket holds original uploaded files, per-page PDF splits, and images extracted during document processing. A separate `langfuse-media` bucket holds Langfuse's media attachments. Presigned URLs with a 7-day TTL serve images directly to clients without proxying through the API server.
 

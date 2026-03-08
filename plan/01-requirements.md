@@ -254,7 +254,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_DEMO_MOBILE | Expo demo application | Mobile chat app with offline-first behavior, all RN components, server switching, verbosity toggle. See [19 — Demos](./19-demos.md) |
 | MH_FRONTEND_TYPE_SAFETY | End-to-end type safety | SSE event types are defined once in the safeagent library and flow through client SDK → React hooks → UI components, with type chaining across subpath modules and zero type casting or manual schema duplication |
 | MH_COMPONENT_CLI | CLI for component installation | shadcn-style CLI that copies components into consumer projects. Individual component installation, not monolithic import. Follows the same pattern as ai-elements installation |
-| MH_STORYBOOK | Component documentation via Storybook | Interactive component documentation with usage examples for both web and RN component packages |
+| MH_STORYBOOK | Component documentation via Storybook | Interactive component documentation with usage examples for both web and RN component modules |
 | MH_FRONTEND_A11Y | Accessibility compliance | All UI components support ARIA attributes, keyboard navigation, and screen reader compatibility. ai-elements already provides this for adopted components — custom components must match |
 | MH_OFFLINE_MOBILE | Offline-first mobile experience | Mobile app queues messages offline via the client SDK module offline queue, persists conversation locally, and syncs on reconnect. Visual indicators show offline state and pending messages |
 | MH_AI_ELEMENTS | ai-elements as web component foundation | Adopt Vercel ai-elements components for conversation, messages, input, tool calls, reasoning, attachments, sources, code blocks. Custom components only for gaps: trace UI, server switch, verbosity toggle, thread list, message timestamps, typing indicator, error retry |
@@ -324,6 +324,9 @@ Every must-have requirement maps to one or more implementation tasks in the [17 
 | Must-Have | Owning Task(s) |
 |-----------|----------------|
 | MH_JWT_AUTH_REQUIRED | JWT_AUTH |
+| MH_BOUNDARY_INPUT_VALIDATION | SERVER_ROUTES, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, ADMIN_API |
+| MH_ROLE_AUTHZ_REQUIRED | JWT_AUTH, ADMIN_API |
+| MH_CORS_POLICY | SERVER_ROUTES |
 | MH_TRACE_THREAD_DELIVERY | SSE_STREAMING |
 | MH_ESM_ONLY | SCAFFOLD_LIB |
 
@@ -411,6 +414,7 @@ Every must-have requirement maps to one or more implementation tasks in the [17 
 | MH_TTL_CLEANUP | TTL_CLEANUP |
 | MH_CIRCUIT_BREAKER | CIRCUIT_BREAKER |
 | MH_AUTH_MIDDLEWARE | JWT_AUTH |
+| MH_AUDIT_LOGGING | STRUCT_LOGGING |
 
 #### Cross-Cutting
 
@@ -422,6 +426,7 @@ Every must-have requirement maps to one or more implementation tasks in the [17 
 | MH_ZERO_LEAK | ZERO_LEAK_GUARD |
 | MH_OFFLINE_QUEUE | CLIENT_SDK |
 | MH_SURQLIZE | SURREALDB_CLIENT |
+| MH_SECRET_MANAGEMENT | CONFIG_DEFAULTS, SCAFFOLD_SERVER |
 | MH_TYPED_ENV | CONFIG_DEFAULTS |
 | MH_TYPED_ERRORS | CORE_TYPES (neverthrow pattern enforced across all boundary tasks) |
 | MH_NO_RAW_SQL | SCAFFOLD_LIB (ESLint plugin configuration) |

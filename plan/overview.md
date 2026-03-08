@@ -17,7 +17,7 @@ graph TB
         MOBILE_CLIENTS["Mobile Apps\n(incl. Expo Demo)"]
     end
 
-    subgraph FRONTEND_SDK_PACKAGES["Frontend SDK (safeagent monorepo)"]
+    subgraph FRONTEND_SDK_SUBPATHS["Frontend SDK Subpath Modules (safeagent library)"]
         CLIENT_PKG["Client SDK"]
         REACT_PKG["React Hooks"]
         UI_WEB_PKG["Web Components"]
@@ -200,7 +200,7 @@ graph LR
         CLIENT["Client SDK"]
     end
 
-    subgraph FRONTEND_PACKAGES["Frontend SDK"]
+    subgraph FRONTEND_SUBPATH_MODULES["Frontend SDK Subpath Modules"]
         REACT_HOOKS_PKG["React Hooks"]
         WEB_UI_PKG["Web Components"]
         NATIVE_UI_PKG["Native Components"]

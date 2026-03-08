@@ -1,6 +1,6 @@
 # 18 — Frontend SDK
 
-> **Scope**: React hooks (`@safeagent/react`), web components (`@safeagent/ui`), React Native components (`@safeagent/ui-native`), trace visualization components, component installation CLI, Storybook documentation, and end-to-end type safety across the frontend stack.
+> **Scope**: React hooks (React hooks subpath), web components (web components subpath), React Native components (native components subpath), trace visualization components, component installation CLI, Storybook documentation, and end-to-end type safety across the frontend stack.
 >
 > **Tasks**: SCAFFOLD_FRONTEND (Frontend Scaffolding), REACT_HOOKS (React Hooks), WEB_COMPONENTS (Web Components), TRACE_UI (Trace Visualization), RN_COMPONENTS (React Native Components), FRONTEND_CLI (Component CLI), STORYBOOK_FRONTEND (Storybook)
 
@@ -8,14 +8,14 @@
 
 ## Table of Contents
 - [Architecture Overview](#architecture-overview)
-- [Package Dependency Chain](#package-dependency-chain)
+- [Subpath Module Dependency Chain](#subpath-module-dependency-chain)
 - [Type Safety Flow](#type-safety-flow)
-- [React Hooks (@safeagent/react)](#react-hooks-safeagentreact)
-- [Web Components (@safeagent/ui)](#web-components-safeagentui)
+- [React Hooks (React hooks module)](#react-hooks-react-hooks-module)
+- [Web Components (Web components module)](#web-components-web-components-module)
 - [ai-elements Adoption](#ai-elements-adoption)
 - [Custom Components](#custom-components)
 - [Trace Visualization (TRACE_UI)](#trace-visualization-trace_ui)
-- [React Native Components (@safeagent/ui-native)](#react-native-components-safeagentui-native)
+- [React Native Components (Native components module)](#react-native-components-native-components-module)
 - [Component Installation CLI](#component-installation-cli)
 - [Storybook Documentation](#storybook-documentation)
 - [Styling Strategy](#styling-strategy)
@@ -26,7 +26,8 @@
 ## Architecture Overview
 
 The frontend SDK stack separates transport-aware business logic from rendering targets.
-Core engine contracts originate in `safeagent` and are projected through `@safeagent/client` into React hooks.
+Core engine contracts originate in safeagent and are projected through the client SDK module into the React hooks module.
+The safeagent library exposes multiple frontend SDK subpath modules: client SDK, React hooks, web components, and native components.
 Web and native UIs consume shared hook outputs but remain implementation-specific for rendering, animation, and platform integration.
 The terminal interface remains a separate consumer path that reads direct stream output from the library layer without browser SSE transport.
 
@@ -34,9 +35,9 @@ The terminal interface remains a separate consumer path that reads direct stream
 flowchart LR
     SAFEAGENT_ENGINE[safeagent\nEngine Runtime\nCanonical Events + Schemas]
     SAFEAGENT_CLIENT[Client SDK\nSSE Transport + Parsing + Queue]
-    SAFEAGENT_REACT[React Hooks Package\nHooks + transport adapter]
-    SAFEAGENT_UI[Web Components Package\nWeb Components]
-    SAFEAGENT_UI_NATIVE[Native Components Package\nNative Components]
+    SAFEAGENT_REACT[React Hooks Module\nHooks + transport adapter]
+    SAFEAGENT_UI[Web Components Module\nWeb Components]
+    SAFEAGENT_UI_NATIVE[Native Components Module\nNative Components]
     WEB_DEMOS[Web Demos\nComponent Consumers]
     NATIVE_DEMOS[Native Demos\nComponent Consumers]
     TUI_CLIENT[TUI Consumer\nDirect Library Stream]
@@ -70,24 +71,24 @@ flowchart TD
 
 Architecture goals for this plan section:
 - Preserve a single source of transport truth.
-- Avoid duplicated event interpretation between frontend packages.
+- Avoid duplicated event interpretation between frontend subpath modules.
 - Keep rendering abstraction at component boundaries only.
 - Keep stream semantics consistent across web and native.
 - Make trace and observability artifacts first-class in UI behavior.
 
-## Package Dependency Chain
+## Subpath Module Dependency Chain
 
-Dependency direction is strictly top-down from server contracts toward consumer-facing component packages.
-The engine package is server-only and never imported by browser or native UI packages.
+Dependency direction is strictly top-down from server contracts toward consumer-facing component modules.
+The engine layer is server-only and never imported by browser or native UI modules.
 Each layer only depends on the public contracts of the previous layer.
 
 ```mermaid
 flowchart LR
     SAFEAGENT[safeagent\nExports SSE Event Types\nExports Zod v4 Schemas]
     CLIENT[Client SDK\nConsumes Types\nRe-exports Types\nSSE Parsing\nOffline Queue]
-    REACT[React Hooks Package\nTransport Adapter Wrapper\nChat Hook Integration\nTyped Hooks]
-    UI_WEB[Web Components Package\nDepends on React Hooks\nshadcn + ai-elements]
-    UI_NATIVE[Native Components Package\nDepends on React Hooks\nNativeWind Styling]
+    REACT[React Hooks Module\nTransport Adapter Wrapper\nChat Hook Integration\nTyped Hooks]
+    UI_WEB[Web Components Module\nDepends on React Hooks\nshadcn + ai-elements]
+    UI_NATIVE[Native Components Module\nDepends on React Hooks\nNativeWind Styling]
 
     SAFEAGENT --> CLIENT
     CLIENT --> REACT
@@ -99,9 +100,9 @@ flowchart LR
 flowchart TD
     SAFEAGENT_CONTRACTS[safeagent Contracts]
     CLIENT_LAYER[Client SDK]
-    REACT_LAYER[React Hooks Package]
-    WEB_LAYER[Web Components Package]
-    NATIVE_LAYER[Native Components Package]
+    REACT_LAYER[React Hooks Module]
+    WEB_LAYER[Web Components Module]
+    NATIVE_LAYER[Native Components Module]
     SERVER_ONLY_RULE[Engine Is Server-Only\nNo Direct Frontend Import]
 
     SAFEAGENT_CONTRACTS --> CLIENT_LAYER
@@ -114,14 +115,14 @@ flowchart TD
 
 Export and dependency guarantees:
 - `safeagent` defines canonical SSE event typing and schema validation contracts.
-- `@safeagent/client` consumes compile-time contracts and provides runtime parsing plus queue behavior.
-- `@safeagent/client` re-exports relevant contract types for downstream consumers.
-- `@safeagent/react` exposes framework-aligned hooks and transport adapter types.
-- `@safeagent/ui` composes `@safeagent/react` hooks with web UI primitives.
-- `@safeagent/ui-native` composes `@safeagent/react` hooks with native UI primitives.
-- No frontend package reaches into engine internals.
+- The client SDK module consumes compile-time contracts and provides runtime parsing plus queue behavior.
+- The client SDK module re-exports relevant contract types for downstream consumers.
+- The React hooks module exposes framework-aligned hooks and transport adapter types.
+- The web components module composes React hooks module outputs with web UI primitives.
+- The native components module composes React hooks module outputs with native UI primitives.
+- No frontend subpath module reaches into engine internals.
 
-Primary exported hook surface from `@safeagent/react`:
+Primary exported hook surface from the React hooks module:
 - Chat-hook passthrough compatibility with AI SDK transport expectations.
 - `useSafeAgent` safe defaults for endpoint and auth alignment.
 - `useFeedback` for reaction and quality signals.
@@ -139,9 +140,9 @@ All event and payload structures originate in canonical contracts.
 Single-source policy:
 - SSE event contracts are defined once in `CORE_TYPES` in `safeagent`.
 - Runtime validation schemas are defined once in `ZOD_SCHEMAS` in `safeagent`.
-- `@safeagent/client` consumes those contracts at compile time and validates at runtime.
-- `@safeagent/react` maps parsed payloads into typed hook state.
-- Component packages consume typed hook outputs without re-declaring event shapes.
+- The client SDK module consumes those contracts at compile time and validates at runtime.
+- The React hooks module maps parsed payloads into typed hook state.
+- Component modules consume typed hook outputs without re-declaring event shapes.
 
 ```mermaid
 flowchart LR
@@ -161,7 +162,7 @@ flowchart LR
 sequenceDiagram
     participant ENGINE as safeagent Engine
     participant CLIENT as Client SDK
-    participant REACT as React Hooks Package
+    participant REACT as React Hooks Module
     participant UI as Component Layer
 
     ENGINE->>CLIENT: SSE event payload aligned to canonical contracts
@@ -185,11 +186,11 @@ Failure handling model:
 - Web and native components render recoverable UI with retry affordances.
 - Offline queue replay keeps original typed payloads intact.
 
-## React Hooks (@safeagent/react)
+## React Hooks (React hooks module)
 
-`@safeagent/react` is the central integration layer between AI SDK UI hooks and safeagent stream transport.
+The React hooks module is the central integration layer between AI SDK UI hooks and safeagent stream transport.
 It implements transport adapter semantics so the chat hook from `@ai-sdk/react` can connect directly to safeagent-compatible servers.
-The transport delegates low-level SSE parsing to `@safeagent/client` while owning React-centric state transitions.
+The transport delegates low-level SSE parsing to the client SDK module while owning React-centric state transitions.
 
 Official references:
 - AI SDK React docs: https://ai-sdk.dev/docs/ai-sdk-ui/chatbot
@@ -200,7 +201,7 @@ Transport responsibilities:
 - Open and manage streaming lifecycle for each chat request.
 - Serialize outgoing message context in AI SDK-compatible form.
 - Inject server URL, auth token, and verbosity controls into request metadata.
-- Delegate SSE parse and event normalization to `@safeagent/client`.
+- Delegate SSE parse and event normalization to the client SDK module.
 - Surface message and status transitions in the shape expected by the chat hook.
 - Handle stream cancellation, retry, and completion cleanup.
 
@@ -234,7 +235,7 @@ Transport edge behavior:
 - Supports metadata association with message identifiers.
 
 `useUpload`:
-- Wraps upload flow from client package.
+- Wraps upload flow from the client SDK module.
 - Exposes progress transitions suitable for UI progress indicators.
 - Maintains typed file references for prompt attachments.
 - Surfaces upload failure and retry affordances.
@@ -300,10 +301,10 @@ Operational constraints:
 - Error objects are normalized for cross-platform rendering.
 - Hook APIs stay stable to support generated component installers.
 
-## Web Components (@safeagent/ui)
+## Web Components (Web components module)
 
-`@safeagent/ui` composes shared hooks with web-focused rendering primitives.
-The package favors composition over monolithic chat widgets.
+The web components module composes shared hooks with web-focused rendering primitives.
+The module favors composition over monolithic chat widgets.
 Adopted ai-elements components provide mature interaction and accessibility primitives.
 Custom components fill safeagent-specific needs such as trace UI, server switching, and offline indicators.
 
@@ -576,10 +577,10 @@ Trace rendering quality gates:
 - Low visual noise in standard mode.
 - Consistent iconography across story states.
 
-## React Native Components (@safeagent/ui-native)
+## React Native Components (Native components module)
 
-`@safeagent/ui-native` provides native equivalents of web component capabilities while preserving hook-level parity.
-The package shares logic through hooks and diverges only where platform rendering constraints require native implementations.
+The native components module provides native equivalents of web component capabilities while preserving hook-level parity.
+The module shares logic through hooks and diverges only where platform rendering constraints require native implementations.
 
 Official references:
 - NativeWind docs: https://www.nativewind.dev
@@ -616,8 +617,8 @@ Polyfill expectations:
 
 ```mermaid
 flowchart LR
-    REACT_HOOKS_LAYER[React Hooks Package Hooks]
-    NATIVE_UI_LAYER[Native Components Package Components]
+    REACT_HOOKS_LAYER[React Hooks Module Hooks]
+    NATIVE_UI_LAYER[Native Components Module Components]
     NATIVEWIND_LAYER[NativeWind Styling Translation]
     EXPO_RUNTIME[Expo Runtime Services]
     DEVICE_UI[Mobile App Surfaces]
@@ -650,7 +651,7 @@ Parity scope and exceptions:
 
 ## Component Installation CLI
 
-The component installer follows the shadcn-style copy model rather than runtime imports from package internals.
+The component installer follows the shadcn-style copy model rather than runtime imports from internal library modules.
 Consumers install component source into their own project and keep full ownership for customization.
 
 Design goals:
@@ -680,8 +681,8 @@ Validation responsibilities:
 - Warn when an existing local component diverges from registry signature.
 
 Registry split:
-- Web registry lists components from `@safeagent/ui` and adopted wrappers.
-- Native registry lists components from `@safeagent/ui-native`.
+- Web registry lists components from the web components module and adopted wrappers.
+- Native registry lists components from the native components module.
 - Shared conceptual names map to platform-specific component sources.
 
 ```mermaid
@@ -729,7 +730,7 @@ Official references:
 - Storybook docs: https://storybook.js.org
 
 Story coverage goals:
-- Cover all adopted component wrappers used by safeagent UI package.
+- Cover all adopted component wrappers used by the web components module.
 - Cover all custom safeagent components.
 - Include default rendering state.
 - Include className customization examples.
@@ -794,7 +795,7 @@ Dark and light appearance behavior:
 - Ensure trace latency colors remain legible in both appearance contexts.
 
 Native styling policies:
-- Native package uses NativeWind translation to native style objects at build time.
+- The native components module uses NativeWind translation to native style objects at build time.
 - Native classes mirror conceptual utility naming from web where practical.
 - Platform-specific spacing and typography may diverge for usability.
 
@@ -869,7 +870,7 @@ flowchart TD
 | Transport | 11 Transport | Defines SSE protocol behavior, `trace-step` payload shape, and verbosity semantics consumed by hooks and components. |
 | Server Runtime | 12 Server | Defines chat streaming endpoint behavior and verbosity query interpretation used by transport integration. |
 | Observability | 14 Observability | Defines trace correlation behavior through shared `traceId` across frontend timeline and telemetry systems. |
-| Demos | 19 Demos | Defines integration targets that consume web and native component packages for end-to-end validation. |
+| Demos | 19 Demos | Defines integration targets that consume web and native component modules for end-to-end validation. |
 
 Cross-section dependency notes:
 - Frontend stream rendering behavior directly depends on transport event ordering guarantees.
@@ -884,33 +885,33 @@ Cross-section dependency notes:
 **Batch**: 2
 
 **What to do**
-- Establish frontend workspace boundaries for `@safeagent/react`, `@safeagent/ui`, and `@safeagent/ui-native`.
-- Define package-level TypeScript baselines aligned with monorepo standards.
+- Establish frontend workspace boundaries for the React hooks, web components, and native components subpath modules within the safeagent library.
+- Define module-level TypeScript baselines aligned with monorepo standards.
 - Add dependency baselines for AI SDK React integration, web styling primitives, component composition, native styling, and Expo runtime integration.
 - Establish Storybook development environment as the default web component sandbox.
-- Define shared lint and quality expectations for all frontend packages.
-- Define package-level test strategy placeholders for hook, component, and integration testing.
-- Ensure build graph includes frontend packages in workspace orchestration.
-- Document baseline package intent and public API ownership.
+- Define shared lint and quality expectations for all frontend subpath modules.
+- Define module-level test strategy placeholders for hook, component, and integration testing.
+- Ensure build graph includes frontend subpath modules in workspace orchestration.
+- Document baseline module intent and public API ownership.
 
 **Depends on**
 - `SCAFFOLD_LIB`
 
 **Acceptance criteria**
-- Frontend packages are discoverable by workspace tooling.
-- Type checking executes cleanly for all three package stubs.
+- Frontend subpath modules are discoverable by workspace tooling.
+- Type checking executes cleanly for all three module stubs.
 - Shared dependency graph resolves without circular references.
 - Storybook environment launches with baseline placeholder stories.
-- Package boundaries clearly separate hook logic, web rendering, and native rendering.
-- No frontend package imports server-only engine internals.
-- Workspace tasks can target each package independently.
+- Module boundaries clearly separate hook logic, web rendering, and native rendering.
+- No frontend subpath module imports server-only engine internals.
+- Workspace tasks can target each frontend subpath module independently.
 
 **QA scenarios**
-- Validate workspace tooling detects all frontend packages.
-- Validate isolated type checking for each package passes.
-- Validate cross-package type references resolve correctly from hooks to UI packages.
+- Validate workspace tooling detects all frontend subpath modules.
+- Validate isolated type checking for each module passes.
+- Validate cross-module type references resolve correctly from hooks to UI modules.
 - Validate Storybook startup and baseline story rendering.
-- Validate native package bootstrap compiles under Expo toolchain assumptions.
+- Validate native module bootstrap compiles under Expo toolchain assumptions.
 - Validate dependency installation in a clean environment reproduces identical graph behavior.
 - Validate unresolved peer warnings are actionable and documented.
 
@@ -920,14 +921,14 @@ Cross-section dependency notes:
 
 **What to do**
 - Implement a transport adapter compatible with AI SDK chat-hook expectations.
-- Integrate SSE lifecycle handling through `@safeagent/client` parser and queue behavior.
+- Integrate SSE lifecycle handling through the client SDK module parser and queue behavior.
 - Implement a safe-agent wrapper hook with safeagent defaults for transport, auth, and endpoint wiring.
 - Implement `useTraceSteps` for full-verbosity trace event projection.
 - Implement `useFeedback` with loading, success, and error transitions.
 - Implement `useUpload` with progress and typed file-reference handling.
 - Implement `useServerConnection` for multi-endpoint selection and auth token state.
 - Implement `useVerbosity` for standard and full mode state management.
-- Re-export hook and type surface for downstream component packages.
+- Re-export hook and type surface for downstream component modules.
 - Add unit and integration tests for stream lifecycle, error handling, and type shape stability.
 
 **Depends on**
@@ -942,7 +943,7 @@ Cross-section dependency notes:
 - Upload hook exposes deterministic progress transitions and final file references.
 - Server connection hook supports switching and state transitions without stale closures.
 - Verbosity hook updates outgoing transport metadata reliably.
-- Hook exports are fully typed and reusable by both web and native packages.
+- Hook exports are fully typed and reusable by both web and native modules.
 
 **QA scenarios**
 - Stream with standard mode and confirm trace-step output remains absent.
@@ -965,7 +966,7 @@ Cross-section dependency notes:
 - Build custom components for server switching, thread navigation, timestamps, typing status, error recovery, offline state, and verbosity control.
 - Ensure all components accept `className` and support children slot override patterns.
 - Ensure controlled and uncontrolled state patterns are implemented consistently.
-- Integrate hooks from `@safeagent/react` across conversation and input workflows.
+- Integrate hooks from the React hooks module across conversation and input workflows.
 - Add accessibility semantics and keyboard behavior for custom components.
 - Add story coverage for major states and interaction paths.
 
@@ -1036,7 +1037,7 @@ Cross-section dependency notes:
 **What to do**
 - Build native equivalents for conversation, messages, prompt input, attachments, server selector, thread list, verbosity toggle, and offline indicator.
 - Ensure component prop contracts align with web counterparts where platform constraints allow.
-- Integrate shared hooks from `@safeagent/react` for stream, trace, upload, feedback, and connection state.
+- Integrate shared hooks from the React hooks module for stream, trace, upload, feedback, and connection state.
 - Implement markdown-capable message rendering suitable for mobile.
 - Implement keyboard-aware input behavior for chat composition.
 - Integrate native document and image pickers for attachments.
