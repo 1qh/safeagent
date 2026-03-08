@@ -147,62 +147,46 @@ Each document below is a self-contained reference for its domain. Files are numb
 
 ### Requirements & Research
 
-| # | Document | Description |
-|---|----------|-------------|
-| 01 | [Requirements & Constraints](./01-requirements.md) | All must-have and must-not-have requirements, task ownership traceability, definition of done |
-| 02 | [Research & Decisions](./02-research.md) | Spike findings, Metis review, architectural decisions (EXEMPT from review rules) |
+- [01 — Requirements & Constraints](./01-requirements.md) — All must-have and must-not-have requirements, task ownership traceability, definition of done
+- [02 — Research & Decisions](./02-research.md) — Spike findings, Metis review, architectural decisions (EXEMPT from review rules)
 
 ### System Design
 
-| # | Document | Description |
-|---|----------|-------------|
-| 03 | [System Architecture](./03-architecture.md) | Component boundaries, infrastructure topology, data flows, scaling, connection management |
-| 04 | [Foundation](./04-foundation.md) | Core types, Zod schemas, configuration system, environment variables, storage factory |
+- [03 — System Architecture](./03-architecture.md) — Component boundaries, infrastructure topology, data flows, scaling, connection management
+- [04 — Foundation](./04-foundation.md) — Core types, Zod schemas, configuration system, environment variables, storage factory
 
 ### Core Engine
 
-| # | Document | Description |
-|---|----------|-------------|
-| 05 | [Conversation Pipeline](./05-conversation.md) | Input validation → intent detection → query rewriting → source routing → response assembly |
-| 06 | [Agents & Orchestration](./06-agents.md) | Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors |
-| 07 | [Memory & Intelligence](./07-memory.md) | Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle |
-| 08 | [Document Processing](./08-documents.md) | Upload pipeline, multimodal-first processing, per-page summarization, file status management |
-| 09 | [Retrieval & Evidence](./09-retrieval.md) | Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding |
+- [05 — Conversation Pipeline](./05-conversation.md) — Input validation → intent detection → query rewriting → source routing → response assembly
+- [06 — Agents & Orchestration](./06-agents.md) — Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors
+- [07 — Memory & Intelligence](./07-memory.md) — Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle
+- [08 — Document Processing](./08-documents.md) — Upload pipeline, multimodal-first processing, per-page summarization, file status management
+- [09 — Retrieval & Evidence](./09-retrieval.md) — Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding
 
 ### Safety & Transport
 
-| # | Document | Description |
-|---|----------|-------------|
-| 10 | [Guardrails & Safety](./10-guardrails.md) | Input/output guardrails, factories, zero-leak buffered mode, language and content safety |
-| 11 | [Streaming & Transport](./11-transport.md) | SSE streaming layer, CTA streaming, client SDK, event protocol |
+- [10 — Guardrails & Safety](./10-guardrails.md) — Input/output guardrails, factories, zero-leak buffered mode, language and content safety
+- [11 — Streaming & Transport](./11-transport.md) — SSE streaming layer, CTA streaming, client SDK, event protocol
 
 ### Server & Interface
 
-| # | Document | Description |
-|---|----------|-------------|
-| 12 | [Server Implementation](./12-server.md) | Thin Elysia server, JWT auth, routes, middleware, startup sequence, error mapping |
-| 13 | [TUI App](./13-tui.md) | OpenTUI Solid terminal interface, component tree, command system, agent integration |
+- [12 — Server Implementation](./12-server.md) — Thin Elysia server, JWT auth, routes, middleware, startup sequence, error mapping
+- [13 — TUI App](./13-tui.md) — OpenTUI Solid terminal interface, component tree, command system, agent integration
 
 ### Operations & Quality
 
-| # | Document | Description |
-|---|----------|-------------|
-| 14 | [Observability](./14-observability.md) | Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering |
-| 15 | [Infrastructure](./15-infrastructure.md) | Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning |
-| 16 | [Testing](./16-testing.md) | Test pyramid, coverage map, CI pipeline, audit tasks, QA policy |
+- [14 — Observability](./14-observability.md) — Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering
+- [15 — Infrastructure](./15-infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
+- [16 — Testing](./16-testing.md) — Test pyramid, coverage map, CI pipeline, audit tasks, QA policy
 
 ### Frontend
 
-| # | Document | Description |
-|---|----------|-------------|
-| 18 | [Frontend SDK](./18-frontend-sdk.md) | React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety |
-| 19 | [Demo Applications](./19-demos.md) | Next.js web demo, Expo mobile demo, server switching, verbosity toggle |
+- [18 — Frontend SDK](./18-frontend-sdk.md) — React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety
+- [19 — Demo Applications](./19-demos.md) — Next.js web demo, Expo mobile demo, server switching, verbosity toggle
 
 ### Execution
 
-| # | Document | Description |
-|---|----------|-------------|
-| 17 | [Execution Plan](./17-execution.md) | Parallel batches, dependency graph, task registry, agent dispatch, critical path |
+- [17 — Execution Plan](./17-execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
 
 ---
 

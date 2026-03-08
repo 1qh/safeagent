@@ -568,7 +568,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | ID | Exclusion | Rationale |
 |---|---|---|
 | MN_ASSISTANT_UI | assistant-ui library | Not adopted — use official shadcn and Vercel ai-elements only |
-| MN_CUSTOM_THEME | Custom CSS variable theme system beyond shadcn | Tailwind v4 and shadcn color variables is the opinionated styling choice. No custom theming layer, no design token abstraction |
+| MN_CUSTOM_THEME | Custom CSS variable theme system beyond shadcn | Tailwind and shadcn color variables is the opinionated styling choice. No custom theming layer, no design token abstraction |
 | MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. `@safeagent/client` is the primary SDK — Eden Treaty SSE data is `Record<string, unknown>` (untyped) |
 | MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via `@safeagent/react`. JSX and styling are separate packages (`@safeagent/ui` for web, `@safeagent/ui-native` for RN) — no universal component abstraction |
 
