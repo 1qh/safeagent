@@ -359,28 +359,28 @@ When `TRIGGER_DEV_API_URL` and `TRIGGER_DEV_API_KEY` are absent, the background 
 
 ```mermaid
 stateDiagram-v2
-    [*] --> uploading : Client sends file
+    [*] --> UPLOADING : Client sends file
 
-    uploading --> summarizing : Validation passes\nS3 write succeeds\nBlocking stage begins
+    UPLOADING --> SUMMARIZING : Validation passes\nS3 write succeeds\nBlocking stage begins
 
-    uploading --> failed : Validation fails\nor S3 write fails
+    UPLOADING --> FAILED : Validation fails\nor S3 write fails
 
-    summarizing --> ready : All pages summarized\npage_index rows inserted\n(blocking stage complete)
+    SUMMARIZING --> READY : All pages summarized\npage_index rows inserted\n(blocking stage complete)
 
-    summarizing --> failed : Gemini error\nor pdf-lib error\nor timeout
+    SUMMARIZING --> FAILED : Gemini error\nor pdf-lib error\nor timeout
 
-    ready --> enriching : Trigger.dev task starts\n(background stage begins)
+    READY --> ENRICHING : Trigger.dev task starts\n(background stage begins)
 
-    enriching --> enriched : All raw_text columns populated\nraw_tsvectors generated\n(background stage complete)
+    ENRICHING --> ENRICHED : All raw_text columns populated\nraw_tsvectors generated\n(background stage complete)
 
-    enriching --> ready : Background stage fails\n(file still queryable\nfrom summary entries)
+    ENRICHING --> READY : Background stage fails\n(file still queryable\nfrom summary entries)
 
-    ready --> deleted : cleanupThread called
+    READY --> DELETED : cleanupThread called
 
-    enriched --> deleted : cleanupThread called
+    ENRICHED --> DELETED : cleanupThread called
 
-    failed --> [*]
-    deleted --> [*]
+    FAILED --> [*]
+    DELETED --> [*]
 ```
 
 ### State Descriptions
