@@ -14,7 +14,7 @@
 - [Screen Layout and Panels](#screen-layout-and-panels)
 - [Keyboard Binding Matrix](#keyboard-binding-matrix)
 - [Command Routing](#command-routing)
-- [Client SDK Integration (@safeagent/client)](#client-sdk-integration-safeagentclient)
+- [Client SDK Integration (Client SDK module)](#client-sdk-integration-client-sdk-module)
 - [Agent Integration Flow](#agent-integration-flow)
 - [File Upload Flow](#file-upload-flow)
 - [Markdown Rendering and Syntax Highlighting](#markdown-rendering-and-syntax-highlighting)
@@ -39,8 +39,8 @@ The TUI is built with OpenTUI Solid, a SolidJS reconciler for OpenTUI's native Z
 
 The client supports two execution paths with the same UX contract:
 
-- Direct runtime mode: consumes `RunStreamEvent` from agent execution stream API in-process.
-- Remote SDK mode: uses `@safeagent/client` with transport-aligned stream semantics.
+- Direct runtime mode: consumes framework stream events from agent execution API in-process.
+- Remote SDK mode: uses the client SDK module with transport-aligned stream semantics.
 
 Both modes preserve identical chat behavior, command behavior, upload behavior, and guardrail behavior.
 
@@ -189,9 +189,9 @@ flowchart TD
 
 ---
 
-## Client SDK Integration (@safeagent/client)
+## Client SDK Integration (Client SDK module)
 
-The TUI supports remote execution through `@safeagent/client` while preserving first-party terminal behavior. The SDK path is transport-backed, but it keeps the same event semantics and rendering semantics as direct runtime mode.
+The TUI supports remote execution through the client SDK module while preserving first-party terminal behavior. The SDK path is transport-backed, but it keeps the same event semantics and rendering semantics as direct runtime mode.
 
 Responsibilities in SDK mode:
 
@@ -204,7 +204,7 @@ Responsibilities in SDK mode:
 flowchart TD
     MODE_SELECTION["Mode Selection\nstartup profile"]
     DIRECT_RUNTIME["Direct Runtime\nin-process runner"]
-    SDK_TRANSPORT["SDK Transport\n@safeagent/client"]
+    SDK_TRANSPORT["SDK Transport\nClient SDK Module"]
     EVENT_NORMALIZER["Event Normalizer\nshared UI event contract"]
     TUI_STATE["TUI State\nsignals + memos"]
     CHAT_RENDER["Chat Render\nstreaming markdown"]
@@ -492,11 +492,11 @@ The TUI can import the runtime directly and call execute agent with streaming en
 
 ### SDK Remote Path
 
-The TUI can use `@safeagent/client` for remote execution with equivalent stream semantics. Event normalization ensures the same downstream UI handling as direct mode.
+The TUI can use the client SDK module for remote execution with equivalent stream semantics. Event normalization ensures the same downstream UI handling as direct mode.
 
 ### Chunk Dispatch
 
-Each `RunStreamEvent` includes `type`. Dispatch behavior:
+Each framework stream event includes a type field. Dispatch behavior:
 
 - `raw_model_stream_event`: extract text delta and append to active assistant message.
 - `run_item_stream_event` (tool call): append system message with tool name and input.
@@ -584,9 +584,9 @@ Preload config that includes `@opentui/solid/preload` must be scoped to TUI runt
 
 `onKeyPress` is not used. Keyboard handling is implemented exclusively with `onKeyDown`.
 
-### RunStreamEvent Semantics
+### Framework Stream Event Semantics
 
-The TUI consumes `RunStreamEvent` semantics directly in local mode and preserves the same semantics in SDK mode via normalization.
+The TUI consumes framework stream event semantics directly in local mode and preserves the same semantics in SDK mode via normalization.
 
 ### Reactive State Model
 
@@ -738,7 +738,7 @@ TUI_SHELL
 
 **What to do**:
 
-Connect the TUI to the library in both direct and SDK modes. Implement stream lifecycle: start stream on submit, dispatch stream events, catch `InputGuardrailTripwireTriggered` and `OutputGuardrailTripwireTriggered` exceptions, handle cancellation on Ctrl+C, finalize message on completion, show spinner while streaming, and update token count when streaming completes.
+Connect the TUI to the library in both direct and SDK modes. Build stream lifecycle: start stream on submit, dispatch stream events, catch input and output guardrail tripwire exceptions, handle cancellation on Ctrl+C, finalize message on completion, show spinner while streaming, and update token count when streaming completes.
 
 **Depends on**:
 

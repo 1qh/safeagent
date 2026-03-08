@@ -30,10 +30,10 @@ Create a production-ready TypeScript library (`safeagent`) that encapsulates all
 | Deliverable | Description |
 |---|---|
 | **safeagent package** | Published to a package registry — core library with agent, guardrails, MCP, streaming, memory, RAG, upload, observability, cache, rate limiting, circuit breaker, logging |
-| **@safeagent/client SDK** | Lightweight, framework-agnostic TypeScript SDK for consuming safeagent server APIs — SSE parsing, file upload, feedback, thread management, offline queue |
-| **@safeagent/react** | React hooks package implementing AI SDK ChatTransport for seamless `useChat` integration with safeagent SSE protocol |
-| **@safeagent/ui** | Web component package built on shadcn and Vercel ai-elements with custom trace/verbosity visualization components |
-| **@safeagent/ui-native** | React Native component package using NativeWind v4 with offline-first capabilities |
+| **Client SDK** | Lightweight, framework-agnostic TypeScript SDK module for consuming safeagent server APIs — SSE parsing, file upload, feedback, thread management, offline queue |
+| **React Hooks** | React hooks module implementing AI SDK ChatTransport for seamless `useChat` integration with safeagent SSE protocol |
+| **Web Components** | Web components module built on shadcn and Vercel ai-elements with custom trace and verbosity visualization components |
+| **Native Components** | Native components module using NativeWind v4 with offline-first capabilities |
 | **safeagent-tui binary** | Interactive terminal UI for agent testing with streaming chat display, textarea input, commands, and file upload |
 | **Server project** | Separate repository with working SSE streaming API, file upload endpoint, guardrail configuration, MCP server definitions, agent prompts |
 | **Next.js demo app** | Full-featured web chat application demonstrating all components, server switching, verbosity toggle, trace visualization |
@@ -93,7 +93,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | ID | Requirement | Detail |
 |---|---|---|
 | MH_AGENT_DEFAULTS | Agent creation with sensible defaults | Agent creation factory with full customizability |
-| MH_INPUT_GUARDRAILS | Input guardrails (server-defined) | `GuardrailFn[]` → severity+conceptId → block/flag/pass |
+| MH_INPUT_GUARDRAILS | Input guardrails (server-defined) | Guardrail function list → severity+conceptId → block/flag/pass |
 | MH_STREAMING_GUARDRAILS | Streaming output guardrails | Framework output guardrail list with tripwire-trigger pattern + sliding-window buffer |
 | MH_GUARDRAIL_FACTORIES | Guardrail authoring factories | Factory-pattern helpers for regex, keyword, model-based, external, and composite guardrails |
 | MH_MCP_CLIENT | MCP client wrapper | Multi-server support and health checks |
@@ -128,6 +128,9 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | ID | Requirement | Detail |
 |---|---|---|
 | MH_JWT_AUTH_REQUIRED | JWT auth on all API routes when `JWT_SECRET` is set | Auth middleware factory extracts userId from JWT `sub` claim and sets request context. Reject with 401 if missing or invalid. When `JWT_SECRET` is absent: in production environment mode, the server must refuse startup (hard fail — security boundary, no fallback); in development, middleware enters dev-bypass mode (default dev userId, startup warning). No user identity header override — userId is extracted from JWT claims by the server |
+| MH_BOUNDARY_INPUT_VALIDATION | Input validation at trust boundaries | All request inputs are schema-validated at route boundaries before agent execution, including chat payloads, file upload metadata, admin payloads, and feedback payloads. Invalid payloads fail closed with typed errors |
+| MH_ROLE_AUTHZ_REQUIRED | Role-based authorization for privileged operations | Admin and privileged APIs require explicit role checks after JWT validation. Authorization failures return forbidden responses and are audit-logged with request identity |
+| MH_CORS_POLICY | CORS allowlist enforcement | CORS policy is environment-driven with explicit origin allowlists, allowed methods, and allowed headers. Production deployments avoid wildcard origins for authenticated routes |
 | MH_TRACE_THREAD_DELIVERY | `traceId` + `threadId` delivery | Emitted as first SSE custom data event for client-side feedback linking and multi-turn continuity |
 | MH_ESM_ONLY | ESM-only TypeScript package | No CommonJS, no dual-format |
 
@@ -168,8 +171,8 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_MAGIC_BYTES | Magic bytes file validation | Not just extension — validate actual file content type |
 | MH_ASYNC_FILE_PROCESSING | Async file processing with status tracking | Polling endpoint for processing status |
 | MH_PARTIAL_BATCH_FAILURE | Partial batch failure handling | One corrupt file doesn't block others |
-| MH_CLEANUP_THREAD | `cleanupThread` API | `cleanupThread` → deletes S3 files + PgVector chunks + metadata. Requires both threadId+userId for defense-in-depth, deps injected by server |
-| MH_DOCKER_PGVECTOR | Docker with pgvector | `pgvector/pgvector` (NOT bare `postgres`), MinIO for local S3 |
+| MH_CLEANUP_THREAD | Thread cleanup API | Thread cleanup deletes S3 files + PgVector chunks + metadata. Requires both threadId+userId for defense-in-depth, deps injected by server |
+| MH_DOCKER_PGVECTOR | Docker with pgvector | pgvector-enabled Postgres image (NOT bare Postgres), MinIO for local S3 |
 
 ### Observability
 
@@ -215,6 +218,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_TTL_CLEANUP | TTL-based automatic cleanup | Trigger.dev scheduled task finds expired files, deletes S3 + PgVector chunks + metadata |
 | MH_CIRCUIT_BREAKER | Circuit breaker | Circuit breaker factory — closed/open/half-open states, wraps asynchronous operations with configurable failure threshold and reset timeout |
 | MH_AUTH_MIDDLEWARE | JWT auth middleware | Auth middleware factory — verifies JWT, extracts userId to Elysia request context, and supports role-based authorization via a role-check helper |
+| MH_AUDIT_LOGGING | Security-relevant audit logging | Authentication failures, authorization denials, guardrail enforcement actions, budget and rate-limit denials, and deletion operations are captured in structured logs with traceable request metadata |
 
 ### Humanlikeness
 
@@ -238,9 +242,9 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 | ID | Requirement | Detail |
 |---|---|---|
-| MH_REACT_HOOKS | React hooks package for AI SDK integration | `@safeagent/react` implements AI SDK ChatTransport interface so `useChat` works with safeagent SSE protocol. Exports typed hooks for chat, feedback, file upload, and thread management. Depends on `@safeagent/client` for SSE transport |
-| MH_WEB_COMPONENTS | Web UI component package | `@safeagent/ui` — components built on shadcn and Vercel ai-elements for conversation, messages, input, attachments, tool calls, reasoning, sources, model selector. Every component customizable via className and children slots. shadcn-style copy-into-project installation |
-| MH_RN_COMPONENTS | React Native UI component package | `@safeagent/ui-native` — equivalent component set for React Native using NativeWind v4. Shares hooks and business logic with web package via `@safeagent/react` but separate JSX and styling. Expo required for `expo/fetch` polyfill |
+| MH_REACT_HOOKS | React hooks module for AI SDK integration | The React hooks module implements the AI SDK ChatTransport interface so `useChat` works with the safeagent SSE protocol. It exports typed hooks for chat, feedback, file upload, and thread management. It depends on the client SDK module for SSE transport |
+| MH_WEB_COMPONENTS | Web UI components module | The web components module includes shadcn and Vercel ai-elements based components for conversation, messages, input, attachments, tool calls, reasoning, sources, and model selector. Every component is customizable via className and children slots. Installation follows shadcn-style copy-into-project workflow |
+| MH_RN_COMPONENTS | Native UI components module | The native components module provides an equivalent React Native component set using NativeWind v4. It shares hooks and business logic with the web layer through the React hooks module while keeping separate JSX and styling. Expo is required for the `expo/fetch` polyfill |
 | MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [11 — Streaming & Transport](./11-transport.md) |
 | MH_VERBOSITY_FILTER | Verbosity-level event filtering | Chat streaming endpoint accepts verbosity level (`standard` or `full`). `standard` emits user-facing events only. `full` adds trace-step events for developer debugging. Server controls via query parameter |
 | MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [18 — Frontend SDK](./18-frontend-sdk.md) |
@@ -248,11 +252,11 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_SERVER_SWITCH | Multi-server switching in demos | Demo apps support dynamically switching between multiple safeagent server instances (like model switching in ChatGPT/Claude). Connection, auth, and thread state reset on switch |
 | MH_DEMO_WEB | Next.js demo application | Full-featured chat app demonstrating all web components, server switching, verbosity toggle, file upload, tool calls, reasoning display, trace visualization. See [19 — Demos](./19-demos.md) |
 | MH_DEMO_MOBILE | Expo demo application | Mobile chat app with offline-first behavior, all RN components, server switching, verbosity toggle. See [19 — Demos](./19-demos.md) |
-| MH_FRONTEND_TYPE_SAFETY | End-to-end type safety | SSE event types defined once in the safeagent library, flow through `@safeagent/client` → `@safeagent/react` → UI components with zero type casting or manual schema duplication |
+| MH_FRONTEND_TYPE_SAFETY | End-to-end type safety | SSE event types are defined once in the safeagent library and flow through client SDK → React hooks → UI components, with type chaining across subpath modules and zero type casting or manual schema duplication |
 | MH_COMPONENT_CLI | CLI for component installation | shadcn-style CLI that copies components into consumer projects. Individual component installation, not monolithic import. Follows the same pattern as ai-elements installation |
 | MH_STORYBOOK | Component documentation via Storybook | Interactive component documentation with usage examples for both web and RN component packages |
 | MH_FRONTEND_A11Y | Accessibility compliance | All UI components support ARIA attributes, keyboard navigation, and screen reader compatibility. ai-elements already provides this for adopted components — custom components must match |
-| MH_OFFLINE_MOBILE | Offline-first mobile experience | Mobile app queues messages offline via `@safeagent/client` offline queue, persists conversation locally, syncs on reconnect. Visual indicators for offline state and pending messages |
+| MH_OFFLINE_MOBILE | Offline-first mobile experience | Mobile app queues messages offline via the client SDK module offline queue, persists conversation locally, and syncs on reconnect. Visual indicators show offline state and pending messages |
 | MH_AI_ELEMENTS | ai-elements as web component foundation | Adopt Vercel ai-elements components for conversation, messages, input, tool calls, reasoning, attachments, sources, code blocks. Custom components only for gaps: trace UI, server switch, verbosity toggle, thread list, message timestamps, typing indicator, error retry |
 
 ### Cross-Cutting
@@ -263,11 +267,12 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_ADMIN_API | Admin API for budget management | Server endpoints for viewing and adjusting per-user token budgets, quota overrides, and cost tracking |
 | MH_PROMPT_MGMT | Langfuse prompt management | Runtime prompt fetching from Langfuse with cache, fallback to local prompts, variable interpolation, circuit breaker protection |
 | MH_ZERO_LEAK | Zero-leak output guardrail | Buffered gating guardrail that holds response chunks until safety classification completes — no unsafe content reaches the client even briefly |
-| MH_OFFLINE_QUEUE | Client SDK offline message queue | `@safeagent/client` queues messages when the server is unreachable, persists to local storage, auto-syncs on reconnect with deduplication |
+| MH_OFFLINE_QUEUE | Client SDK offline message queue | The client SDK module queues messages when the server is unreachable, persists to local storage, and auto-syncs on reconnect with deduplication |
 | MH_SURQLIZE | SurrealDB via surqlize ORM | All SurrealDB operations use the surqlize ORM — no raw SurrealQL queries |
+| MH_SECRET_MANAGEMENT | Secret management through typed env flow | Secrets are loaded through validated typed environment configuration, never hardcoded, never logged in clear text, and redacted at logging and tracing sinks |
 | MH_TYPED_ENV | Typed environment configuration | `@t3-oss/env-core` validates and types all environment variables at startup — runtime access is fully typed with no raw `process.env` reads |
 | MH_TYPED_ERRORS | Typed error handling with neverthrow | Result type pattern (`ok`/`err`) for all boundary operations — no thrown exceptions at module boundaries, every error path is typed |
-| MH_NO_RAW_SQL | No raw SQL — Drizzle only | All Postgres operations use Drizzle ORM query builder — raw SQL strings are banned and enforced via ESLint rule |
+| MH_NO_RAW_SQL | No raw database query strings | All PostgreSQL operations use Drizzle ORM's type-safe query builder and all SurrealDB operations use surqlize's typed API. Raw SQL and raw SurrealQL query strings are banned and enforced through linting and review gates to prevent injection-prone query paths |
 | MH_PRECOMMIT_HOOKS | Pre-commit quality gates | Husky + lint-staged run formatting, linting, and type-checking on staged files before every commit |
 | MH_WATCH_ONLY | Development watch mode | Automatic file-watching restart during development — no manual rebuild step required |
 | MH_OPENAPI_DOCS | OpenAPI documentation from Elysia | Elysia auto-generates OpenAPI specification from route definitions — always in sync with actual endpoints |
@@ -530,7 +535,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_MAMMOTH | `mammoth` for DOCX processing | Replaced by LibreOffice DOCX→PDF conversion (multimodal-first approach) |
 | MN_SUMMARIES_ONLY | Sending ONLY summaries/chunks to answering LLM without original pages | Always include original PDF pages as multimodal file parts alongside summaries and matching chunks. Be exhaustive |
 | MN_CHUNKS_WITHOUT_SUMMARIES | Sending ONLY chunk embeddings without per-page summaries for indexed mode | Always summarize per page first (blocking stage), then optionally enrich with raw text (background stage) |
-| MN_LOCAL_FILESYSTEM | File storage in local filesystem (`Bun.write`) | S3 only for persistence |
+| MN_LOCAL_FILESYSTEM | File storage in local filesystem | S3 only for persistence |
 | MN_CROSS_USER_SHARING | Cross-thread document sharing between different users | Each document belongs to exactly one user. Within a single user's account, cross-thread access via `scope: 'global'` (sentinel threadId), but documents NEVER leak across user boundaries |
 | MN_MULTI_PROVIDER_ROUTING | Multi-provider load balancing / smart routing beyond simple try/catch | Out of scope complexity |
 | MN_HEAVY_ORM | Heavy ORM (Prisma, TypeORM) | Drizzle only for application-managed tables |
@@ -560,6 +565,7 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_COMPLEX_CTA | Complex CTA types (forms, multi-step wizards, carousels) | Simple buttons/links only |
 | MN_TUI_IDE_FEATURES | TUI file editing, diff view, git integration, multi-tab | TUI is for testing, not IDE |
 | MN_BUN_HOT | Must NOT use Bun hot mode for development | Native modules throw symbol-not-found errors after hot reload; debugger leaks resources |
+| MN_RAW_SQL | Must NOT write raw SQL string queries | All PostgreSQL access through Drizzle ORM. Type safety is non-negotiable |
 | MN_RAW_SURREALQL | Must NOT write raw SurrealQL string queries | All SurrealDB access through surqlize ORM. Type safety is non-negotiable |
 | MN_DIRECT_ENV_ACCESS | Must NOT read environment variables via runtime global environment access | All access through the typed env module validated by @t3-oss/env-core |
 
@@ -569,8 +575,8 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 |---|---|---|
 | MN_ASSISTANT_UI | assistant-ui library | Not adopted — use official shadcn and Vercel ai-elements only |
 | MN_CUSTOM_THEME | Custom CSS variable theme system beyond shadcn | Tailwind and shadcn color variables is the opinionated styling choice. No custom theming layer, no design token abstraction |
-| MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. `@safeagent/client` is the primary SDK — Eden Treaty SSE data is `Record<string, unknown>` (untyped) |
-| MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via `@safeagent/react`. JSX and styling are separate packages (`@safeagent/ui` for web, `@safeagent/ui-native` for RN) — no universal component abstraction |
+| MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. The client SDK module is the primary SDK, while Eden Treaty SSE data is `Record<string, unknown>` and untyped |
+| MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via the React hooks module. JSX and styling stay split between the web components module and native components module, with no universal component abstraction |
 
 ---
 

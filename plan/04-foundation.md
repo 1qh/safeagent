@@ -481,7 +481,7 @@ flowchart TB
 ## Domain Type Contracts
 
 Foundation contracts cover agent, guardrail, MCP, config, storage, memory, stream, SSE events (including trace-step events for pipeline visibility), upload, documents, RAG, files, eval, model, key-pool, cache, location, queue, budget, and memory-support types (temporal references, preference updates, memory control actions, interaction signals, and media facts).
-SSE event types — including SSETraceStepEvent, TraceStepType, and TraceStepData — are defined in the core library and consumed by `@safeagent/client`, `@safeagent/react`, and frontend component packages. TraceStepType is a discriminated union covering intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite steps. TraceStepData is a corresponding discriminated union where each step type carries step-specific payload fields plus a common `latencyMs` timing field. See [11 — Streaming & Transport](./11-transport.md) for the full SSE event protocol.
+SSE event types — including SSETraceStepEvent, TraceStepType, and TraceStepData — are defined in the core library and consumed by the client SDK module, React hooks module, and frontend component modules. TraceStepType is a discriminated union covering intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite steps. TraceStepData is a corresponding discriminated union where each step type carries step-specific payload fields plus a common `latencyMs` timing field. See [11 — Streaming & Transport](./11-transport.md) for the full SSE event protocol.
 GuardMode is canonical in guardrail contracts and resolves by precedence: pipeline override, then agent override, then development default.
 RAG contracts include StructuredResultSet and ResultItem for persisted ranked outputs.
 File contracts include FileRecord lifecycle metadata.
@@ -557,7 +557,7 @@ Key schemas:
 - MemoryConfigSchema.
 - ModelConfigSchema.
 - EvalConfigSchema.
-- SSETraceStepEventSchema (discriminated by step field, used by `@safeagent/client` for runtime event parsing).
+- SSETraceStepEventSchema (discriminated by step field, used by the client SDK module for runtime event parsing).
 - VerbosityLevelSchema (standard or full, used by server route to configure stream handler).
 
 Validation helpers:

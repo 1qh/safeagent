@@ -229,7 +229,7 @@ graph LR
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
 | ZOD_SCHEMAS | Zod validation schemas | `quick` | CORE_TYPES |
-| MCP_CLIENT | MCP client via framework `MCPServerStdio`/`MCPServerSSE`/`MCPServerStreamableHttp` | `unspecified-high` | CORE_TYPES, MCP_HEALTH |
+| MCP_CLIENT | MCP client via framework transport classes (stdio, SSE, streamable HTTP) | `unspecified-high` | CORE_TYPES, MCP_HEALTH |
 | SHORT_TERM_MEM | Memory management wrapper | `unspecified-high` | CORE_TYPES, STORAGE_WRAPPER |
 | PROVIDER_FALLBACK | Provider fallback helper (fallback model factory) | `quick` | PROVIDER_HELPERS |
 | TUI_CHAT | Chat message display (streaming markdown) | `visual-engineering` | TUI_SHELL |
@@ -254,7 +254,7 @@ graph LR
 |------|-------------|----------|------------|
 | CONFIG_DEFAULTS | Configuration system with defaults | `quick` | CORE_TYPES, ZOD_SCHEMAS |
 | INPUT_GUARD | Input guardrail composition | `deep` | CORE_TYPES, ZOD_SCHEMAS |
-| OUTPUT_GUARD | Streaming output guardrail (framework `OutputGuardrail` with `tripwireTriggered` pattern) | `deep` | CORE_TYPES, ZOD_SCHEMAS |
+| OUTPUT_GUARD | Streaming output guardrail (framework output guardrail with tripwire-trigger pattern) | `deep` | CORE_TYPES, ZOD_SCHEMAS |
 | GUARD_FACTORY | External guardrail adapter | `unspecified-high` | CORE_TYPES |
 | **FILE_REGISTRY** | **FileRegistry — Temporal + ordinal + named resolution engine** | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
@@ -284,7 +284,7 @@ graph LR
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
-| SSE_STREAMING | SSE streaming layer + `Runner.run()` → SSE event translation | `deep` | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB |
+| SSE_STREAMING | SSE streaming layer + framework execution → SSE event translation | `deep` | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB |
 | GEMINI_GROUNDING | Gemini grounding agent mode | `deep` | AGENT_FACTORY |
 | GUARD_PIPELINE | Guardrail pipeline orchestrator | `deep` | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY |
 | EVAL_CONFIG | Eval/scoring configuration helpers | `unspecified-high` | AGENT_FACTORY |

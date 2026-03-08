@@ -464,7 +464,7 @@ graph LR
 
 | Tool | Description | Used By |
 |------|-------------|---------|
-| `searchDocument` | Search uploaded documents by document ID | Sub-agents, orchestrator (single intent) |
+| Document search tool | Search uploaded documents by document ID | Sub-agents, orchestrator (single intent) |
 | `ragflowSearch` | Query external knowledge source | Sub-agents |
 | `groundingSearch` | Google Search grounding (separate agent call, not LLM tool) | Orchestrator (parallel agent spawn) |
 | `memoryRecall` | Long-term semantic recall with auto-trigger on new threads | Sub-agents, auto-trigger on first turn |
@@ -709,7 +709,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 **QA Scenarios**:
 
-- Create agent with defaults -> framework execution method streams `RunStreamEvent` successfully
+- Create agent with defaults -> framework execution method streams events successfully
 - Create agent with grounding -> grounding metadata present in response
 - Create agent with tools -> tool calls execute in runner loop
 - Create agent with output schema -> typed JSON returned through structured output path

@@ -544,7 +544,7 @@ The total per-instance connection count must stay low enough that `N instances Ã
 
 **Valkey** uses `ioredis` with a connection URL in `redis://` scheme (not `valkey://` â€” the Redis protocol is identical, but the URL scheme must match what `ioredis` expects). A single client instance per API process handles all Valkey operations.
 
-**MinIO** connections are stateless HTTP requests via `Bun.S3Client`. No persistent connection pool needed â€” each request opens and closes independently.
+**MinIO** connections are stateless HTTP requests via the Bun S3-compatible client. No persistent connection pool needed â€” each request opens and closes independently.
 
 ---
 
@@ -556,7 +556,7 @@ The total per-instance connection count must stay low enough that `N instances Ã
 | Long-term memory | SurrealDB | Graph relationships + vector similarity in one store |
 | Per-page doc search | Postgres (Drizzle `page_index` + pgvector + tsvector) | Hybrid RRF combining dense and sparse retrieval |
 | Large TXT RAG | Custom pgvector (Drizzle) | Custom text chunking pipeline, application-managed |
-| Original files | S3 via `Bun.S3Client` | Scalable object storage, presigned URL delivery |
+| Original files | S3 via Bun S3-compatible client | Scalable object storage, presigned URL delivery |
 | File metadata + quotas | Postgres (Drizzle ORM) | Type-safe relational schema, quota enforcement |
 | Background jobs | Trigger.dev (self-hosted) | Containerized tasks, retries, dashboard, HTTP trigger |
 | Real-time cache + counters | Valkey | Sub-millisecond budget counters, atomic INCR, rate limits |

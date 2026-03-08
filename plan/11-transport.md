@@ -1,6 +1,6 @@
 # 11 — Streaming & Transport
 
-> **Scope**: SSE streaming pipeline, custom SSE event protocol boundary, trace-step event family, verbosity-level filtering, CTA tool streaming, and the `@safeagent/client` SDK.
+> **Scope**: SSE streaming pipeline, custom SSE event protocol boundary, trace-step event family, verbosity-level filtering, CTA tool streaming, and the client SDK module.
 >
 > **Tasks**: SSE_STREAMING (SSE Streaming Layer), CTA_STREAMING (CTA Streaming), CLIENT_SDK (Client SDK)
 
@@ -24,7 +24,7 @@
 
 ## Architecture Overview
 
-The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for `@safeagent/client` and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
+The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for the client SDK module and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
 
 ```mermaid
 graph TB
@@ -57,7 +57,7 @@ graph TB
         EVT_ERR["event: error\ndata: { code, message }"]
     end
 
-    subgraph CLIENT_SDK["@safeagent/client"]
+    subgraph CLIENT_SDK["Client SDK Module"]
         PARSER["SSE Parser"]
         TYPED["Typed Event\nDispatcher"]
         QUEUE["Offline Message\nQueue"]
@@ -224,7 +224,7 @@ flowchart LR
     end
 
     subgraph CLIENTS["External Clients"]
-        WEB_MOBILE_CLIENT["Web / Mobile\n@safeagent/client"]
+        WEB_MOBILE_CLIENT["Web / Mobile\nClient SDK Module"]
     end
 
     AGENT --> GP --> CP
@@ -233,7 +233,7 @@ flowchart LR
     SSE --> WEB_MOBILE_CLIENT
 ```
 
-The wire protocol is custom SSE named events, not any framework-specific data format. `@safeagent/client` parses these events directly.
+The wire protocol is custom SSE named events, not any framework-specific data format. The client SDK module parses these events directly.
 
 Location enrichment events are emitted during the live stream, never batched at the end. A single response can emit multiple `location` events, typically one per detected place. The underlying `search_locations` tool-call and tool-result chunks are suppressed from the outbound SSE stream using a location stream processor that mirrors the CTA suppression pattern, and only the clean `location` event payload is emitted to clients. When no image provider is configured, each `location` event still includes `lat` and `lng`, and `images` is emitted as an empty array.
 
@@ -246,7 +246,7 @@ Every stream starts with a `session-meta` event before any text delta arrives. T
 ```mermaid
 sequenceDiagram
     participant HANDLER as stream handler factory
-    participant CLIENT as @safeagent/client
+    participant CLIENT as Client SDK Module
 
     HANDLER->>CLIENT: event: session-meta\ndata: { traceId, threadId, agentId }
     Note over CLIENT: client stores traceId for feedback submission
@@ -525,11 +525,11 @@ flowchart LR
 
 ### Design Principles
 
-`@safeagent/client` is a framework-agnostic TypeScript package with zero runtime dependencies. It works in browsers and React Native. It doesn't import React, Vue, or any UI framework. Applications wrap it in whatever state management they use.
+The client SDK module is a framework-agnostic TypeScript package with zero runtime dependencies. It works in browsers and React Native. It doesn't import React, Vue, or any UI framework. Applications wrap it in whatever state management they use.
 
 Zero dependencies is a hard constraint. Every feature — SSE parsing, reconnection, offline queuing, file uploads — is implemented from scratch using platform APIs.
 
-For TypeScript consumers who want server-inferred route types, Eden Treaty (`@elysiajs/eden`) is available as an optional alternative client path. The primary SDK remains `@safeagent/client` because it is zero-dependency and framework-agnostic, while Eden Treaty can provide auto-inferred types from `type App = typeof app` on Elysia servers.
+For TypeScript consumers who want server-inferred route types, Eden Treaty (`@elysiajs/eden`) is available as an optional alternative client path. The primary SDK remains the client SDK module because it is zero-dependency and framework-agnostic, while Eden Treaty can provide auto-inferred types from `type App = typeof app` on Elysia servers.
 
 ### SSE Parsing and Typed Events
 
@@ -634,7 +634,7 @@ The client stores the `traceId` from the most recent `session-meta` event. When 
 ```mermaid
 sequenceDiagram
     participant APP
-    participant CLIENT as @safeagent/client
+    participant CLIENT as Client SDK Module
     participant SERVER
 
     SERVER-->>CLIENT: session-meta { traceId: "abc123" }
@@ -652,7 +652,7 @@ Every request the client makes — chat, upload, feedback — includes `Authoriz
 
 ## SSE Event Type Reference
 
-All event types are shared between the server (emitter) and the client (consumer). They're defined in safeagent and imported by `@safeagent/client` at compile time.
+All event types are shared between the server (emitter) and the client (consumer). They're defined in safeagent and imported by the client SDK module at compile time.
 
 | Event Type | Payload | Description |
 |---|---|---|
@@ -818,11 +818,11 @@ classDiagram
 |----------|-------------|
 | **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
 | **Foundation** ([04 — Foundation](./04-foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
-| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the `RunStreamEvent` stream consumed by this SSE transport layer. |
+| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the framework stream event sequence consumed by this SSE transport layer. |
 | **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
 | **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
 | **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share `traceId` with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
-| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes `@safeagent/client` events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
+| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
 | **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
 
 ---
@@ -937,7 +937,7 @@ Build the CTA tool and stream processor pair:
 
 **What to do**:
 
-Build `@safeagent/client`, a zero-dependency TypeScript package:
+Build the client SDK module as a zero-dependency TypeScript package:
 
 - SSE connection management using Fetch API streaming
 - Incremental SSE line parser (handles chunked delivery, multi-line data fields)

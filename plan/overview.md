@@ -228,11 +228,11 @@ graph LR
 | Deliverable | Description |
 |-------------|-------------|
 | **safeagent** | TypeScript library — agent creation, guardrails, MCP, streaming, memory, RAG, upload, conversation pipeline, evidence gate, observability, eval |
-| **@safeagent/client** | Framework-agnostic TypeScript client SDK — SSE parsing, reconnection, offline queue, typed events |
+| **Client SDK** | Framework-agnostic TypeScript client SDK module — SSE parsing, reconnection, offline queue, typed events |
 | **safeagent-tui** | Interactive TUI testing app — streaming chat, /upload, commands, "as good as opencode" |
-| **@safeagent/react** | React hooks package — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity |
-| **@safeagent/ui** | Web component package — shadcn + ai-elements adopted components, custom trace/server/thread components, Storybook, component CLI |
-| **@safeagent/ui-native** | React Native component package — NativeWind styling, offline-first, native equivalents of web components |
+| **React Hooks** | React hooks module — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity |
+| **Web Components** | Web components module — shadcn + ai-elements adopted components, custom trace and server and thread components, Storybook, component CLI |
+| **Native Components** | Native components module — NativeWind styling, offline-first behavior, native equivalents of web components |
 | **Next.js Demo** | Web reference application — full-featured chat with server switching, verbosity toggle, trace timeline, file upload, feedback |
 | **Expo Demo** | Mobile reference application — offline-first, tab navigation, server management, local SQLite persistence |
 | **Server** | Thin API server — custom prompts, intent config, guardrail rules, MCP config, JWT auth |
@@ -261,7 +261,7 @@ graph LR
 | Memory | Three-layer: thread short-term (Postgres) + user short-term (Postgres) + long-term (SurrealDB) | Conversation context + cross-thread continuity + persistent knowledge |
 | Humanlikeness | 13 engine-level behaviors woven into conversation pipeline, agents, and memory | Correction handling, frustration detection, response energy, emotional context, style memory, fact supersession, clarification patience, and more |
 | Streaming | Framework stream-event format throughout | No format bridge, direct streaming path via the framework's execution method, TripWire safety |
-| Frontend SDK | @safeagent/client → @safeagent/react → @safeagent/ui (web) + @safeagent/ui-native (RN) | Types flow once from engine through dependency chain — zero duplication, shared hooks, separate JSX |
+| Frontend SDK | Client SDK → React hooks → web components plus native components | Types flow once from engine through the frontend subpath module chain — zero duplication, shared hooks, separate JSX |
 | Web Components | shadcn + ai-elements (48 adopted) + 8 custom | Mature Radix-backed primitives from AI SDK team, gap-fill only where needed |
 | RN Components | NativeWind, separate JSX, shared hooks | No DOM, no Radix — native implementation with hook-level parity |
 | Trace Visualization | Trace-step SSE events → TraceTimeline component | Real-time pipeline visibility in full verbosity mode, hidden in standard mode |

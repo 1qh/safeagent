@@ -176,7 +176,7 @@ It demonstrates the full safeagent web component surface inside a coherent shell
 
 ### Component Surface
 
-Components consumed from `@safeagent/ui`:
+Components consumed from the web components module:
 - Conversation
 - MessageResponse
 - PromptInput
@@ -191,7 +191,7 @@ Components consumed from `@safeagent/ui`:
 - Suggestions
 - Context
 
-Custom composition components using `@safeagent/ui` primitives:
+Custom composition components using web components module primitives:
 - ServerSelector
 - VerbosityToggle
 - ThreadList
@@ -200,7 +200,7 @@ Custom composition components using `@safeagent/ui` primitives:
 - TypingIndicator
 - ErrorRetry
 
-Hooks consumed from `@safeagent/react`:
+Hooks consumed from the React hooks module:
 - useSafeAgent
 - useTraceSteps
 - useFeedback
@@ -264,15 +264,15 @@ It mirrors web capabilities while prioritizing mobile ergonomics.
   - Conversations tab for thread list and chat detail flow.
   - Settings tab for server management and verbosity control.
 - Shared runtime:
-  - Uses the same `@safeagent/react` hooks as web.
+- Uses the same React hooks module as web.
   - Keeps behavior parity for switching, trace, upload, and feedback.
 - Native rendering:
-  - Uses `@safeagent/ui-native` conversation and input surfaces.
+- Uses native components module conversation and input surfaces.
   - Keeps interaction language native to touch interfaces.
 
 ### Component and Hook Surface
 
-Components consumed from `@safeagent/ui-native`:
+Components consumed from the native components module:
 - Native conversation surface
 - Native message rendering
 - Native prompt input
@@ -281,7 +281,7 @@ Components consumed from `@safeagent/ui-native`:
 - Native verbosity toggle
 - Native offline indicator
 
-Hooks consumed from `@safeagent/react`:
+Hooks consumed from the React hooks module:
 - useSafeAgent
 - useTraceSteps
 - useFeedback
@@ -292,7 +292,7 @@ Hooks consumed from `@safeagent/react`:
 ### Offline-First Behavior
 
 - Conversation history persisted locally using SQLite via `expo-sqlite`.
-- Messages queued while offline through `@safeagent/client` offline queue.
+- Messages queued while offline through the client SDK module offline queue.
 - Offline indicator shows connectivity state and pending message count.
 - Reconnect automatically drains queued messages in FIFO order.
 - Stale conversations remain visible from local cache during disconnect periods.

@@ -209,7 +209,7 @@ flowchart TD
 
 LibreOffice headless is the most faithful DOCX renderer available outside of Microsoft Word itself. It preserves tables, embedded images, headers, footers, and complex formatting that simpler converters lose. The Docker service runs persistently so there's no cold-start cost per conversion.
 
-The API server sends the DOCX file to the LibreOffice sidecar over the internal Docker network on its dedicated service port. The sidecar runs LibreOffice headless, converts the file to PDF, and returns the result. The 30-second timeout handles pathological documents without hanging the pipeline. For local development without Docker, developers can install LibreOffice on the host machine and the conversion module falls back to a direct `Bun.spawn` subprocess call.
+The API server sends the DOCX file to the LibreOffice sidecar over the internal Docker network on its dedicated service port. The sidecar runs LibreOffice headless, converts the file to PDF, and returns the result. The 30-second timeout handles pathological documents without hanging the pipeline. For local development without Docker, developers can install LibreOffice on the host machine and the conversion module falls back to a direct subprocess call.
 
 **Temp file cleanup**: The temporary processing directory is cleaned after each conversion. LibreOffice writes intermediate output to the system temporary directory, which is ephemeral.
 

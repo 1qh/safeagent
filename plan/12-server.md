@@ -513,7 +513,7 @@ HTTP status behavior:
 | **Guardrails** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
 | **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
 | **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
-| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes server SSE endpoints through `@safeagent/react` hooks; verbosity parameter drives frontend trace visualization. |
+| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes server SSE endpoints through the React hooks module; verbosity parameter drives frontend trace visualization. |
 | **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
 ---
 ## Task Specifications
