@@ -1594,6 +1594,770 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 **Output format**: `Tasks [N/N compliant] | Contamination [CLEAN/ISSUES] | Unaccounted [CLEAN/ISSUES] | VERDICT`.
 
+## Per-Module Test Specifications
+
+This section maps every plan document to specific test specifications, ensuring no feature area lacks verification. Each module lists its testable behaviors organized by test layer. Together with the Coverage Map, this guarantees exhaustive coverage across the entire system.
+
+### Module: Requirements and Constraints (01)
+
+All MH_* constraints are verified through their implementing module tests. All MN_* constraints are verified through audit scans and negative tests.
+
+**Verification approach**:
+
+- Every MH_* identifier has at least one test proving the behavior exists and functions correctly.
+- Every MN_* identifier has at least one negative test proving the excluded behavior is absent.
+- Definition of Done verification gates are exercised through task acceptance criteria in end-to-end suites.
+- Requirement traceability: each test description references the MH or MN identifiers it covers.
+- Constraint cross-referencing: tests for compound constraints (such as injection detection requiring ensemble, not single layer) verify the combined behavior.
+
+### Module: System Architecture (03)
+
+Architecture invariants are verified through integration and end-to-end tests rather than dedicated unit tests. These tests validate structural properties of the running system.
+
+**Testable invariants**:
+
+- Layer boundary enforcement: library imports do not pull server-specific modules and vice versa.
+- Storage responsibility isolation: each storage system handles only its designated data categories per the storage decision table.
+- Docker Compose profiles: default profile starts five services, Langfuse profile adds observability, Trigger profile adds background jobs.
+- Graceful degradation topology: each optional service unavailability triggers the correct fallback per the degradation model.
+- Horizontal scaling: stateless API design verified by running concurrent requests across multiple API instances sharing the same external services.
+- Connection management: pool limits respected under load, PgBouncer integration functional.
+- Network topology: all services communicate over single Docker bridge network with correct port assignments.
+- Data flow invariants: chat request follows rate-check then budget-check then memory-load then LLM-stream sequence, with persistence and accounting after stream completion.
+- File upload flow: synchronous upload phase completes under one second, asynchronous enrichment runs in background.
+
+### Module: Foundation (04)
+
+Foundation tests are primarily unit tests validating configuration, types, schemas, and shared utilities.
+
+**Configuration system**:
+
+- Deep merge behavior: skip undefined values, override null values, replace arrays, override functions, recurse objects.
+- Configuration validation: invalid configs return descriptive validation errors through Zod schema reporting.
+- Configuration builder: merges per-agent overrides over library defaults correctly.
+- Frozen runtime config: config object is immutable after validation.
+- No hardcoded deployment prompts: library defaults contain no business-specific prompt content.
+- No built-in concept registry: library ships empty concept registry.
+
+**Zod v4 schema validation**:
+
+- All domain schemas accept valid input matching their type contracts.
+- All domain schemas reject invalid input with descriptive error paths.
+- Discriminated unions (TraceStepType, SSEEvent types) correctly discriminate on their tag field.
+- VerbosityLevel schema accepts exactly "standard" and "full".
+- GuardMode resolution: pipeline override wins over agent override wins over development default.
+
+**Storage factory**:
+
+- Explicit config always wins over auto-detection.
+- Postgres branch returns Drizzle-backed store.
+- Memory branch returns in-memory development store.
+- Custom branch returns user-supplied implementation.
+- Auto-detection uses database URL presence.
+- Selection path is logged for debugging.
+- SurrealDB storage uses surqlize typed APIs with no raw query strings.
+
+**MCP health check**:
+
+- Tool key parsing extracts server names using underscore-prefix ownership with greedy matching.
+- Per-server status: has_matching_tools yields connected, zero tools with allowEmptyTools yields empty, missing tools yields failed.
+- onFailure callback invoked with warn or throw behavior.
+- Periodic health check scheduling functions correctly.
+- No duplicate client creation when wrapper augments existing client.
+
+**Provider resolution**:
+
+- String identifiers resolve to correct provider path.
+- Direct provider model instances pass through unchanged.
+- Factory functions pass through unchanged.
+- Fallback model wraps primary with ordered fallback chain.
+- onFallback callback invoked when fallback is used.
+- Both stream and generate paths use fallback middleware.
+
+**Environment validation**:
+
+- GOOGLE_API_KEY: comma-separated pool parsed into individual keys.
+- JWT_SECRET: missing in production refuses startup, missing in development enables bypass.
+- DATABASE_URL: hard-required, missing causes startup failure.
+- SURREALDB_URL: missing disables long-term memory only.
+- VALKEY_URL: missing falls back to in-memory cache.
+- S3_ENDPOINT: missing disables upload path.
+- TRIGGER_DEV_API_URL: missing runs jobs in-process.
+- LANGFUSE variables: missing disables observability.
+
+**Numeric configuration constants**:
+
+- All thresholds (USER_SHORTTERM_LIMIT, USER_SHORTTERM_FADEOUT, ROLLING_SUMMARY_MAX_TOKENS, CONTEXT_WINDOW_BUDGET, MAX_RECALL_TOKENS, MAX_INPUT_MESSAGE_LENGTH, GIBBERISH_CONFIDENCE_THRESHOLD, RECENCY_BOOST values, TTL values) applied correctly at boundary values.
+
+### Module: Conversation Pipeline (05)
+
+Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete six-phase flow.
+
+**Phase 0 — input validation and language gate**:
+
+- Fast language detection for clear allow and block paths.
+- Ambiguous or mixed-language content proceeds to intent classification.
+- Clear unsupported language triggers p0 tripwire block.
+- Post-intent gate checks intendedOutputLanguage support.
+- Translation edge cases: input in one language with intent to translate to another.
+
+**Phase 1 — non-actionable detection**:
+
+- Pleasantries, acknowledgments, and single-emoji messages short-circuit.
+- Gibberish via entropy and language reliability signals short-circuits.
+- Mixed actionable turns do not short-circuit.
+- False-positive avoidance for short valid tokens, abbreviations, and non-Latin scripts.
+- Short-circuit path skips embedding, LLM intent, rewriting, source routing, and fact extraction.
+
+**Phase 2 — context assembly**:
+
+- Three-layer context loading: thread short-term, user short-term, long-term recall.
+- Trust hierarchy enforcement: system instruction highest, user messages medium, retrieved content zero trust.
+- Retrieved content wrapped with reinforcement boundaries (sandwich framing, not delimiters alone).
+- Zero-trust content containing instruction-like patterns: redacted or preserved with data-only framing.
+- Unmarked zero-trust content never inserted into instruction-adjacent positions.
+
+**Phase 3 — intent classification**:
+
+- Embedding router: semantic hint generation with confidence scoring and Valkey cache interaction.
+- LLM intent validator: structured output with all fields (intent, topics, rewritten query, clarification, language, temporal, dependent intents, negations, replay structure, behavioral signals).
+- Speculative pre-fetching: starts on embedding guess, cancels on LLM disagreement.
+- Correction detection: triggers re-interpretation of previous response.
+- Frustration detection: signals de-escalation behavior.
+- Topic abandonment: flushes stale topic context.
+- Multi-intent decomposition: sub-queries with parallel or sequential processing.
+- Dependent intents: dependency ordering with constraint passing between intents.
+- Attribute negation: property-level exclusion distinct from entity exclusion.
+- Query replay: parameter substitution with thread context recovery.
+- Temporal resolution: phrases resolved to concrete ranges using user timezone with UTC fallback.
+
+**Phase 4 — rewrite and source routing**:
+
+- Seven rewrite triggers: pronoun referent, short query expansion, multi-intent separation, specific identifier preservation, jargon alignment, ordinal resolution, query replay reconstruction.
+- Entity preservation guardrail: all original entities appear verbatim in rewrite, guardrail failure discards rewrite.
+- Source priority: parallel fan-out across all configured sources with priority weighting at merge.
+- Result merging: weight formula application, priority as scaling factor not absolute gate.
+- Attribute negation application: per-source negation strategies (minus-prefix, contextual clause, negation-aware recall, negative preference framing).
+- Empty result handling: normal versus suspicious empties with logging.
+
+**RAGFlow integration**:
+
+- Read-only retrieval: query mapping, chunk-to-citation mapping, dataset isolation.
+- Topic-level dataset overrides take precedence over global defaults.
+- Single request must not mix incompatible dataset embeddings.
+
+### Module: Agents and Orchestration (06)
+
+**Agent factory**:
+
+- Creation with sensible defaults and full customizability.
+- System prompt wiring through Gemini's dedicated system instruction field.
+- Provider bridge wiring and model resolution.
+- No hardcoded business prompts in library.
+
+**Orchestrator**:
+
+- Multi-intent supervision via handoffs between sub-agents.
+- Sub-agent lifecycle management: creation, execution, result collection, cleanup.
+- Live synthesis: streaming merge of sub-agent results into unified response.
+- Dependent intent handling: sequential processing with constraint passing.
+- Independent intent handling: parallel processing with result merging.
+
+**Agent behaviors**:
+
+- Auto-trigger memory recall on first message in new thread.
+- Context budgeting: token allocation across layers with priority-based truncation.
+- Response energy matching: input characteristics determine output calibration hint.
+- Clarification patience model: after threshold turns synthesize best-effort answer.
+- Location enrichment tool: pluggable geocoding, cached results, suppressed from stream.
+- Tool registration: dynamic scoping per agent, namespace isolation, no duplicate instances.
+- Grounding mode: separate agent mode for web-grounded responses with grounding metadata.
+- Provider-agnostic configuration: no model-specific branching in core agent logic.
+
+### Module: Memory and Intelligence (07)
+
+Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
+
+**Thread short-term memory**:
+
+- Load last ten turns from conversation store scoped by userId and threadId.
+- Persist new turn after stream completes.
+- Drop turns outside sliding window from context but keep in storage.
+- Roll dropped turns into mandatory rolling summary.
+- Edge cases: first turn returns zero turns, exactly ten turns fit in window, eleventh turn triggers summary.
+
+**User short-term memory**:
+
+- Cross-thread loading: load messages from other threads scoped by userId.
+- Fade-out: injection stops after configured turn threshold.
+- Framing: injected context strictly for ambiguity resolution, not proactive mention.
+- Edge cases: no prior threads returns empty, user with many threads returns only configured limit.
+
+**Rolling summaries**:
+
+- Trigger on window overflow with incremental merge.
+- Token budget enforcement and compaction when exceeded.
+- Compaction priority: remove resolved items, collapse old detail, merge topics.
+- Summary preserves topic trajectory, decisions, entities, and open loops.
+- Summary excludes verbatim transcript and obsolete preferences.
+
+**Thread resurrection**:
+
+- Gap detection exceeding configured threshold.
+- Entity extraction from rolling summary.
+- Memory recall triggered with extracted entities.
+- Staleness note injected.
+- Edge cases: just under gap threshold yields no resurrection, just over triggers it.
+
+**Fact extraction pipeline**:
+
+- User-only content: never extracts facts from assistant-originated content.
+- Attribution filter: self yields user fact, third_party yields interaction signal, general discarded.
+- Certainty filter: stated yields store, hypothetical or asked yields discard.
+- Sarcasm detection: inverts polarity from conversational context.
+- Temporal classification: PAST, PRESENT, FUTURE states.
+- Contradiction detection: attribute match plus semantic check triggers supersession.
+- Deduplication: cosine similarity at 0.92 threshold with exact boundary behavior.
+- Emotional context: extraction with decay counter, turn-by-turn decrement.
+- Interaction signals: search queries, discussed entities, user actions, temporal markers.
+- Media facts: vision description plus entity extraction from shared images.
+- Injection defense: classify candidate facts, reject instruction-like patterns.
+- Fire-and-forget: extraction failure logs error, skips extraction, persists short-term anyway.
+
+**Fact supersession and deduplication**:
+
+- Similarity search returns top five existing facts.
+- Below 0.7: add new fact independently. Between 0.7 and 0.92: check predicate match. At or above 0.92: skip as duplicate.
+- Predicate match with contradiction: supersede old fact with pointer and edge.
+- Predicate match without contradiction: coexist.
+- Superseded records kept for audit.
+- Recall excludes superseded facts by default.
+
+**Memory recall tool**:
+
+- Auto-trigger on first message in new thread.
+- Agent-controlled recall on subsequent turns.
+- Semantic search on facts, interactions, and media facts.
+- Graph traversal limited to two hops.
+- Temporal filter when hint provided.
+- Recency weighting: 24-hour 1.5x, 7-day 1.2x, beyond 7 days 1.0x.
+- TTL refresh on recalled records.
+
+**Memory control tools**:
+
+- Inspect: loads active facts grouped by type, excludes superseded.
+- Delete: search, show candidates, require confirmation, remove records and edges, purge cache.
+- Edge cases: zero matches returns explicit message, user decline cancels deletion.
+
+**Context window budget**:
+
+- Track usage across all layers.
+- Priority-based truncation: thread history highest, then user short-term, then long-term, then sources.
+- Budget enforcement prevents context overflow.
+
+**Memory poisoning defense**:
+
+- Injection classifier at extraction time rejects instruction-like facts.
+- Recalled facts framed as zero-trust data-only content.
+- Periodic cleanup scans for injection patterns in stored facts.
+
+### Module: Document Processing (08)
+
+**Upload validation**:
+
+- Magic bytes check (not extension-based) against known signatures.
+- Size limit: 5MB per file exactly at boundary.
+- Turn limit: 5 files per turn exactly at boundary.
+- Quota check: reject if result exceeds user maximum.
+- Supported types: PDF, DOCX, TXT, PNG, JPG, JPEG, WEBP.
+- .doc legacy binary rejected with clear error message.
+- Quota reservation rollback on processing failure.
+
+**Document routing**:
+
+- Images: direct mode. TXT up to 8K tokens: direct mode. TXT above 8K: RAG mode.
+- PDF up to 6 pages: direct mode. PDF above 6: indexed mode.
+- DOCX routing matches PDF after conversion.
+- Exact boundary values: 6 pages is direct, 7 pages is indexed.
+
+**DOCX conversion**:
+
+- LibreOffice sidecar invocation over Docker network.
+- Thirty-second timeout handling.
+- Converted PDF stored in S3 with updated metadata.
+- Temp file cleanup after conversion.
+- Failed conversion marks file as failed.
+
+**Per-page summarization**:
+
+- PDF splitting into single-page outputs.
+- Image extraction with 100px minimum dimension filter.
+- Gemini structured output: summary 150-400 words, image descriptions, vector-chart flag.
+- Embedding generation per page.
+- Vector-chart fallback: PNG render when flag is true and no raster images.
+- Concurrency control with configurable limit and round-robin key distribution.
+- Retry failed pages up to three times with exponential backoff.
+- Single failed page does not abort entire document.
+
+**Background enrichment**:
+
+- Raw text extraction and truncation to 1800 tokens.
+- Embedding and tsvector generation.
+- Failure reverts to ready state, file remains queryable from summaries.
+- Dev mode fallback: in-process when Trigger.dev environment absent.
+
+**File status state machine**:
+
+- All transitions validated: uploading to summarizing, summarizing to ready, ready to enriching, enriching to enriched, enriching to ready on failure.
+- Failure transitions: uploading to failed, summarizing to failed.
+- Deletion transitions: ready or enriched to deleted.
+- No backward transitions for any event sequence.
+
+**Stranded file recovery**:
+
+- TTL cleanup detects files in summarizing state beyond ten minutes.
+- Reset and re-enqueue with idempotent re-execution.
+- After three retries, transition to failed.
+
+**Cleanup**:
+
+- Per-file: requires both fileId and userId, removes S3 objects, page_index rows, vector chunks, marks deleted, releases quota.
+- Per-thread: iterates all files for thread plus user.
+- TTL: scheduled daily, finds expired non-deleted files.
+- Idempotent: safe to run twice with same input.
+
+### Module: Retrieval and Evidence (09)
+
+**Hybrid search with RRF**:
+
+- Three-arm fusion: summary vector, raw vector, keyword tsvector.
+- Over-fetch 40 candidates per arm, RRF with k=50 smoothing.
+- Group by file_id and page_number before score aggregation.
+- Return top 10 pages.
+- Cross-arm agreement dominates single-arm dominance.
+- All arms execute through Drizzle-composed queries.
+
+**Graceful degradation**:
+
+- Summary-only mode: arms two and three return zero rows, arm one provides results.
+- Enriched mode: all three arms contribute.
+- Same user flow regardless of enrichment status.
+
+**Content sanitization**:
+
+- Injection pattern classifier evaluates each retrieved chunk.
+- Strip external image embeds, dynamic URL patterns, hidden markup.
+- Wrap chunks with explicit data-only boundaries.
+- Latency cost approximately 50-100ms per retrieval.
+
+**Structured citations**:
+
+- Attribute-first generation: plan citations before prose.
+- Citation fields: source, fileId, page, quote, scope, images.
+- Presigned URLs with seven-day TTL.
+- Quotes verbatim from raw text when available, summary-derived when summary-only.
+
+**Evidence bundle gate**:
+
+- Sufficiency scoring: coverage 0.4, confidence 0.4, completeness 0.2 weights.
+- Gate open: plan citations and generate prose.
+- Gate closed: hard refusal, soft caveat, or clarification per config.
+- Thresholds configurable per topic.
+
+**FileRegistry**:
+
+- Temporal reference resolution: yesterday, last week, recently.
+- Ordinal reference resolution: third document, first PDF.
+- Named reference: fuzzy match against filenames.
+- Timezone handling: user timezone from request header, UTC fallback.
+- Ambiguity: ask user to clarify, no arbitrary guess.
+- Cache invalidation on deletion or status changes.
+
+**Cross-conversation RAG**:
+
+- Thread scope versus global scope.
+- Scope boost: thread results at full score, global at 0.85x multiplier.
+- Global scope never crosses user boundaries.
+
+**Anti-hallucination architecture**:
+
+- Four-layer verification: FileRegistry resolution, evidence gate, attribute-first citations, transparent refusal.
+- Phantom file reference caught at layer one.
+- Weak evidence caught at layer two.
+- Unsupported claims caught at layer three.
+- Partial evidence explicitly noted at layer four.
+
+**File edge cases**: all 28 documented scenarios across six categories (content Q&A, cross-reference, visual, ambiguity, conversational, format-specific) each have corresponding test coverage.
+
+### Module: Guardrails and Safety (10)
+
+**Input guardrail pipeline**:
+
+- All guardrails run in parallel, all verdicts collected before aggregation.
+- Worst-wins aggregation: p0 > p1 > p2.
+- p0 triggers abort and tripwire, p1 triggers onFlag with message pass-through, p2 passes silently.
+- Empty guardrail array means message always passes.
+- No short-circuit on first p0 (all verdicts collected).
+- Error in individual guardrail propagates, stream terminates.
+
+**Injection detection ensemble**:
+
+- Tier one heuristic: regex-driven detection of role-override, delimiter injection, encoding obfuscation, imperative patterns.
+- Tier two ML classification: trained injection classifier.
+- Tier three LLM-as-judge: lightweight judge model with structured output.
+- All tiers run in parallel.
+- Decision logic: LLM-alone blocks, two-tier triggers flag, single non-LLM passes.
+- Edge cases: only tier one triggers yields pass, tier one plus tier two yields flag, tier three alone yields block.
+
+**Output guardrail sliding window**:
+
+- Configurable buffer size, default fifty tokens.
+- Per-chunk evaluation against all output guardrails.
+- Production mode: p0 suppresses all remaining chunks, injects fallback.
+- Development mode: p0 throws tripwire exception.
+- Multi-token patterns spanning chunk boundaries caught by sliding window.
+
+**Output-side injection detection**:
+
+- System prompt leakage: fingerprint-based matching catches verbatim and paraphrased leakage.
+- Attention collapse: flag responses over-indexing on single chunk.
+
+**Zero-leak buffered mode**:
+
+- Buffer phase holds configured token count server-side.
+- Violation during buffer: suppress entire buffer, zero bytes sent, inject fallback.
+- Buffer full with no violation: flush and switch to streaming with sliding window.
+
+**Guardrail factories**:
+
+- Regex: patterns plus concept plus severity yields guardrail function.
+- Keyword: keywords plus concept plus severity yields guardrail function, case-insensitive matching.
+- LLM: classifier callback plus concept yields guardrail function.
+- External moderation: endpoint plus concept plus failMode yields guardrail function.
+- External failMode open: network errors return p2 with warning.
+- External failMode closed: network errors return p0.
+- Composite: constituents run in parallel, worst-wins aggregation.
+- All factories return identical function signature.
+
+**Language guard**:
+
+- Fast detect: eld detection with confidence threshold.
+- Post-intent gate: read intendedOutputLanguage from intent result.
+- Output scanner: catch unsupported-language drift mid-stream with dominance thresholding.
+- Edge cases: translation intent, mixed language with place names, short text below minimum length.
+
+**Hate speech guard**:
+
+- English engine: obscenity library with leet-speak, Unicode confusables, repetition handling.
+- Multilingual engine: profanity library with Unicode word boundaries across supported languages.
+- LDNOOBW supplement for thinner language coverage.
+- Both engines run in parallel, any match returns p0.
+
+**Escalation detection**:
+
+- Sliding window anomaly scoring across turns.
+- Behavioral signals: persona drift, privilege escalation sequences, context exhaustion.
+
+### Module: Streaming and Transport (11)
+
+**SSE event types**:
+
+- All nine event types (session-meta, text-delta, trace-step, cta, citation, location, tripwire, done, error) conform to defined schemas.
+- Each event type serializes to valid SSE format.
+
+**Verbosity filtering**:
+
+- Standard mode excludes trace-step events.
+- Full mode includes all event types.
+- Verbosity does not affect Langfuse tracing (always full).
+
+**CTA streaming**:
+
+- Tool-call events suppressed from stream.
+- Clean CTA event emitted with schema validation: id, label, action type, optional URL and icon.
+- Maximum three CTAs per response enforced.
+
+**Location streaming**:
+
+- Location-search tool-call and tool-result events suppressed from output.
+- Clean location event emitted with coordinate data.
+
+**Client SDK transport**:
+
+- SSE parsing with correct line buffering for incomplete chunks.
+- Event type discrimination and typed event object construction.
+- Reconnection with automatic resume.
+- Offline queue: persist messages locally, sync on reconnect.
+
+### Module: Server Implementation (12)
+
+**Middleware chain**:
+
+- Ordering enforced: CORS before RequestID before LogContext before JWT before RateLimit before Budget before Handler.
+- CORS runs first for preflight success without authentication.
+- Request ID generated or forwarded from client header.
+- JWT verification: signature, expiry, optional issuer and audience.
+- Rate limiting per user and endpoint group with sliding window.
+- Budget check reads counters from cache before agent execution.
+
+**JWT authentication edge cases**:
+
+- Missing authorization header returns 401 missing_token.
+- Malformed bearer format returns 401 invalid_token.
+- Invalid signature returns 401 invalid_token.
+- Expired token returns 401 token_expired.
+- Valid token with wrong role returns 403 insufficient_role.
+- Missing JWT_SECRET in production refuses startup.
+- Missing JWT_SECRET in development enables dev-bypass with warning.
+
+**Startup validation**:
+
+- Postgres connectivity validated before accepting traffic.
+- Error map completeness validated against all typed error codes.
+- Missing required environment values cause startup failure.
+- Optional service unavailability logs warning with degraded mode.
+
+**Route handlers**:
+
+- Chat streaming: SSE response, agent resolution, verbosity control, usage accounting after stream.
+- File upload: multipart handling, validation, blocking preparation, background enrichment enqueue.
+- File management: list, detail, delete, status, page image redirect with signed URLs.
+- Feedback: trace ownership validation, binary score, rate limiting.
+- Admin budget: detail, update with optional reset, list with over-budget filter.
+- Health: unauthenticated, parallel probes, five-second timeout, ok/degraded/down status.
+
+**Error handling**:
+
+- Every typed error code mapped to user-facing message.
+- Missing error code mapping causes startup failure.
+- Mid-stream errors emit typed error event and close stream.
+
+**Graceful shutdown**:
+
+- Stop accepting new connections on termination signal.
+- Active streams signaled to drain with thirty-second timeout.
+- Tracing backend flushed with ten-second timeout.
+- Database and cache connections closed.
+- New requests during shutdown receive 503 with Retry-After header.
+
+### Module: TUI App (13)
+
+**Setup and rendering**:
+
+- Correct jsxImportSource for OpenTUI Solid compilation.
+- Preload configuration for reactive state updates.
+- Full-screen layout with four persistent panels.
+- Terminal resize reflow.
+
+**Keyboard handling**:
+
+- Enter submits, Shift+Enter inserts newline.
+- Ctrl+C cancels stream or quits with guarded behavior.
+- Ctrl+L clears state and pending attachments.
+- Up and Down arrow for input history recall.
+- Tab for slash command autocomplete.
+- Escape dismisses overlays.
+
+**Command routing**:
+
+- Slash commands intercepted before agent.
+- Known commands dispatched to handlers.
+- Unknown commands show inline error message.
+- Tab completion works for all supported command names.
+
+**Chat display**:
+
+- Streaming markdown rendering with syntax-highlighted code blocks.
+- Auto-scroll follows new content unless user scrolled up.
+- Auto-scroll resumes when user returns to bottom.
+- Only currently streaming message re-renders per chunk.
+
+**Input component**:
+
+- Multiline growth up to eight lines, then internal scrolling.
+- Empty and whitespace-only submissions rejected.
+- Input disabled during streaming, re-enabled when streaming ends.
+- Local in-memory input history separate from chat history.
+
+**Agent integration**:
+
+- Direct mode: import library runtime and call execution directly.
+- Client SDK mode: remote execution with equivalent stream semantics.
+- Event normalization: same downstream handling regardless of mode.
+- TripWire handling: exception caught, error banner displayed, fallback text shown.
+- Stream cancellation: Ctrl+C cancels stream, partial response preserved.
+
+**File upload flow**:
+
+- File picker with type filtering, arrow navigation, multi-select.
+- Magic bytes validation for type checking.
+- Progress tracking through file status state machine.
+- Pending attachment management through status bar.
+- Cleanup on /clear command.
+- Edge cases: oversize file, excess files, quota exceeded, unsupported type.
+
+### Module: Observability (14)
+
+**Langfuse integration**:
+
+- Tracing exporter translates framework trace and span events into Langfuse API calls.
+- Automatic span creation for agent runs, LLM generations, tool calls, guardrails, handoffs.
+- Custom domain spans added for input guardrail, output guardrail, RAG pipeline, file processing, memory operations.
+- No-op behavior when Langfuse not configured: all consumers work without null checks.
+
+**Trace lifecycle**:
+
+- Every agent interaction produces trace.
+- traceId shared between SSE events and Langfuse traces.
+- Verbosity controls SSE emission only, Langfuse always receives full trace.
+
+**PII redaction**:
+
+- Two-layer pipeline: deterministic entity detection plus structured-output LLM review.
+- Default-on in production.
+- Confidence failures route to quarantine.
+- Redaction counters and reason tags visible for audit.
+
+**User feedback**:
+
+- Trace ownership validation prevents cross-user score submission.
+- Binary score (zero or one) attached to trace.
+- Rate limiting: ten requests per user per minute.
+- Graceful handling when Langfuse absent: 200 response with traced false.
+
+**Prompt management**:
+
+- Startup preload from Langfuse with cache hydration.
+- Variable interpolation with strict missing-variable checks.
+- Stale-while-revalidate semantics on cache expiry.
+- Circuit breaker prevents repeated latency spikes.
+- Langfuse outage at startup loads fallback prompts.
+- Langfuse outage at runtime falls back to local prompt.
+
+**Self-test infrastructure**:
+
+- Promptfoo subprocess spawning with ephemeral server.
+- Config generation and result parsing.
+- Clean dependency boundary: no Promptfoo library import.
+
+### Module: Infrastructure (15)
+
+**Docker Compose**:
+
+- Core profile five services start correctly with health checks.
+- Langfuse profile adds four services on non-conflicting ports.
+- Trigger profile adds five services.
+- Port conflict resolution: Valkey on 6379, Langfuse Redis on 6380, ClickHouse native on 9100, Langfuse web on 3100.
+
+**Degradation model**:
+
+- Postgres unavailable: hard failure, HTTP 503.
+- JWT secret absent in production: hard failure, startup refused.
+- Each optional service (SurrealDB, MinIO, Valkey, Trigger.dev, Langfuse) degrades gracefully per documented behavior.
+- Valkey unavailable: budget fail-open, per-instance rate limiting, in-memory cache.
+
+**Budget enforcement**:
+
+- Pessimistic reservation: increment by estimate, check limit, rollback on over-limit.
+- Reconciliation: adjust counter based on actual versus estimated usage.
+- Daily and monthly counter auto-expiry.
+- Atomic increment and expiration committed as one unit.
+- Valkey unavailable returns allowed true with warning.
+- Admin capabilities: detail, update with cache invalidation, paginated list.
+
+**Rate limiting**:
+
+- Sliding window sorted sets with Lua script atomicity.
+- Member uniqueness using random UUID for same-millisecond handling.
+- Retry-After derived from oldest in-window entry, clamped to minimum one second.
+- Per-user keying with custom key extraction support.
+- Development no-op fallback when Valkey unavailable.
+
+**Circuit breaker**:
+
+- Three-state machine: closed, open, half-open.
+- Closed to open: after configured consecutive failures.
+- Open to half-open: after reset timeout elapsed.
+- Half-open to closed: probe succeeds.
+- Half-open to open: probe fails.
+
+**Trigger.dev integration**:
+
+- Production dispatch to Trigger.dev task endpoint.
+- Development in-process fallback executes same handlers.
+- Registered tasks: background-enrichment, budget-aggregation, cleanup, expired-file-cleanup.
+
+**Structured logging**:
+
+- Hierarchical categories with async context propagation.
+- Request correlation through requestId.
+
+### Module: Execution Plan (17)
+
+- Task dependency graph: all dependencies correctly specified with no circular dependencies.
+- Task ordering: batches contain only tasks whose dependencies are satisfied by prior batches.
+- Acceptance criteria: each task has verifiable criteria that can be mechanically checked.
+
+### Module: Frontend SDK (18)
+
+**Transport adapter**:
+
+- SSE parsing with correct line buffering.
+- Event type discrimination producing typed event objects.
+- Reconnection with automatic resume and deduplication.
+
+**React hooks**:
+
+- Six hooks with correct behavior for chat, streaming state, feedback submission, trace display, file upload, and offline mode.
+- Hooks integrate with AI SDK ChatTransport interface.
+
+**Web components**:
+
+- 48 ai-elements based components render correctly with proper ARIA attributes.
+- Eight custom components (trace timeline, verbosity toggle, server switch, and others) function correctly.
+- Component installation CLI provides individual component installation.
+
+**Type safety**:
+
+- SSE event types flow through client SDK to React hooks to UI components without type loss.
+- Runtime event parsing validates against Zod schemas.
+
+**Accessibility**:
+
+- WCAG 2.1 AA compliance for all components.
+- Keyboard navigation for all interactive elements.
+- Screen reader compatibility with appropriate ARIA attributes.
+
+**Offline queue**:
+
+- Messages queued when server unreachable.
+- Local persistence across app restarts.
+- Auto-sync on reconnect with no duplicate delivery.
+
+**Storybook**:
+
+- Usage examples for all web components.
+- Usage examples for React Native components.
+
+### Module: Demos (19)
+
+**Next.js demo**:
+
+- All web components render and function correctly.
+- Server switching between multiple safeagent instances.
+- Verbosity toggle switches between standard and full modes.
+- File upload through the complete pipeline.
+
+**Expo demo**:
+
+- Offline-first behavior: queue messages, persist locally, sync on reconnect.
+- All React Native components render correctly.
+- Server switching functions correctly.
+
+**Eden Treaty integration**:
+
+- Type-safe API calls through Elysia Eden Treaty client.
+
 ## Coverage Map
 
 Every Must Have feature area maps to one or more testing layers.
