@@ -529,7 +529,7 @@ Memory context layers:
 - UserShortTermContext includes user identity, cross-thread messages, and active flag.
 - CombinedMemoryContext merges thread short-term, optional user short-term, and long-term recall.
 
-Memory deep-dive is in `./07-memory.md`.
+Memory deep-dive is in [07 — Memory & Intelligence](./07-memory.md).
 
 ---
 
@@ -991,10 +991,10 @@ Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespac
 ---
 
 ## Cross-References
-- Requirements and guardrails context: `./01-requirements.md`
-- System layout context: `./03-architecture.md`
-- Conversation pipeline consumers: `./05-conversation.md`
-- Memory architecture consumers: `./07-memory.md`
+- Requirements and guardrails context: [01 — Requirements & Constraints](./01-requirements.md)
+- System layout context: [03 — System Architecture](./03-architecture.md)
+- Conversation pipeline consumers: [05 — Conversation Pipeline](./05-conversation.md)
+- Memory architecture consumers: [07 — Memory & Intelligence](./07-memory.md)
 ---
 
 *Previous: [03 — System Architecture](./03-architecture.md) | Next: [05 — Conversation Pipeline](./05-conversation.md)*

@@ -118,7 +118,7 @@ Intent routing consumes three-layer context:
 - User short-term (cross-thread messages when active).
 - Long-term recall (auto-triggered for new threads).
 
-Ordering guarantee: memory loading completes before intent detection. First-turn recall uses raw user message and does not depend on pre-classified intent. See `./07-memory.md`.
+Ordering guarantee: memory loading completes before intent detection. First-turn recall uses raw user message and does not depend on pre-classified intent. See [07 — Memory & Intelligence](./07-memory.md).
 
 ---
 ## Phase 3: Two-Stage Intent Classification with Integrated Signals
@@ -772,12 +772,12 @@ flowchart TB
 ## Cross-References
 | Component | Interaction |
 |-----------|------------|
-| Requirements | `./01-requirements.md` |
-| Architecture | `./03-architecture.md` |
-| Agents & Orchestration | `./06-agents.md` |
-| Memory | `./07-memory.md` |
-| Retrieval | `./09-retrieval.md` |
-| Infrastructure | `./15-infrastructure.md` |
+| Requirements | [01 — Requirements & Constraints](./01-requirements.md) |
+| Architecture | [03 — System Architecture](./03-architecture.md) |
+| Agents & Orchestration | [06 — Agents & Orchestration](./06-agents.md) |
+| Memory | [07 — Memory & Intelligence](./07-memory.md) |
+| Retrieval | [09 — Retrieval & Evidence](./09-retrieval.md) |
+| Infrastructure | [15 — Infrastructure](./15-infrastructure.md) |
 
 ---
 ## Task Specifications
