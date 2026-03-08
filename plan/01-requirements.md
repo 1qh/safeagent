@@ -240,7 +240,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 |---|---|---|
 | MH_REACT_HOOKS | React hooks package for AI SDK integration | `@safeagent/react` implements AI SDK ChatTransport interface so `useChat` works with safeagent SSE protocol. Exports typed hooks for chat, feedback, file upload, and thread management. Depends on `@safeagent/client` for SSE transport |
 | MH_WEB_COMPONENTS | Web UI component package | `@safeagent/ui` — components built on shadcn and Vercel ai-elements for conversation, messages, input, attachments, tool calls, reasoning, sources, model selector. Every component customizable via className and children slots. shadcn-style copy-into-project installation |
-| MH_RN_COMPONENTS | React Native UI component package | `@safeagent/ui-native` — equivalent component set for React Native using NativeWind v4. Shares hooks and business logic with web package via `@safeagent/react` but separate JSX and styling. Expo 52+ required for `expo/fetch` polyfill |
+| MH_RN_COMPONENTS | React Native UI component package | `@safeagent/ui-native` — equivalent component set for React Native using NativeWind v4. Shares hooks and business logic with web package via `@safeagent/react` but separate JSX and styling. Expo required for `expo/fetch` polyfill |
 | MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [11 — Streaming & Transport](./11-transport.md) |
 | MH_VERBOSITY_FILTER | Verbosity-level event filtering | Chat streaming endpoint accepts verbosity level (`standard` or `full`). `standard` emits user-facing events only. `full` adds trace-step events for developer debugging. Server controls via query parameter |
 | MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [18 — Frontend SDK](./18-frontend-sdk.md) |
@@ -254,6 +254,26 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_FRONTEND_A11Y | Accessibility compliance | All UI components support ARIA attributes, keyboard navigation, and screen reader compatibility. ai-elements already provides this for adopted components — custom components must match |
 | MH_OFFLINE_MOBILE | Offline-first mobile experience | Mobile app queues messages offline via `@safeagent/client` offline queue, persists conversation locally, syncs on reconnect. Visual indicators for offline state and pending messages |
 | MH_AI_ELEMENTS | ai-elements as web component foundation | Adopt Vercel ai-elements components for conversation, messages, input, tool calls, reasoning, attachments, sources, code blocks. Custom components only for gaps: trace UI, server switch, verbosity toggle, thread list, message timestamps, typing indicator, error retry |
+
+### Cross-Cutting
+
+| ID | Requirement | Detail |
+|---|---|---|
+| MH_CROSS_CONV_RAG | Cross-conversation RAG knowledge base | Global document knowledge accessible across all conversations for a user — not siloed per thread |
+| MH_ADMIN_API | Admin API for budget management | Server endpoints for viewing and adjusting per-user token budgets, quota overrides, and cost tracking |
+| MH_PROMPT_MGMT | Langfuse prompt management | Runtime prompt fetching from Langfuse with cache, fallback to local prompts, variable interpolation, circuit breaker protection |
+| MH_ZERO_LEAK | Zero-leak output guardrail | Buffered gating guardrail that holds response chunks until safety classification completes — no unsafe content reaches the client even briefly |
+| MH_OFFLINE_QUEUE | Client SDK offline message queue | `@safeagent/client` queues messages when the server is unreachable, persists to local storage, auto-syncs on reconnect with deduplication |
+| MH_SURQLIZE | SurrealDB via surqlize ORM | All SurrealDB operations use the surqlize ORM — no raw SurrealQL queries |
+| MH_TYPED_ENV | Typed environment configuration | `@t3-oss/env-core` validates and types all environment variables at startup — runtime access is fully typed with no raw `process.env` reads |
+| MH_TYPED_ERRORS | Typed error handling with neverthrow | Result type pattern (`ok`/`err`) for all boundary operations — no thrown exceptions at module boundaries, every error path is typed |
+| MH_NO_RAW_SQL | No raw SQL — Drizzle only | All Postgres operations use Drizzle ORM query builder — raw SQL strings are banned and enforced via ESLint rule |
+| MH_PRECOMMIT_HOOKS | Pre-commit quality gates | Husky + lint-staged run formatting, linting, and type-checking on staged files before every commit |
+| MH_WATCH_ONLY | Development watch mode | `bun --watch` for automatic restart during development — no manual rebuild step required |
+| MH_OPENAPI_DOCS | OpenAPI documentation from Elysia | Elysia auto-generates OpenAPI specification from route definitions — always in sync with actual endpoints |
+| MH_SEED_DATA | Seed data for testing | Reproducible seed data fixtures for smoke tests and end-to-end tests — deterministic test state |
+| MH_TYPEDOC | API documentation generation | TypeDoc generates API reference documentation from source TypeScript — published alongside the package |
+| MH_BUN_LINK | Local development linking | `bun link` workflow for developing safeagent library and server project simultaneously without publishing |
 
 ### Complete Must-Have → Task Ownership Mapping
 
