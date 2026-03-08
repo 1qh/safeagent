@@ -43,7 +43,7 @@ flowchart TD
     end
 
     subgraph STORE["Storage (synchronous)"]
-        S3_ORIG["Store original object in S3\nusing a hierarchical key\norganized by user, thread, and file identity"]
+        STORAGE_ORIGINAL_OBJECT["Store original object in S3\nusing a hierarchical key\norganized by user, thread, and file identity"]
         PG_META["INSERT file_uploads\n(Drizzle ORM)\nstatus = 'uploading'"]
         QUOTA_UP["UPDATE user_storage_quotas\n+byteSize"]
     end
@@ -63,8 +63,8 @@ flowchart TD
         GEMINI_SUM["Gemini generateObject\nper-page summarization"]
         EMBED_SUM["Embed summaries\n→ EMBEDDING_PROVIDER"]
         STORE_IDX["INSERT page_index rows\n(summary + vector)"]
-        S3_PAGES["PUT per-page PDFs to S3"]
-        S3_IMGS["PUT extracted images to S3"]
+        STORAGE_PAGE_PDFS["PUT per-page PDFs to S3"]
+        STORAGE_PAGE_IMAGES["PUT extracted images to S3"]
         STATUS_READY["UPDATE status = 'ready'"]
     end
 
@@ -78,7 +78,7 @@ flowchart TD
     end
 
     CLIENT --> MAGIC --> SIZE --> QUOTA --> TYPE
-    TYPE --> S3_ORIG --> PG_META --> QUOTA_UP --> RESPOND
+    TYPE --> STORAGE_ORIGINAL_OBJECT --> PG_META --> QUOTA_UP --> RESPOND
     RESPOND --> DETECT_TYPE --> SET_MODE
 
     SET_MODE -->|"DOCX"| DOCX_CONV
@@ -87,8 +87,8 @@ flowchart TD
     SET_MODE -->|"PDF >6 pages"| PDF_SPLIT
     PDF_SPLIT --> IMG_EXTRACT --> GEMINI_SUM
     GEMINI_SUM --> EMBED_SUM --> STORE_IDX
-    GEMINI_SUM --> S3_PAGES
-    IMG_EXTRACT --> S3_IMGS
+    GEMINI_SUM --> STORAGE_PAGE_PDFS
+    IMG_EXTRACT --> STORAGE_PAGE_IMAGES
     STORE_IDX --> STATUS_READY
 
     STATUS_READY --> UNPDF --> TRUNC --> EMBED_RAW --> STORE_RAW --> STATUS_ENRICHED
@@ -184,7 +184,7 @@ DOCX files must be converted to PDF before the PDF processing pipeline can run. 
 flowchart TD
     DOCX_FILE["DOCX file\n(validated, stored in S3)"]
 
-    FETCH_S3["Fetch original DOCX\nfrom S3 to temp buffer"]
+    FETCH_FROM_STORAGE["Fetch original DOCX\nfrom S3 to temp buffer"]
 
     subgraph LIBREOFFICE["LibreOffice Headless (Docker sidecar :2002)"]
         SEND["Send DOCX to sidecar\nover Docker network\n(30s timeout)"]
@@ -200,7 +200,7 @@ flowchart TD
 
     CONTINUE["Continue to PDF\nprocessing pipeline"]
 
-    DOCX_FILE --> FETCH_S3 --> SEND --> WAIT --> CHECK_EXIT
+    DOCX_FILE --> FETCH_FROM_STORAGE --> SEND --> WAIT --> CHECK_EXIT
     CHECK_EXIT -->|"Yes"| PDF_BYTES --> UPLOAD_PDF --> UPDATE_META --> CONTINUE
     CHECK_EXIT -->|"No"| FAIL_CONVERT
 ```
@@ -249,8 +249,8 @@ flowchart TD
 
     subgraph STEP_E["Step E: Store"]
         EMBED_SUMMARY["Embed summary text\n→ EMBEDDING_PROVIDER"]
-        S3_PAGE_PDF["PUT page-{N}.pdf to S3"]
-        S3_PAGE_IMGS["PUT page-{N}-img-{M}.{ext} to S3"]
+        STORAGE_SINGLE_PAGE_PDF["PUT page-{N}.pdf to S3"]
+        STORAGE_EXTRACTED_IMAGES["PUT page-{N}-img-{M}.{ext} to S3"]
         INSERT_IDX["UPSERT page_index row\nsummary=page summary\nsummary_embedding=vector\nmetadata={images[]}"]
         UPDATE_PROGRESS["UPDATE progress_current = N"]
     end
@@ -263,8 +263,8 @@ flowchart TD
     DENSE_PARA --> CHECK_VECTOR
     CHECK_VECTOR -->|"Yes"| RENDER_PNG --> EMBED_SUMMARY
     CHECK_VECTOR -->|"No"| SKIP_RENDER --> EMBED_SUMMARY
-    EMBED_SUMMARY --> S3_PAGE_PDF
-    EMBED_SUMMARY --> S3_PAGE_IMGS
+    EMBED_SUMMARY --> STORAGE_SINGLE_PAGE_PDF
+    EMBED_SUMMARY --> STORAGE_EXTRACTED_IMAGES
     EMBED_SUMMARY --> INSERT_IDX --> UPDATE_PROGRESS
     UPDATE_PROGRESS -->|"All pages done"| STATUS_READY
 ```
@@ -486,7 +486,7 @@ flowchart TD
     end
 
     subgraph UPLOAD["S3 upload"]
-        S3_KEY["Hierarchical image key\norganized by user, thread, file, page, and image index"]
+        STORAGE_IMAGE_KEY["Hierarchical image key\norganized by user, thread, file, page, and image index"]
         PRESIGN["Generate presigned URL\n7-day TTL"]
         STORE_META["Store S3 key + URL\nin metadata JSONB"]
     end
@@ -498,16 +498,16 @@ flowchart TD
     end
 
     PAGE_PDF --> GET_OPS --> FIND_IMG --> GET_RES --> DECODE --> SIZE_CHECK
-    SIZE_CHECK -->|"Yes"| KEEP --> S3_KEY
+    SIZE_CHECK -->|"Yes"| KEEP --> STORAGE_IMAGE_KEY
     SIZE_CHECK -->|"No"| DISCARD
 
     KEEP --> HAS_VECTOR
     HAS_VECTOR -->|"Yes"| NO_RASTER
-    NO_RASTER -->|"Yes"| RENDER_CANVAS --> USE_PNG --> S3_KEY
+    NO_RASTER -->|"Yes"| RENDER_CANVAS --> USE_PNG --> STORAGE_IMAGE_KEY
     NO_RASTER -->|"No"| SKIP
     HAS_VECTOR -->|"No"| SKIP
 
-    S3_KEY --> PRESIGN --> STORE_META
+    STORAGE_IMAGE_KEY --> PRESIGN --> STORE_META
 
     STORE_META --> DIRECT_URL
     API_ENDPOINT --> REDIRECT
@@ -725,13 +725,13 @@ flowchart TD
     subgraph PER_FILE["cleanupFile(fileId, userId, deps)\ncalled on per-file deletion or TTL expiry"]
         direction TB
         CHECK_FILE["Require BOTH fileId AND userId"]
-        S3_DEL_FILE["Delete S3 objects\nfor this file only"]
+        STORAGE_DELETE_FILE_OBJECTS["Delete S3 objects\nfor this file only"]
         PAGE_DEL_FILE["DELETE FROM page_index\nWHERE file_id = ? AND user_id = ?"]
         CHUNK_DEL_FILE["DELETE PgVector chunks\nWHERE file_id = ? AND user_id = ?"]
         META_DEL_FILE["UPDATE file_uploads\nSET status='deleted',\ndeleted_at=NOW()\nWHERE file_id = ? AND user_id = ?"]
         QUOTA_REL_FILE["Release storage quota\ndecrBy(userId, fileSize)"]
 
-        CHECK_FILE --> S3_DEL_FILE --> PAGE_DEL_FILE --> CHUNK_DEL_FILE --> META_DEL_FILE --> QUOTA_REL_FILE
+        CHECK_FILE --> STORAGE_DELETE_FILE_OBJECTS --> PAGE_DEL_FILE --> CHUNK_DEL_FILE --> META_DEL_FILE --> QUOTA_REL_FILE
     end
 
     subgraph PER_THREAD["cleanupThread(threadId, userId, deps)\ncalled on thread deletion"]
@@ -770,17 +770,17 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 | Document | Relationship |
 |----------|-------------|
-| **System Architecture** ([01](./01-requirements.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
-| **Configuration** ([02](./02-configuration.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
+| **System Architecture** ([03](./03-architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
+| **Foundation** ([04](./04-foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
 | **RAG & Retrieval** ([09](./09-retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
-| **Server Implementation** ([14](./14-server-implementation.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
+| **Server Implementation** ([12](./12-server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
 | **Infrastructure** ([15](./15-infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
 
 ---
 
 ## Task Specifications
 
-> **SPIKE_RAG_DEPS** — canonical task specification is in [04 — Types & Foundation](./04-types-and-foundation.md#task-spike_rag_deps-rag--multimodal-dependencies-spike). This document's pipeline tasks depend on its output.
+> **SPIKE_RAG_DEPS** — canonical task specification is in [04 — Foundation](./04-foundation.md#task-spike_rag_deps-rag--multimodal-dependencies-spike). This document's pipeline tasks depend on its output.
 
 ---
 
@@ -857,7 +857,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ---
 
-> **UPLOAD_ENDPOINT** — canonical task specification is in [14 — Server Implementation](./14-server-implementation.md#task-upload_endpoint-upload-endpoint). The server route wires UPLOAD_PIPELINE to the HTTP layer.
+> **UPLOAD_ENDPOINT** — canonical task specification is in [12 — Server Implementation](./12-server.md#task-upload_endpoint-upload-endpoint). The server route wires UPLOAD_PIPELINE to the HTTP layer.
 
 ---
 

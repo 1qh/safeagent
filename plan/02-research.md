@@ -811,5 +811,4 @@ Every implementation task installs dependencies with `bun add <package>` (no dep
 
 ---
 
-*Previous: [02 — Configuration](./02-configuration.md)*
-*Next: [04 — Types & Foundation](./04-types-and-foundation.md)*
+*Previous: [01 — Requirements](./01-requirements.md) | Next: [03 — System Architecture](./03-architecture.md)*

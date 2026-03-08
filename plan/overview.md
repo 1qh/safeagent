@@ -257,3 +257,7 @@ graph LR
 | Storage per user | 100MB quota (configurable) |
 | Budget tracking | Sub-millisecond via Valkey atomic counters |
 | Horizontal scaling | Stateless API server + Trigger.dev workers |
+
+---
+
+*Next: [01 — Requirements](./01-requirements.md)*
