@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 99 implementation tasks + 4 final audit tasks = 103 total. 15 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~70% faster than sequential execution.
+> **Scale**: 108 implementation tasks + 4 final audit tasks = 112 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~70% faster than sequential execution.
 
 ---
 
@@ -16,10 +16,10 @@
 - [Dependency Graph](#dependency-graph)
 - [Batch Parallelism Visualization](#batch-parallelism-visualization)
 - [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (103 Tasks) and Full Dependency Matrix](#complete-task-registry-103-tasks-and-full-dependency-matrix)
+- [Complete Task Registry (112 Tasks) and Full Dependency Matrix](#complete-task-registry-112-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Documents 05, 06, 07, 09, 10)](#new-task-registry-documents-05-06-07-09-10)
+- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19)](#new-task-registry-documents-05-06-07-09-10-18-19)
 
 ---
 
@@ -39,7 +39,7 @@ gantt
     Batch 1 — Repo Setup (2 parallel)           :SCAFFOLDING_BATCH, after SPIKE_RAG_DEPENDENCY_GATE, 1d
 
     section Foundation
-    Batch 2 — Foundation A (8 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
+    Batch 2 — Foundation A (9 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
     Batch 3 — Foundation B (13 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
     section Config + Guards
@@ -59,14 +59,17 @@ gantt
     Batch 8b — Extended Integration (12 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
 
     section Routes + API
-    Batch 9a — Server Routes + Sub-Agent (2 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
-    Batch 9b — Endpoints+Barrel (5 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
+    Batch 9a — Server Routes + Sub-Agent + React Hooks (3 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
+    Batch 9b — Endpoints+Barrel+Frontend Components (7 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
 
     section Testing + Deploy
-    Batch 10 — E2E+Deploy+Publish (4 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 3d
+    Batch 10 — E2E+Deploy+Publish+Frontend Tools (7 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 3d
+
+    section Frontend + Demos
+    Batch 11 — Demos (2 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
 
     section Final Audit
-    FINAL — Compliance+QA (4 parallel)          :crit, FINAL_AUDIT_BATCH, after E2E_DEPLOY_BATCH, 2d
+    FINAL — Compliance+QA (4 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
 ```
 
 ### Batch Summary
@@ -76,7 +79,7 @@ gantt
 | 0 | BLOCKING | 1 | — | Validates all tech assumptions |
 | 0.5 | RAG Validation | 1 | — | Validates RAG dependency chain |
 | 1 | Scaffolding | 2 | 2 parallel | Repo structure for library + server |
-| 2 | Foundation A | 8 | 8 parallel | Types, storage, MCP, TUI shell, Docker, logging |
+| 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
 | 3 | Foundation B | 13 | 13 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies |
 | 4 | Config + Guards | 6 | 6 parallel | Configuration system, guardrails, FileRegistry, summary cap |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
@@ -84,9 +87,10 @@ gantt
 | 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
 | 8a | Server + TUI + Pipeline | 16 | 16 parallel | TUI integration, server config, search/visual tools, intent validator, extraction safeguards, context budget, style/fact calibration |
 | 8b | Extended Integration | 12 | 12 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification |
-| 9a | Server Routes + Sub-Agent Factory | 2 | 2 parallel | HTTP routes + lifecycle + sub-agent assembly |
-| 9b | Endpoints + Barrel | 5 | 5 parallel | Upload/feedback/file/admin endpoints + barrel exports |
-| 10 | E2E + Deploy | 4 | 4 parallel | Integration tests, publish prep, smoke tests, load tests |
+| 9a | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
+| 9b | Endpoints + Barrel | 7 | 7 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components |
+| 10 | E2E + Deploy | 7 | 7 parallel | Integration tests, publish prep, smoke tests, load tests, trace UI, CLI, Storybook |
+| 11 | Frontend Demos | 2 | 2 parallel | Next.js web demo, Expo mobile demo |
 | FINAL | Audit | 4 | 4 parallel | Plan compliance, code quality, full QA, scope fidelity |
 
 ### Milestone Markers
@@ -108,6 +112,7 @@ timeline
     SERVER_ROUTES_MARKER : SERVER_ROUTES + SUBAGENT_FACTORY complete
     ENDPOINT_SURFACE_MARKER : Endpoint surface + BARREL_EXPORTS complete
     E2E_DEPLOY_MARKER : E2E + publish + smoke + load complete
+    FRONTEND_DEMOS_MARKER : DEMO_WEB + DEMO_MOBILE complete
     FINAL_AUDIT_MARKER : AUDIT_PLAN + AUDIT_CODE + AUDIT_QA + AUDIT_SCOPE complete
 ```
 
@@ -146,19 +151,19 @@ graph LR
 | SPIKE_CORE_STACK — Core stack validation spike | 0 | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
 | SPIKE_RAG_DEPS — RAG Dependencies Spike | 0.5 | Blocks document processing, RAG infra, and file storage. Three critical Batch 2 tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
 | AGENT_FACTORY — Agent Factory | 5 | Critical gate for most integration paths. 8 Batch 6 tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
-| SERVER_ROUTES — Server Routes | 9a | Single-task batch. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API) and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
+| SERVER_ROUTES — Server Routes | 9a | Key gate in Batch 9a. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
 
 ### Timing Estimates
 
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 99 tasks) | ~350–450 hours estimated |
-| Parallel execution (batch model) | ~100–130 hours estimated |
+| Sequential execution (all 108 tasks) | ~380–480 hours estimated |
+| Parallel execution (batch model) | ~110–140 hours estimated |
 | Parallel speedup | ~70% faster than sequential |
 | Maximum concurrency | 17 tasks (Batch 6) |
 | Single-task bottleneck batches | 2 (Batch 0, 0.5) |
-| Total batches | 15 (including FINAL) |
+| Total batches | 16 (including FINAL) |
 
 ---
 
@@ -199,7 +204,7 @@ graph LR
 
 ---
 
-### Batch 2 — Foundation A (8 parallel)
+### Batch 2 — Foundation A (9 parallel)
 
 > Core types, storage, MCP, TUI shell, Docker infra bootstrap, and logging.
 
@@ -213,6 +218,7 @@ graph LR
 | SURREALDB_CLIENT | SurrealDB client via surqlize ORM + memory graph schema | `deep` | SCAFFOLD_LIB |
 | DOCKER_COMPOSE | Docker Compose (pgvector + MinIO + SurrealDB + Valkey + Trigger.dev + LibreOffice) | `quick` | SCAFFOLD_SERVER |
 | STRUCT_LOGGING | Structured logging (LogTape + AsyncLocalStorage context) | `quick` | SCAFFOLD_LIB |
+| SCAFFOLD_FRONTEND | Frontend workspace setup (@safeagent/react, @safeagent/ui, @safeagent/ui-native stubs, Storybook env) | `quick` | SCAFFOLD_LIB |
 
 ---
 
@@ -365,16 +371,17 @@ graph LR
 
 ---
 
-### Batch 9a — Server Routes + Lifecycle (2 parallel)
+### Batch 9a — Server Routes + Lifecycle + React Hooks (3 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
 | SUBAGENT_FACTORY | Sub-Agent Factory (intent-scoped Agent + Handoff creation with tool assignment) | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 | SERVER_ROUTES | Server HTTP routes + SSE endpoints + auth + health + graceful shutdown | `unspecified-high` | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING |
+| REACT_HOOKS | React hooks package (@safeagent/react — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity) | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
 
 ---
 
-### Batch 9b — Barrel Exports + Server Endpoints (5 parallel)
+### Batch 9b — Barrel Exports + Server Endpoints + Frontend Components (7 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -383,12 +390,14 @@ graph LR
 | FEEDBACK_ENDPOINT | User feedback endpoint (feedback submission → Langfuse scores) | `quick` | SERVER_ROUTES, LANGFUSE_MODULE |
 | FILE_CRUD | File management CRUD endpoints | `unspecified-high` | SERVER_ROUTES, FILE_REGISTRY |
 | ADMIN_API | Admin API for budget management | `unspecified-high` | SERVER_ROUTES, COST_TRACKING, JWT_AUTH |
+| WEB_COMPONENTS | Web UI components (@safeagent/ui — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (@safeagent/ui-native — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
-> **Note**: BARREL_EXPORTS depends on ALL library module tasks (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, and CLARIFICATION_MODEL). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
+> **Note**: BARREL_EXPORTS depends on ALL library module tasks (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, and STORYBOOK_FRONTEND). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
 
 ---
 
-### Batch 10 — E2E + Deploy + Publish + Load Testing (4 parallel)
+### Batch 10 — E2E + Deploy + Publish + Load + Frontend Tools (7 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -396,12 +405,27 @@ graph LR
 | PKG_PUBLISH | package publish preparation | `quick` | BARREL_EXPORTS |
 | SMOKE_TESTS | Server smoke tests + deployment config | `unspecified-high` | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API |
 | LOAD_TESTS | k6 load test scripts + smoke run | `unspecified-high` | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE |
+| TRACE_UI | Trace visualization components (TraceTimeline, TraceStep, TraceLatencyBar, TraceDetail) | `unspecified-high` | WEB_COMPONENTS |
+| FRONTEND_CLI | Component installation CLI (registry, resolver, copier, validator) | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
+| STORYBOOK_FRONTEND | Storybook documentation (stories, mock generators, visual regression baseline) | `unspecified-high` | WEB_COMPONENTS |
+
+---
+
+### Batch 11 — Frontend Demos (2 parallel)
+
+> Full-featured demo applications exercising the complete frontend SDK stack.
+
+| Task | Description | Category | Depends On |
+|------|-------------|----------|------------|
+| DEMO_WEB | Next.js web demo (server switching, verbosity toggle, trace timeline, file upload, feedback, dark mode) | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
+| DEMO_MOBILE | Expo mobile demo (offline-first, server management, tab navigation, local SQLite persistence) | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 
 ---
 
 ### Batch FINAL — Audit (4 parallel)
 
 > After ALL tasks complete. Independent review across four dimensions.
+> FINAL is scheduled after Batch 11, so audit coverage includes both frontend demo tasks.
 
 | Task | Description | Category |
 |------|-------------|----------|
@@ -421,7 +445,7 @@ graph TB
     BATCH_SPIKE["Batch 0<br/>SPIKE_CORE_STACK Spike"]
     BATCH_RAG_SPIKE["Batch 0.5<br/>SPIKE_RAG_DEPS RAG Spike"]
     BATCH_SCAFFOLD["Batch 1<br/>SCAFFOLD_LIB, SCAFFOLD_SERVER Scaffold"]
-    BATCH_TYPES_STORAGE["Batch 2<br/>8 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging"]
+    BATCH_TYPES_STORAGE["Batch 2<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
     BATCH_SCHEMAS_MEMORY["Batch 3<br/>13 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite"]
     BATCH_CONFIG_GUARDS["Batch 4<br/>6 tasks — Config, Guards,<br/>FileRegistry, Summary"]
     BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
@@ -429,12 +453,13 @@ graph TB
     BATCH_EVIDENCE_UPLOAD["Batch 7<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
     BATCH_SERVER_TUI["Batch 8a<br/>16 tasks — Server, TUI,<br/>Intent, Search, Visual,<br/>Humanlikeness Signals"]
     BATCH_UPLOAD_COST["Batch 8b<br/>12 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification"]
-    BATCH_ROUTES_SUBAGENT["Batch 9a<br/>2 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY"]
-    BATCH_ENDPOINTS["Batch 9b<br/>5 tasks — Endpoints,<br/>Barrel Exports"]
-    BATCH_END_TO_END_DEPLOY["Batch 10<br/>4 tasks — E2E, Deploy,<br/>Publish, Load"]
+    BATCH_ROUTES_SUBAGENT["Batch 9a<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
+    BATCH_ENDPOINTS["Batch 9b<br/>7 tasks — Endpoints,<br/>Barrel Exports, Frontend Components"]
+    BATCH_END_TO_END_DEPLOY["Batch 10<br/>7 tasks — E2E, Deploy,<br/>Publish, Load, Frontend Tools"]
+    BATCH_FRONTEND_DEMOS["Batch 11<br/>2 tasks — Demos"]
     BATCH_FINAL_AUDIT["FINAL<br/>4 tasks — Audit"]
 
-    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FINAL_AUDIT
+    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
 
     style BATCH_SPIKE fill:#ff6b6b,color:white
     style BATCH_RAG_SPIKE fill:#ff6b6b,color:white
@@ -460,6 +485,7 @@ graph TB
     SCAFFOLD_LIB --> TUI_SHELL["TUI_SHELL TUI Shell"]
     SCAFFOLD_LIB --> SURREALDB_CLIENT["SURREALDB_CLIENT SurrealDB"]
     SCAFFOLD_LIB --> STRUCT_LOGGING["STRUCT_LOGGING Logging"]
+    SCAFFOLD_LIB --> SCAFFOLD_FRONTEND["SCAFFOLD_FRONTEND Frontend Scaffold"]:::new
 
     CORE_TYPES --> ZOD_SCHEMAS["ZOD_SCHEMAS Schemas"]:::crit
     CORE_TYPES --> MCP_CLIENT["MCP_CLIENT MCP Client"]
@@ -585,10 +611,26 @@ graph TB
     SERVER_ROUTES --> FILE_CRUD["FILE_CRUD File CRUD"]
     SERVER_ROUTES --> ADMIN_API["ADMIN_API Admin API"]
 
+    CLIENT_SDK --> REACT_HOOKS["REACT_HOOKS React Hooks"]:::new
+    SCAFFOLD_FRONTEND --> REACT_HOOKS
+    REACT_HOOKS --> WEB_COMPONENTS["WEB_COMPONENTS Web Components"]:::new
+    REACT_HOOKS --> RN_COMPONENTS["RN_COMPONENTS RN Components"]:::new
+    WEB_COMPONENTS --> TRACE_UI["TRACE_UI Trace UI"]:::new
+    WEB_COMPONENTS --> FRONTEND_CLI["FRONTEND_CLI Component CLI"]:::new
+    RN_COMPONENTS --> FRONTEND_CLI
+    WEB_COMPONENTS --> STORYBOOK_FRONTEND["STORYBOOK_FRONTEND Storybook"]:::new
+    WEB_COMPONENTS --> DEMO_WEB["DEMO_WEB Web Demo"]:::new
+    TRACE_UI --> DEMO_WEB
+    SERVER_ROUTES --> DEMO_WEB
+    RN_COMPONENTS --> DEMO_MOBILE["DEMO_MOBILE Mobile Demo"]:::new
+    SERVER_ROUTES --> DEMO_MOBILE
+
     UPLOAD_ENDPOINT --> END_TO_END_TESTS["E2E_TESTS E2E Tests"]:::crit
     BARREL_EXPORTS --> PKG_PUBLISH["PKG_PUBLISH Publish"]
 
     END_TO_END_TESTS --> F["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
+    DEMO_WEB --> F
+    DEMO_MOBILE --> F
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
@@ -663,7 +705,7 @@ graph TB
         SCAFFOLD_SERVER_P["SCAFFOLD_SERVER"]
     end
 
-    subgraph BATCH_TYPES_STORAGE["Batch 2 — 8 parallel"]
+    subgraph BATCH_TYPES_STORAGE["Batch 2 — 9 parallel"]
         CORE_TYPES_P["CORE_TYPES"]
         STORAGE_WRAPPER_P["STORAGE_WRAPPER"]
         MCP_HEALTH_P["MCP_HEALTH"]
@@ -672,6 +714,7 @@ graph TB
         SURREALDB_CLIENT_P["SURREALDB_CLIENT"]
         DOCKER_COMPOSE_P["DOCKER_COMPOSE"]
         STRUCT_LOGGING_P["STRUCT_LOGGING"]
+        SCAFFOLD_FRONTEND_P["SCAFFOLD_FRONTEND (frontend)"]
     end
 
     subgraph BATCH_SCHEMAS_MEMORY["Batch 3 — 13 parallel"]
@@ -771,24 +814,35 @@ graph TB
         QUERY_REPLAY_P["QUERY_REPLAY (new)"]
     end
 
-    subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 2 parallel"]
+    subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 3 parallel"]
         SUBAGENT_FACTORY_P["SUBAGENT_FACTORY (new)"]
         SERVER_ROUTES_P["SERVER_ROUTES"]
+        REACT_HOOKS_P["REACT_HOOKS (frontend)"]
     end
 
-    subgraph BATCH_ENDPOINTS["Batch 9b — 5 parallel"]
+    subgraph BATCH_ENDPOINTS["Batch 9b — 7 parallel"]
         BARREL_EXPORTS_P["BARREL_EXPORTS"]
         UPLOAD_ENDPOINT_P["UPLOAD_ENDPOINT"]
         FEEDBACK_ENDPOINT_P["FEEDBACK_ENDPOINT"]
         FILE_CRUD_P["FILE_CRUD"]
         ADMIN_API_P["ADMIN_API"]
+        WEB_COMPONENTS_P["WEB_COMPONENTS (frontend)"]
+        RN_COMPONENTS_P["RN_COMPONENTS (frontend)"]
     end
 
-    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 4 parallel"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 7 parallel"]
         END_TO_END_TESTS_P["E2E_TESTS"]
         PKG_PUBLISH_P["PKG_PUBLISH"]
         SMOKE_TESTS_P["SMOKE_TESTS"]
         LOAD_TESTS_P["LOAD_TESTS"]
+        TRACE_UI_P["TRACE_UI (frontend)"]
+        FRONTEND_CLI_P["FRONTEND_CLI (frontend)"]
+        STORYBOOK_FRONTEND_P["STORYBOOK_FRONTEND (frontend)"]
+    end
+
+    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 2 parallel"]
+        DEMO_WEB_P["DEMO_WEB (frontend)"]
+        DEMO_MOBILE_P["DEMO_MOBILE (frontend)"]
     end
 
     subgraph BATCH_FINAL_AUDIT["FINAL — 4 parallel"]
@@ -798,12 +852,13 @@ graph TB
         AUDIT_SCOPE_P["AUDIT_SCOPE"]
     end
 
-    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FINAL_AUDIT
+    BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
 
 > (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12)
+> (frontend) = New task from frontend SDK requirements (Documents 18, 19)
 
 ---
 
@@ -820,33 +875,34 @@ graph LR
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DEEP_TASKS["deep Tasks (48)"]
+    subgraph DEEP_TASKS["deep Tasks (50)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
         DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
         DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM"]
         DEEP_INTENT["EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL"]
         DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL"]
-        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION"]
+        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE"]
     end
 
-    subgraph QUICK_TASKS["quick Tasks (25)"]
+    subgraph QUICK_TASKS["quick Tasks (26)"]
         QUICK_FOUND["SCAFFOLD_LIB, SCAFFOLD_SERVER, CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER"]
         QUICK_INFRA["MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, BARREL_EXPORTS, SERVER_AGENT_CFG"]
         QUICK_SERVER["SERVER_MCP, SERVER_GUARDRAILS, PKG_PUBLISH, DOCKER_COMPOSE, LANGFUSE_MODULE"]
         QUICK_UTIL["FEEDBACK_ENDPOINT, KEY_POOL, VALKEY_CACHE, STRUCT_LOGGING, REWRITE_STRATEGIES, SUMMARY_CAP"]
-        QUICK_ENGINE["NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION"]
+        QUICK_ENGINE["NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION, SCAFFOLD_FRONTEND"]
     end
 
     subgraph VIS_TASKS["visual-engineering Tasks (5)"]
         VIS_TUI_TASKS["TUI_SHELL, TUI_CHAT, TUI_INPUT, TUI_COMMANDS, TUI_UPLOAD"]
     end
 
-    subgraph U_HIGH_TASKS["unspecified-high Tasks (23)"]
+    subgraph U_HIGH_TASKS["unspecified-high Tasks (29)"]
         UHIGH_GUARD_MCP["GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, EVAL_CONFIG, SELF_TEST"]
         UHIGH_SERVER_SMOKE["SERVER_ROUTES, SMOKE_TESTS, UPLOAD_ENDPOINT, CUSTOM_SPANS, CTA_STREAMING"]
         UHIGH_CLIENT_COST["CLIENT_SDK, COST_TRACKING, LOAD_TESTS, FILE_CRUD, JWT_AUTH, ADMIN_API, REWRITE_TOOL, CONTEXT_BUDGET, RESPONSE_CALIBRATION"]
-        UHIGH_INTENT["ATTRIBUTE_NEGATION, QUERY_REPLAY"]
+        UHIGH_INTENT["ATTRIBUTE_NEGATION, QUERY_REPLAY, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS"]
+        UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND"]
         UHIGH_AUDIT_CODE["AUDIT_CODE"]
     end
 
@@ -873,7 +929,7 @@ graph LR
 | 0 | 1 | SPIKE_CORE_STACK → `deep` |
 | 0.5 | 1 | SPIKE_RAG_DEPS → `deep` |
 | 1 | 2 | SCAFFOLD_LIB, SCAFFOLD_SERVER → `quick` |
-| 2 | 8 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
+| 2 | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
 | 3 | 13 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
 | 4 | 6 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY → `deep`; GUARD_FACTORY → `unspecified-high` |
 | 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
@@ -881,26 +937,27 @@ graph LR
 | 7 | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
 | 8a | 16 | TUI_AGENT, AGENT_ROUTER, LLM_INTENT, SOURCE_ROUTER, DOC_SEARCH, VISUAL_GROUNDING, EXTRACTION_SAFEGUARDS, STYLE_PREFERENCES, FACT_SUPERSESSION → `deep`; SERVER_AGENT_CFG, SERVER_MCP, SERVER_GUARDRAILS → `quick`; CLIENT_SDK, JWT_AUTH, CONTEXT_BUDGET, RESPONSE_CALIBRATION → `unspecified-high` |
 | 8b | 12 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL → `deep` |
-| 9a | 2 | SUBAGENT_FACTORY, SERVER_ROUTES → `deep`, `unspecified-high` |
-| 9b | 5 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API → `unspecified-high` |
-| 10 | 4 | E2E_TESTS → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS → `unspecified-high` |
+| 9a | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
+| 9b | 7 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high` |
+| 10 | 7 | E2E_TESTS → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND → `unspecified-high` |
+| 11 | 2 | DEMO_WEB, DEMO_MOBILE → `deep` |
 | FINAL | 4 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
 
 ### Category Totals
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| `deep` | 48 | 47% |
-| `quick` | 25 | 24% |
-| `unspecified-high` | 23 | 22% |
-| `visual-engineering` | 5 | 5% |
+| `deep` | 50 | 45% |
+| `quick` | 26 | 23% |
+| `unspecified-high` | 29 | 26% |
+| `visual-engineering` | 5 | 4% |
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **103** | |
+| **Total** | **112** | |
 
 ---
 
-## Complete Task Registry (103 Tasks) and Full Dependency Matrix
+## Complete Task Registry (112 Tasks) and Full Dependency Matrix
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -910,8 +967,9 @@ graph LR
 |------|-----------|--------|------|
 | SPIKE_CORE_STACK | None (Batch 0) | SCAFFOLD_LIB, SCAFFOLD_SERVER, SPIKE_RAG_DEPS | 0 |
 | SPIKE_RAG_DEPS | SPIKE_CORE_STACK | DOC_PIPELINE | 0.5 |
-| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING | 1 |
+| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING, SCAFFOLD_FRONTEND | 1 |
 | SCAFFOLD_SERVER | SPIKE_CORE_STACK | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS | 1 |
+| SCAFFOLD_FRONTEND | SCAFFOLD_LIB | REACT_HOOKS | 2 |
 | CORE_TYPES | SCAFFOLD_LIB | ZOD_SCHEMAS, CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, LANGFUSE_MODULE, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, CIRCUIT_BREAKER, JWT_AUTH, EMBED_ROUTER, RAGFLOW_CLIENT, REWRITE_STRATEGIES, EVIDENCE_GATE, LANG_GUARD, HATE_SPEECH_GUARD, RESPONSE_CALIBRATION | 2 |
 | STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM | 2 |
 | MCP_HEALTH | SCAFFOLD_LIB | MCP_CLIENT | 2 |
@@ -974,7 +1032,7 @@ graph LR
 | SERVER_MCP | SCAFFOLD_SERVER, MCP_CLIENT | E2E_TESTS, SMOKE_TESTS | 8a |
 | SERVER_GUARDRAILS | SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD | E2E_TESTS, SMOKE_TESTS | 8a |
 | DOCKER_COMPOSE | SCAFFOLD_SERVER | FILE_STORAGE, UPLOAD_PIPELINE, E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | 2 |
-| CLIENT_SDK | SSE_STREAMING, CTA_STREAMING, CORE_TYPES | E2E_TESTS | 8a |
+| CLIENT_SDK | SSE_STREAMING, CTA_STREAMING, CORE_TYPES | E2E_TESTS, REACT_HOOKS | 8a |
 | EXTRACTION_SAFEGUARDS | FACT_EXTRACTION | — | 8a |
 | CONTEXT_BUDGET | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | 8a |
 | STYLE_PREFERENCES | FACT_EXTRACTION, SURREALDB_CLIENT | — | 8a |
@@ -997,8 +1055,11 @@ graph LR
 | ATTRIBUTE_NEGATION | LLM_INTENT, REWRITE_TOOL | — | 8b |
 | QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | 8b |
 | SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 9a |
+| REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | 9a |
 | SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API | 9a |
-| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES | PKG_PUBLISH | 9b |
+| WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | 9b |
+| RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | 9b |
+| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES | PKG_PUBLISH | 9b |
 | UPLOAD_ENDPOINT | SERVER_ROUTES, UPLOAD_PIPELINE | E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | 9b |
 | FEEDBACK_ENDPOINT | SERVER_ROUTES, LANGFUSE_MODULE | E2E_TESTS | 9b |
 | FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | 9b |
@@ -1007,6 +1068,11 @@ graph LR
 | PKG_PUBLISH | BARREL_EXPORTS | — | 10 |
 | SMOKE_TESTS | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API | — | 10 |
 | LOAD_TESTS | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE | — | 10 |
+| TRACE_UI | WEB_COMPONENTS | DEMO_WEB | 10 |
+| FRONTEND_CLI | WEB_COMPONENTS, RN_COMPONENTS | — | 10 |
+| STORYBOOK_FRONTEND | WEB_COMPONENTS | — | 10 |
+| DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | 11 |
+| DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
 | AUDIT_PLAN | PKG_PUBLISH | — | FINAL |
 | AUDIT_CODE | PKG_PUBLISH | — | FINAL |
 | AUDIT_QA | PKG_PUBLISH | — | FINAL |
@@ -1016,7 +1082,7 @@ graph LR
 
 BARREL_EXPORTS depends on every library module that exports public API surface:
 
-> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL
+> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND
 
 This is the complete list of all tasks that produce exports in the core library. BARREL_EXPORTS only handles the **top-level barrel** — see Subpath Barrel Export Convention below.
 
@@ -1052,6 +1118,10 @@ This is the complete list of all tasks that produce exports in the core library.
 | Location module | LOCATION_TOOL | LOCATION_TOOL creates and owns |
 | Visual module | VISUAL_GROUNDING | VISUAL_GROUNDING creates and owns |
 | Orchestration module | ORCHESTRATOR, SUBAGENT_FACTORY | ORCHESTRATOR creates, SUBAGENT_FACTORY appends sub-agent factory |
+| Frontend hooks module | REACT_HOOKS | REACT_HOOKS creates and owns |
+| Frontend web module | WEB_COMPONENTS, TRACE_UI, STORYBOOK_FRONTEND | WEB_COMPONENTS creates, TRACE_UI appends trace components, STORYBOOK_FRONTEND appends stories |
+| Frontend native module | RN_COMPONENTS | RN_COMPONENTS creates and owns |
+| Frontend CLI module | FRONTEND_CLI | FRONTEND_CLI creates and owns |
 
 ### Enforcement
 
@@ -1122,7 +1192,7 @@ flowchart TB
 
 ---
 
-## New Task Registry (Documents 05, 06, 07, 09, 10)
+## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19)
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
@@ -1169,10 +1239,26 @@ The following 8 tasks address engine-level edge cases for response quality (extr
 | SUMMARY_CAP | Rolling summary size cap with compaction | Document 07 | 4 | `quick` | SHORT_TERM_MEM |
 | INPUT_VALIDATION | Input message length validation | Document 12 | 7 | `quick` | SSE_STREAMING |
 
+### Frontend SDK Tasks
+
+The following 9 tasks were added for the frontend SDK feature (React hooks, web components, React Native components, trace UI, component CLI, Storybook, and demo applications). Each is integrated into the batch structure above.
+
+| Task | Name | Source | Batch | Category | Depends On |
+|------|------|--------|------|----------|------------|
+| SCAFFOLD_FRONTEND | Frontend workspace setup | Document 18 | 2 | `quick` | SCAFFOLD_LIB |
+| REACT_HOOKS | React hooks package (@safeagent/react) | Document 18 | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
+| WEB_COMPONENTS | Web UI components (@safeagent/ui) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (@safeagent/ui-native) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
+| TRACE_UI | Trace visualization components | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |
+| FRONTEND_CLI | Component installation CLI | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
+| STORYBOOK_FRONTEND | Storybook documentation | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |
+| DEMO_WEB | Next.js demo app | Document 19 | 11 | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
+| DEMO_MOBILE | Expo demo app | Document 19 | 11 | `deep` | RN_COMPONENTS, SERVER_ROUTES |
+
 ---
 
-*Covers all 99 implementation tasks + 4 final audit tasks = 103 total across 15 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10) and 8 engine-gap tasks, all fully integrated into the batch structure and dependency matrix.*
+*Covers all 108 implementation tasks + 4 final audit tasks = 112 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, and 9 frontend SDK tasks (Document 18, 19), all fully integrated into the batch structure and dependency matrix.*
 
 ---
 
-*Previous: [16 — Testing](./16-testing.md)*
+*Previous: [16 — Testing](./16-testing.md) | Next: [18 — Frontend SDK](./18-frontend-sdk.md)*
