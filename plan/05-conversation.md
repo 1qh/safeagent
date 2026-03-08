@@ -475,7 +475,7 @@ flowchart TB
 Rewrite is conditional; no trigger means pass-through.
 ```mermaid
 flowchart TB
-    Q["Incoming query + context"]
+    INCOMING_QUERY["Incoming query + context"]
     PRONOUN{Pronoun referent?}
     SHORT{Short query?}
     MULTI{Multi-intent?}
@@ -485,7 +485,7 @@ flowchart TB
     REPLAY{Query replay?}
     PASS["Pass through"]
     REWRITE["Rewrite"]
-    Q --> PRONOUN
+    INCOMING_QUERY --> PRONOUN
     PRONOUN -->|Yes| REWRITE
     PRONOUN -->|No| SHORT
     SHORT -->|Yes| REWRITE

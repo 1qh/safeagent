@@ -864,7 +864,7 @@ flowchart TD
 
 | Area | Linked Plan Section | Why It Matters for Frontend SDK |
 |---|---|---|
-| Requirements | 01 Requirements (`MH_REACT_HOOKS`, `MH_WEB_COMPONENTS`, `MH_RN_COMPONENTS`, `MH_TRACE_STEP_EVENTS`, `MH_TRACE_UI`, `MH_OFFLINE_QUEUE`, `MH_STORYBOOK_DOCS`) | Defines expected frontend capabilities and acceptance outcomes. |
+| Requirements | 01 Requirements (`MH_REACT_HOOKS`, `MH_WEB_COMPONENTS`, `MH_RN_COMPONENTS`, `MH_TRACE_STEP_EVENTS`, `MH_TRACE_UI`, `MH_OFFLINE_QUEUE`, `MH_STORYBOOK`) | Defines expected frontend capabilities and acceptance outcomes. |
 | Foundation Contracts | 04 Foundation | Source of canonical SSE event contracts and schema definitions used by frontend layers. |
 | Transport | 11 Transport | Defines SSE protocol behavior, `trace-step` payload shape, and verbosity semantics consumed by hooks and components. |
 | Server Runtime | 12 Server | Defines chat streaming endpoint behavior and verbosity query interpretation used by transport integration. |

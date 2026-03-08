@@ -780,7 +780,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ## Task Specifications
 
-> **SPIKE_RAG_DEPS** — canonical task specification is in [04 — Foundation](./04-foundation.md#task-spike_rag_deps-rag--multimodal-dependencies-spike). This document's pipeline tasks depend on its output.
+> **SPIKE_RAG_DEPS** — canonical task specification is in [04 — Foundation](./04-foundation.md). This document's pipeline tasks depend on its output.
 
 ---
 

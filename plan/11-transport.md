@@ -146,14 +146,14 @@ sequenceDiagram
     participant CREATE_STREAM_HANDLER
     participant AGENT
 
-    Client->>Elysia: Chat streaming request\nAuthorization: Bearer token
-    Elysia->>AuthMiddleware: verify JWT
-    AuthMiddleware->>Elysia: resolve ctx.userId
-    Elysia->>createStreamHandler: handle(ctx)
-    createStreamHandler->>createStreamHandler: read userId from ctx, threadId from body
-    createStreamHandler->>Agent: stream(messages, { userId, threadId })
-    AGENT-->>createStreamHandler: AsyncIterable<RunStreamEvent>
-    CREATE_STREAM_HANDLER-->>Client: SSE stream
+    CLIENT->>ELYSIA: Chat streaming request\nAuthorization: Bearer token
+    ELYSIA->>AUTH_MIDDLEWARE: verify JWT
+    AUTH_MIDDLEWARE->>ELYSIA: resolve ctx.userId
+    ELYSIA->>CREATE_STREAM_HANDLER: handle(ctx)
+    CREATE_STREAM_HANDLER->>CREATE_STREAM_HANDLER: read userId from ctx, threadId from body
+    CREATE_STREAM_HANDLER->>AGENT: stream(messages, { userId, threadId })
+    AGENT-->>CREATE_STREAM_HANDLER: AsyncIterable of RunStreamEvent
+    CREATE_STREAM_HANDLER-->>CLIENT: SSE stream
 ```
 
 ### Keepalive
@@ -248,12 +248,12 @@ sequenceDiagram
     participant HANDLER as createStreamHandler
     participant CLIENT as @safeagent/client
 
-    Handler->>Client: event: session-meta\ndata: { traceId, threadId, agentId }
-    Note over Client: client stores traceId for feedback submission
-    Handler->>Client: event: text-delta\ndata: { delta: "Hello" }
-    Handler->>Client: event: text-delta\ndata: { delta: " there" }
-    Handler->>Client: event: cta\ndata: { cta: [...] }
-    Handler->>Client: event: done
+    HANDLER->>CLIENT: event: session-meta\ndata: { traceId, threadId, agentId }
+    Note over CLIENT: client stores traceId for feedback submission
+    HANDLER->>CLIENT: event: text-delta\ndata: { delta: "Hello" }
+    HANDLER->>CLIENT: event: text-delta\ndata: { delta: " there" }
+    HANDLER->>CLIENT: event: cta\ndata: { cta: [...] }
+    HANDLER->>CLIENT: event: done
 ```
 
 The `traceId` is a server-generated UUID created before the agent run begins and passed to Langfuse as the trace identifier. The `threadId` is the conversation thread ID for the conversation. The `agentId` is optional and identifies which agent handled the request when the server runs multiple agents.
@@ -637,11 +637,11 @@ sequenceDiagram
     participant CLIENT as @safeagent/client
     participant SERVER
 
-    SERVER-->>Client: session-meta { traceId: "abc123" }
-    Note over Client: stores traceId internally
-    App->>Client: submitFeedback({ score: 1 })
-    Client->>Server: Submit feedback\n{ traceId, score: 1 }
-    SERVER-->>Client: 200 OK
+    SERVER-->>CLIENT: session-meta { traceId: "abc123" }
+    Note over CLIENT: stores traceId internally
+    APP->>CLIENT: submitFeedback({ score: 1 })
+    CLIENT->>SERVER: Submit feedback\n{ traceId, score: 1 }
+    SERVER-->>CLIENT: 200 OK
 ```
 
 ### JWT Auth
