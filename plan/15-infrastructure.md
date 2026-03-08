@@ -501,7 +501,7 @@ flowchart TB
         CLEANUP_CRON --> CLEANUP_TASK
     end
     subgraph EXPIRED_QUERY["Find Expired Files"]
-        EXPIRED_PREDICATE["SELECT * FROM file_uploads\nWHERE expires_at < NOW()\nAND status != 'deleted'\nLIMIT batch_size"]
+        EXPIRED_PREDICATE["Query expired file records\nnon-deleted, past expiration\nbatch-limited"]
     end
     CLEANUP_TASK --> EXPIRED_PREDICATE
     subgraph PER_FILE_CLEANUP["Per-File Cleanup (isolated try/catch)"]
@@ -511,7 +511,7 @@ flowchart TB
         PAGE_INDEX_DELETE["Delete page_index rows\nsummary + raw_text entries"]
         VECTOR_CHUNK_DELETE["Delete TXT vector chunks\nPgVector storage"]
         QUOTA_RELEASE["Release storage quota\ndecrBy(userId, fileSize)"]
-        MARK_FILE_DELETED["UPDATE file_uploads\nSET status='deleted',\ndeleted_at=NOW()"]
+        MARK_FILE_DELETED["Mark file as deleted\nwith deletion timestamp"]
         FILE_META_READ --> OBJECT_STORAGE_DELETE
         OBJECT_STORAGE_DELETE --> PAGE_INDEX_DELETE
         PAGE_INDEX_DELETE --> VECTOR_CHUNK_DELETE
@@ -520,7 +520,7 @@ flowchart TB
     end
     EXPIRED_PREDICATE --> PER_FILE_CLEANUP
     subgraph CLEANUP_RESULT["Cleanup Summary"]
-        CLEANUP_SUMMARY["{ scanned: N,\n  deleted: N,\n  failed: N }"]
+        CLEANUP_SUMMARY["Scanned, deleted,\nand failed counts"]
     end
     PER_FILE_CLEANUP --> CLEANUP_RESULT
 ```
@@ -581,7 +581,7 @@ flowchart TB
         HEALTH_AGGREGATOR["Health Aggregator"]
     end
     subgraph SERVICE_CHECKS["Individual Service Checks"]
-        CHECK_POSTGRES["Postgres\nSELECT 1"]
+        CHECK_POSTGRES["Postgres\nconnectivity check"]
         CHECK_SURREAL["SurrealDB\nservice health probe"]
         CHECK_OBJECT_STORAGE["MinIO\nHEAD bucket"]
         CHECK_VALKEY["Valkey\ncache.isHealthy()"]

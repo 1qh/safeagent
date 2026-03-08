@@ -59,20 +59,20 @@ Foundation responsibilities:
 ```mermaid
 flowchart TB
     subgraph SPIKES["Spikes"]
-        CORE_STACK_SPIKE["CORE_STACK_SPIKE\nCore stack validation"]
-        RAG_DEP_SPIKE["RAG_DEPENDENCY_SPIKE\nRAG multimodal validation"]
+        SPIKE_CORE_STACK["SPIKE_CORE_STACK\nCore stack validation"]
+        SPIKE_RAG_DEPS["SPIKE_RAG_DEPS\nRAG multimodal validation"]
     end
 
     subgraph SCAFFOLDING["Scaffolding"]
-        LIB_SCAFFOLD["LIBRARY_SCAFFOLD\nWorkspace baseline"]
-        SERVER_SCAFFOLD["SERVER_SCAFFOLD\nServer baseline"]
+        SCAFFOLD_LIB["SCAFFOLD_LIB\nWorkspace baseline"]
+        SCAFFOLD_SERVER["SCAFFOLD_SERVER\nServer baseline"]
     end
 
     subgraph FOUNDATION["Foundation Layer"]
         CORE_TYPES["CORE_TYPES\nDomain contracts"]
         ZOD_SCHEMAS["ZOD_SCHEMAS\nRuntime schemas"]
         CONFIG_DEFAULTS["CONFIG_DEFAULTS\nDefaults merge validate"]
-        STORAGE_FACTORY["STORAGE_FACTORY\nBackend selection"]
+        STORAGE_WRAPPER["STORAGE_WRAPPER\nBackend selection"]
         MCP_HEALTH["MCP_HEALTH\nSilent failure detection"]
         PROVIDER_HELPERS["PROVIDER_HELPERS\nModel resolution"]
     end
@@ -86,14 +86,14 @@ flowchart TB
         EVAL_CONSUMER["Eval"]
     end
 
-    CORE_STACK_SPIKE --> RAG_DEP_SPIKE
-    CORE_STACK_SPIKE --> LIB_SCAFFOLD
-    CORE_STACK_SPIKE --> SERVER_SCAFFOLD
+    SPIKE_CORE_STACK --> SPIKE_RAG_DEPS
+    SPIKE_CORE_STACK --> SCAFFOLD_LIB
+    SPIKE_CORE_STACK --> SCAFFOLD_SERVER
 
-    LIB_SCAFFOLD --> CORE_TYPES
-    LIB_SCAFFOLD --> STORAGE_FACTORY
-    LIB_SCAFFOLD --> MCP_HEALTH
-    LIB_SCAFFOLD --> PROVIDER_HELPERS
+    SCAFFOLD_LIB --> CORE_TYPES
+    SCAFFOLD_LIB --> STORAGE_WRAPPER
+    SCAFFOLD_LIB --> MCP_HEALTH
+    SCAFFOLD_LIB --> PROVIDER_HELPERS
 
     CORE_TYPES --> ZOD_SCHEMAS
     ZOD_SCHEMAS --> CONFIG_DEFAULTS
@@ -104,7 +104,7 @@ flowchart TB
     PROVIDER_HELPERS --> AGENT_FACTORY_CONSUMER
 
     CORE_TYPES --> GUARDRAIL_CONSUMER
-    STORAGE_FACTORY --> MEMORY_CONSUMER
+    STORAGE_WRAPPER --> MEMORY_CONSUMER
     PROVIDER_HELPERS --> STREAM_CONSUMER
     CONFIG_DEFAULTS --> DOC_CONSUMER
     CORE_TYPES --> EVAL_CONSUMER
@@ -118,21 +118,21 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph BATCH_SPIKE["Batch Spike"]
-        SPIKE_CORE["CORE_STACK_SPIKE\nBlocking"]
+        SPIKE_CORE["SPIKE_CORE_STACK\nBlocking"]
     end
 
     subgraph BATCH_RAG["Batch RAG Spike"]
-        SPIKE_RAG["RAG_DEPENDENCY_SPIKE\nBlocking RAG path"]
+        SPIKE_RAG["SPIKE_RAG_DEPS\nBlocking RAG path"]
     end
 
     subgraph BATCH_SCAFFOLD["Batch Scaffold"]
-        SCAFFOLD_LIB["LIBRARY_SCAFFOLD"]
-        SCAFFOLD_SERVER["SERVER_SCAFFOLD"]
+        SCAFFOLD_LIB["SCAFFOLD_LIB"]
+        SCAFFOLD_SERVER["SCAFFOLD_SERVER"]
     end
 
     subgraph BATCH_FOUNDATION["Batch Foundation"]
         TASK_TYPES["CORE_TYPES"]
-        TASK_STORAGE["STORAGE_FACTORY"]
+        TASK_STORAGE["STORAGE_WRAPPER"]
         TASK_MCP["MCP_HEALTH"]
         TASK_PROVIDER["PROVIDER_HELPERS"]
     end
@@ -984,7 +984,7 @@ The foundation layer task specifications remain authoritative.
 | CORE_TYPES | Define all domain contracts and runtime-enumerable typed error code set | SCAFFOLD_LIB | Type-check pass, barrel import pass, DeepPartial behavior validated |
 | ZOD_SCHEMAS | Build schema layer mirroring core types with Zod v4 | CORE_TYPES | Schema tests pass, defaults apply, invalid config errors are descriptive |
 | CONFIG_DEFAULTS | Build createConfig and defineAgent merge+validate path | CORE_TYPES and ZOD_SCHEMAS | No-args defaults valid, partial nested overrides merge correctly |
-| STORAGE_FACTORY | Build postgres/memory/custom factory with auto-detection | SCAFFOLD_LIB | Explicit and auto-detected selection paths validated |
+| STORAGE_WRAPPER | Build postgres/memory/custom factory with auto-detection | SCAFFOLD_LIB | Explicit and auto-detected selection paths validated |
 | MCP_HEALTH | Build MCP silent-failure detection wrapper | SCAFFOLD_LIB | Missing tools detected, throw and warn modes validated |
 | PROVIDER_HELPERS | Build model resolver and fallback middleware helpers | SCAFFOLD_LIB | String resolution, passthrough, fallback activation validated |
 | BARREL_EXPORTS | Aggregate top-level exports from subpath barrels | Foundation and downstream public modules | Public surface complete, no private leaks, no circular warnings |
