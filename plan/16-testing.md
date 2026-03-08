@@ -851,6 +851,406 @@ Beyond the foundational seven properties, property-based testing covers all modu
 
 Use a Bun-compatible property testing library or lightweight generators for domain-specific values. Each property executes at least one hundred randomized iterations. Shrinking is preferred but optional.
 
+## Chaos and Failure Testing
+
+**Runner**: Bun test runner with chaos scope, plus infrastructure tools for network-level fault injection.
+**Secrets**: Full environment plus fault injection infrastructure.
+**Scope**: Systematic failure injection for all external dependencies to verify graceful degradation, fallback paths, and recovery behavior.
+
+Chaos testing intentionally injects faults to uncover weaknesses before they cause production failures. AI agent systems have unique failure modes: LLM provider timeouts cascade differently than database outages, and cache failures affect budget enforcement differently than retrieval quality.
+
+### Chaos Testing Architecture
+
+```mermaid
+flowchart TD
+    subgraph CHAOS_LIFECYCLE["Chaos Experiment Lifecycle"]
+        STEADY_STATE["Define Steady State\ntask completion rate error rate latency baselines"]
+        HYPOTHESIS["Form Hypothesis\nmetrics remain within bounds under fault"]
+        INJECT["Inject Fault\nsingle dependency failure at a time"]
+        OBSERVE["Observe Behavior\nmonitor all metrics during fault window"]
+        VERIFY["Verify Hypothesis\nmetrics within acceptable degradation bounds"]
+        RESTORE["Restore and Verify Recovery\nremove fault and confirm metrics return to baseline"]
+    end
+
+    STEADY_STATE --> HYPOTHESIS --> INJECT --> OBSERVE --> VERIFY --> RESTORE
+    RESTORE -.->|"next fault target"| HYPOTHESIS
+
+    style STEADY_STATE fill:#22aa44,color:#fff
+    style INJECT fill:#ff4444,color:#fff
+    style VERIFY fill:#4488cc,color:#fff
+    style RESTORE fill:#22aa44,color:#fff
+```
+
+### Fault Injection Matrix
+
+Every external dependency has a defined failure mode, expected system behavior, and recovery verification.
+
+**LLM Provider Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Primary key unavailable | Rotate to next key in pool | Response succeeds with different key |
+| All keys exhausted | Circuit breaker opens, fast-fail without network calls | Circuit half-opens after timeout, probe succeeds |
+| Rate limit response from provider | Exponential backoff with jitter, no circuit trigger | Requests resume after backoff window |
+| Timeout with no response | Retry with timeout, circuit opens after threshold consecutive failures | Circuit recovers after reset timeout |
+| Malformed response body | Parse error caught, retry once, surface error if persistent | Normal responses resume immediately |
+| Context length exceeded response | No retry, surface as client-facing error | Next request with valid length succeeds |
+
+**PostgreSQL Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Connection refused | Health endpoint returns down status, all requests return service unavailable | Automatic reconnection on availability, health returns ok |
+| Query timeout | Individual request fails with timeout, connection pool remains healthy | Subsequent queries succeed normally |
+| Connection pool exhaustion | New requests queue then timeout, no process crash | Pool recovers as long-running queries complete |
+| Disk full simulation | Write failures surface as typed errors, reads continue | Writes resume after space recovery |
+
+**SurrealDB Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| WebSocket connection dropped | Long-term memory disabled, chat continues via short-term only | Auto-reconnect on next operation, memory resumes |
+| Query timeout | Memory operation times out, extraction skipped, short-term persists anyway | Subsequent operations succeed |
+| Complete unavailability | Graceful degradation to no long-term memory with warning log | Full memory restored on reconnection |
+
+**Valkey Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Connection refused | In-memory fallback for cache, per-instance rate limiting, budget fail-open | Valkey reconnection restores global state |
+| Response timeout | Individual operation times out, fallback path used | Subsequent operations succeed normally |
+| Eviction under memory pressure | Cache misses increase, source-of-truth queries increase | Application remains functional with higher latency |
+| Connection restored after outage | No cache stampede, gradual warm-up | Cache hit ratio returns to baseline within minutes |
+
+**Object Storage Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Upload failure | Quota reservation rolled back, file marked failed | Retry upload succeeds, quota correct |
+| Download timeout during retrieval | Page context assembly degrades gracefully without full request failure | Subsequent downloads succeed |
+| Signed URL expired during client access | Client receives clear expiry error, can re-request | New signed URL generated successfully |
+| Complete unavailability | File upload and file-backed retrieval disabled, chat continues | Full file capability restored on recovery |
+
+**Background Job Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Worker crash mid-task | Job re-enqueued by queue adapter, idempotent re-execution | Document reaches ready or enriched state |
+| Duplicate delivery | Idempotent handlers produce same result, no duplicate records | Single set of page_index rows exists |
+| Queue unavailable | In-process fallback executes same handlers directly | Background jobs resume when queue returns |
+
+**Observability Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Langfuse unavailable at startup | Warning logged, fallback prompts loaded, no-op tracing | Full tracing resumes when Langfuse returns |
+| Langfuse unavailable at runtime | No-op scoring, stale-while-revalidate for cached prompts | Score writes resume on recovery |
+| Trace flush timeout | Pending telemetry buffered, no request blocking | Buffer flushes on next successful connection |
+
+**LibreOffice Faults**:
+
+| Fault | Expected Behavior | Recovery Verification |
+|---|---|---|
+| Sidecar unavailable | DOCX conversion fails, file marked failed with clear error | Conversion succeeds when sidecar returns |
+| Conversion timeout after thirty seconds | File marked failed, timeout error recorded | Subsequent conversions succeed within timeout |
+| Corrupt output | PDF validation catches corrupt output, file marked failed | Re-conversion of same file succeeds |
+
+### Chaos Experiment Execution
+
+Chaos experiments follow a strict protocol to prevent uncontrolled failure propagation:
+
+1. Verify steady state before injection: all health checks pass, baseline metrics within normal range.
+2. Inject exactly one fault at a time: never combine failures in a single experiment.
+3. Observe for defined duration: minimum thirty seconds, maximum five minutes per fault.
+4. Verify hypothesis: check that degradation metrics remain within acceptable bounds.
+5. Restore and verify recovery: remove fault and confirm return to baseline within defined recovery window.
+6. Document results: capture metrics, behavior observations, and any unexpected side effects.
+
+### Chaos Execution Schedule
+
+- **Unit-level chaos** (every commit): circuit breaker state transitions, retry logic, fallback path selection — all with mocked dependencies.
+- **Integration-level chaos** (nightly): TCP-proxy-based fault injection against real services in Docker Compose.
+- **Game day chaos** (monthly): multi-fault scenarios, sustained outages, recovery exercises.
+
+## Contract Testing
+
+**Runner**: Bun test runner.
+**Secrets**: None (schema validation only).
+**Scope**: Consumer-driven contracts between the library and server repositories verifying interface stability.
+
+Contract testing guarantees that interface changes in the library propagate correctly to the server without requiring full integration test execution. The library defines what it provides. The server defines what it expects. Contract tests verify these promises align.
+
+### Contract Testing Architecture
+
+```mermaid
+flowchart LR
+    subgraph LIBRARY_SIDE["Library Repository"]
+        LIB_EXPORTS["Typed Exports\ninterfaces schemas event types"]
+        LIB_PROVIDER_CONTRACT["Provider Contract\nwhat library promises to deliver"]
+    end
+
+    subgraph SERVER_SIDE["Server Repository"]
+        SERVER_IMPORTS["Consumed Interfaces\nimported types and schemas"]
+        SERVER_CONSUMER_CONTRACT["Consumer Contract\nwhat server expects to receive"]
+    end
+
+    subgraph CONTRACT_VERIFICATION["Verification Layer"]
+        SCHEMA_COMPAT["Schema Compatibility\nZod schema structural alignment"]
+        TYPE_COMPAT["Type Surface Stability\npublic export surface unchanged"]
+        EVENT_COMPAT["Event Shape Contract\nSSE event types match consumer expectations"]
+        ERROR_COMPAT["Error Code Contract\nlibrary codes match server message map"]
+    end
+
+    LIB_PROVIDER_CONTRACT --> SCHEMA_COMPAT
+    SERVER_CONSUMER_CONTRACT --> SCHEMA_COMPAT
+    LIB_PROVIDER_CONTRACT --> TYPE_COMPAT
+    SERVER_CONSUMER_CONTRACT --> TYPE_COMPAT
+    LIB_PROVIDER_CONTRACT --> EVENT_COMPAT
+    SERVER_CONSUMER_CONTRACT --> EVENT_COMPAT
+    LIB_PROVIDER_CONTRACT --> ERROR_COMPAT
+    SERVER_CONSUMER_CONTRACT --> ERROR_COMPAT
+
+    style LIBRARY_SIDE fill:#e8f5e9,stroke:#2e7d32
+    style SERVER_SIDE fill:#e3f2fd,stroke:#1565c0
+    style CONTRACT_VERIFICATION fill:#fff3e0,stroke:#ef6c00
+```
+
+### Contract Areas
+
+Each contract area represents an interface boundary where library and server must agree:
+
+- **SSE event type shapes**: all nine event types (session-meta, text-delta, trace-step, cta, citation, location, tripwire, done, error) with defined Zod schemas validated on both sides.
+- **Agent configuration interface**: the configuration object that server passes to library agent factory, validated against library schema.
+- **Guardrail pipeline configuration interface**: guardrail function signatures, severity types, verdict shapes.
+- **Memory configuration interface**: memory config objects including all numeric thresholds.
+- **Storage factory interface**: storage configuration shape and auto-detection contract.
+- **Stream event iterator interface**: the async iterable shape returned by agent execution.
+- **Error code union**: library emits typed error codes, server maps every code to a message — contract verifies completeness.
+- **Typed result patterns**: neverthrow Result type shapes for all boundary operations.
+- **Trace-step event discriminated union**: step-specific payload shapes matched between library emission and client SDK consumption.
+
+### Contract Execution
+
+Contract tests run on every commit in both repositories. When the library publishes a new contract artifact, the server CI validates against it. When the server updates its consumer expectations, the library CI validates it can still satisfy them.
+
+Breaking contract changes are detected before they reach integration testing, saving significant feedback time.
+
+## Mutation Testing
+
+**Runner**: Mutation testing framework compatible with Bun.
+**Secrets**: None.
+**Scope**: Safety-critical paths where undetected mutations could cause security or quality failures.
+
+Mutation testing systematically introduces small changes (mutations) to code and verifies that existing tests catch them. Surviving mutants reveal gaps in test coverage for critical logic.
+
+### Mutation Testing Process
+
+```mermaid
+flowchart TD
+    subgraph MUTATION_LIFECYCLE["Mutation Testing Lifecycle"]
+        IDENTIFY_PATHS["Identify Safety-Critical Paths\nguardrails budget enforcement rate limiting injection detection"]
+        GENERATE_MUTANTS["Generate Mutations\nthreshold shifts logic inversions boundary changes"]
+        EXECUTE_TESTS["Execute Full Test Suite\nrun against each mutant"]
+        ANALYZE_SURVIVORS["Analyze Surviving Mutants\neach survivor reveals a test gap"]
+        STRENGTHEN_TESTS["Add Missing Tests\nwrite tests that kill each survivor"]
+    end
+
+    IDENTIFY_PATHS --> GENERATE_MUTANTS --> EXECUTE_TESTS --> ANALYZE_SURVIVORS --> STRENGTHEN_TESTS
+    STRENGTHEN_TESTS -.->|"iterate until zero survivors"| GENERATE_MUTANTS
+
+    style IDENTIFY_PATHS fill:#22aa44,color:#fff
+    style GENERATE_MUTANTS fill:#ff9900,color:#fff
+    style ANALYZE_SURVIVORS fill:#ff4444,color:#fff
+    style STRENGTHEN_TESTS fill:#4488cc,color:#fff
+```
+
+### Mutation Target Paths
+
+Mutation testing focuses exclusively on paths where a missed mutation could cause security, safety, or correctness failures:
+
+- **Input guardrail pipeline**: mutate severity thresholds, detection pattern logic, worst-wins aggregation comparisons.
+- **Output guardrail sliding window**: mutate buffer size checks, verdict evaluation logic, chunk suppression conditions.
+- **Injection detection ensemble**: mutate tier decision logic (LLM-alone blocks, two-tier flags), parallel execution coordination, blocking threshold comparisons.
+- **Memory extraction safeguards**: mutate attribution filter conditions, certainty filter thresholds, injection classifier integration.
+- **Content sanitization**: mutate pattern matching expressions, redaction logic, boundary framing insertion.
+- **Budget enforcement**: mutate comparison operators in limit checks, reservation increment logic, rollback conditions.
+- **Rate limiting**: mutate window boundary calculations, counter increment operations, rejection threshold comparisons.
+- **Evidence gate**: mutate sufficiency scoring formula, weight values, threshold comparison operators.
+- **File validation**: mutate magic byte comparisons, size limit checks, quota arithmetic.
+- **Trust hierarchy enforcement**: mutate trust level assignments, boundary framing conditions, zero-trust content handling.
+
+### Mutation Categories
+
+- **Threshold mutations**: shift numeric boundaries by plus or minus one, by ten percent, to zero, and to maximum value.
+- **Logic inversions**: flip boolean conditions, swap AND with OR, invert comparison operators.
+- **Boundary shifts**: off-by-one in window sizes, TTL values, limit checks, array indices.
+- **Removal mutations**: remove validation steps, skip aggregation stages, omit safety checks.
+- **Reorder mutations**: change execution order in pipelines, swap priority levels in aggregation.
+
+### Mutation Testing Schedule
+
+Mutation testing runs nightly against safety-critical paths. Target mutation kill rate is above ninety-five percent for all guarded paths. Surviving mutants are triaged within one business day.
+
+## Snapshot and Golden-File Testing
+
+**Runner**: Bun test runner.
+**Secrets**: None for structural snapshots; keys required for golden dataset evaluation.
+**Scope**: Non-deterministic LLM outputs validated through structural and quality-score snapshots rather than exact text matching.
+
+Traditional snapshot testing breaks for AI systems because outputs vary between runs. Snapshot testing for this system captures structure, properties, and quality scores rather than raw text content.
+
+### Snapshot Strategy
+
+```mermaid
+flowchart TD
+    subgraph SNAPSHOT_TYPES["Snapshot Testing Strategies"]
+        STRUCTURAL["Structural Snapshots\nJSON shape, field presence, type conformance"]
+        BEHAVIORAL["Behavioral Snapshots\ntool call sequences, event ordering, state transitions"]
+        QUALITY_SCORE["Quality Score Snapshots\neval scores stored as snapshot values"]
+        FORMAT_SNAP["Format Compliance Snapshots\nSSE event format, citation schema, error shapes"]
+    end
+
+    subgraph GOLDEN_MANAGEMENT["Golden Dataset Management"]
+        CURATE["Curate from Production Failures\nreal failures become test cases"]
+        HUMAN_REVIEW["Human Review Required\nsnapshot updates never auto-accepted"]
+        BASELINE_SCORES["Baseline Quality Scores\nper-case quality measurements"]
+        REGRESSION_DETECT["Regression Detection\nscore drops below baseline trigger review"]
+    end
+
+    STRUCTURAL --> GOLDEN_MANAGEMENT
+    BEHAVIORAL --> GOLDEN_MANAGEMENT
+    QUALITY_SCORE --> GOLDEN_MANAGEMENT
+    FORMAT_SNAP --> GOLDEN_MANAGEMENT
+
+    style SNAPSHOT_TYPES fill:#f3e5f5,stroke:#7b1fa2
+    style GOLDEN_MANAGEMENT fill:#e8f5e9,stroke:#2e7d32
+```
+
+### Structural Snapshots
+
+Structural snapshots validate that output shape is correct without asserting exact content:
+
+- Agent response objects contain all required fields with correct types.
+- Citation objects contain source, fileId, page, and quote fields.
+- SSE events conform to their type-specific schemas.
+- Tool call sequences match expected tool names and argument shapes.
+- Guardrail verdicts contain severity and conceptId fields.
+- Memory extraction results contain factType, confidence, and temporal state fields.
+- Error responses contain error code and message fields matching typed error union.
+
+### Behavioral Snapshots
+
+Behavioral snapshots validate execution patterns rather than output content:
+
+- Multi-intent queries produce expected sub-query decomposition structure.
+- Source priority execution produces expected source ordering.
+- Dependent intent handling produces expected sequential-then-parallel execution pattern.
+- Guardrail pipeline execution produces verdicts in expected aggregation order.
+- Memory recall produces expected retrieval-then-ranking pipeline behavior.
+
+### Quality Score Snapshots
+
+For eval-dependent validation, quality scores serve as the snapshot rather than raw text:
+
+- Each golden dataset case has a recorded baseline quality score per dimension.
+- Re-evaluation produces scores that are compared against baselines.
+- Score drops greater than five percentage points from baseline trigger mandatory human review.
+- Score improvements are accepted and baselines are updated after review.
+- Quality score history is retained for trend analysis.
+
+### Golden Dataset Lifecycle
+
+- **Initial creation**: minimum fifty cases per quality dimension sourced from realistic scenarios.
+- **Expansion**: new cases added when production usage reveals failure modes not covered.
+- **Maintenance**: monthly review of cases for continued relevance, quarterly score recalibration.
+- **Retirement**: cases removed only when the tested behavior is intentionally changed, with documented justification.
+
+## Streaming-Specific Tests
+
+**Runner**: Bun test runner with streaming scope.
+**Secrets**: Mock model for unit-level streaming; keys required for integration streaming tests.
+**Scope**: Dedicated testing patterns for SSE streaming behavior covering mid-stream failures, backpressure, reconnection, and protocol compliance.
+
+Streaming responses require specialized testing because they hold server resources for extended durations, involve incremental delivery, and have failure modes that do not exist in request-response patterns.
+
+### Streaming Test Architecture
+
+```mermaid
+flowchart TD
+    subgraph STREAM_TEST_TYPES["Streaming Test Categories"]
+        FORMAT_TESTS["Format Compliance\nevent type validation, line format, done marker"]
+        MIDSTREAM_TESTS["Mid-Stream Failure\nprovider error, network drop, timeout"]
+        BACKPRESSURE_TESTS["Backpressure Handling\nslow consumer, fast producer, buffer limits"]
+        RECONNECT_TESTS["Reconnection Behavior\nclient reconnect, state recovery, deduplication"]
+        PARTIAL_TESTS["Partial Response\nincomplete chunks, buffer assembly, cleanup"]
+        CONCURRENT_TESTS["Concurrent Streams\nisolation, resource limits, cleanup on disconnect"]
+    end
+
+    FORMAT_TESTS --> MIDSTREAM_TESTS --> BACKPRESSURE_TESTS
+    BACKPRESSURE_TESTS --> RECONNECT_TESTS --> PARTIAL_TESTS --> CONCURRENT_TESTS
+
+    style FORMAT_TESTS fill:#22aa44,color:#fff
+    style MIDSTREAM_TESTS fill:#ff4444,color:#fff
+    style BACKPRESSURE_TESTS fill:#ff9900,color:#fff
+    style RECONNECT_TESTS fill:#4488cc,color:#fff
+    style PARTIAL_TESTS fill:#aa44aa,color:#fff
+    style CONCURRENT_TESTS fill:#8866cc,color:#fff
+```
+
+### Format Compliance Tests
+
+- Each of nine SSE event types emits correct structure when serialized.
+- Session-meta event is always the first event in every stream.
+- Done event is always the last event in every successful stream.
+- Error event terminates stream and no further events follow.
+- Text-delta events contain only text content, no metadata leakage.
+- Trace-step events appear only when verbosity is set to full.
+- CTA events contain valid schema: id, label, action type, and optional URL and icon, with maximum three per response.
+- Location events contain coordinate data without exposing internal tool call details.
+- Tripwire events contain conceptId and fallback text.
+
+### Mid-Stream Failure Tests
+
+- Provider error during generation: error event emitted, stream closed cleanly, no partial corruption in persisted data.
+- Network drop between server and client: server-side cleanup runs, resources released, connection state cleared.
+- Guardrail tripwire during stream in production mode: remaining chunks suppressed, fallback message injected, tripwire event emitted.
+- Guardrail tripwire during stream in development mode: exception thrown with diagnostic information.
+- Provider timeout during generation: stream closed after configured timeout, error event emitted.
+- Memory extraction after partial stream: extraction skipped, short-term memory persisted with partial flag.
+- Budget accounting after partial stream: actual token count reconciled against estimate, counter corrected.
+
+### Backpressure Tests
+
+- Slow consumer does not crash server or corrupt stream state.
+- Server-side buffer limits prevent unbounded memory growth per connection.
+- Fast producer with slow consumer: chunks buffered up to limit, then backpressure applied.
+- Multiple slow consumers simultaneously: each connection independently managed without cross-contamination.
+- Consumer disconnect during backpressure: connection cleanup runs, buffered data released.
+
+### Reconnection Tests
+
+- Client SDK reconnects automatically after connection drop.
+- Reconnected client receives events from interruption point without duplicates or gaps.
+- Client SDK offline queue persists messages during disconnection and syncs on reconnect.
+- Multiple rapid disconnects and reconnects do not create duplicate connections or leak resources.
+- Reconnection with expired authentication token: client re-authenticates before resuming.
+
+### Concurrent Stream Tests
+
+- Multiple simultaneous streams for the same user maintain independent state.
+- Each stream tracks its own token budget consumption independently.
+- Stream cancellation by one client does not affect other active streams.
+- Server resource limits: maximum concurrent streams per user enforced without crash.
+- Cleanup on disconnect: all per-connection resources released, no memory leaks across stream lifecycle.
+
+### Zero-Leak Buffer Mode Tests
+
+- Buffer fills to configured size before any bytes reach client.
+- Violation detected during buffer phase: entire buffer suppressed, zero bytes sent, fallback injected.
+- Buffer fills with no violation: buffer flushed to client, streaming mode begins with sliding window.
+- Time-to-first-token delayed by exactly buffer fill duration under normal generation speed.
+- Multiple violations during buffer phase: first violation triggers suppression, subsequent violations are no-ops.
+
 ## Development Seed Data
 
 Both repositories provide idempotent seed workflows for realistic local test datasets.
