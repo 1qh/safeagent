@@ -1611,6 +1611,212 @@ All MH_* constraints are verified through their implementing module tests. All M
 - Requirement traceability: each test description references the MH or MN identifiers it covers.
 - Constraint cross-referencing: tests for compound constraints (such as injection detection requiring ensemble, not single layer) verify the combined behavior.
 
+### Module: Requirements Cross-Cutting Constraints (01)
+
+This section verifies cross-cutting behavioral constraints that must hold consistently across memory, transport, auth, admin, feedback, upload, and audit surfaces.
+
+**User-scoping invariants**:
+
+- Every memory extract operation requires explicit user identity scoping.
+- Every memory store operation requires explicit user identity scoping.
+- Every memory recall operation requires explicit user identity scoping.
+- Every memory delete operation requires explicit user identity scoping.
+- Every memory inspect operation requires explicit user identity scoping.
+- Cross-user memory access attempts are denied deterministically.
+- Cross-user memory access attempts never return partial data from other users.
+
+**No-write-without-user constraints**:
+
+- Conversation writes require both thread identity and user identity.
+- Conversation updates without both identities are rejected.
+- Document writes require both thread identity and user identity.
+- Document metadata updates without both identities are rejected.
+- File CRUD requires both file identity and user identity.
+- File delete operations reject requests missing user identity.
+- Long-term memory writes require user identity and reject missing user identity.
+
+**JWT authentication behavior**:
+
+- Production startup hard-fails when auth secret is absent.
+- Development startup without auth secret enables explicit bypass mode.
+- Development bypass startup logs clear warning about security posture.
+- User identity extraction uses JWT subject claim.
+- Header-based user-identity override attempts are rejected.
+- Invalid token signatures return authentication failure.
+- Expired tokens return authentication failure.
+
+**Boundary input validation**:
+
+- Chat payload validation fails closed on malformed request bodies.
+- Upload payload validation fails closed on malformed multipart metadata.
+- Admin payload validation fails closed on malformed update fields.
+- Feedback payload validation fails closed on malformed score values.
+- Boundary validation failures return typed error payloads.
+
+**Role authorization and access control**:
+
+- Privileged routes require role checks after authentication success.
+- Failed authorization returns forbidden status.
+- Authorization denials include request identity in audit logs.
+- Authorization denials do not leak privileged resource details.
+
+**CORS enforcement**:
+
+- CORS origin allowlist is loaded from environment-driven configuration.
+- Authenticated routes in production reject wildcard origin policy.
+- Disallowed origins fail preflight checks for authenticated routes.
+- Allowed origins pass preflight checks with expected headers.
+
+**Audit logging requirements**:
+
+- Authentication failures are audit-logged with traceable metadata.
+- Authorization denials are audit-logged with traceable metadata.
+- Guardrail enforcement actions are audit-logged with traceable metadata.
+- Budget denials are audit-logged with traceable metadata.
+- Rate-limit denials are audit-logged with traceable metadata.
+- Deletion operations are audit-logged with traceable metadata.
+
+**Secret-management constraints**:
+
+- Secrets are never hardcoded in runtime configuration outputs.
+- Secret values are never emitted in clear text logs.
+- Secret values are redacted in tracing sinks before export.
+- Error surfaces redact secret-bearing values before propagation.
+
+**Typed environment access**:
+
+- Typed environment module validates required keys at startup.
+- Typed environment module exposes validated values for runtime use.
+- Direct global environment reads are blocked by convention checks.
+- Missing required typed env fields fail startup deterministically.
+
+**Typed error and result-boundary behavior**:
+
+- Boundary operations return typed result patterns for success and failure.
+- Boundary operations avoid thrown exceptions across module interfaces.
+- Typed error codes map to deterministic user-facing messages.
+- Unmapped typed error codes fail startup completeness checks.
+
+**Data-access policy constraints**:
+
+- Postgres operations use type-safe ORM query construction paths.
+- SurrealDB operations use typed surqlize query paths.
+- Raw query string usage is rejected by policy validation checks.
+
+**Quality and governance constraints**:
+
+- Pre-commit hooks run formatting on staged files.
+- Pre-commit hooks run linting on staged files.
+- Pre-commit hooks run type checking on staged files.
+- OpenAPI output remains synchronized with route definitions.
+- Seed-data workflows are idempotent and avoid duplicate records.
+- Seed-data workflows produce deterministic state across reruns.
+- API docs generation produces package documentation artifacts.
+- API docs publication flow includes generated docs with package output.
+
+### Module: Architecture Invariants (03)
+
+This section verifies non-negotiable architecture invariants for stateless scaling, service boundaries, request sequencing, storage ownership, and degradation behavior.
+
+**Stateless API invariants**:
+
+- Any API instance can handle any incoming request without sticky-session requirement.
+- Load balancing behavior remains correct with no session affinity assumptions.
+- Mid-stream reconnection can continue through a different API instance.
+- Instance restart during active traffic does not corrupt shared persistent state.
+
+**Postgres connection budget invariants**:
+
+- Total Postgres connection budget enforces hard upper limit of two hundred connections.
+- Budget allocation across API, workers, and observability services stays within hard limit.
+- PgBouncer integration path is validated for production-scale pooling behavior.
+- Connection exhaustion handling degrades gracefully without process crash.
+
+**SurrealDB connection invariants**:
+
+- SurrealDB client uses persistent WebSocket per process.
+- WebSocket drop triggers automatic reconnect path.
+- Reconnect path avoids duplicate concurrent SurrealDB connections.
+- Memory operations recover after reconnect without manual intervention.
+
+**Valkey connection invariants**:
+
+- Valkey integration uses one shared client per process.
+- Connection URL uses redis-style scheme compatibility.
+- Additional ad-hoc client creation is blocked in steady-state runtime.
+
+**MinIO connection invariants**:
+
+- MinIO operations use stateless HTTP request flow.
+- MinIO integration avoids persistent connection-pool dependency.
+- Repeated object operations remain stable without long-lived pooled sockets.
+
+**Chat request sequence invariants**:
+
+- Request flow enforces rate-check before budget-check.
+- Request flow enforces budget-check before memory-load.
+- Request flow enforces memory-load before model stream start.
+- Persistence stage runs after stream completion.
+- Accounting stage runs after persistence stage.
+- Out-of-order execution attempts are rejected by sequencing checks.
+
+**File upload timing invariants**:
+
+- Synchronous upload phase completes under one-second target in nominal conditions.
+- Background enrichment executes asynchronously after synchronous completion.
+- Slow enrichment does not block upload response acknowledgement.
+- Upload response returns status promptly before enrichment completion.
+
+**Storage responsibility isolation**:
+
+- Postgres stores conversation, page index, file metadata, and usage records.
+- SurrealDB stores long-term memory only.
+- MinIO stores binary object payloads only.
+- Valkey stores cache and counter data only.
+- Cross-system duplication is prohibited except designated cache copies.
+
+**Compose-profile topology invariants**:
+
+- Default profile starts exactly five core services.
+- Langfuse profile adds four observability services on top of default profile.
+- Trigger profile adds five background services on top of default profile.
+- Dependency ordering respects health-gated startup sequence.
+- Service health checks gate dependent service readiness.
+
+**Graceful degradation invariants**:
+
+- Postgres-only boot path is viable for core service startup.
+- SurrealDB failure degrades long-term memory independently.
+- MinIO failure degrades file capabilities independently.
+- Valkey failure degrades rate-limit and budget behavior independently.
+- Trigger failure degrades background execution mode independently.
+- Langfuse failure degrades tracing behavior independently.
+
+**Horizontal scaling invariants**:
+
+- Postgres read replicas support read scaling with primary-write separation.
+- Postgres partitioning strategy supports high-write growth paths.
+- SurrealDB scaling model supports vertical expansion with bounded per-user corpus assumptions.
+- MinIO distributed mode supports storage throughput scaling.
+- MinIO object keying strategy remains user-identity scoped.
+- Valkey cluster mode supports shard scaling.
+- Valkey hash-tag strategy keeps related keys colocated.
+- Valkey eviction strategy follows allkeys-lru policy under pressure.
+
+**Network topology invariants**:
+
+- Services communicate over a single Docker bridge network.
+- External network access is limited to API port 3000 and MinIO console port 9001.
+- Internal-only services are not exposed externally by default.
+- Cross-service communication uses internal addresses on bridge network.
+
+**Layer-boundary enforcement**:
+
+- Library modules do not import server-only route and runtime wiring modules.
+- Server modules consume library public surfaces rather than internal private paths.
+- Cross-boundary import violations are detected by static checks.
+- TUI, client SDK, and frontend modules consume library boundaries without server internals.
+
 ### Module: System Architecture (03)
 
 Architecture invariants are verified through integration and end-to-end tests rather than dedicated unit tests. These tests validate structural properties of the running system.
@@ -3898,6 +4104,87 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Dependency validation blocks unsupported installs with clear diagnostics.
 - Conflict detection prevents unintended overwrite of existing local component artifacts.
 
+**Scaffold and workspace boundaries**:
+
+- Frontend subpath modules are discoverable by workspace graph and task tooling.
+- Module-stub type checking passes cleanly for hooks, web components, and native components modules.
+- Shared frontend dependency graph validates with no circular references.
+- Storybook startup succeeds with placeholder stories in baseline scaffold state.
+- Hook, web, and native boundaries remain separated with no cross-layer leakage.
+- Frontend modules do not import server-only engine internals.
+- Workspace tasks can target hooks, web components, and native components independently.
+
+**React hook transport behavior**:
+
+- Chat-hook transport works with safeagent stream flow without consumer-side adapter glue.
+- Stream text events map to AI SDK message updates in expected order.
+- Stream status transitions map to loading, streaming, and completion states correctly.
+- Completion events finalize run state exactly once per request.
+- Trace-step collection remains empty in standard mode.
+- Trace-step collection appends ordered entries only in full mode.
+- Feedback hook supports optimistic state before server confirmation.
+- Feedback hook rolls back optimistic state on submission failure.
+- Upload hook emits deterministic progress transitions across upload lifecycle states.
+- Upload hook returns final typed file references on success.
+- Server-connection hook supports endpoint switching without stale closure usage.
+- Verbosity hook updates outgoing transport metadata for subsequent requests.
+- Hook exports remain fully typed and reusable across both web and native consumers.
+
+**Web component consistency and accessibility**:
+
+- ai-elements wrappers render correctly in isolated story state.
+- ai-elements wrappers render correctly in integrated chat-surface state.
+- Custom components consume hook state and emit expected callback semantics.
+- API shape remains consistent across related primitive wrappers.
+- `className` extension points apply without breaking default internals.
+- Slot-override behavior works for key composition surfaces.
+- Accessibility semantics are present for custom controls and dynamic surfaces.
+- Offline-state UI provides actionable reconnect guidance.
+- Error-state UI provides actionable retry affordances.
+
+**Trace UI fidelity**:
+
+- Every incoming trace-step event appears exactly once in timeline rendering.
+- Step-type icon mapping matches supported step taxonomy.
+- Latency-bar color thresholds follow green/yellow/red policy boundaries.
+- Latency-bar widths remain proportional to relative step latency.
+- Detail-panel expansion is keyboard accessible.
+- Detail-panel expansion is pointer accessible.
+- Full mode auto-opens trace panel on incoming assistant run.
+- Standard mode keeps trace panel hidden and lightweight.
+- Total pipeline latency summary remains numerically accurate.
+
+**Native component parity**:
+
+- Native chat flow preserves semantic parity with web chat behavior.
+- Shared hook API behavior is identical across web and native contexts.
+- Native attachment flow supports document and image inputs.
+- Offline queue visibility shows pending-count and sync transitions.
+- Reconnect replay transitions drain queued messages in FIFO order.
+- Thread switching remains stable during network transitions.
+- Server switching remains stable during network transitions.
+- Native styling remains consistent and maintainable through utility patterns.
+- Required polyfills are active for stream and clone support.
+
+**Frontend CLI install guarantees**:
+
+- Single-component install resolves full dependency closure.
+- Multi-component install resolves merged dependency closure deterministically.
+- Web registry and native registry are independently addressable.
+- Unsupported install targets are blocked by validation checks.
+- Repeated installs produce deterministic output layouts.
+- Existing local conflicts are detected and blocked from silent overwrite.
+- Customization workflow copies editable component source into consumer space.
+
+**Storybook coverage quality**:
+
+- Every web component has at least one representative story.
+- Custom components include state-rich stories covering key branches.
+- Mock generators produce stable fixtures across repeated runs.
+- Story rendering remains stable across supported browsers.
+- Visual baseline artifacts are produced for high-impact surfaces.
+- Accessibility checks run against documented story states.
+
 ### Module: Demos (19)
 
 **Next.js demo**:
@@ -3916,6 +4203,53 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 **Eden Treaty integration**:
 
 - Type-safe API calls through Elysia Eden Treaty client.
+
+**Web demo end-to-end behavior**:
+
+- Chat streaming completes end-to-end with smooth incremental chunk rendering.
+- Full-mode trace timeline renders incoming trace-step events during active runs.
+- Server switching resets active conversation and connection state immediately.
+- Verbosity toggle shows trace panel in full mode and hides in standard mode.
+- File upload shows accurate progress through completion state.
+- Feedback submission includes trace identifier from session-meta payload.
+- Theme toggle between light and dark maintains readability and contrast.
+- Responsive layout collapses sidebar on mobile-sized viewport widths.
+
+**Web demo interaction resilience**:
+
+- Switching server during active stream aborts prior stream and shows clean reset state.
+- Failed server switch keeps prior configured server entry for retry.
+- Trace panel remains decoupled from markdown render stability under high event rate.
+- Retry affordance after recoverable error preserves thread context.
+- Pending attachment state resets correctly when server context changes.
+
+**Mobile demo end-to-end behavior**:
+
+- Streaming chat works on iOS simulator with expected chunk progression.
+- Streaming chat works on Android simulator with expected chunk progression.
+- Offline queue persists unsent messages while disconnected.
+- Reconnect drains queued messages in FIFO order automatically.
+- Server switching from settings resets active conversation state.
+- Verbosity toggle reveals trace surface in mobile UI flow.
+- File picker upload path shows progress and completion states.
+- Polyfill initialization succeeds without startup crash.
+- Cached conversations remain readable while offline.
+
+**Mobile offline and recovery semantics**:
+
+- Offline indicator persists while disconnected and clears after reconnect completion.
+- Queue metadata remains visible during reconnect and drain stages.
+- App restart while offline preserves cached threads and messages.
+- Reconnect after app restart resumes queued-message replay deterministically.
+- Switching server while offline keeps queue scoped to selected server context.
+
+**Cross-demo parity checks**:
+
+- Server-switch semantics match across web and mobile demos.
+- Verbosity-mode semantics match across web and mobile demos.
+- Feedback trace-link semantics match across web and mobile demos.
+- Upload completion semantics match across web and mobile demos.
+- Conversation reset semantics prevent cross-server context bleed in both demos.
 
 ### Module: Testing Strategy (16)
 
