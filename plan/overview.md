@@ -1,6 +1,6 @@
 # safeagent — System Plan Overview
 
-> **What**: `safeagent` — a highly-opinionated headless TypeScript library for creating AI agents with streaming guardrails, MCP compatibility, Gemini grounding, intelligent query routing, humanlike conversation, and agentic document Q&A — plus a thin API server that consumes it.
+> **What**: `safeagent` — a highly-opinionated TypeScript library for creating AI agents with streaming guardrails, MCP compatibility, Gemini grounding, intelligent query routing, humanlike conversation, and agentic document Q&A — plus a thin API server, a full frontend SDK (React hooks, web components, React Native components), and demo applications.
 >
 > **Scale**: Designed for 10 million users from the ground up.
 >
@@ -13,8 +13,15 @@
 ```mermaid
 graph TB
     subgraph CLIENT_APPLICATIONS["Client Applications (HTTP/SSE)"]
-        WEB["Web Apps"]
-        MOB["Mobile Apps"]
+        WEB["Web Apps\n(incl. Next.js Demo)"]
+        MOB["Mobile Apps\n(incl. Expo Demo)"]
+    end
+
+    subgraph FRONTEND_SDK_PACKAGES["Frontend SDK (safeagent monorepo)"]
+        CLIENT_PKG["@safeagent/client"]
+        REACT_PKG["@safeagent/react"]
+        UI_WEB_PKG["@safeagent/ui"]
+        UI_NATIVE_PKG["@safeagent/ui-native"]
     end
 
     subgraph DIRECT_LIBRARY_CONSUMERS["Direct Library Consumers"]
@@ -82,6 +89,12 @@ graph TB
     SAFEAGENT_LIBRARY --> INFRASTRUCTURE_LAYER
     ORCH --> SUB_A & SUB_B & SUB_N
     SUB_A & SUB_B & SUB_N --> TOOLS
+
+    SAFEAGENT_LIBRARY -.->|"types"| CLIENT_PKG
+    CLIENT_PKG --> REACT_PKG
+    REACT_PKG --> UI_WEB_PKG & UI_NATIVE_PKG
+    UI_WEB_PKG -.->|"consumed by"| WEB
+    UI_NATIVE_PKG -.->|"consumed by"| MOB
 ```
 
 ## Request Lifecycle
@@ -178,6 +191,13 @@ Each document below is a self-contained reference for its domain. Files are numb
 | 15 | [Infrastructure](./15-infrastructure.md) | Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning |
 | 16 | [Testing](./16-testing.md) | Test pyramid, coverage map, CI pipeline, audit tasks, QA policy |
 
+### Frontend
+
+| # | Document | Description |
+|---|----------|-------------|
+| 18 | [Frontend SDK](./18-frontend-sdk.md) | React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety |
+| 19 | [Demo Applications](./19-demos.md) | Next.js web demo, Expo mobile demo, server switching, verbosity toggle |
+
 ### Execution
 
 | # | Document | Description |
@@ -196,6 +216,17 @@ graph LR
         CLIENT["Client SDK"]
     end
 
+    subgraph FRONTEND_PACKAGES["Frontend SDK"]
+        REACT_HOOKS_PKG["@safeagent/react"]
+        WEB_UI_PKG["@safeagent/ui"]
+        NATIVE_UI_PKG["@safeagent/ui-native"]
+    end
+
+    subgraph DEMO_PACKAGES["Demo Applications"]
+        WEB_DEMO_PKG["Next.js Demo"]
+        MOBILE_DEMO_PKG["Expo Demo"]
+    end
+
     subgraph SERVER_PACKAGE["Server Project"]
         SRV_CFG["Custom prompts + config"]
         SRV_ROUTES["Thin route layer"]
@@ -204,6 +235,10 @@ graph LR
     SAFEAGENT_PACKAGE -->|imported by| SERVER_PACKAGE
     CORE -->|linked by| TUI_PKG
     CORE -.- CLIENT
+    CLIENT --> REACT_HOOKS_PKG
+    REACT_HOOKS_PKG --> WEB_UI_PKG & NATIVE_UI_PKG
+    WEB_UI_PKG --> WEB_DEMO_PKG
+    NATIVE_UI_PKG --> MOBILE_DEMO_PKG
 ```
 
 | Deliverable | Description |
@@ -211,6 +246,11 @@ graph LR
 | **safeagent** | TypeScript library — agent creation, guardrails, MCP, streaming, memory, RAG, upload, conversation pipeline, evidence gate, observability, eval |
 | **@safeagent/client** | Framework-agnostic TypeScript client SDK — SSE parsing, reconnection, offline queue, typed events |
 | **safeagent-tui** | Interactive TUI testing app — streaming chat, /upload, commands, "as good as opencode" |
+| **@safeagent/react** | React hooks package — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity |
+| **@safeagent/ui** | Web component package — shadcn + ai-elements adopted components, custom trace/server/thread components, Storybook, component CLI |
+| **@safeagent/ui-native** | React Native component package — NativeWind styling, offline-first, native equivalents of web components |
+| **Next.js Demo** | Web reference application — full-featured chat with server switching, verbosity toggle, trace timeline, file upload, feedback |
+| **Expo Demo** | Mobile reference application — offline-first, tab navigation, server management, local SQLite persistence |
 | **Server** | Thin API server — custom prompts, intent config, guardrail rules, MCP config, JWT auth |
 | **Docker Compose** | Full infrastructure — Postgres+pgvector, SurrealDB, MinIO, Valkey, Trigger.dev, Langfuse stack |
 
@@ -237,6 +277,11 @@ graph LR
 | Memory | Three-layer: thread short-term (Postgres) + user short-term (Postgres) + long-term (SurrealDB) | Conversation context + cross-thread continuity + persistent knowledge |
 | Humanlikeness | 13 engine-level behaviors woven into conversation pipeline, agents, and memory | Correction handling, frustration detection, response energy, emotional context, style memory, fact supersession, clarification patience, and more |
 | Streaming | RunStreamEvent format throughout | No format bridge, direct streaming path via Runner.run(), TripWire safety |
+| Frontend SDK | @safeagent/client → @safeagent/react → @safeagent/ui (web) + @safeagent/ui-native (RN) | Types flow once from engine through dependency chain — zero duplication, shared hooks, separate JSX |
+| Web Components | shadcn + ai-elements (48 adopted) + 8 custom | Mature Radix-backed primitives from AI SDK team, gap-fill only where needed |
+| RN Components | NativeWind, separate JSX, shared hooks | No DOM, no Radix — native implementation with hook-level parity |
+| Trace Visualization | Trace-step SSE events → TraceTimeline component | Real-time pipeline visibility in full verbosity mode, hidden in standard mode |
+| Demo Strategy | Next.js web + Expo mobile reference apps | Production-quality references, not throwaway samples — server switching and verbosity as first-class UX |
 | Scaling | Trigger.dev queue + horizontal workers | Configurable per deployment (queue-all vs in-process) |
 | Library/Server | Library defaults + server overrides | Great out-of-box experience, full customizability |
 | Error Messages | Typed error codes, server maps all (validated at startup) | Server controls user-facing tone, startup validation ensures completeness |
