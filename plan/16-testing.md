@@ -4473,6 +4473,16 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Citation display and inline citation linking render structured citations.
 - Location rendering displays context cards with coordinate data.
 - Suggestion chip actions are interactive and trigger follow-up prompts.
+- Markdown rendering in chat messages produces formatted output for emphasis, links, lists, and code blocks.
+- Message timestamp rendering displays time metadata for each message in the conversation.
+- Typing indicator renders during active assistant response and clears on completion.
+- Upload initiation is accessible from the prompt input area before message submission.
+- Thumbs up and thumbs down buttons are visible on eligible assistant messages and trigger feedback submission.
+- Feedback flow carries Langfuse-correlated trace identifiers deterministically across both demos.
+- Mobile tab-based navigation structure surfaces conversations and settings as primary navigation targets.
+- Offline indicator displays both connectivity state and pending message count.
+- Verbosity toggle label communicates the current mode distinction between standard and full.
+- Web demo time-to-interactive remains low despite rich component surface.
 
 ### Module: Testing Strategy (16)
 
