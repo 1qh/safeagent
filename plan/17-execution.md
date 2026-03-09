@@ -6,6 +6,8 @@
 >
 > **Scale**: 119 implementation tasks + 4 final audit tasks = 123 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
+> **Scale Update (Documents 28, 29)**: 121 implementation tasks + 4 final audit tasks = 125 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
+
 ---
 
 ## Table of Contents
@@ -20,6 +22,7 @@
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
 - [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24-25-26-27)
+- [Execution Addendum (Documents 28, 29)](#execution-addendum-documents-28-29)
 
 ---
 
@@ -92,6 +95,10 @@ gantt
 | 10 | E2E + Deploy + Ops + Docs Infra | 11 | 11 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance |
 | 11 | Frontend Demos + Docs + Incident Ops | 4 | 4 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures |
 | FINAL | Audit | 4 | 4 parallel | Plan compliance, code quality, full QA, scope fidelity |
+
+| 11 (Updated) | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
+| FINAL (Updated) | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
+| TOTAL (Updated) | Execution Plan | 125 | — | 121 implementation tasks + 4 final audit tasks |
 
 ### Milestone Markers
 
@@ -436,6 +443,7 @@ graph LR
 | DEMO_MOBILE | Expo mobile demo (offline-first, server management, tab navigation, local SQLite persistence) | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 | DOCS_CONTENT | Documentation content authoring | `writing` | DOCS_SITE, ALL core module tasks |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | `writing` | MONITORING_INFRA |
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
 
 ---
 
@@ -450,6 +458,7 @@ graph LR
 | AUDIT_CODE | Code quality review | `unspecified-high` |
 | AUDIT_QA | Full QA run — agent-executed | `unspecified-high` + `playwright` |
 | AUDIT_SCOPE | Scope fidelity check | `deep` |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
 
 ---
 
@@ -1002,6 +1011,8 @@ graph LR
 | 10 | 11 | E2E_TESTS, MONITORING_INFRA → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
 | 11 | 4 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing` |
 | FINAL | 4 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
+| 11 (Updated) | 5 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing`; DEVELOPER_EXPERIENCE → `unspecified-high` |
+| FINAL (Updated) | 5 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA, API_GOVERNANCE → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
 
 ### Category Totals
 
@@ -1016,9 +1027,24 @@ graph LR
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
 | **Total** | **123** | |
 
+### Category Totals (Updated for Documents 28, 29)
+
+| Category | Count | Percentage |
+|----------|-------|------------|
+| `deep` | 54 | 43% |
+| `quick` | 27 | 22% |
+| `unspecified-high` | 35 | 28% |
+| `writing` | 2 | 2% |
+| `visual-engineering` | 5 | 4% |
+| `oracle` | 1 | 1% |
+| Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
+| **Total** | **125** | |
+
 ---
 
 ## Complete Task Registry (123 Tasks) and Full Dependency Matrix
+
+> **Registry Update (Documents 28, 29)**: Complete task count is now 125.
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -1145,10 +1171,12 @@ graph LR
 | DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
 | DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | 11 |
 | INCIDENT_PROCEDURES | MONITORING_INFRA | — | 11 |
+| DEVELOPER_EXPERIENCE | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY | API_GOVERNANCE | 11 |
 | AUDIT_PLAN | PKG_PUBLISH | — | FINAL |
 | AUDIT_CODE | PKG_PUBLISH | — | FINAL |
 | AUDIT_QA | PKG_PUBLISH | — | FINAL |
 | AUDIT_SCOPE | PKG_PUBLISH | — | FINAL |
+| API_GOVERNANCE | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE | — | FINAL |
 
 ### BARREL_EXPORTS Full Dependency List (Barrel Exports)
 
@@ -1267,6 +1295,8 @@ flowchart TB
 
 ## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)
 
+> **Document Coverage Update**: Includes Documents 28 and 29 via the execution addendum tasks listed below.
+
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
 | Task | Name | Source | Batch | Category | Depends On |
@@ -1346,9 +1376,33 @@ The following 11 tasks were added for coding standards, CI quality gates, releas
 | AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | Document 26 | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
 | SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Document 27 | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
+### Execution Addendum Tasks (Documents 28, 29)
+
+The following 2 tasks were added for developer workflow maturity and public API governance. Each is integrated into late-stage execution where platform behavior is already stable.
+
+| Task | Name | Source | Batch | Category | Depends On |
+|------|------|--------|------|----------|------------|
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Document 28 | 11 | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | Document 29 | FINAL | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
+
+---
+
+## Execution Addendum (Documents 28, 29)
+
+### Batch and Total Impact
+
+| Item | Previous | Updated |
+|------|----------|---------|
+| Total tasks | 123 | 125 |
+| Batch 11 tasks | 4 | 5 |
+| FINAL batch tasks | 4 | 5 |
+| Maximum concurrency | 18 (Batch 6) | 18 (Batch 6) |
+
 ---
 
 *Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 11 operations and quality tasks (Documents 20, 21, 22, 23, 24, 25, 26, 27), all fully integrated into the batch structure and dependency matrix.*
+
+*Execution addendum update: 121 implementation tasks + 4 final audit tasks = 125 total across the same 16 execution batches, with Documents 28 and 29 integrated into Batch 11 and FINAL respectively.*
 
 ---
 

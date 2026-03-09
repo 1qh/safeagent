@@ -5245,6 +5245,103 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Security audit compliance enforces required cadence, scope, and evidence output across monthly to annual reviews.
 - Dependency scanning and vulnerability remediation governance maintain ownership, SLA tracking, and closure evidence.
 
+### Module: Developer Experience and Onboarding (28)
+
+- Project scaffolder generates valid project structure with all required artifacts.
+- Generated project produces output on first run with mock provider.
+- Progressive API tiers (quick, standard, expert) each produce the expected agent behavior profile.
+- Error taxonomy covers all named error classes with correct domain and category assignment.
+- Error messages include clear sections for what happened, why it happened, and what to do next.
+- Mock provider returns fixture-based responses and supports streaming simulation behavior.
+- Fixture recording mode captures real responses and replays deterministically.
+- Deterministic mode produces identical results across repeated runs.
+- Local studio starts correctly and renders agent chat, trace viewer, and tool sandbox surfaces.
+- Template gallery scaffolds all templates successfully and each one runs successfully.
+- Type-checking performance stays within the defined budget with thirty or more tools configured.
+- OpenTelemetry export emits valid trace data to configured endpoints.
+- Tool sandbox executes tools in isolation with correct schema validation behavior.
+- AI coding agent skill definition loads with correct metadata and instruction payloads.
+
+### Module: API Governance and Consumer Migration (29)
+
+- Public API surface matches the documented export list exactly.
+- Stability tier annotations exist on all public exports.
+- Deprecated APIs emit runtime warnings with migration-guide references.
+- Breaking changes are detected by automated compatibility checks.
+- Migration codemods transform prior API usage into current API usage correctly.
+- Consumer canary fixtures pass against the current release.
+- Type contract changes are classified correctly as breaking or non-breaking.
+- Extension contracts maintain backward compatibility within each stability tier.
+- Semantic release rules derive the correct release type from commit history.
+- Pre-release channel publishes successfully and installs correctly.
+
+### Module: Content Provenance (14-extension)
+
+- Provenance records are created for every agent output.
+- Provenance schema includes all required fields: output identifier, model identifier, prompt hash, context chunks, tool results, and timestamps.
+- Immutable storage rejects modification attempts on existing records.
+- Hash-chain integrity verification detects tampering.
+- Prompt revision registry resolves historical prompts by content hash.
+- Reasoning-chain capture respects configured depth levels (minimal, standard, full).
+- GDPR export includes all provenance records for a given user.
+- EU AI Act transparency reporting generates valid output.
+- Provenance records link correctly to Langfuse trace spans.
+
+### Module: Disaster Recovery (22-extension)
+
+- PostgreSQL backup completes within configured frequency targets.
+- SurrealDB backup produces restorable snapshots.
+- MinIO bucket replication maintains data integrity.
+- Valkey rebuild-from-source restores rate-limiting state correctly.
+- Automated restore validation runs on schedule and passes.
+- RTO measurements stay within defined targets per service tier.
+- RPO measurements confirm no data loss beyond defined thresholds.
+- Failover procedures execute without service interruption beyond RTO limits.
+- Cross-region replication maintains consistency within configured lag thresholds.
+- Disaster-recovery escalation triggers correctly transition incident handling into DR-event handling.
+
+### Module: Agent Identity and Data Residency (27-extension)
+
+- Agent NHI credentials are distinct from user credentials.
+- OAuth token exchange produces correctly scoped delegated tokens.
+- Token vault encrypts credentials at rest and rotates them on schedule.
+- Chained delegation audit trail captures the complete delegation chain.
+- Least-privilege enforcement denies over-scoped agent requests.
+- Region-locked storage rejects writes to non-designated regions.
+- GDPR transfer-basis validation blocks transfers without legal basis.
+- Data location attestation produces verifiable proof of storage location.
+- Cross-border transfer controls enforce configured policies.
+
+### Module: Dynamic Fan-Out (06-extension)
+
+- Orchestrator spawns the correct number of workers for runtime-determined fan-out size.
+- Result aggregation merges outputs from all workers correctly.
+- Partial-failure handling follows configured policy for fail-all, succeed-with-partial, and retry-failed behaviors.
+- Concurrency limits prevent spawning beyond the configured maximum worker count.
+- Progress tracking reports accurate completion percentage throughout execution.
+- Backpressure throttles workers when reducer capacity is overwhelmed.
+
+### Module: Concurrent Request Policy (11-extension)
+
+- REJECT policy returns an error to the second request while the first continues.
+- ENQUEUE policy queues the second request and processes it after the first completes.
+- INTERRUPT policy cancels the first run and starts the second immediately.
+- ROLLBACK policy reverts state before starting the second request.
+- In-flight cancellation drains the current step cleanly.
+- Client receives the correct notification for each policy outcome.
+- State consistency is maintained across all policy transitions.
+
+### Module: Deferred Tool Loading (24-extension)
+
+- Deferred tools register with metadata only and no full schema at startup.
+- Tool search returns relevant tools by description and tags.
+- On-demand loading populates full schema into runtime context.
+- Tool token budget is enforced so excess tools are not loaded.
+- Frequently used tools are loaded eagerly based on priority.
+- Session cache prevents repeated loading of the same tool.
+- MCP server connections remain deferred until a tool from that server is needed.
+- Graceful fallback behavior applies when tool search finds no matches.
+
 ## Coverage Map
 
 Every Must Have feature area maps to one or more testing layers.
