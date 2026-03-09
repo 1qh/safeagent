@@ -107,6 +107,7 @@ flowchart TB
 At 10M users, unconstrained task cost can reach 0.30 USD.
 Cost intelligence combines semantic reuse, routing, and prompt cache strategy to reduce spend while preserving quality.
 Combined target: 47 percent sustained reduction from semantic cache plus routing, with additional 45 to 80 percent reduction where provider prompt cache hits are optimized.
+- Budget enforcement baselines and per-request spending limits are owned in file 12; infrastructure-level budget pools and quota allocation are owned in file 15; this plan adds proactive cost-reduction intelligence (semantic reuse, routing optimization, prompt cache strategy) and per-agent attribution contracts on top of those enforcement baselines.
 - Route to cheapest valid path first.
 - Reuse prior outputs when semantic equivalence is safe.
 - Enforce budget contracts during execution.
@@ -338,6 +339,7 @@ Output control policies reduce spend without degrading utility.
 ## Prompt Lifecycle Management (PromptOps)
 PromptOps governs behavior changes with release-grade controls.
 This extends existing prompt management with atomic bundles, experiments, shadow validation, canary controls, and immutable lineage.
+- Promotion gates and rollback mechanics are owned in file 21; this plan adds behavior-atomic bundle scope, shadow validation prior to promotion, prompt experiment lanes, and canary controls that integrate with those promotion gates.
 - Bundle dependent behavior artifacts together.
 - Gate promotions with eval and safety checks.
 - Validate in shadow before user impact.
