@@ -38,10 +38,10 @@
 - Category-level exports are curated for advanced usage.
 - Top-level exports prioritize high-signal and low-ambiguity symbols.
 - Top-level exports avoid broad passthrough behavior.
-- Barrel governance requires explicit allow-list policy for top-level re-export.
-- Barrel governance requires ownership assignment for each exported symbol group.
-- Barrel governance requires duplicate-surface detection before release acceptance.
-- Barrel governance requires periodic pruning of obsolete aliases.
+- Export aggregation governance requires explicit allow-list policy for top-level re-export.
+- Export aggregation governance requires ownership assignment for each exported symbol group.
+- Export aggregation governance requires duplicate-surface detection before release acceptance.
+- Export aggregation governance requires periodic pruning of obsolete aliases.
 - Aliases are temporary compatibility tools, not permanent API growth strategy.
 - Public API inventory must be regenerated during release validation.
 - Public API inventory drift blocks release promotion.
@@ -74,7 +74,7 @@
 - Internal tier may be refactored without deprecation process.
 - Tier communication uses documentation badges.
 - Tier communication uses structured API metadata tags.
-- Tier communication uses JSDoc tags aligned to governance vocabulary.
+- Tier communication uses inline documentation annotations aligned to governance vocabulary.
 - Tier communication must remain consistent across docs and generated references.
 - Tier transition from experimental to stable requires readiness review.
 - Readiness review includes adoption data, defect rate, and migration burden signals.
@@ -85,7 +85,7 @@
 - Tier mislabeling discovered in release prep blocks release admission.
 - Stable tier symbols require stricter compatibility tests.
 - Experimental tier symbols require stronger usage disclaimers.
-- Internal tier symbols must not leak through top-level barrel outputs.
+- Internal tier symbols must not leak through top-level export surfaces.
 - Extension contracts carry independent tier labels in addition to base API tier labels.
 
 ## Semantic Release Policy

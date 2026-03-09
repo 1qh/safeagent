@@ -68,7 +68,7 @@
 - The project generator is interactive and designed around guided choices.
 - Template selection includes provider choice, use case orientation, and framework integration posture.
 - First run must produce visible output with no hidden prerequisite beyond documented local setup.
-- `.env.example` is required and must default to local-first provider behavior.
+- An environment template is required and must default to local-first provider behavior.
 - Local model provider defaults must be preferred over cloud-first assumptions.
 - Scaffolding must preserve Bun-only workflows and `safeagent` single-package constraints.
 - Generated outputs must avoid hidden dependency on network-only infrastructure.
@@ -110,7 +110,7 @@
 - Schema-as-single-source-of-truth is mandatory using Zod v4.
 - Zod v4 schema definitions must drive runtime validation and TypeScript typing consistently.
 - Tool results must use discriminated unions for safe narrowing.
-- Public API contracts must avoid `any` and `unknown` as outward-facing return shape.
+- Public API contracts must avoid untyped escape hatches as outward-facing return shapes.
 - Progressive surface area must remain Bun-compatible without alternate runtime assumptions.
 
 ### Design Governance
@@ -139,36 +139,16 @@
 - Developers must understand what failed, why it failed, and what to do next.
 
 ### Named Error Classes
-- `CONFIG_ERROR`
-- `SCHEMA_ERROR`
-- `EXECUTION_ERROR`
-- `AUTH_ERROR`
-- `RATE_LIMIT_ERROR`
-- `CONTEXT_WINDOW_ERROR`
-- `MAX_STEPS_ERROR`
-- `TOOL_NOT_FOUND_ERROR`
-- `INVALID_RESULT_ERROR`
-- `MEMORY_ERROR`
-- `GUARDRAIL_VIOLATION_ERROR`
-- `PROVIDER_ERROR`
-- `TRANSPORT_ERROR`
-- `BUDGET_ERROR`
-- `TIMEOUT_ERROR`
+The system SHALL provide a minimum of fifteen distinct named error classes covering: configuration validation, schema validation, agent execution, authentication and authorization, rate limiting, context window exhaustion, maximum step limits, tool resolution failure, invalid tool results, memory operations, guardrail violations, provider communication, transport failures, budget enforcement, and timeout conditions.
 
-### Error Domain Enum
-- `TOOL`
-- `AGENT`
-- `MEMORY`
-- `RETRIEVAL`
-- `PROVIDER`
-- `TRANSPORT`
-- `GUARDRAIL`
-- `CONFIG`
+### Error Domain Classification
+The error taxonomy SHALL classify every error into one of at least eight semantic domains: tool operations, agent lifecycle, memory operations, retrieval operations, provider communication, transport layer, guardrail enforcement, and configuration.
 
-### Error Category Enum
-- `USER` for developer mistakes and invalid setup assumptions.
-- `SYSTEM` for framework defects and internal contract failures.
-- `THIRD_PARTY` for provider, network, or external dependency failures.
+### Error Category Classification
+The error taxonomy SHALL classify every error into one of three fault-origin categories:
+- Developer-originated faults from mistakes and invalid setup assumptions.
+- Framework-originated faults from internal defects and contract failures.
+- External faults from provider, network, or dependency failures.
 
 ### Message Quality Contract
 - Every error message must answer: what happened.
@@ -186,7 +166,7 @@
 
 ### Type-Safe Identification Pattern
 - Error identification must use stable discriminants and structured metadata.
-- Cross-boundary recognition must not rely on fragile `instanceof` behavior.
+- Cross-boundary recognition must not rely on fragile prototype-chain checks.
 - Identification patterns must be deterministic across transpilation or bundling differences.
 - Consumer logic must be able to branch on domain and category safely.
 
@@ -328,10 +308,12 @@
 - Guidance must explain how to adopt progressively from minimal use to advanced composition.
 
 ### Example Ecosystem
-- Examples catalog must provide standalone runnable examples for focused concepts.
+- A top-level examples directory SHALL contain standalone runnable examples for focused concepts.
+- Each example SHALL be independently executable with its own dependency manifest.
 - Example entries must state intended audience and required baseline knowledge.
 - Example curation must prioritize realistic patterns over toy-only demonstrations.
 - Example refresh cadence must track major release iterations and deprecate stale patterns.
+- Example directory governance must define ownership, minimum quality standards, and review requirements.
 
 ### Ecosystem Governance
 - Template review board must approve additions based on quality and maintenance ownership.
