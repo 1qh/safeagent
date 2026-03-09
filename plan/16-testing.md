@@ -4590,6 +4590,56 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Flaky test detection quarantines unreliable tests from blocking the pipeline.
 - Pipeline failure notifications reach the team within seconds of failure.
 
+### Module: Monitoring and Alerting (22)
+
+**Health check behavior**:
+
+- Shallow health check confirms process liveness and memory within configured limits.
+- Deep health check verifies database connectivity, cache reachability, object storage availability, and queue worker status.
+- Health check endpoint returns structured response with per-dependency status.
+- Fleet-aggregated health reflects worst-case status across horizontally scaled instances.
+- Dependency failure in deep health check marks the affected component as degraded without marking the entire service as down.
+
+**Metrics collection accuracy**:
+
+- Request rate metrics increment for every inbound request grouped by endpoint category.
+- Response latency metrics capture p50, p95, and p99 distributions per endpoint category.
+- Error rate metrics distinguish between client errors and server errors.
+- Active SSE connection count reflects currently open streaming connections in real time.
+- Guardrail trigger rate tracks input-blocked and output-blocked events separately.
+- Token consumption rate is attributed to the correct model identity.
+- Infrastructure metrics for each dependency (Postgres, SurrealDB, Valkey, MinIO, Trigger.dev) report expected dimensions.
+
+**Alert rule behavior**:
+
+- Critical alert fires when error rate exceeds the critical threshold.
+- Warning alert fires when latency p99 exceeds the warning threshold.
+- Alert deduplication suppresses repeated alerts for the same condition within the configured window.
+- Alert grouping combines related alerts from the same service into a single notification.
+- Alert silencing during planned maintenance prevents false alarms.
+- Escalation triggers when a critical alert remains unacknowledged past the timeout.
+
+**SLA monitoring**:
+
+- Rolling window SLA calculation reflects the configured measurement period.
+- SLA breach triggers an alert when availability drops below the defined target.
+- Error budget tracking shows remaining allowable downtime for the current period.
+
+**Incident lifecycle**:
+
+- Detection phase fires an alert within the defined mean-time-to-detect target.
+- Triage phase classifies incident severity and assigns an incident commander.
+- Mitigation applies fix or rollback and restores service within the mean-time-to-recover target.
+- Status page updates reflect current incident state for public visibility.
+- Post-mortem produces a blameless review document with root cause and preventive actions.
+
+**Status page behavior**:
+
+- Public status page displays per-component health status.
+- Historical uptime percentage is accurate over the trailing measurement window.
+- Planned maintenance announcements appear before the maintenance window begins.
+- Status update subscriptions deliver notifications to subscribers on state change.
+
 ### Module: Testing Strategy (16)
 
 **Testing infrastructure self-validation**:

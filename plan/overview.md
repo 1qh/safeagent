@@ -178,6 +178,7 @@ Each document below is a self-contained reference for its domain. Files are numb
 - [14 — Observability](./14-observability.md) — Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering
 - [15 — Infrastructure](./15-infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
 - [16 — Testing](./16-testing.md) — Test pyramid, coverage map, CI pipeline, audit tasks, QA policy
+- [22 — Monitoring & Alerting](./22-monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
 
 ### Frontend
 
