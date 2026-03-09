@@ -55,7 +55,7 @@
 - Local environments can run full development loops with no internet reliance for core capabilities.
 - AI coding assistants can load lightweight context by default and expand guidance on demand.
 - Type-checking and editor responsiveness remain measurable quality gates under high tool counts.
-- Tracing and telemetry can be exported to any compatible platform through OpenTelemetry.
+- Tracing and telemetry can be exported to all compatible platforms through OpenTelemetry.
 
 ## Project Scaffolding
 
@@ -138,8 +138,8 @@
 - Error behavior must enable fast, confident resolution instead of generic failure states.
 - Developers must understand what failed, why it failed, and what to do next.
 
-### Named Error Classes
-The system SHALL provide a minimum of fifteen distinct named error classes covering: configuration validation, schema validation, agent execution, authentication and authorization, rate limiting, context window exhaustion, maximum step limits, tool resolution failure, invalid tool results, memory operations, guardrail violations, provider communication, transport failures, budget enforcement, and timeout conditions.
+### Named Error Hierarchy
+The system SHALL provide a minimum of fifteen distinct named error types covering: configuration validation, schema validation, agent execution, authentication and authorization, rate limiting, context window exhaustion, maximum step limits, tool resolution failure, invalid tool results, memory operations, guardrail violations, provider communication, transport failures, budget enforcement, and timeout conditions.
 
 ### Error Domain Classification
 The error taxonomy SHALL classify every error into one of at least eight semantic domains: tool operations, agent lifecycle, memory operations, retrieval operations, provider communication, transport layer, guardrail enforcement, and configuration.
@@ -166,7 +166,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 
 ### Type-Safe Identification Pattern
 - Error identification must use stable discriminants and structured metadata.
-- Cross-boundary recognition must not rely on fragile prototype-chain checks.
+- Cross-boundary recognition must not rely on fragile inheritance-based identification.
 - Identification patterns must be deterministic across transpilation or bundling differences.
 - Consumer logic must be able to branch on domain and category safely.
 
@@ -186,7 +186,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Mock provider mode must require zero API keys for local work.
 - Core architecture must be offline-capable for memory, tools, and tracing workflows.
 - Environment validation concept must check setup readiness and return actionable guidance.
-- Provider abstraction must support switching through one environment variable decision point.
+- Provider abstraction must support switching through a single configuration decision point.
 - Local defaults must avoid accidental cloud coupling.
 
 ### Local-First Governance
@@ -309,7 +309,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 
 ### Example Ecosystem
 - A top-level examples directory SHALL contain standalone runnable examples for focused concepts.
-- Each example SHALL be independently executable with its own dependency manifest.
+- Each example SHALL be independently executable with its own declared dependencies.
 - Example entries must state intended audience and required baseline knowledge.
 - Example curation must prioritize realistic patterns over toy-only demonstrations.
 - Example refresh cadence must track major release iterations and deprecate stale patterns.
@@ -406,7 +406,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Tool sandbox is required for isolated validation before agent attachment.
 - Trace replay is required to reproduce specific executions.
 - MCP-first publishing model is required so each tool can be published as an MCP server.
-- Tool registry manifest format is required for discovery and governance.
+- A structured tool metadata format is required for discovery and governance.
 
 ### Workflow Governance
 - Tool contracts must define input and output schema expectations clearly.
@@ -457,7 +457,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Mermaid diagrams are present with UPPER_SNAKE task identifiers.
 - Diagram labels remain conceptual and avoid implementation-specific naming.
 - Bun-only, single-package, surqlize, and Drizzle constraints are explicit.
-- Error taxonomy includes at least fifteen named error classes and required enums.
+- Error taxonomy includes at least fifteen named error types and required domain and category classifications.
 - Progressive API tiering includes zero-config happy path and expert disclosure boundaries.
 - Testing pyramid and deterministic tooling model are explicitly defined.
 - OpenTelemetry compatibility requirements and file 14 extension note are explicit.
@@ -536,7 +536,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Local-first setup completion rate without cloud credentials.
 - Offline workflow success rate for core development loops.
 - Mock-provider usage rate during onboarding and testing.
-- Provider-switch success rate through single-variable abstraction.
+- Provider-switch success rate through single configuration decision point.
 
 ### Studio Metrics
 - Studio adoption rate across active developer cohort.
