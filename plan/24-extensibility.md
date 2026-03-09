@@ -38,7 +38,7 @@
 - Consumers can progressively replace defaults as maturity grows.
 - Replacement does not require forking the core library.
 - The baseline is strict type integrity across extension boundaries.
-- Contracts are authored in TypeScript and validated at registration.
+- Contracts are formally defined and validated at registration.
 - Contract shape checks happen before the system enters ready state.
 - Initialization fails loudly when an extension is incompatible.
 - Compatibility errors are explicit, contextual, and actionable.
@@ -81,20 +81,20 @@
 
 ```mermaid
 flowchart TB
-    A[Application Layer] --> B[Agent Orchestration Layer]
-    B --> C[Default Subsystem Implementations]
-    B --> D[Extension Contract Boundary]
-    D --> E[Custom Subsystem Implementations]
-    C --> F[Tooling and MCP Bus]
-    E --> F
-    B --> G[Guardrail Pipeline]
-    B --> H[Auth and Identity Boundary]
-    B --> I[Memory and Retrieval Layer]
-    B --> J[Transport Delivery Layer]
-    B --> K[Observability Layer]
-    C -. Swap Point .- E
-    G -. Additive Only .- E
-    H -. Non-Bypassable .- E
+    APPLICATION_LAYER[Application Layer] --> AGENT_ORCHESTRATION[Agent Orchestration Layer]
+    AGENT_ORCHESTRATION --> DEFAULT_SUBSYSTEMS[Default Subsystem Implementations]
+    AGENT_ORCHESTRATION --> CONTRACT_BOUNDARY[Extension Contract Boundary]
+    CONTRACT_BOUNDARY --> CUSTOM_SUBSYSTEMS[Custom Subsystem Implementations]
+    DEFAULT_SUBSYSTEMS --> TOOLING_MCP_BUS[Tooling and MCP Bus]
+    CUSTOM_SUBSYSTEMS --> TOOLING_MCP_BUS
+    AGENT_ORCHESTRATION --> GUARDRAIL_PIPELINE[Guardrail Pipeline]
+    AGENT_ORCHESTRATION --> AUTH_IDENTITY_BOUNDARY[Auth and Identity Boundary]
+    AGENT_ORCHESTRATION --> MEMORY_RETRIEVAL_LAYER[Memory and Retrieval Layer]
+    AGENT_ORCHESTRATION --> TRANSPORT_DELIVERY[Transport Delivery Layer]
+    AGENT_ORCHESTRATION --> OBSERVABILITY_LAYER[Observability Layer]
+    DEFAULT_SUBSYSTEMS -. Swap Point .- CUSTOM_SUBSYSTEMS
+    GUARDRAIL_PIPELINE -. Additive Only .- CUSTOM_SUBSYSTEMS
+    AUTH_IDENTITY_BOUNDARY -. Non-Bypassable .- CUSTOM_SUBSYSTEMS
 ```
 
 ## Extension Point Catalog
@@ -464,21 +464,21 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A[Pre-Request] --> B[Post-Intent]
-    B --> C[Pre-Guardrail]
-    C --> D[Guardrail Evaluation]
-    D --> E[Post-Guardrail]
-    E --> F[Pre-Retrieval]
-    F --> G[Retrieval Execution]
-    G --> H[Post-Retrieval]
-    H --> I[Tool Start and Tool End]
-    I --> J[Memory Read and Memory Write]
-    J --> K[Pre-Response]
-    K --> L[Response Streaming]
-    L --> M[Post-Response]
-    D --> N[Error]
-    G --> N
-    L --> N
+    PRE_REQUEST[Pre-Request] --> POST_INTENT[Post-Intent]
+    POST_INTENT --> PRE_GUARDRAIL[Pre-Guardrail]
+    PRE_GUARDRAIL --> GUARDRAIL_EVAL[Guardrail Evaluation]
+    GUARDRAIL_EVAL --> POST_GUARDRAIL[Post-Guardrail]
+    POST_GUARDRAIL --> PRE_RETRIEVAL[Pre-Retrieval]
+    PRE_RETRIEVAL --> RETRIEVAL_EXEC[Retrieval Execution]
+    RETRIEVAL_EXEC --> POST_RETRIEVAL[Post-Retrieval]
+    POST_RETRIEVAL --> TOOL_BOUNDARY[Tool Start and Tool End]
+    TOOL_BOUNDARY --> MEMORY_BOUNDARY[Memory Read and Memory Write]
+    MEMORY_BOUNDARY --> PRE_RESPONSE[Pre-Response]
+    PRE_RESPONSE --> RESPONSE_STREAMING[Response Streaming]
+    RESPONSE_STREAMING --> POST_RESPONSE[Post-Response]
+    GUARDRAIL_EVAL --> ERROR_PHASE[Error]
+    RETRIEVAL_EXEC --> ERROR_PHASE
+    RESPONSE_STREAMING --> ERROR_PHASE
 ```
 
 ## Extension Registration and Validation Model
@@ -519,16 +519,16 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A[Define Extension] --> B[Contract Validation]
-    B --> C[Security Validation]
-    C --> D[Identity and Deduplication]
-    D --> E[Priority and Scope Resolution]
-    E --> F[Register Extension]
-    F --> G[Ready State]
-    B --> X[Fail Startup]
-    C --> X
-    D --> X
-    E --> X
+    DEFINE_EXTENSION[Define Extension] --> CONTRACT_VALIDATION[Contract Validation]
+    CONTRACT_VALIDATION --> SECURITY_VALIDATION[Security Validation]
+    SECURITY_VALIDATION --> IDENTITY_DEDUP[Identity and Deduplication]
+    IDENTITY_DEDUP --> PRIORITY_SCOPE[Priority and Scope Resolution]
+    PRIORITY_SCOPE --> REGISTER_EXTENSION[Register Extension]
+    REGISTER_EXTENSION --> READY_STATE[Ready State]
+    CONTRACT_VALIDATION --> FAIL_STARTUP[Fail Startup]
+    SECURITY_VALIDATION --> FAIL_STARTUP
+    IDENTITY_DEDUP --> FAIL_STARTUP
+    PRIORITY_SCOPE --> FAIL_STARTUP
 ```
 
 ## Composition Patterns
@@ -559,12 +559,12 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    A[Global Defaults] --> B[Agent Overrides]
-    B --> C[Request Overrides]
-    C --> D[Resolved Active Extension Set]
-    D --> E[Chain Execution]
-    E --> F[Fallback Activation if Needed]
-    F --> G[Final Outcome]
+    GLOBAL_DEFAULTS[Global Defaults] --> AGENT_OVERRIDES[Agent Overrides]
+    AGENT_OVERRIDES --> REQUEST_OVERRIDES[Request Overrides]
+    REQUEST_OVERRIDES --> RESOLVED_EXTENSION_SET[Resolved Active Extension Set]
+    RESOLVED_EXTENSION_SET --> CHAIN_EXECUTION[Chain Execution]
+    CHAIN_EXECUTION --> FALLBACK_ACTIVATION[Fallback Activation if Needed]
+    FALLBACK_ACTIVATION --> FINAL_OUTCOME[Final Outcome]
 ```
 
 ## Security Model for Extensions
@@ -572,7 +572,11 @@ flowchart TB
 - Trust levels are explicitly declared for each extension.
 - Built-in trust level is highest and always trusted.
 - First-party trust level is trusted with governance review.
-- Third-party trust level is sandboxed by default.
+- Third-party trust level is sandboxed by default with restricted execution boundaries.
+- Third-party sandbox enforces: no direct filesystem access beyond declared paths, no outbound network calls beyond declared endpoints, no access to environment secrets or credential stores, memory allocation limits per invocation, CPU time limits per invocation, and no access to other extension instance state.
+- Third-party extensions require explicit capability declarations for each restricted operation.
+- Capability grants are reviewed and approved through the governance workflow before activation.
+- Kill-switch behavior allows immediate quarantine of any extension by identity without restart.
 - Trust level influences capability grants and execution boundaries.
 - Capability declarations are mandatory for privileged actions.
 - Capability examples include network, storage, and memory access classes.
@@ -604,15 +608,15 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A[Built-In Trusted] --> D[Capability Boundary]
-    B[First-Party Trusted] --> D
-    C[Third-Party Sandboxed] --> D
-    D --> E[Isolation Controls]
-    D --> F[Timeout Controls]
-    D --> G[Audit Trail]
-    E --> H[Policy-Compliant Execution]
-    F --> H
-    G --> H
+    BUILT_IN_TRUSTED[Built-In Trusted] --> CAPABILITY_BOUNDARY[Capability Boundary]
+    FIRST_PARTY_TRUSTED[First-Party Trusted] --> CAPABILITY_BOUNDARY
+    THIRD_PARTY_SANDBOXED[Third-Party Sandboxed] --> CAPABILITY_BOUNDARY
+    CAPABILITY_BOUNDARY --> ISOLATION_CONTROLS[Isolation Controls]
+    CAPABILITY_BOUNDARY --> TIMEOUT_CONTROLS[Timeout Controls]
+    CAPABILITY_BOUNDARY --> AUDIT_TRAIL[Audit Trail]
+    ISOLATION_CONTROLS --> POLICY_COMPLIANT_EXEC[Policy-Compliant Execution]
+    TIMEOUT_CONTROLS --> POLICY_COMPLIANT_EXEC
+    AUDIT_TRAIL --> POLICY_COMPLIANT_EXEC
 ```
 
 ## Performance Considerations
@@ -671,11 +675,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A[Implement Extension] --> B[Run Contract Tests]
-    B --> C[Pass Required Behaviors]
-    C --> D[Register at Initialization]
-    B --> E[Fix Incompatibilities]
-    E --> B
+    IMPLEMENT_EXTENSION[Implement Extension] --> RUN_CONTRACT_TESTS[Run Contract Tests]
+    RUN_CONTRACT_TESTS --> PASS_REQUIRED[Pass Required Behaviors]
+    PASS_REQUIRED --> REGISTER_AT_INIT[Register at Initialization]
+    RUN_CONTRACT_TESTS --> FIX_INCOMPATIBILITIES[Fix Incompatibilities]
+    FIX_INCOMPATIBILITIES --> RUN_CONTRACT_TESTS
 ```
 
 ## Cross-References
@@ -688,8 +692,9 @@ flowchart LR
 | 09 - Retrieval | Retrieval strategy contracts |
 | 10 - Guardrails | Guardrail contracts and composition |
 | 11 - Transport | Transport adapter contracts |
-| 12 - Server | Auth middleware contracts |
+| 12 - Server | Auth middleware boundary and HTTP integration surface |
 | 14 - Observability | Observability provider contracts |
+| 15 - Infrastructure | Rate limiting, budget enforcement, circuit breaker, and capacity planning (non-extensible by design) |
 | 16 - Testing | Contract test methodology |
 | 18 - Frontend SDK | Component extension patterns |
 
@@ -709,7 +714,7 @@ flowchart LR
 - Implement security model including trust levels, capability restrictions, and timeout enforcement.
 - Implement contract test suites for external extension authors.
 - Verify built-in implementations pass published contract tests.
-- Document extension points in TypeScript types for auto-generated reference.
+- Document extension points through typed contract definitions for auto-generated reference.
 
 #### Acceptance Criteria
 - All 12 extension points have typed contracts that compile and validate.
@@ -734,10 +739,22 @@ flowchart LR
 
 #### Implementation Notes
 - EXTENSIBILITY_INFRA is planned for Batch 4 after foundational types and config stabilize.
-- Extension contracts are TypeScript interfaces for strong compile-time integrity.
+- Extension contracts enforce strong compile-time integrity through typed definitions.
 - Contract tests are exportable for third-party extension author workflows.
-- MCP tool integration reuses existing MCP health check wrapper from File 06.
-- Validation includes Zod 4 schema checks where contract registration needs structural assurance.
+- MCP tool integration reuses the shared MCP health check behavior defined in the agent orchestration layer.
+- Validation includes Zod v4 schema checks where contract registration needs structural assurance.
+
+## Non-Extensible Boundaries
+
+The following subsystems are intentionally non-extensible by design. They are core platform invariants that must remain deterministic, auditable, and tamper-proof across all deployments. Exposing them as extension points would compromise safety guarantees or create unpredictable operational behavior at scale.
+
+- **Rate limiting** is a platform invariant. Rate limiting behavior is configured through the infrastructure layer but not replaceable by extension authors. Custom rate policies can be expressed through configuration but the enforcement mechanism itself is non-negotiable. Allowing extension-level rate limiting would risk bypass paths that compromise system-wide fairness.
+- **Budget enforcement** is a platform invariant. Token budget tracking and enforcement use event-sourced accounting with atomic counters. Custom budget thresholds are configurable but the tracking and enforcement mechanism is non-extensible. Budget bypass would create unbounded cost exposure.
+- **Structured logging** is a platform invariant. The logging pipeline uses the structured logging module defined in the foundation layer. Log output format and redaction rules are configurable but the logging infrastructure itself is non-replaceable. Custom observability providers can consume log-derived signals without replacing the logging layer.
+- **Error handling** is a platform invariant. Error classification, normalization, and safe user-facing messaging follow the typed error system defined in the foundation layer. Error mapping is configurable at the server layer but the classification hierarchy is non-extensible. Custom extensions produce errors through the standard error envelope and do not define their own error delivery semantics.
+- **Circuit breaker** is a platform invariant. Circuit breaker behavior wraps all external calls including extension invocations. Circuit breaker thresholds are tunable per extension type but the breaker mechanism itself is non-replaceable.
+
+These boundaries are enforced through the registration validation system. Extensions that attempt to intercept, override, or bypass these platform invariants are rejected at startup.
 
 ## Governance and Rollout Guidelines
 - Extensibility governance is owned jointly by platform and security stakeholders.

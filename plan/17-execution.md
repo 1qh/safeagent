@@ -43,7 +43,7 @@ gantt
     Batch 3 — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
     section Config + Guards
-    Batch 4 — Config+Guards (6 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
+    Batch 4 — Config+Guards+Extensibility (7 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
 
     section Agent Factory + Pipelines
     Batch 5 — Agent Factory + Pipelines (4 parallel)      :crit, AGENT_PIPELINE_BATCH, after CONFIG_GUARDS_BATCH, 3d
@@ -164,7 +164,7 @@ graph LR
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 115 tasks) | ~405–515 hours estimated |
+| Sequential execution (all 116 tasks) | ~405–515 hours estimated |
 | Parallel execution (batch model) | ~125–160 hours estimated |
 | Parallel speedup | ~69% faster than sequential |
 | Maximum concurrency | 17 tasks (Batch 6) |
