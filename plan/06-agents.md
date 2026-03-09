@@ -12,6 +12,7 @@
 - [Architecture Overview](#architecture-overview)
 - [Agent Factory (Agent Creation Factory)](#agent-factory-agent-creation-factory)
 - [Orchestrator Agent Pattern](#orchestrator-agent-pattern)
+- [Dynamic Fan-Out & Map-Reduce Orchestration](#dynamic-fan-out--map-reduce-orchestration)
 - [Context Assembly, Budgeting, and Response Calibration](#context-assembly-budgeting-and-response-calibration)
 - [Live Synthesis Streaming](#live-synthesis-streaming)
 - [Dependent Intent Handling](#dependent-intent-handling)
@@ -433,6 +434,40 @@ Constraint passing: After first stage completes, the orchestrator extracts a str
 | exclusion | Feedback identifies disliked entity | entities: names or IDs to exclude from later results |
 | refinement | Context intent narrows scope | entities: scope qualifiers; metadata: additional filters |
 | context | Context-establishing intent provides background | entities: key mentions; metadata: grounding facts |
+
+---
+
+## Dynamic Fan-Out & Map-Reduce Orchestration
+
+For workloads where parallel width is unknown until runtime, the orchestrator uses dynamic fan-out and reduction. Instead of fixed handoff count, it computes `N` from incoming work (for example, many documents or records), dispatches one worker per item or shard, and reduces outputs into one coherent result.
+
+```mermaid
+flowchart TB
+    ORCHESTRATOR[ORCHESTRATOR]
+    WORK_ITEM_SET[WORK_ITEM_SET]
+    FAN_OUT_POLICY{FAN_OUT_POLICY}
+    WORKER_POOL[WORKER_POOL_N]
+    REDUCER[REDUCER]
+    FINAL_RESULT[FINAL_RESULT]
+
+    ORCHESTRATOR --> WORK_ITEM_SET
+    WORK_ITEM_SET --> FAN_OUT_POLICY
+    FAN_OUT_POLICY --> WORKER_POOL
+    WORKER_POOL --> REDUCER
+    REDUCER --> FINAL_RESULT
+```
+
+Core orchestration behaviors:
+
+- Runtime-determined parallelism: worker count is derived at execution time, not fixed during design.
+- Fan-out dispatch: the orchestrator partitions work items and assigns each partition to dynamically created workers.
+- Result aggregation: reducer strategies include merge, vote, concatenate, and summarize depending on task semantics.
+- Partial failure handling: policy is explicit per run as fail-all, succeed-with-partial, or retry-failed-only.
+- Concurrency limits: the orchestrator enforces a maximum active worker cap to avoid resource exhaustion.
+- Progress tracking: completion is tracked as processed items versus total items, enabling percent-complete reporting.
+- Backpressure: when worker output exceeds reducer throughput, the orchestrator applies queueing or throttling to stabilize flow.
+
+Durability note: checkpoint-backed fan-out state and recovery behavior should align with durable execution guidance in [25 — Durable Execution](./25-durable-execution.md), so incomplete worker sets can resume without reprocessing completed items.
 
 ---
 

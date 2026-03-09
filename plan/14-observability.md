@@ -14,6 +14,7 @@
 - [Logging Strategy](#logging-strategy)
 - [User Feedback Endpoint](#user-feedback-endpoint)
 - [Langfuse Prompt Management](#langfuse-prompt-management)
+- [Content Provenance & Attribution](#content-provenance--attribution)
 - [Eval/Scoring Configuration](#evalscoring-configuration)
 - [Dashboard and Alerting](#dashboard-and-alerting)
 - [Self-Test Infrastructure](#self-test-infrastructure)
@@ -616,6 +617,76 @@ Wraps a safeagent Agent as a Promptfoo custom provider:
 |-------|-------|
 | provider call method | Runs an agent evaluation request and returns the model output plus token usage totals |
 This provider is used in the direct in-process path (when Promptfoo runs in Bun) and as the agent-facing adapter in the HTTP bridge.
+---
+## Content Provenance & Attribution
+Tracing explains runtime behavior. Provenance explains causality and accountability: which inputs, context, instructions, and model configuration produced a specific output. This section defines the compliance-grade provenance layer required for transparency obligations, including California transparency requirements and EU AI Act accountability expectations. It extends observability with legally defensible reconstruction of output lineage.
+
+```mermaid
+graph LR
+    INPUT_ARTIFACT["INPUT_ARTIFACT\nUser Request and Session Context"] --> CONTEXT_ASSEMBLY["CONTEXT_ASSEMBLY\nRetrieved Chunks and Tool Evidence"]
+    CONTEXT_ASSEMBLY --> MODEL_INFERENCE["MODEL_INFERENCE\nModel Processing Stage"]
+    MODEL_INFERENCE --> OUTPUT_ARTIFACT["OUTPUT_ARTIFACT\nAgent Response Artifact"]
+    OUTPUT_ARTIFACT --> PROVENANCE_RECORD["PROVENANCE_RECORD\nImmutable Compliance Ledger Entry"]
+    CONTEXT_ASSEMBLY --> PROVENANCE_RECORD
+    MODEL_INFERENCE --> PROVENANCE_RECORD
+```
+
+### Provenance Record Schema
+Every output artifact carries a provenance record with the minimum linkage set:
+
+| Field Group | Required Identifiers |
+|-------------|----------------------|
+| Output identity | output identifier |
+| Model identity | model identifier |
+| Prompt identity | prompt revision hash |
+| Context identity | context chunk identifiers |
+| Tool evidence identity | tool result identifiers |
+| Actor and session identity | timestamp, agent identifier, session identifier, user identifier |
+
+The schema is extensible so domain programs can append controlled metadata without changing core compliance fields. Interoperability aligns with W3C PROV semantics so external audit systems can ingest provenance data without custom translation.
+
+### Immutable Provenance Storage
+Provenance entries are append-only and immutable after creation. Storage policy follows WORM constraints to prevent post-hoc alteration. Integrity is tamper-evident through chained cryptographic digests or Merkle-style commitment structures so any mutation attempt is detectable during audit.
+
+Provenance storage is isolated from operational logs. Operational logs support debugging and reliability analysis; provenance is a compliance artifact designed for legal transparency and evidentiary workflows. Retention windows follow regulatory obligations and data minimization requirements, coordinated with GDPR handling and EU AI Act documentation duties (see [27 — Security & Compliance](./27-security-compliance.md)).
+
+When persistence spans multiple data systems, PostgreSQL persistence uses Drizzle and SurrealDB persistence uses surqlize to keep governance and audit behavior consistent across storage backplanes.
+
+### Prompt Revision Registry
+Every prompt template is registered by content hash so each historical output can be tied to the exact prompt revision used at generation time. The registry provides deterministic prompt reconstruction for audits, dispute resolution, and policy reviews.
+
+This registry integrates with PromptOps governance defined in [26 — AI Operations](./26-ai-operations.md), ensuring prompt change controls, approvals, and release documentation remain connected to downstream provenance records.
+
+### Reasoning Chain Capture
+High-stakes decisions require reasoning-chain capture beyond final text output. Capture depth is risk-tiered:
+
+| Capture Depth | Intended Use |
+|---------------|--------------|
+| minimal | Low-risk interactions with compact causal evidence |
+| standard | Default compliance posture for most production flows |
+| full | High-impact or regulated decisions requiring maximal reconstruction fidelity |
+
+Reasoning capture includes explicit storage cost controls at scale, combining depth policy, retention classes, and selective persistence so legal sufficiency is preserved without unbounded storage growth.
+
+### Compliance Export
+Compliance export is automated into audit-consumable report formats with chain-of-custody metadata. Export workflows include:
+
+- GDPR subject access support for complete provenance export scoped to a user identifier.
+- EU AI Act transparency report generation with output-level causal lineage.
+- Audit-ready packaging that preserves integrity proofs and provenance ordering.
+
+These exports are designed for regulator and third-party audit use without requiring internal debugging tooling.
+
+### Provenance-Tracing Integration
+Provenance extends tracing rather than replacing it. Existing tracing remains the operational lens for debugging, performance tuning, and reliability triage. Provenance adds a legal-compliance lens focused on causality, accountability, and reconstruction.
+
+Each provenance record links to relevant trace spans so investigators can traverse from compliance artifacts to operational context when needed. This separation of concerns is strict:
+
+- Tracing: operational telemetry for engineering workflows.
+- Provenance: compliance ledger for legal and regulatory workflows.
+
+Together they provide both fast incident diagnosis and defensible transparency reporting.
+
 ---
 ## Cross-References
 | Component | Interaction |

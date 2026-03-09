@@ -14,6 +14,7 @@
 - [Session Metadata Delivery](#session-metadata-delivery)
 - [Trace-Step Events](#trace-step-events)
 - [Verbosity Levels](#verbosity-levels)
+- [Concurrent Invocation Policy (Double-Texting)](#concurrent-invocation-policy-double-texting)
 - [CTA Streaming (CTA_STREAMING)](#cta-streaming-cta_streaming)
 - [Client SDK (CLIENT_SDK)](#client-sdk-client_sdk)
 - [SSE Event Type Reference](#sse-event-type-reference)
@@ -194,6 +195,77 @@ flowchart LR
     TRIP -->|no| UNKNOWN
     UNKNOWN -->|yes| EMIT_ERR --> CLOSE
     UNKNOWN -->|no| STREAM
+```
+
+### Concurrent Invocation Policy (Double-Texting)
+
+Concurrent invocation happens when a user sends a second message while the first run is still in-flight. The transport layer must apply one explicit policy so behavior is predictable for users, clients, and operators.
+
+#### Policy Set
+
+- **REJECT**: deny the second request immediately with a clear conflict error while the first run continues unchanged.
+- **ENQUEUE**: accept the second request into a per-session queue and start it only after the first run reaches a terminal state. This is the default policy.
+- **INTERRUPT**: stop the first run and start the second request as soon as cancellation reaches a safe boundary.
+- **ROLLBACK**: stop the first run, restore state to the pre-run checkpoint, then start the second request.
+
+#### Policy Selection
+
+Policy selection is configurable at two scopes:
+
+- Per agent: an agent can define its preferred concurrent invocation behavior based on interaction style.
+- Per endpoint: an endpoint can override agent defaults for channels that need stricter or looser behavior.
+
+When both are configured, endpoint policy takes precedence. If no explicit setting is present, use **ENQUEUE**.
+
+#### In-Flight Cancellation Semantics
+
+For **INTERRUPT** and **ROLLBACK**, cancellation is clean and ordered:
+
+- The running step is allowed to drain to its nearest safe boundary.
+- A cancellation event is emitted so clients and observability systems can correlate why output stopped.
+- Partial progress is persisted as an interrupted run record before control moves to the next request.
+
+This avoids abrupt termination that can leave transport and state machines out of sync.
+
+#### Client Notification Contract
+
+Clients are notified explicitly when a second message changes execution flow:
+
+- If policy is **REJECT**, the second request receives an immediate conflict response with retry guidance.
+- If policy is **ENQUEUE**, the second request receives accepted-and-queued status and later receives normal stream start signals when execution begins.
+- If policy is **INTERRUPT** or **ROLLBACK**, the first stream receives an interruption/cancellation signal before closure, and the second stream begins under a new run lifecycle.
+
+#### State Consistency Guarantees
+
+Interrupt handling must preserve state integrity:
+
+- No partial writes are committed as final state unless marked as interrupted partial progress.
+- Message ordering remains monotonic from the client perspective even when interruption occurs.
+- Queue transitions and run transitions are atomic at the session level to prevent split-brain run ownership.
+
+#### Durable Execution Tie-In (File 25)
+
+The **ROLLBACK** policy depends on durable execution checkpoints defined in [25 — Durable Execution](./25-durable-execution.md). Pre-run and step-level checkpoints make rollback deterministic by restoring a known-good session snapshot before replaying the replacement request.
+
+```mermaid
+stateDiagram-v2
+    [*] --> IN_FLIGHT
+    IN_FLIGHT --> REJECT_POLICY: SECOND_MESSAGE
+    IN_FLIGHT --> ENQUEUE_POLICY: SECOND_MESSAGE
+    IN_FLIGHT --> INTERRUPT_POLICY: SECOND_MESSAGE
+    IN_FLIGHT --> ROLLBACK_POLICY: SECOND_MESSAGE
+
+    REJECT_POLICY --> FIRST_CONTINUES: RETURN_CONFLICT
+    ENQUEUE_POLICY --> QUEUED_WAIT: ADD_TO_QUEUE
+    QUEUED_WAIT --> NEXT_RUN_STARTS: FIRST_COMPLETES
+    INTERRUPT_POLICY --> CANCEL_IN_FLIGHT: REQUEST_CANCEL
+    CANCEL_IN_FLIGHT --> NEXT_RUN_STARTS: SAFE_STOP_REACHED
+    ROLLBACK_POLICY --> CANCEL_IN_FLIGHT: REQUEST_CANCEL
+    CANCEL_IN_FLIGHT --> RESTORE_CHECKPOINT: SAFE_STOP_REACHED
+    RESTORE_CHECKPOINT --> NEXT_RUN_STARTS: STATE_RESTORED
+
+    FIRST_CONTINUES --> [*]
+    NEXT_RUN_STARTS --> [*]
 ```
 
 ---

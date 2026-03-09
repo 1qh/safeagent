@@ -32,6 +32,8 @@
 - [Data Classification Scheme](#data-classification-scheme)
 - [Bias and Fairness Governance](#bias-and-fairness-governance)
 - [Incident Response Program](#incident-response-program)
+- [Agent Identity and Delegated Authorization](#agent-identity-and-delegated-authorization)
+- [Data Residency and Geo-Compliance](#data-residency-and-geo-compliance)
 - [Cross-References](#cross-references)
 - [Delivery Checklist](#delivery-checklist)
 - [Navigation](#navigation)
@@ -443,6 +445,42 @@ flowchart LR
 - Regulator communications are factual and timely.
 - Enterprise customer communication includes mitigation status and next milestones.
 
+## Agent Identity and Delegated Authorization
+- Agent identity is modeled as non-human identity, distinct from end-user identity, so every autonomous action is attributable to a unique operational principal.
+- OAuth 2.0 Token Exchange under RFC 8693 governs delegated execution, allowing agents to act on behalf of users with explicit user-scoped permissions and bounded trust context.
+- Delegated credentials for external services are stored in a dedicated token vault with strict separation by principal, purpose, and sensitivity class.
+- Third-party access for GitHub, Slack, and Salesforce is brokered through vault-managed credentials so direct credential exposure is not permitted in runtime execution.
+- Least-privilege enforcement applies per task intent, with permissions reduced to the minimum capability set required for completion and automatically narrowed when risk context changes.
+- Delegation scope constraints define what each agent may delegate, which capabilities require elevated approval, and which operations are never delegable.
+- Chained delegation is fully auditable, preserving lineage from initiating user through each delegation hop so a transfer from one agent to another remains reconstructable for forensics and regulator review.
+- Credential rotation policy is automatic and recurring, with shortened rotation windows for high-sensitivity principals and immediate rotation after compromise indicators.
+
+```mermaid
+flowchart LR
+    USER_PRINCIPAL[USER_PRINCIPAL] --> AUTHORIZATION_CONSENT[AUTHORIZATION_CONSENT]
+    AUTHORIZATION_CONSENT --> TOKEN_EXCHANGE_GATE[TOKEN_EXCHANGE_GATE]
+    TOKEN_EXCHANGE_GATE --> PRIMARY_AGENT_NHI[PRIMARY_AGENT_NHI]
+    PRIMARY_AGENT_NHI --> DELEGATION_SCOPE_GUARD[DELEGATION_SCOPE_GUARD]
+    DELEGATION_SCOPE_GUARD --> SUB_AGENT_NHI[SUB_AGENT_NHI]
+    SUB_AGENT_NHI --> TOKEN_VAULT_BROKER[TOKEN_VAULT_BROKER]
+    TOKEN_VAULT_BROKER --> EXTERNAL_SERVICE_ACCESS[EXTERNAL_SERVICE_ACCESS]
+    PRIMARY_AGENT_NHI -. AUDIT_LINEAGE .- DELEGATION_CHAIN_LEDGER[DELEGATION_CHAIN_LEDGER]
+    SUB_AGENT_NHI -. AUDIT_LINEAGE .- DELEGATION_CHAIN_LEDGER
+    TOKEN_EXCHANGE_GATE -. POLICY_ENFORCED .- LEAST_PRIVILEGE_POLICY[LEAST_PRIVILEGE_POLICY]
+    TOKEN_VAULT_BROKER -. ROTATION_ENFORCED .- CREDENTIAL_ROTATION_POLICY[CREDENTIAL_ROTATION_POLICY]
+```
+
+## Data Residency and Geo-Compliance
+- Region-locked storage enforcement requires data tagged with residency obligations to remain in designated jurisdictions, with placement decisions bound to policy and legal classification.
+- Residency controls apply consistently across SurrealDB access through surqlize and PostgreSQL access through Drizzle, preventing policy drift between operational data layers.
+- GDPR Articles 44-49 mapping is maintained as transfer-governance policy covering adequacy decisions, standard contractual clauses, and binding corporate rules as the lawful basis set for international transfers.
+- SCHREMS II implications are addressed through supplemental safeguards, including transfer impact assessment governance, enhanced access controls, and stricter oversight for EU-US transfer pathways.
+- Cross-border transfer controls enforce jurisdiction boundaries technically, blocking unauthorized movement, triggering escalation on attempted violations, and requiring accountable override evidence where lawful exceptions apply.
+- Data location attestation provides verifiable proof of storage geography through immutable evidence artifacts tied to policy decisions and retained for regulator and enterprise assurance.
+- Regional deployment configuration adapts trust boundaries, retention posture, and transfer permissions by jurisdictional profile so each operational region follows its legal and risk baseline.
+- Data sovereignty audit trail captures every residency classification, transfer decision, exception rationale, and approval chain to preserve end-to-end accountability.
+- Existing infrastructure controls in file 15 remain the mandatory enforcement anchor for network segmentation, resilience boundaries, and regional isolation posture used by this governance layer.
+
 ## Cross-References
 | Plan File | Connection |
 |---|---|
@@ -476,4 +514,4 @@ flowchart LR
 
 ## Navigation
 
-*Previous: [26 — AI Operations](./26-ai-operations.md)*
+*Previous: [26 — AI Operations](./26-ai-operations.md) | Next: [28 — Developer Experience & Onboarding](./28-developer-experience.md)*

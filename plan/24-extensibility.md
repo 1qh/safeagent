@@ -6,6 +6,7 @@
 ## Table of Contents
 - Extensibility Philosophy
 - Tool Extensions
+- Deferred Tool Loading and On-Demand Discovery
 - Guardrail Extensions
 - Memory Provider Extensions
 - Storage Provider Extensions
@@ -135,6 +136,38 @@ flowchart TB
 - **Operational notes:** Tool backpressure behavior is measured under concurrent load.
 - **Operational notes:** Tool replacement supports phased rollout through scoped overrides.
 - **Reference:** File 06 for agent-level tool orchestration and MCP integration behavior.
+
+#### Deferred Tool Loading and On-Demand Discovery
+- **Scalability problem:** As MCP adoption expands, agents often connect to 10 or more MCP servers, and loading every tool definition at startup can consume roughly 50K to 130K tokens before useful work begins.
+- **Scalability problem:** Front-loading all definitions creates a context window scalability blocker and reduces room for user intent, retrieved evidence, and policy context.
+- **Deferred loading pattern:** Startup registration keeps only compact metadata in memory, including tool identity, description, and tags.
+- **Deferred loading pattern:** Full tool definitions are loaded only when a task actually requires the tool, keeping initial context lean.
+- **Tool search mechanism:** A dedicated meta-tool searches the registry by description and tags, then brings matching tool definitions into context just-in-time.
+- **Token budget for tools:** A configurable ceiling limits how many tokens tool definitions may occupy in active context.
+- **Loading priority:** High-frequency tools can be loaded eagerly for responsiveness, while low-frequency tools remain deferred until needed.
+- **Loaded-definition cache:** Once a definition is loaded, it is cached for the active session to avoid repeated fetch and repeated context cost.
+- **MCP server lazy connection:** MCP servers are not connected at startup by default; connection occurs only when a selected tool from that server is needed.
+- **Compatibility:** Deferred behavior remains transparent at agent level so planning and execution flows stay consistent regardless of eager or deferred source.
+- **Fallback behavior:** When search does not find a required tool, the system returns a graceful error that includes viable alternatives from the current registry.
+- **Runtime alignment:** This strategy fits the Bun runtime baseline and the single published package model for safeagent.
+- **Reference:** Anthropic tool search pattern: https://docs.anthropic.com/en/docs/build-with-claude/tool-use/tool-search
+
+```mermaid
+flowchart LR
+    STARTUP[Startup] --> LOAD_STRATEGY{Loading Strategy}
+    LOAD_STRATEGY --> EAGER_PATH[Eager Path]
+    LOAD_STRATEGY --> DEFERRED_PATH[Deferred Path]
+    EAGER_PATH --> EAGER_DEFINITIONS[Load Full Definitions]
+    EAGER_DEFINITIONS --> CONTEXT_SATURATION[High Early Context Cost]
+    DEFERRED_PATH --> METADATA_ONLY[Register Metadata Only]
+    METADATA_ONLY --> TOOL_SEARCH[Search by Description and Tags]
+    TOOL_SEARCH --> JIT_LOAD[Load Matching Definitions Just-in-Time]
+    JIT_LOAD --> SESSION_CACHE[Cache Loaded Definitions]
+    JIT_LOAD --> LAZY_MCP_CONNECT[Connect Needed MCP Server]
+    SESSION_CACHE --> TOKEN_BUDGET_GUARD[Enforce Tool Token Budget]
+    TOKEN_BUDGET_GUARD --> AGENT_EXECUTION[Agent Execution]
+    CONTEXT_SATURATION --> AGENT_EXECUTION
+```
 
 ### 2. Guardrail Extensions
 - **Role in system:** Guardrail extensions enforce policy safety over requests and responses.

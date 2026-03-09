@@ -33,6 +33,7 @@
 - [Runbook Templates](#runbook-templates)
 - [On-Call Rotation](#on-call-rotation)
 - [Capacity Monitoring and Forecasting](#capacity-monitoring-and-forecasting)
+- [Disaster Recovery and Backup Strategy](#disaster-recovery-and-backup-strategy)
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
 
@@ -2162,6 +2163,133 @@ Forecasting dimensions:
 - Burst headroom up to 10 percent daily active usage.
 - Dependency-specific bottleneck projections for Postgres, Valkey, object storage, and background execution.
 - Reliability impact modeling for slow-burn saturation and sudden event-driven spikes.
+
+## Disaster Recovery and Backup Strategy
+
+Disaster recovery planning protects state durability and service continuity when regional, infrastructure, or dependency failures exceed normal incident containment.
+This strategy applies to the Bun runtime deployment footprint for the single safeagent package and ties directly into monitoring, escalation, and status communication practices.
+
+### Backup Strategy by Service
+
+- PostgreSQL via Drizzle:
+  - Run frequent full and incremental backup cycles with point-in-time recovery support for primary state.
+  - Keep retention windows long enough for delayed-detection incidents and compliance review needs.
+  - Encrypt backup artifacts at rest and in transit with tightly scoped access control.
+  - Replicate backup artifacts to off-site storage to reduce single-region durability risk.
+- SurrealDB via surqlize:
+  - Run scheduled snapshot and change-capture backup flows aligned to memory durability needs.
+  - Keep retention aligned to long-term memory recovery and investigation windows.
+  - Evaluate cross-region replication for memory continuity where user-impact risk justifies added complexity.
+- MinIO object storage:
+  - Use erasure coding for local durability against disk and node failures.
+  - Use bucket replication to secondary location targets for disaster isolation.
+  - Define object revision retention policy by data class to balance recovery depth and storage cost.
+- Valkey cache and rate-limiting state:
+  - Enable persistence policy with RDB and append-only durability where restart continuity is required.
+  - Treat cache payloads as rebuildable from system-of-record state and replayed events.
+  - Keep explicit rebuild-from-source procedure to restore cache effectiveness quickly after loss.
+- Backup validation:
+  - Run automated restore validation on a fixed cadence with clear pass and fail gates.
+  - Track validation failures as reliability risks with explicit remediation ownership.
+
+### RTO and RPO Targets by Service Criticality
+
+- Tier 1, PostgreSQL primary state:
+  - Set the most aggressive recovery-time objective and recovery-point objective in the platform.
+  - Prioritize fastest restore path, lowest acceptable data loss window, and strict escalation urgency.
+- Tier 2, SurrealDB long-term memory:
+  - Set moderate recovery-time objective and recovery-point objective tuned for memory continuity.
+  - Prioritize controlled recovery sequencing with integrity checks before broad reactivation.
+- Tier 3, MinIO document storage:
+  - Set relaxed recovery-time objective with strict recovery-point objective for uploaded artifacts.
+  - Prioritize document durability guarantees even when full read availability is temporarily reduced.
+- Tier 4, Valkey cache:
+  - Set fast recovery-time objective with no recovery-point objective requirement due to rebuildable state.
+  - Prioritize rapid warmup and predictable performance restoration.
+
+### Failover Procedures
+
+- Use automated failover for eligible database read-replica topologies to reduce detection-to-failover delay.
+- Maintain a manual primary database failover runbook for split-brain prevention and controlled leadership transfer.
+- Apply service degradation behavior during failover according to 15 — Infrastructure degradation model.
+- Define DNS and load balancer failover policy for regional traffic steering and dependency isolation.
+- Run scheduled failover drills to verify readiness, decision speed, and communication accuracy.
+
+### Restore Testing
+
+- Run automated restore validation on a regular cadence across all critical data tiers.
+- Run full restore drills at least quarterly, including complete environment bring-up and dependency checks.
+- Measure restore duration and compare results directly against each tier recovery-time objective.
+- Verify data integrity after restore with record consistency checks and application-level correctness validation.
+
+### Cross-Region Considerations
+
+- Choose active-passive or active-active regional posture based on service criticality, cost envelope, and operational readiness.
+- Enforce data residency constraints during replication as defined in 27 — Security and Compliance.
+- Monitor replication lag continuously and alert when lag threatens recovery-point objectives.
+- Define region failover decision criteria using blast radius, lag state, dependency health, and regulatory constraints.
+
+### Incident Integration
+
+- Tie disaster recovery procedures into the existing incident lifecycle and P0-P3 severity handling in this plan.
+- Define disaster-recovery escalation triggers that promote an incident into a disaster-recovery event.
+- Use a dedicated communication plan during disaster-recovery events with internal and external cadence commitments.
+- Require post-disaster-recovery review covering root factors, timeline quality, and control improvements.
+
+```mermaid
+flowchart TB
+  INCIDENT_SIGNAL[SEVERE INCIDENT SIGNAL] --> DR_DECISION_GATE{DR EVENT TRIGGERED}
+  DR_DECISION_GATE -->|YES| BACKUP_COORDINATION[BACKUP COORDINATION PLANE]
+  DR_DECISION_GATE -->|NO| STANDARD_INCIDENT_PATH[STANDARD INCIDENT PATH]
+
+  subgraph TIER_1[TIER 1 PRIMARY STATE]
+    POSTGRESQL_STATE[POSTGRESQL VIA DRIZZLE]
+    POSTGRESQL_BACKUP[PRIMARY BACKUP STREAM]
+    POSTGRESQL_RESTORE[POINT-IN-TIME RESTORE]
+  end
+
+  subgraph TIER_2[TIER 2 LONG-TERM MEMORY]
+    SURREALDB_STATE[SURREALDB VIA SURQLIZE]
+    SURREALDB_BACKUP[MEMORY SNAPSHOT STREAM]
+    SURREALDB_RESTORE[MEMORY RESTORE FLOW]
+  end
+
+  subgraph TIER_3[TIER 3 DOCUMENT STORAGE]
+    MINIO_STATE[MINIO OBJECT DURABILITY]
+    MINIO_BACKUP[OBJECT REPLICATION STREAM]
+    MINIO_RESTORE[DOCUMENT RESTORE FLOW]
+  end
+
+  subgraph TIER_4[TIER 4 CACHE]
+    VALKEY_STATE[VALKEY CACHE STATE]
+    VALKEY_BACKUP[PERSISTENCE SNAPSHOT]
+    VALKEY_REBUILD[CACHE REBUILD FLOW]
+  end
+
+  BACKUP_COORDINATION --> POSTGRESQL_BACKUP
+  BACKUP_COORDINATION --> SURREALDB_BACKUP
+  BACKUP_COORDINATION --> MINIO_BACKUP
+  BACKUP_COORDINATION --> VALKEY_BACKUP
+
+  POSTGRESQL_STATE --> POSTGRESQL_BACKUP --> OFFSITE_VAULT[OFF-SITE ENCRYPTED VAULT]
+  SURREALDB_STATE --> SURREALDB_BACKUP --> OFFSITE_VAULT
+  MINIO_STATE --> MINIO_BACKUP --> OFFSITE_VAULT
+  VALKEY_STATE --> VALKEY_BACKUP --> OFFSITE_VAULT
+
+  OFFSITE_VAULT --> RESTORE_ORCHESTRATION[RESTORE ORCHESTRATION]
+  RESTORE_ORCHESTRATION --> POSTGRESQL_RESTORE
+  RESTORE_ORCHESTRATION --> SURREALDB_RESTORE
+  RESTORE_ORCHESTRATION --> MINIO_RESTORE
+  RESTORE_ORCHESTRATION --> VALKEY_REBUILD
+
+  POSTGRESQL_RESTORE --> INTEGRITY_VALIDATION[DATA INTEGRITY VALIDATION]
+  SURREALDB_RESTORE --> INTEGRITY_VALIDATION
+  MINIO_RESTORE --> INTEGRITY_VALIDATION
+  VALKEY_REBUILD --> INTEGRITY_VALIDATION
+
+  INTEGRITY_VALIDATION --> SERVICE_RECOVERY[CONTROLLED SERVICE RECOVERY]
+  SERVICE_RECOVERY --> DR_REVIEW[POST-DR REVIEW AND IMPROVEMENT]
+```
 
 ## Cross-References
 
