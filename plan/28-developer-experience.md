@@ -71,14 +71,14 @@
 - An environment template is required and must default to local-first provider behavior.
 - Local model provider defaults must be preferred over cloud-first assumptions.
 - The onboarding experience must preserve Bun-only workflows and `safeagent` single-package constraints.
-- Generated outputs must avoid hidden dependency on network-only infrastructure.
+- Initial project outputs must avoid hidden dependency on network-only infrastructure.
 
 ### Governance Rules
 - The onboarding experience prompts must use clear language that explains implications of each choice.
 - Template metadata must identify intended audience: beginner, intermediate, expert.
-- Generated projects must include onboarding notes focused on outcome validation, not internal mechanics.
-- Generated projects must include explicit indicators for optional cloud augmentation, not baseline dependency.
-- Generator evolution must be reviewed every release iteration with onboarding telemetry.
+- New projects must include onboarding notes focused on outcome validation, not internal mechanics.
+- New projects must include explicit indicators for optional cloud augmentation, not baseline dependency.
+- Onboarding flow evolution must be reviewed every release iteration with adoption telemetry.
 
 ### Acceptance Signals
 - Median time from onboarding start to first visible output remains below an agreed threshold.
@@ -291,7 +291,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Basic agent template.
 - Tool-enabled agent template.
 - Multi-agent collaboration template.
-- Retrieval-augmented generation template.
+- Retrieval-augmented (RAG) template.
 - Human-in-the-loop template.
 - Local-model-first template.
 
@@ -580,15 +580,15 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 ```mermaid
 flowchart LR
     FIRST_ENCOUNTER[FIRST_ENCOUNTER]
-    SCAFFOLD_SELECTION[SCAFFOLD_SELECTION]
+    PROJECT_SETUP[PROJECT_SETUP]
     FIRST_VISIBLE_OUTPUT[FIRST_VISIBLE_OUTPUT]
     ITERATIVE_DEVELOPMENT[ITERATIVE_DEVELOPMENT]
     QUALITY_VALIDATION[QUALITY_VALIDATION]
     RELEASE_READINESS[RELEASE_READINESS]
     EXPERT_PRACTICE[EXPERT_PRACTICE]
 
-    FIRST_ENCOUNTER --> SCAFFOLD_SELECTION
-    SCAFFOLD_SELECTION --> FIRST_VISIBLE_OUTPUT
+    FIRST_ENCOUNTER --> PROJECT_SETUP
+    PROJECT_SETUP --> FIRST_VISIBLE_OUTPUT
     FIRST_VISIBLE_OUTPUT --> ITERATIVE_DEVELOPMENT
     ITERATIVE_DEVELOPMENT --> QUALITY_VALIDATION
     QUALITY_VALIDATION --> RELEASE_READINESS
