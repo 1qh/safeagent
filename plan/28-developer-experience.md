@@ -8,7 +8,7 @@
 
 ## Table of Contents
 - [Strategic Context](#strategic-context)
-- [Project Scaffolding](#project-scaffolding)
+- [Project Onboarding](#project-onboarding)
 - [Progressive API Design](#progressive-api-design)
 - [Error Taxonomy and Diagnostics](#error-taxonomy-and-diagnostics)
 - [Local Development Environment](#local-development-environment)
@@ -57,39 +57,39 @@
 - Type-checking and editor responsiveness remain measurable quality gates under high tool counts.
 - Tracing and telemetry can be exported to all compatible platforms through OpenTelemetry.
 
-## Project Scaffolding
+## Project Onboarding
 
 ### Intent
-- Scaffolding must reduce first-contact uncertainty and produce confidence immediately.
-- The generator concept is interactive and user-guided rather than static copy-only templates.
+- The onboarding experience must reduce first-contact uncertainty and produce confidence immediately.
+- The onboarding flow is interactive and user-guided rather than requiring manual setup.
 - Initial setup must prioritize local execution and visible outcome instead of credential setup.
 
 ### Mandatory Requirements
-- The project generator is interactive and designed around guided choices.
+- The initial project creation flow is interactive and designed around guided choices.
 - Template selection includes provider choice, use case orientation, and framework integration posture.
 - First run must produce visible output with no hidden prerequisite beyond documented local setup.
 - An environment template is required and must default to local-first provider behavior.
 - Local model provider defaults must be preferred over cloud-first assumptions.
-- Scaffolding must preserve Bun-only workflows and `safeagent` single-package constraints.
+- The onboarding experience must preserve Bun-only workflows and `safeagent` single-package constraints.
 - Generated outputs must avoid hidden dependency on network-only infrastructure.
 
 ### Governance Rules
-- Scaffolding prompts must use clear language that explains implications of each choice.
+- The onboarding experience prompts must use clear language that explains implications of each choice.
 - Template metadata must identify intended audience: beginner, intermediate, expert.
 - Generated projects must include onboarding notes focused on outcome validation, not internal mechanics.
 - Generated projects must include explicit indicators for optional cloud augmentation, not baseline dependency.
 - Generator evolution must be reviewed every release iteration with onboarding telemetry.
 
 ### Acceptance Signals
-- Median time from scaffold start to first visible output remains below an agreed threshold.
+- Median time from onboarding start to first visible output remains below an agreed threshold.
 - Setup failure reports trend downward across each release iteration.
 - First-time users can recover from setup issues using provided diagnostics guidance without external help.
 - New developer satisfaction improves in surveys tied to initial workflow completion.
 
 ### Non-Goals
-- Scaffolding does not attempt to replace architecture governance from foundational files.
-- Scaffolding does not expose expert-only controls during beginner flow unless explicitly requested.
-- Scaffolding does not force cloud account setup during initial flow.
+- The onboarding experience does not attempt to replace architecture governance from foundational files.
+- The onboarding experience does not expose expert-only controls during beginner flow unless explicitly requested.
+- The onboarding experience does not force cloud account setup during initial flow.
 
 ## Progressive API Design
 
@@ -308,12 +308,12 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Guidance must explain how to adopt progressively from minimal use to advanced composition.
 
 ### Example Ecosystem
-- A top-level examples directory SHALL contain standalone runnable examples for focused concepts.
+- The project SHALL provide a curated set of standalone runnable examples for focused concepts.
 - Each example SHALL be independently executable with its own declared dependencies.
 - Example entries must state intended audience and required baseline knowledge.
 - Example curation must prioritize realistic patterns over toy-only demonstrations.
 - Example refresh cadence must track major release iterations and deprecate stale patterns.
-- Example directory governance must define ownership, minimum quality standards, and review requirements.
+- Example governance must define ownership, minimum quality standards, and review requirements.
 
 ### Ecosystem Governance
 - Template review board must approve additions based on quality and maintenance ownership.
@@ -428,7 +428,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 
 ### This File Delivers
 - Governance model for end-to-end Developer Experience from first contact through expert operations.
-- Project scaffolding strategy with local-first defaults and visible first-run outcome requirements.
+- Project onboardinging strategy with local-first defaults and visible first-run outcome requirements.
 - Progressive API model with three-tier disclosure and type-safe schema governance via Zod v4.
 - Comprehensive error taxonomy, domain and category classification, and actionable diagnostics contract.
 - Local development architecture requirements including Ollama-first and offline-capable workflows.
@@ -471,7 +471,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Phase four focuses on expert workflows, MCP-first tool publishing maturity, and partner enablement.
 
 ### Entry Criteria Per Phase
-- Phase one entry requires stable scaffold outcomes and local-first defaults.
+- Phase one entry requires stable onboarding outcomes and local-first defaults.
 - Phase two entry requires tiered API clarity and discriminated union consistency.
 - Phase three entry requires trace visibility, token insight, and local retention policy readiness.
 - Phase four entry requires reproducible tool workflows and registry governance maturity.
@@ -483,7 +483,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Phase four exit requires ecosystem contribution quality and predictable publication outcomes.
 
 ### Risk Register Focus Areas
-- Onboarding fragility risk from hidden assumptions in scaffold defaults.
+- Onboarding fragility risk from hidden assumptions in onboarding defaults.
 - API confusion risk from unclear tier boundaries and naming consistency.
 - Diagnostic ambiguity risk from insufficient context in failure payloads.
 - Local parity risk where offline behavior diverges from connected behavior.
