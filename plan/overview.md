@@ -179,6 +179,7 @@ Each document below is a self-contained reference for its domain. Files are numb
 - [15 — Infrastructure](./15-infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
 - [16 — Testing](./16-testing.md) — Test pyramid, coverage map, CI pipeline, audit tasks, QA policy
 - [22 — Monitoring & Alerting](./22-monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
+- [23 — Coding Standards](./23-coding-standards.md) — lintmax maximum strictness, Biome + oxlint + ESLint + Prettier, TypeScript strict mode, zero-warnings policy
 
 ### Frontend
 
