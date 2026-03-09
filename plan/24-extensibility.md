@@ -670,7 +670,7 @@ flowchart LR
 - Built-in defaults must pass their own contract suites.
 - Contract suite outcomes are tracked as release quality gates.
 - Failure diagnostics include scenario names and expected behavior deltas.
-- Contract updates remain backward-safe through governance process.
+- Contract updates remain stable through governance process.
 - Testing posture emphasizes behavior reliability at scale.
 
 ```mermaid
@@ -761,7 +761,7 @@ These boundaries are enforced through the registration validation system. Extens
 - High-trust extension categories require explicit review workflows.
 - Third-party extension onboarding requires sandbox policy confirmation.
 - Contract changes require updated contract test coverage before adoption.
-- Breaking contract shifts require migration guidance and compatibility windows.
+- Significant contract changes require transition guidance and adoption windows.
 - Registry metadata tracks owner, trust level, and capability intent.
 - Rollout can be scoped by environment, agent, or request class.
 - Canary rollout is encouraged for new extension categories.

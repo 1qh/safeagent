@@ -42,7 +42,7 @@ gantt
     Batch 2 — Foundation A (9 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
     Batch 3 — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
-    section Config + Guards
+    section Config + Guards + Extensibility
     Batch 4 — Config+Guards+Extensibility (7 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
 
     section Agent Factory + Pipelines
