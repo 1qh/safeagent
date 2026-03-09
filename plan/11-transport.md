@@ -321,6 +321,12 @@ flowchart LR
 
 This preserves real-time quality while maintaining broad network compatibility.
 
+### Transport Security
+
+- All media and signaling channels MUST use encrypted transport (DTLS for WebRTC media, TLS for WebSocket signaling and HTTP fallback)
+- Voice session establishment MUST require authenticated session authorization; unauthenticated callers are rejected before any media exchange
+- Abuse controls MUST enforce per-tenant concurrent session limits, per-session duration caps, and rate limiting on session creation to prevent resource exhaustion attacks
+
 ### Turn Detection and Interruption
 
 Voice turn management SHALL use voice activity detection with configurable controls:
@@ -375,6 +381,12 @@ Voice sessions can carry text, images, and audio in one shared conversation cont
 ### Latency Budget
 
 End-to-end voice response latency target SHALL be measured from user silence detection to first audio byte returned to the client, with a target of 700 ms or less under normal network conditions.
+
+### Scalability and Load Governance
+
+- The framework MUST enforce configurable admission limits on concurrent voice sessions per tenant and per deployment to prevent resource exhaustion
+- Backpressure controls MUST throttle new session creation when infrastructure approaches capacity, returning structured rejection with retry-after guidance rather than silent failure
+- Under sustained load, degraded-mode behavior MUST be available: cascaded pipeline fallback when S2S capacity is exhausted, reduced audio quality tiers, and graceful session shedding with client notification
 
 ### Session Persistence and Durability
 

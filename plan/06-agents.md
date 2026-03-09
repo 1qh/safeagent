@@ -164,7 +164,7 @@ Core requirements:
   - Screenshot-based perception uses rendered frames and works across any user interface.
   - Accessibility-tree perception uses structured page semantics and is preferred for web workflows due to substantially lower token cost (commonly around four times lower than screenshot-heavy flows).
 - **Reference providers**: Playwright MCP, Anthropic Computer Use, and OpenAI CUA should be provided as interchangeable plugin implementations behind the same abstraction.
-- **Plugin boundary**: computer use providers MUST ship as separate installable plugins and MUST NOT be bundled into the core Bun package `safeagent`.
+- **Plugin boundary**: computer use providers are optional provider integrations enabled outside the core runtime; the core `safeagent` package does not include any computer use provider by default.
 - **Mandatory sandboxing**: all computer use execution MUST run in isolated environments (virtual machine, container, or remote browser). Direct host-machine control is prohibited and must align with the sandbox isolation model in file 10.
 - **Action-surface governance**: the orchestrator MUST enforce a configurable allowlist of permitted actions, including read-only profiles that allow observation (screenshots and accessibility-tree reads) while blocking mutation actions.
 - **Viewport streaming**: browser viewport output may be streamed as a live visual feed for real-time observation, aligned with transport streaming behavior in file 11.
@@ -194,7 +194,6 @@ flowchart LR
 
 Reference material:
 
-- Playwright MCP quickstart: https://github.com/anthropics/anthropic-quickstarts
 - Anthropic Computer Use documentation: https://docs.anthropic.com/en/docs/agents-and-tools/computer-use
 
 ---
