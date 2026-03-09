@@ -4402,6 +4402,78 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Upload completion semantics match across web and mobile demos.
 - Conversation reset semantics prevent cross-server context bleed in both demos.
 
+**Thread management end-to-end behavior**:
+
+- Creating a new thread starts a fresh empty conversation state.
+- Switching between existing threads loads the correct message history for the selected thread.
+- Thread history displays messages in persisted chronological order.
+- Per-thread message ordering remains preserved across app restarts.
+- Thread list reflects all threads for the active server context only.
+
+**Server configuration persistence behavior**:
+
+- Web demo persists the server list in localStorage across page reloads.
+- Mobile demo persists the server list in AsyncStorage across app restarts.
+- Active server identity is restored on app launch when the stored entry remains valid.
+- Invalid stored server entry on app launch falls back to a disconnected state.
+- Server entry includes name, URL, and auth token as required fields.
+- Optional agentId field overrides default server routing when present.
+- When agentId is absent, routing uses the server default agent.
+
+**Connection lifecycle state behavior**:
+
+- Initial app state is disconnected before any server is selected.
+- Selecting a server transitions state from disconnected to connecting.
+- Successful handshake transitions state from connecting to connected.
+- Failed handshake transitions state from connecting back to disconnected.
+- Selecting a different server while connected transitions through switching to disconnected before reconnecting.
+- Explicit disconnect from connected returns state to disconnected.
+- Active stream abort occurs during switching before connection teardown.
+
+**Verbosity toggle edge-case behavior**:
+
+- Mid-conversation verbosity toggle affects only requests made after toggle activation.
+- Completed responses do not retroactively gain trace data when full mode is enabled.
+- Trace timeline renders events in arrival order regardless of network chunking variation.
+- Trace timeline scroll remains stable during rapid trace-step event arrival.
+- Trace timeline supports collapsed and expanded views when event count is large.
+- Trace step entries display a semantic phase label and relative timestamp.
+
+**UX guardrail behavior**:
+
+- Active server identity is always visible near the switch control in both demos.
+- Switching server while streaming shows a clear interruption indicator before reset.
+- Thread history from one server is never merged into another server context.
+- Server entries can be edited or removed only through explicit user actions, never as a side effect.
+- Feedback controls appear on eligible assistant messages only after completion, not during streaming.
+
+**Platform-specific mobile behavior**:
+
+- Polyfill initialization for structuredClone and TextEncoderStream succeeds without startup crash.
+- Keyboard avoiding behavior keeps input visible during active text entry on devices with software keyboards.
+- Safe area insets are respected on devices with sensor housing and gesture bars.
+- Haptic feedback fires on high-value interactions including send, server switch, and feedback submission.
+
+**Non-functional baseline behavior**:
+
+- Web demo maintains smooth scrolling behavior during active stream rendering.
+- Web demo avoids panel reflow jitter while trace events stream in full mode.
+- Web demo renders graceful empty states for no threads and disconnected servers.
+- Mobile demo maintains stable frame rate on long conversation lists.
+- Mobile demo keeps memory pressure stable when rendering large message histories.
+- Mobile demo touch targets meet accessibility size requirements.
+- Settings operations in mobile demo are reversible without unintended side effects.
+
+**Shared conversation capability behavior**:
+
+- Streaming assistant text renders incrementally during active response.
+- Tool call display surfaces tool invocation details within message flow.
+- Reasoning and chain-of-thought surfaces render where available from model output.
+- CTA rendering displays call-to-action elements from CTA events.
+- Citation display and inline citation linking render structured citations.
+- Location rendering displays context cards with coordinate data.
+- Suggestion chip actions are interactive and trigger follow-up prompts.
+
 ### Module: Testing Strategy (16)
 
 **Testing infrastructure self-validation**:
