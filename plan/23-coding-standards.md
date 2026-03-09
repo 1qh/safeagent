@@ -263,7 +263,7 @@ Required strictness settings:
 - Runtime-aligned module syntax enforced.
 - Independent compilation correctness enforced.
 - Cross-platform naming safety enforced.
-- Modern Bun-first alignment with ESNext target, Preserve module mode, and Bundler resolution.
+- Modern Bun-first alignment targeting the latest language standard with module and resolution modes optimized for the Bun runtime.
 
 Strictness intent map:
 - Broad type contract enforcement: comprehensive type safety across all code surfaces.
@@ -273,7 +273,7 @@ Strictness intent map:
 - Runtime-aligned module syntax: ensures import and export behavior matches runtime expectations.
 - Independent compilation correctness: enables isolated module compilation.
 - Cross-platform naming safety: prevents case-sensitivity issues across platforms.
-- Modern Bun-first alignment: ESNext target, Preserve module mode, and Bundler resolution for Bun compatibility.
+- Modern Bun-first alignment: latest language standard with module and resolution modes optimized for Bun compatibility.
 
 ```mermaid
 flowchart TB
