@@ -134,7 +134,7 @@ flowchart TB
 - **Operational notes:** Tool invocation latency and failure rates are tracked in observability.
 - **Operational notes:** Tool backpressure behavior is measured under concurrent load.
 - **Operational notes:** Tool replacement supports phased rollout through scoped overrides.
-- **Reference:** File 06 for agent-level tool orchestration and MCP wrapper details.
+- **Reference:** File 06 for agent-level tool orchestration and MCP integration behavior.
 
 ### 2. Guardrail Extensions
 - **Role in system:** Guardrail extensions enforce policy safety over requests and responses.
@@ -749,9 +749,9 @@ flowchart LR
 The following subsystems are intentionally non-extensible by design. They are core platform invariants that must remain deterministic, auditable, and tamper-proof across all deployments. Exposing them as extension points would compromise safety guarantees or create unpredictable operational behavior at scale.
 
 - **Rate limiting** is a platform invariant. Rate limiting behavior is configured through the infrastructure layer but not replaceable by extension authors. Custom rate policies can be expressed through configuration but the enforcement mechanism itself is non-negotiable. Allowing extension-level rate limiting would risk bypass paths that compromise system-wide fairness.
-- **Budget enforcement** is a platform invariant. Token budget tracking and enforcement use event-sourced accounting with atomic counters. Custom budget thresholds are configurable but the tracking and enforcement mechanism is non-extensible. Budget bypass would create unbounded cost exposure.
-- **Structured logging** is a platform invariant. The logging pipeline uses the structured logging module defined in the foundation layer. Log output format and redaction rules are configurable but the logging infrastructure itself is non-replaceable. Custom observability providers can consume log-derived signals without replacing the logging layer.
-- **Error handling** is a platform invariant. Error classification, normalization, and safe user-facing messaging follow the typed error system defined in the foundation layer. Error mapping is configurable at the server layer but the classification hierarchy is non-extensible. Custom extensions produce errors through the standard error envelope and do not define their own error delivery semantics.
+- **Budget enforcement** is a platform invariant. Token budget tracking and enforcement are managed centrally with durable accounting. Custom budget thresholds are configurable but the tracking and enforcement mechanism is non-extensible. Budget bypass would create unbounded cost exposure.
+- **Structured logging** is a platform invariant. The logging pipeline is managed centrally with consistent format and redaction behavior. Log output format and redaction rules are configurable but the logging infrastructure itself is non-replaceable. Custom observability providers can consume log-derived signals without replacing the logging layer.
+- **Error handling** is a platform invariant. Error classification, normalization, and safe user-facing messaging follow the core error taxonomy. Error mapping is configurable at the server layer but the classification hierarchy is non-extensible. Custom extensions produce errors through the standard error envelope and do not define their own error delivery semantics.
 - **Circuit breaker** is a platform invariant. Circuit breaker behavior wraps all external calls including extension invocations. Circuit breaker thresholds are tunable per extension type but the breaker mechanism itself is non-replaceable.
 
 These boundaries are enforced through the registration validation system. Extensions that attempt to intercept, override, or bypass these platform invariants are rejected at startup.

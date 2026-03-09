@@ -81,7 +81,7 @@ gantt
 | 1 | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
 | 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
 | 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
-| 4 | Config + Guards | 7 | 7 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra |
+| 4 | Config + Guards + Extensibility | 7 | 7 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
 | 6 | Integration Layer | 17 | 17 parallel | Streaming, grounding, core tools, intent routing, RAG infra |
 | 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
