@@ -256,26 +256,24 @@ Compiler-level constraints complement lint-layer policy.
 The combined model catches issues earlier and shrinks runtime uncertainty.
 
 Required strictness settings:
-- strict mode enabled.
-- noUncheckedIndexedAccess enabled.
-- noImplicitOverride enabled.
-- noFallthroughCasesInSwitch enabled.
-- verbatimModuleSyntax enabled.
-- isolatedModules enabled.
-- forceConsistentCasingInFileNames enabled.
-- target set to ESNext.
-- module set to Preserve.
-- moduleResolution set to Bundler.
+- Broad type contract enforcement enabled.
+- Indexed access requires null checking.
+- Explicit inheritance override clarity enforced.
+- Control-flow safety in switch statements enforced.
+- Runtime-aligned module syntax enforced.
+- Independent compilation correctness enforced.
+- Cross-platform naming safety enforced.
+- Modern Bun-first alignment with ESNext target, Preserve module mode, and Bundler resolution.
 
 Strictness intent map:
-- strict: broad type contract enforcement.
-- noUncheckedIndexedAccess: blocks unsafe indexed reads.
-- noImplicitOverride: explicit inheritance override clarity.
-- noFallthroughCasesInSwitch: control-flow safety.
-- verbatimModuleSyntax: runtime-aligned import and export behavior.
-- isolatedModules: independent compilation correctness.
-- forceConsistentCasingInFileNames: cross-platform naming safety.
-- ESNext target with Preserve module and Bundler resolution: modern Bun-first alignment.
+- Broad type contract enforcement: comprehensive type safety across all code surfaces.
+- Indexed access requires null checking: blocks unsafe indexed reads.
+- Explicit inheritance override clarity: prevents accidental method override issues.
+- Control-flow safety in switch statements: prevents fallthrough bugs.
+- Runtime-aligned module syntax: ensures import and export behavior matches runtime expectations.
+- Independent compilation correctness: enables isolated module compilation.
+- Cross-platform naming safety: prevents case-sensitivity issues across platforms.
+- Modern Bun-first alignment: ESNext target, Preserve module mode, and Bundler resolution for Bun compatibility.
 
 ```mermaid
 flowchart TB
@@ -351,7 +349,7 @@ Any standards failure is treated as release risk.
 No exception path bypasses quality gates without explicit governance approval.
 
 Required integration behaviors:
-- bun check runs in CI as a required quality gate.
+- The validation command runs in CI as a required quality gate.
 - Build fails on any linting, formatting, or type error.
 - Merge is blocked until check results are fully clean.
 - Editor integration aligns local output with CI output.
@@ -387,10 +385,10 @@ One flow applies deterministic fixes.
 One flow validates without modifying content.
 
 Workflow definitions:
-- bun fix applies deterministic corrections across the full codebase.
-- bun check validates the same policy surface without modifications.
+- The auto-fix operation applies deterministic corrections across the full codebase.
+- The validation command validates the same policy surface without modifications.
 
-bun fix execution order:
+Auto-fix operation execution order:
 1. Package manifest field sorting.
 2. Biome formatting and lint fixes.
 3. oxlint fast lint fixes.
@@ -493,7 +491,7 @@ flowchart TB
 |---|---|
 | 04 — Foundation | TypeScript strictness baseline and runtime constraints alignment |
 | 16 — Testing | Test-focused rule relaxation scenarios and exception boundaries |
-| 21 — Release Pipeline | bun check quality gate and merge admission enforcement |
+| 21 — Release Pipeline | validation command quality gate and merge admission enforcement |
 
 ## Task Specifications
 
@@ -507,7 +505,7 @@ flowchart TB
 - Install lintmax and initialize policy in both projects.
 - Verify all default rules are active at error severity.
 - Configure project-specific exceptions with documented justification.
-- Integrate bun check into CI as a blocking quality gate.
+- Integrate the validation command into CI as a blocking quality gate.
 - Set up editor behavior for format-on-save and real-time lint feedback.
 - Validate TypeScript strictness policy is fully active.
 - Document every project-specific override with rationale and review trace.
@@ -518,8 +516,8 @@ flowchart TB
 
 **Acceptance Criteria**:
 - lintmax is active in both projects with maximum strictness defaults.
-- bun check passes with zero errors across the full codebase.
-- bun fix is idempotent on a clean baseline.
+- The validation command passes with zero errors across the full codebase.
+- The auto-fix operation is idempotent on a clean baseline.
 - CI rejects any change containing lint, format, or type failures.
 - Every active exception has documented justification.
 - Editor integration is configured and behavior is verified.
@@ -529,8 +527,8 @@ flowchart TB
 - Introduce a formatting violation and verify CI rejection.
 - Introduce a type defect and verify CI rejection.
 - Introduce an ESLint violation and verify CI rejection.
-- Run bun fix on clean content and verify no changes occur.
-- Verify editor save output matches bun fix output.
+- Run the auto-fix operation on clean content and verify no changes occur.
+- Verify editor save output matches auto-fix operation output.
 - Add an inline disable for a non-existent rule and verify error detection.
 - Validate strictness by introducing patterns that only pass under weaker type policy.
 
@@ -564,4 +562,4 @@ flowchart LR
 
 ## Navigation
 
-*Previous: 22 — Monitoring & Alerting*
+*Previous: [22 — Monitoring & Alerting](./22-monitoring.md)*

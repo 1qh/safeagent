@@ -388,3 +388,7 @@ Integration notes:
 - Search quality validated across conceptual and reference queries.
 - Dark mode and responsive behavior validated for production readability.
 - Security and scalability narratives validated as first-class documentation concerns.
+
+---
+
+*Previous: [19 — Demo Applications](./19-demos.md) | Next: [21 — Release Pipeline](./21-release-pipeline.md)*

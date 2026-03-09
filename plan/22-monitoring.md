@@ -152,8 +152,9 @@ Monitoring and observability have distinct responsibilities and must not be merg
 - Observability focus:
   - Trace-level execution analysis through Langfuse.
   - Structured logging and correlation for deep diagnostics.
-  - Evaluation quality scoring and regression analysis.
+  - Post-hoc evaluation scoring and offline regression analysis through Promptfoo.
   - Post-incident root cause reconstruction.
+  - Note: live production quality scoring (sampled evaluator, hallucination SLO, golden prompt canaries) is a monitoring responsibility because it drives real-time alerts and burn-rate policy. Observability records the raw traces that monitoring scores against.
 - Integration boundary:
   - Monitoring detects and pages.
   - Incident responders use observability traces to investigate and verify mitigation.
@@ -2380,4 +2381,4 @@ Integration notes:
 - Prompt experiment observability is active with per-variant outcome comparison and significance-based decision gating.
 - Graceful degradation monitoring is active with degraded-state quality-floor, fallback headroom, and recovery-stability controls.
 
-*Previous: 21 — Release Pipeline*
+*Previous: [21 — Release Pipeline](./21-release-pipeline.md) | Next: [23 — Coding Standards](./23-coding-standards.md)*
