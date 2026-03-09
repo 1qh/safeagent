@@ -2091,7 +2091,7 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 
 **Environment variable contracts — full foundation matrix**:
 
-- GOOGLE_API_KEY accepts comma-separated key pools and rotates keys in deterministic order.
+- GOOGLE_API_KEY accepts comma-separated key pools for rotation.
 - GOOGLE_API_KEY allows startup when absent, while model-dependent endpoints return explicit unavailable behavior.
 - OPENAI_API_KEY is treated as moderation-only credential and does not gate unrelated request paths.
 - Missing OPENAI_API_KEY disables moderation guardrail path while keeping other guardrails active.
@@ -2713,16 +2713,10 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Tool blocklist filtering removes blocked tools from the exposed set even when the server advertises them.
 - Tool allowlist and blocklist applied together produces only the intersection minus exclusions.
 - Tool list caching for stable servers avoids re-listing on every request and serves cached tool definitions.
-- Cached tool list invalidation triggers re-listing when server health state transitions from unhealthy to healthy.
-- Health monitor detects availability changes in connected MCP servers and updates connection state continuously.
-- Health monitor transitions server state to unhealthy after configured consecutive probe failures.
-- Health monitor transitions server state back to healthy after a successful probe following unhealthy period.
-- Reconnection retries with exponential backoff after MCP server disconnects and restores tool availability on success.
-- Reconnection backoff caps at a configured maximum delay and does not grow unboundedly.
-- Runtime MCP server disconnect triggers automatic reconnection without caller intervention.
-- Runtime MCP server disconnect updates health status immediately before reconnection attempt begins.
-- Successful reconnection after runtime disconnect restores full tool availability to the agent.
-- Failed reconnection after maximum retry attempts marks the server as permanently unavailable until manual reset.
+- Tool list caching avoids re-listing on every request for stable servers.
+- Health monitor detects availability changes in connected MCP servers and updates connection state.
+- Reconnection retries with backoff after MCP server disconnects and restores tool availability on success.
+- Runtime MCP server disconnect triggers health status change and automatic reconnection begins.
 
 ### Module: Memory and Intelligence (07)
 
@@ -2897,13 +2891,10 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Communication style memory influence on response tone**:
 
-- Active emotional context with positive valence produces measurably warmer response tone compared to neutral baseline.
-- Active emotional context with negative valence produces measurably more careful and empathetic response tone.
-- Communication style preferences stored in long-term memory influence response formality, verbosity, and vocabulary choices.
-- Style memory influence persists across conversation threads for the same user.
-- Emotional context tone influence decays and ceases once the emotional state transitions to inactive.
-- Inactive emotional states do not influence response tone even when they remain queryable in audit outputs.
-- Multiple concurrent active emotional states produce a blended tone influence rather than last-write-wins.
+- Communication style memory persists learned user communication preferences across conversations.
+- Emotional cue activates short-lived tone context that influences response tone calibration.
+- Active emotional state is injected into response context during its active decay window.
+- Inactive emotional states stop influencing tone and are excluded from response context injection.
 - Tone calibration respects the response energy matching constraint from the conversation pipeline.
 
 ### Module: Document Processing (08)
