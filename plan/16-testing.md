@@ -2710,10 +2710,9 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 
 **MCP client resilience and configuration**:
 
-- Tool blocklist filtering removes blocked tools from the exposed set even when the server advertises them.
-- Tool allowlist and blocklist applied together produces only the intersection minus exclusions.
-- Tool list caching for stable servers avoids re-listing on every request and serves cached tool definitions.
-- Tool list caching avoids re-listing on every request for stable servers.
+- Static allowlist controls which tools are exposed per agent.
+- Static blocklist controls which tools are excluded per agent.
+- Tool list caching for stable servers avoids re-listing on every request.
 - Health monitor detects availability changes in connected MCP servers and updates connection state.
 - Reconnection retries with backoff after MCP server disconnects and restores tool availability on success.
 - Runtime MCP server disconnect triggers health status change and automatic reconnection begins.
@@ -2891,11 +2890,10 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Communication style memory influence on response tone**:
 
-- Communication style memory persists learned user communication preferences across conversations.
+- Communication style memory persists learned user communication preferences.
 - Emotional cue activates short-lived tone context that influences response tone calibration.
 - Active emotional state is injected into response context during its active decay window.
 - Inactive emotional states stop influencing tone and are excluded from response context injection.
-- Tone calibration respects the response energy matching constraint from the conversation pipeline.
 
 ### Module: Document Processing (08)
 
