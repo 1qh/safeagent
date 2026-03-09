@@ -181,6 +181,9 @@ Each document below is a self-contained reference for its domain. Files are numb
 - [22 — Monitoring & Alerting](./22-monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
 - [23 — Coding Standards](./23-coding-standards.md) — lintmax maximum strictness, Biome + oxlint + ESLint + Prettier, TypeScript strict mode, zero-warnings policy
 - [24 — Extensibility](./24-extensibility.md) — 12 typed extension point contracts, lifecycle hooks, registration validation, composition patterns, security model, contract testing for extension authors
+- [25 — Durable Execution & HITL](./25-durable-execution.md) — Checkpoint backends, crash recovery, time-travel replay, background runs, human-in-the-loop approval gates, async suspension, escalation queues, configurable automation ratio
+- [26 — AI Operations](./26-ai-operations.md) — Semantic caching, dynamic model routing, prompt A/B testing, atomic bundle rollout, shadow mode, LLM-as-judge evaluation, CLASSic framework, per-agent cost attribution
+- [27 — Security & Compliance](./27-security-compliance.md) — Unified threat model, OWASP LLM Top 10 mapping, EU AI Act compliance, GDPR article mapping, DSAR workflow, breach notification, bias monitoring, decision audit trails
 
 ### Frontend
 

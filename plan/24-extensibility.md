@@ -815,4 +815,4 @@ These boundaries are enforced through the registration validation system. Extens
 
 ## Navigation
 
-*Previous: [23 — Coding Standards](./23-coding-standards.md)*
+*Previous: [23 — Coding Standards](./23-coding-standards.md) | Next: [25 — Durable Execution & HITL](./25-durable-execution.md)*
