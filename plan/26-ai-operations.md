@@ -8,6 +8,7 @@
 - [Operating Principles](#operating-principles)
 - [Cost Intelligence Layer](#cost-intelligence-layer)
 - [Semantic Caching](#semantic-caching)
+  - [Scale Design at 10M Users](#scale-design-at-10m-users)
 - [Dynamic Model Routing](#dynamic-model-routing)
 - [Prompt Caching Architecture](#prompt-caching-architecture)
 - [Per-Agent Cost Attribution and Budget Contracts](#per-agent-cost-attribution-and-budget-contracts)
@@ -36,6 +37,7 @@
 - [Eval Dataset Freshness and Maintenance](#eval-dataset-freshness-and-maintenance)
 - [Prompt Rollout Decision Framework](#prompt-rollout-decision-framework)
 - [Scalability and Security Guardrails](#scalability-and-security-guardrails)
+  - [Runtime Baseline Constraints](#runtime-baseline-constraints)
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
 - [Delivery Checklist](#delivery-checklist)
@@ -161,6 +163,15 @@ flowchart TB
 - Authorization scope change.
 - Eval drift alarms.
 
+### Scale Design at 10M Users
+- Semantic cache partitions SHALL be tenant-aware and workload-segmented to contain blast radius.
+- Sharding strategy SHALL preserve locality for assignment keys while supporting horizontal expansion.
+- Admission policy SHALL prioritize high-reuse intents and reject low-confidence long-tail inserts under pressure.
+- Eviction policy SHALL combine recency, reuse value, and risk tier to protect high-safety entries.
+- Hot and cold tiers SHALL be maintained with explicit promotion and demotion criteria.
+- Lookup latency budget SHALL be enforced before generation dispatch, with miss fallback when budget is exceeded.
+- Invalidation propagation SHALL execute after bundle, policy, or retrieval-data changes with bounded propagation delay.
+
 ### Safety Protections
 - Re-run guardrail checks on cache hits.
 - Reject hit when workflow state differs materially.
@@ -213,6 +224,10 @@ flowchart TB
 - Never choose lane missing required capability.
 - Never ignore provider degradation state.
 - Always store route reason tags.
+- Pre-generation routing decision latency SHALL remain within a defined budget under steady-state and burst traffic.
+- Burst behavior SHALL prioritize policy-safe degradation over queue explosion.
+- Stale routing signals SHALL be quarantined from routing decisions until refreshed.
+- Stale provider-health state SHALL force conservative lane selection until fresh health evidence is available.
 
 ### Routing Metrics
 - Lane efficiency score.
@@ -224,6 +239,7 @@ flowchart TB
 ## Prompt Caching Architecture
 Prompt caching strategy is designed to maximize provider-level cache hits.
 This extends existing prompt retrieval caching by optimizing prompt composition.
+- Prompt fetch and baseline retrieval caching are owned in file 14; this plan adds provider-cache-aware assembly policy and governance boundaries.
 - Stable policy and instruction prefix.
 - Dynamic user context in bounded tail.
 - Deterministic evidence ordering.
@@ -329,13 +345,15 @@ This extends existing prompt management with atomic bundles, experiments, shadow
 - Maintain immutable change lineage.
 
 ## Atomic Bundle Rollout
-Atomic bundle includes prompt, tool schema, policy rules, and retrieval config.
+Atomic bundle includes prompt, tool schema, policy rules, retrieval config, and eval/judge config revision.
 All move together and roll back together.
 - Immutable after publish.
 - Contract validation required.
 - Lane-based promotion.
 - One-step rollback.
 - Marker emission for monitoring.
+- Behavior-atomic linkage SHALL bind prompt, tools, policy, retrieval configuration, scorer configuration, and judge prompt revision as one release artifact.
+- Rollback SHALL restore the complete linked artifact set with no partial behavior state.
 
 ```mermaid
 flowchart TB
@@ -359,6 +377,7 @@ flowchart TB
 - Retrieval settings preserve grounding floor.
 - Risk metadata required.
 - Rollback ownership required.
+- Bundle capture SHALL include immutable dataset snapshot identifiers and experiment manifest references required for reproducibility.
 
 ### Rollback Guarantees
 - Full artifact rollback with no partial state.
@@ -374,6 +393,10 @@ A/B testing compares prompt bundles with controlled traffic and statistical conf
 - Shared scorer stack across lanes.
 - Guard-metric early-stop policy.
 - Confidence-based winner decision.
+- Assignment key strategy SHALL be declared before launch and remain stable through the observation window.
+- Sample-ratio checks SHALL run continuously and SHALL pause inference when allocation drift exceeds guardrails.
+- Experiment spend caps SHALL enforce hard ceilings at scale and trigger controlled hold when breached.
+- Overlapping experiment rules SHALL prevent assignment collisions and metric contamination.
 
 ```mermaid
 flowchart TB
@@ -413,6 +436,11 @@ User-visible output remains production output during shadow.
 - Record divergence categories.
 - Feed canary readiness decisions.
 - Run asynchronously to avoid user latency impact.
+- Sampling strategy SHALL be risk-tiered and quota-bounded for high-volume traffic.
+- Async queue policy SHALL define backlog ceilings, priority classes, and expiration for stale comparisons.
+- Judge traffic cost caps SHALL be enforced independently from production serving budgets.
+- Throughput controls SHALL throttle non-critical shadow traffic before impacting production-critical workloads.
+- Degraded mode SHALL reduce comparison depth when judge capacity lags while preserving critical safety checks.
 
 ### Shadow Exit Criteria
 - Required sample volume reached.
@@ -508,6 +536,12 @@ Judge scorers capture semantic quality dimensions not covered by deterministic c
 - Safety scorer.
 - Helpfulness scorer.
 - Coherence scorer.
+- Judge prompt revision identifiers SHALL be recorded for every scored run.
+- Scorer revision identifiers SHALL be recorded for every score artifact.
+- Sampling policy SHALL prioritize high-risk cohorts during capacity constraints.
+- Async backlog policy SHALL enforce queue caps and bounded staleness.
+- Judge traffic SHALL respect explicit cost ceilings and throughput budgets.
+- Degraded mode SHALL preserve safety scoring first when judge capacity is constrained.
 
 ### Judge Governance
 - Explicit rubric per scorer.
@@ -553,6 +587,8 @@ Datasets are governed assets with provenance and freshness controls.
 - Ground truth or rubric expectation.
 - Item-level score history.
 - Freshness and quarantine lifecycle.
+- Immutable dataset snapshot identifiers SHALL be created for every evaluation release.
+- Snapshot metadata SHALL include scope, ownership, and retention policy.
 
 ### Ground Truth Management
 - Deterministic expected outputs.
@@ -567,14 +603,20 @@ Datasets are governed assets with provenance and freshness controls.
 - Freshness state.
 - Quarantine and restore actions.
 - Linkage to rollout markers.
+- Bundle linkage SHALL capture the exact behavior artifact set evaluated against each item cohort.
 
 ## Experiments and Regression Detection
 Experiments compare baseline and candidate lanes with per-item and aggregate deltas.
+- Promptfoo baseline experiment mechanics are owned in file 16; this plan adds governance for scale controls, lineage linkage, and release decision policy.
+- Regression detection and incident alert baseline are owned in file 22; this plan adds decision-state coupling for rollout holds and rollbacks.
 - Evaluate quality, safety, latency, and cost jointly.
 - Require confidence threshold for promotion.
 - Block on critical regressions.
 - Record decisions in lineage.
 - Correlate with rollout markers.
+- Experiment manifest SHALL be immutable after launch and SHALL capture assignment policy, metrics, stop rules, and spend constraints.
+- Rerun policy SHALL require the same dataset snapshot and manifest unless an approved revision is recorded.
+- Reproducibility checks SHALL validate scorer and judge prompt revision alignment before promotion decisions.
 
 ### Regression Policy
 - Critical safety regression: block.
@@ -603,6 +645,7 @@ Each scored on reasoning and action layers.
 
 ## CI Integration and Eval Gates
 Eval gates are mandatory release controls.
+- Deployment marker baseline is owned in file 22; this plan adds AI-behavior gate coupling and rollback linkage requirements.
 - Pre-merge focused eval packs.
 - Main broad regression suites.
 - Release critical scenario suites.
@@ -665,6 +708,7 @@ Dashboard should answer where cost is rising and why.
 
 ## Alert Thresholds for Cost Anomalies
 Alerts combine static and adaptive thresholds.
+- Anomaly monitoring baseline is owned in file 22; this plan adds AI-cost lane diagnostics and prompt-behavior decision linkage.
 - Absolute spend spike alert.
 - Relative baseline deviation alert.
 - Segment-specific anomaly alert.
@@ -732,10 +776,14 @@ Scalability and security are mandatory, not optional optimizations.
 
 ### Data Access Controls
 - PostgreSQL access via Drizzle ORM only.
+- SurrealDB access via surqlize only.
 - Raw query paths disallowed.
 - Least-privilege scope enforcement.
 - Audit records for state mutation intent and outcome.
 - Retention controls aligned with compliance.
+
+### Runtime Baseline Constraints
+- Runtime package management SHALL remain Bun-only with a single npm package: safeagent.
 
 ## Cross-References
 | Plan File | Relevant Scope | Connection |
@@ -751,121 +799,35 @@ Scalability and security are mandatory, not optional optimizations.
 
 ## Task Specifications
 ### COST_INTELLIGENCE_LAYER
-**Objective**
-- Build proactive spend controls through semantic reuse, routing, prompt cache optimization, gateway policy, and budget contracts.
-**What To Do**
-- Implement semantic caching with threshold, TTL, and invalidation.
-- Implement complexity-and-risk routing before generation.
-- Implement cache-aware prompt assembly for provider cache hits.
-- Implement per-agent, per-user, and per-workflow attribution.
-- Implement budget contracts for max cost, steps, and tool calls.
-- Implement provider gateway cost optimization and rate-limit handling.
-**Depends On**
-- CONVERSATION_PIPELINE
-- AGENT_ORCHESTRATION
-- SERVER_LIFECYCLE
-- INFRA_BUDGET_BASELINE
-- OBSERVABILITY_BASELINE
-**Acceptance Criteria**
-- Paraphrase-safe semantic reuse works with policy checks.
-- Threshold and TTL are configurable.
-- Invalidation responds to data, policy, and bundle changes.
-- Routing decisions are proactive and rationale-tagged.
-- Prompt cache hit optimization is measurable.
-- Budget contract breaches trigger deterministic enforcement.
-**QA Scenarios**
-- Paraphrase hit and below-threshold miss checks.
-- Invalidation on policy and bundle changes.
-- Mixed complexity routing distribution checks.
-- Budget breach stop-path checks.
-- Provider throttling and fairness checks.
+- The system SHALL enforce proactive spend controls through semantic reuse, dynamic routing, prompt cache optimization, gateway policy, and budget contracts.
+- The system SHALL apply configurable threshold, TTL, and invalidation governance for semantic reuse.
+- The system SHALL issue pre-generation complexity and risk routing decisions with auditable rationale tags.
+- The system SHALL maintain measurable provider-cache hit optimization outcomes.
+- The system SHALL enforce per-agent, per-user, and per-workflow attribution with deterministic budget breach handling.
+- The system SHALL align this layer with CONVERSATION_PIPELINE, AGENT_ORCHESTRATION, SERVER_LIFECYCLE, INFRA_BUDGET_BASELINE, and OBSERVABILITY_BASELINE.
 
 ### PROMPT_LIFECYCLE_LAYER
-**Objective**
-- Build PromptOps governance with atomic bundles, A/B tests, shadow mode, canary, promotion lanes, rollback, and immutable lineage.
-**What To Do**
-- Implement atomic bundle packaging and validation.
-- Implement shadow comparison pipeline.
-- Implement traffic split A/B experiments with winner policy.
-- Implement canary progression with rollback triggers.
-- Implement promotion and rollback controls across environments.
-- Implement immutable lineage records.
-- Implement isolated playground-to-rollout workflow.
-**Depends On**
-- PROMPT_BASELINE
-- RELEASE_PIPELINE
-- MONITORING_MARKERS
-- EVAL_BASELINE
-- AGENT_RUNTIME
-**Acceptance Criteria**
-- Bundles roll forward and back atomically.
-- Shadow mode runs without user-visible impact.
-- A/B decisions are significance-aware.
-- Canary rolls back on policy, quality, or cost breach.
-- Promotion lanes enforce gates.
-- Lineage captures who changed what and why.
-**QA Scenarios**
-- Incompatible bundle rejection.
-- Shadow divergence capture.
-- Canary rollback trigger validation.
-- Immutable lineage audit check.
-- Playground proposal path validation.
+- The system SHALL govern prompt lifecycle through behavior-atomic bundles, controlled experiments, shadow analysis, canary progression, promotion lanes, rollback readiness, and immutable lineage.
+- The system SHALL require bundle validation prior to promotion and SHALL prevent partial behavior release states.
+- The system SHALL enforce significance-aware experiment decisions and policy-safe canary rollback triggers.
+- The system SHALL preserve non-user-visible shadow execution while recording divergence evidence.
+- The system SHALL maintain immutable lineage records capturing actor, intent, and decision outcomes.
+- The system SHALL align this layer with PROMPT_BASELINE, RELEASE_PIPELINE, MONITORING_MARKERS, EVAL_BASELINE, and AGENT_RUNTIME.
 
 ### AGENT_EVAL_LAYER
-**Objective**
-- Build composable evaluation with judge, rule, and statistical scorers, governed datasets, and CI regression gates.
-**What To Do**
-- Implement scorer runtime and scorer families.
-- Implement dataset manager with item lifecycle.
-- Implement experiment runner and delta analysis.
-- Implement CLASSic matrix reporting.
-- Implement CI gate thresholds and block policies.
-**Depends On**
-- TESTING_BASELINE
-- OBSERVABILITY_BASELINE
-- RELEASE_GATES
-- MONITORING_ALERTS
-- PROMPT_LIFECYCLE_LAYER
-**Acceptance Criteria**
-- Scorer families run consistently.
-- Item-level tracking supports lineage and freshness.
-- Critical regressions block promotion.
-- CLASSic reports reasoning and action layers.
-- CI gates enforce quality and safety floors.
-**QA Scenarios**
-- Judge calibration checks.
-- Deterministic rule-failure checks.
-- Outlier detection checks.
-- Regression block checks.
-- Freshness maintenance checks.
+- The system SHALL provide composable evaluation using judge, rule, and statistical scorers with governed datasets and CI regression gates.
+- The system SHALL require item-level tracking, freshness governance, and lineage linkage for evaluation evidence.
+- The system SHALL block promotion on critical regression signals and SHALL report CLASSic dimensions across reasoning and action layers.
+- The system SHALL enforce release gates with explicit quality and safety floors.
+- The system SHALL maintain reproducible experiment outcomes through dataset snapshots, scorer revisions, and judge prompt revisions.
+- The system SHALL align this layer with TESTING_BASELINE, OBSERVABILITY_BASELINE, RELEASE_GATES, MONITORING_ALERTS, and PROMPT_LIFECYCLE_LAYER.
 
 ### AIOPS_RUNTIME_GOVERNANCE
-**Objective**
-- Operationalize warmup, dashboards, anomaly response, dataset freshness, and decision governance.
-**What To Do**
-- Implement cache warmup schedules.
-- Implement attribution-focused dashboards.
-- Implement anomaly thresholds and playbooks.
-- Implement freshness KPI loops.
-- Implement explicit rollout decision-state workflow.
-**Depends On**
-- COST_INTELLIGENCE_LAYER
-- PROMPT_LIFECYCLE_LAYER
-- AGENT_EVAL_LAYER
-- MONITORING_BASELINE
-- INCIDENT_BASELINE
-**Acceptance Criteria**
-- Warmup improves hit-rate without overspend.
-- Dashboards support root-cause analysis.
-- Alerts catch meaningful anomalies with low noise.
-- Freshness backlog remains controlled.
-- Decisions are complete and auditable.
-**QA Scenarios**
-- Warmup impact validation.
-- Synthetic cost-spike alert validation.
-- Lane-drift dashboard validation.
-- Freshness cycle validation.
-- Hold-versus-rollback drill validation.
+- The system SHALL operationalize warmup policy, attribution dashboards, anomaly response, dataset freshness governance, and rollout decision governance.
+- The system SHALL maintain warmup controls that improve hit-rate while constraining spend and concurrency.
+- The system SHALL provide dashboards and alerts that support causal diagnosis with low-noise escalation.
+- The system SHALL maintain bounded freshness backlog and auditable decision states.
+- The system SHALL align runtime governance with COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, MONITORING_BASELINE, and INCIDENT_BASELINE.
 
 ### Delivery Checklist
 - Bullet-based table of contents is present.
@@ -884,7 +846,7 @@ Scalability and security are mandatory, not optional optimizations.
 - Eval datasets, experiments, CLASSic, and CI gates are defined.
 - Operational concerns include warmup, dashboards, alerts, freshness, and rollout decisions.
 - Cross-reference table links to 05, 06, 12, 14, 15, 16, 21, and 22.
-- Five Mermaid diagrams use UPPER_SNAKE semantic IDs.
+- Six Mermaid diagrams use UPPER_SNAKE semantic IDs.
 - Security and scalability controls are explicit.
 - PostgreSQL policy remains Drizzle ORM only.
 

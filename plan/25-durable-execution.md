@@ -32,6 +32,7 @@
 - [Checkpoint Size Management](#checkpoint-size-management)
 - [Concurrent Workflow Limits](#concurrent-workflow-limits)
 - [Failure Isolation](#failure-isolation)
+- [Failure-Mode Ownership and Divergence Recovery](#failure-mode-ownership-and-divergence-recovery)
 - [Observability](#observability)
 - [Security and Governance](#security-and-governance)
 - [Scale Profile for 10M Users](#scale-profile-for-10m-users)
@@ -131,6 +132,11 @@ flowchart TB
 - SurrealDB access in neighboring systems uses surqlize only.
 - Direct bypass query paths are disallowed.
 - Access policies enforce tenant and user boundaries.
+- Checkpoint access MUST require checkpoint-level authorization for read, write, restore, and export scopes.
+- Checkpoint data MUST be encrypted in transit and at rest with tenant-scoped cryptographic separation.
+- Cryptographic keys MUST rotate on a defined release cadence and on compromise events.
+- Restore and export actions MUST require explicit privileged approval with separation of duties for sensitive tenants.
+- All checkpoint access paths MUST emit immutable audit records linking actor, purpose, scope, and outcome.
 - Storage events are traceable for compliance reporting.
 - Retention and deletion obligations are policy-driven.
 
@@ -220,8 +226,8 @@ flowchart LR
 
 ## Background Run Execution
 
-- Long-running workflows execute outside request lifecycle.
-- Long-running workflows execute outside the HTTP request lifecycle.
+- Long-running workflows execute outside synchronous intake boundaries.
+- Detached execution remains resilient across client disconnect and retry conditions.
 - Request intake returns durable run identity immediately.
 - Background workers own active runs via lease model.
 - Waiting runs release worker capacity while suspended.
@@ -284,6 +290,9 @@ stateDiagram-v2
 - Review item stores action summary and due time.
 - Reviewer can approve, reject, or edit before approval.
 - Decision ingestion validates identity and authority.
+- Decision actions MUST be signed and nonce-bound to the exact pending item and checkpoint sequence.
+- Decision ingestion MUST reject replayed, expired, or previously consumed approval artifacts.
+- Reviewer sessions MUST be bound to authenticated identity and active tenant context for decision validity.
 - Approved actions resume deterministic execution.
 - Rejected actions transition to safe terminal failure.
 - Edited approvals apply bounded merge rules.
@@ -297,6 +306,8 @@ stateDiagram-v2
 - Gate rules can require dual-review for strict domains.
 - Gate outcomes are deterministic and checkpointed.
 - Gate bypass attempts are blocked and logged.
+- Edit-and-approve flows MUST enforce separation of duties where governance policy requires independent review.
+- Decision records MUST remain immutable and append-only across approve, reject, edit, and escalation outcomes.
 - Gate latency objectives are defined per priority.
 - Gate metrics feed automation-ratio tuning.
 
@@ -357,6 +368,10 @@ flowchart TB
 - Escalate on unresolved policy conflicts.
 - Escalate on emergency risk indicators.
 - Escalation routes by urgency and role lanes.
+- Escalation triggers MUST enforce rate limits per tenant, reviewer lane, and workflow family.
+- Escalation channels MUST include spam and flood suppression with anomaly-based abuse detection.
+- Escalation governance MUST define who can trigger, defer, or suppress escalations with full auditability.
+- Escalation routing MUST prevent priority inversion so critical risk paths cannot be starved by bulk low-risk traffic.
 - Escalation handoffs preserve full context history.
 - Escalation loops are bounded by policy.
 - Escalation outcomes feed staffing and policy tuning.
@@ -417,6 +432,10 @@ flowchart TD
 - Archive transitions preserve replay-critical metadata.
 - Legal-hold rules override standard expiration.
 - Deletion outcomes are verifiable and auditable.
+- Checkpoint cardinality MUST stay within governed ceilings per run, tenant, and risk tier.
+- Snapshot and compaction cadence MUST follow policy-defined frequency targets aligned to recovery objectives.
+- Branch and fork retention MUST expire non-essential investigative branches while preserving regulated audit branches.
+- Replay-cost budgets MUST be enforced so historical reconstruction load remains bounded at 10M-user scale.
 
 - Cleanup runs in bounded batches.
 - Cleanup emits lag, volume, and failure metrics.
@@ -435,6 +454,8 @@ flowchart TD
 - Growth trends are tracked by workflow family.
 - Budget violations emit actionable diagnostics.
 - Size policy remains consistent across backends.
+- Growth controls MUST reserve capacity for peak checkpoint cardinality under sustained multi-tenant expansion.
+- Compaction policy revisions MUST be governance-reviewed against replay fidelity and recovery latency objectives.
 
 - Include deterministic control and policy context.
 - Include idempotency and ordering identifiers.
@@ -453,6 +474,9 @@ flowchart TD
 - Priority lanes protect critical workflow continuity.
 - Limit decisions are deterministic and observable.
 - Limit tuning is policy and data driven.
+- Checkpoint partitions SHALL shard by tenant and workload class with deterministic ownership.
+- Index policy SHALL prioritize resume-pointer lookup, queue urgency retrieval, tenant fairness scans, and lineage validation.
+- Hot-tenant isolation SHALL reserve capacity lanes so localized surges do not degrade shared baseline service.
 
 - Control dimensions include active runs.
 - Control dimensions include pending approvals.
@@ -478,6 +502,17 @@ flowchart TD
 - Manual intervention handles policy conflict cases.
 - Controlled ramp-up handles post-incident recovery.
 - Backlog drain policies preserve fairness.
+- Backlog drain rules MUST prioritize oldest-safe-first within urgency lanes while preserving critical-path guarantees.
+- Queue sharding MUST isolate escalation traffic from routine approvals to prevent cross-lane saturation.
+
+## Failure-Mode Ownership and Divergence Recovery
+
+- Partial checkpoint commit outcomes MUST resolve under canonical-authority rules before a run can resume.
+- Divergence between Valkey hot state and PostgreSQL canonical state MUST auto-reconcile in favor of canonical history.
+- Divergence reconciliation MUST emit immutable records for detection time, owning authority, and recovery decision.
+- Reviewer-service outage behavior MUST place affected actions into safe hold lanes with explicit timeout and escalation ownership.
+- Policy drift discovered during resume MUST require compatibility adjudication before side effects continue.
+- Incident ownership for detection, containment, and recovery sign-off MUST align with resilience governance defined in file 15.
 
 ## Observability
 
@@ -505,6 +540,8 @@ flowchart TD
 - Replay edits require elevated authorization and audit.
 - Approval bypass attempts are blocked and logged.
 - Escalation bypass attempts are blocked and logged.
+- Checkpoint restore and export permissions MUST be explicitly scoped and periodically recertified.
+- Cryptographic control effectiveness MUST be reviewed on a defined key-rotation and access-recency cadence.
 - Sensitive fields are redacted in broad views.
 - Governance trails are immutable and traceable.
 
@@ -514,6 +551,9 @@ flowchart TD
 - Storage tiers scale independently for cost and speed.
 - Review queue lanes scale independently by urgency.
 - Recovery scanners scale with shard-aware partitioning.
+- Recovery scan fanout MUST assign shard ownership leases with one accountable scanner cohort per shard interval.
+- Queue sharding and checkpoint partitioning MUST expand horizontally without cross-tenant fairness regression.
+- Operational policy MUST isolate hot tenants into protected throughput pools during sustained burst periods.
 - Replay workloads run in isolated investigation pools.
 - Concurrency limits maintain fairness under heavy load.
 - Lifecycle cleanup remains bounded during sustained growth.

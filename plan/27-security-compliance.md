@@ -15,6 +15,16 @@
 - [Defense-in-Depth Composition](#defense-in-depth-composition)
 - [Security Audit and Assessment](#security-audit-and-assessment)
 - [Regulatory Compliance](#regulatory-compliance)
+- [EU AI Act Mapping](#eu-ai-act-mapping)
+- [GDPR Mapping](#gdpr-mapping)
+- [Articles 12–22 — Data Subject Rights Governance](#articles-1222--data-subject-rights-governance)
+- [Article 15 — Right of Access](#article-15--right-of-access)
+- [Article 16 — Right to Rectification](#article-16--right-to-rectification)
+- [Article 17 — Right to Erasure](#article-17--right-to-erasure)
+- [Article 18 — Right to Restriction of Processing](#article-18--right-to-restriction-of-processing)
+- [Article 20 — Right to Data Portability](#article-20--right-to-data-portability)
+- [Article 21 — Right to Object](#article-21--right-to-object)
+- [Article 22 — Safeguards for Solely Automated Decision-Making](#article-22--safeguards-for-solely-automated-decision-making)
 - [Decision Audit Trail and Explainability](#decision-audit-trail-and-explainability)
 - [DSAR Workflow](#dsar-workflow)
 - [Breach Notification Procedure](#breach-notification-procedure)
@@ -30,7 +40,8 @@
 - `safeagent` already includes strong technical controls across guardrails, authentication, observability, infrastructure, monitoring, and extension boundaries.
 - Enterprise adoption requires one governance layer that maps those controls to measurable risk ownership, audit evidence, and legal duties.
 - This plan focuses on the missing governance layer rather than redefining mechanics already documented elsewhere.
-- EU AI Act enforcement in August 2026 and active GDPR obligations make this governance model mandatory for market access.
+- EU AI Act duties apply on a phased enforcement timeline and depend on provider or deployer role plus system-risk category; active GDPR obligations make this governance model mandatory for market access.
+- Runtime and dependency governance is Bun-only for `safeagent` as a single npm package.
 - Security and compliance are treated as continuous operations, not checklist milestones.
 
 ## Unified Threat Model
@@ -54,6 +65,7 @@
 - PII leakage risk spans outputs, telemetry, audit exports, and support workflows.
 - Cross-user or cross-tenant leakage is a top-severity event.
 - Retention beyond lawful purpose creates legal and trust risk.
+- SurrealDB handling remains constrained to surqlize.
 - Relational handling remains constrained to PostgreSQL through Drizzle ORM.
 
 ### Infrastructure Layer
@@ -188,30 +200,28 @@ flowchart LR
 - Compliance status is reviewed alongside security risk and incident metrics.
 
 ## EU AI Act Mapping
+- Applicability is phased and role-scoped; this library is governed primarily as a provider or enabler, while deployers or integrators hold context-of-use duties.
+- Compliance evidence is separated by provider obligations and deployer or integrator obligations to prevent accountability gaps.
 
 ### Article 12 — Record-Keeping
-- Maintain immutable decision and policy event logs.
-- Preserve trace continuity from request through action and oversight intervention.
-- Ensure exportable records for authority requests.
-- Validate log integrity through scheduled checks.
+- The library MUST provide immutable decision and policy event records with trace continuity from request through action and oversight intervention.
+- The library MUST provide authority-request-ready record export capability and integrity attestation evidence.
+- Deployers or integrators MUST define retention periods, lawful access controls, and authority engagement procedures for their operating context.
 
 ### Article 13 — Transparency
-- Provide clear disclosure of AI-mediated behavior.
-- Provide human-readable summaries for consequential decisions.
-- Communicate key limitations and uncertainty posture.
-- Track transparency completeness in compliance reviews.
+- The library MUST provide transparency artifacts that describe AI-mediated behavior, key limitations, and uncertainty posture.
+- The library MUST provide human-readable decision summaries for consequential outcomes and completion evidence for transparency coverage.
+- Deployers or integrators MUST deliver user-facing disclosures, jurisdiction-specific notices, and context-appropriate communication controls.
 
 ### Article 14 — Human Oversight
-- Define human intervention points for high-impact actions.
-- Support interrupt, halt, and override pathways.
-- Log every oversight intervention with rationale.
-- Validate oversight usability during incident drills.
+- The library MUST define human intervention points for high-impact actions and provide interrupt, halt, and override capabilities.
+- The library MUST preserve immutable oversight intervention records, including rationale and timing evidence.
+- Deployers or integrators MUST assign oversight operators, escalation authority, and operational readiness drills in production contexts.
 
 ### Article 15 — Accuracy and Robustness
-- Define measurable robustness and quality objectives.
-- Run adversarial and stress validations on recurring cadence.
-- Apply safe fallback behavior during degraded confidence states.
-- Tie unresolved robustness gaps to explicit risk acceptance.
+- The library MUST define measurable accuracy, robustness, and cybersecurity objectives with recurring validation evidence.
+- The library MUST provide safe fallback behavior during degraded confidence states and documented risk acceptance for unresolved gaps.
+- Deployers or integrators MUST monitor live-risk conditions, perform context-specific assurance reviews, and maintain cybersecurity incident readiness.
 
 ### EU AI Act Evidence Matrix
 | Article | Evidence Artifacts | Primary Owner | Audit Cadence |
@@ -238,10 +248,37 @@ flowchart LR
 - Consent withdrawal is immediate for future processing.
 - Consent history remains immutable and exportable.
 
-### Articles 12–22 — Data Subject Rights
-- DSAR includes access, portability support, and deletion pathway coordination.
-- Identity verification is required before data release.
-- Completion timelines are tracked with escalation for delay risk.
+### Articles 12–22 — Data Subject Rights Governance
+- The system SHALL maintain rights-request intake, identity assurance, and timeline governance aligned to statutory deadlines.
+- The system SHALL preserve auditable evidence for rights-request decisions, fulfillment status, and lawful exception handling.
+
+### Article 15 — Right of Access
+- The system SHALL provide data subjects access to personal data and associated processing context in a concise, intelligible, and commonly usable form.
+- The system SHALL provide request-status evidence and fulfillment attestation suitable for supervisory review.
+
+### Article 16 — Right to Rectification
+- The system SHALL support correction of inaccurate personal data and completion of incomplete personal data with audit evidence.
+- The system SHALL propagate approved rectification outcomes across governed records within defined operational timelines.
+
+### Article 17 — Right to Erasure
+- The system SHALL support erasure requests where legal grounds apply and SHALL document lawful exceptions where erasure is denied.
+- The system SHALL provide erasure completion evidence and residual-data exception evidence for audit review.
+
+### Article 18 — Right to Restriction of Processing
+- The system SHALL support restriction status controls that prevent non-authorized processing while a restriction is active.
+- The system SHALL preserve restriction activation, scope, and release evidence with accountable approval records.
+
+### Article 20 — Right to Data Portability
+- The system SHALL provide personal data portability in machine-readable and human-readable output formats.
+- The system SHALL preserve portability fulfillment evidence, delivery status, and integrity assurance records.
+
+### Article 21 — Right to Object
+- The system SHALL support objection handling for processing tied to legitimate-interest or related legal bases.
+- The system SHALL enforce objection outcomes for future processing and preserve rationale evidence for accepted or denied objections.
+
+### Article 22 — Safeguards for Solely Automated Decision-Making
+- The system SHALL provide safeguards for solely automated decisions, including human intervention pathways and rights to express a viewpoint and contest outcomes.
+- The system SHALL preserve evidence that contestation workflows, review decisions, and remediation actions were completed.
 
 ### Articles 32–34 — Security and Breach Notification
 - Security measures align with layered defense and tested incident operations.
@@ -251,10 +288,10 @@ flowchart LR
 ### GDPR Capability Matrix
 | GDPR Area | Library-Level Enablement | Integrator Responsibility |
 |---|---|---|
-| Principles and accountability | Audit trail model, policy hooks, retention controls | Define business-specific processing purpose |
-| Consent lifecycle | Immutable consent events and withdrawal propagation model | User-facing consent experience and jurisdiction language |
-| Data subject rights | DSAR workflow model and export format | Identity verification and legal exception review |
-| Security and breach operations | Detection hooks and breach timeline governance model | Final regulatory filing and authority engagement |
+| Principles and accountability | Decision audit trail requirements, policy enforcement points, retention governance controls | Define business-specific processing purpose |
+| Consent lifecycle | Immutable consent records and withdrawal propagation requirements | User-facing consent experience and jurisdiction language |
+| Data subject rights | Rights-request governance workflow and portability output requirements | Identity verification and legal exception review |
+| Security and breach operations | Detection mechanisms and breach timeline governance requirements | Final regulatory filing and authority engagement |
 
 ## Decision Audit Trail and Explainability
 - Audit trails include what happened and why a decision path was selected.
@@ -280,7 +317,7 @@ flowchart LR
 - DSAR intake supports authenticated and scoped rights requests.
 - Identity verification is mandatory before data retrieval.
 - Data collection includes conversation artifacts, consent history, and audit records.
-- Export format is structured JSON plus readable summary.
+- Output formats MUST be machine-readable and human-readable.
 - Target response timeline is 30 days with escalation for complex cases.
 - Fulfillment completion is logged as immutable evidence.
 
@@ -300,8 +337,8 @@ flowchart TB
 - Breach handling starts with detection, triage, and impact classification.
 - Confirmed incidents activate incident command and legal review immediately.
 - Regulator notification preparation runs in parallel with containment.
-- 72-hour reporting governance is measured from confirmation time.
-- Affected-user communication is prepared with clear impact guidance.
+- 72-hour reporting governance is measured from controller awareness of a personal data breach.
+- Affected-user communication is risk-based and required where high risk to rights and freedoms is identified.
 - Completion requires remediation tracking and post-incident review.
 
 ```mermaid
@@ -429,7 +466,7 @@ flowchart LR
 - GDPR Articles 5, 6, 7, 12-22, and 32-34 mapped to operational workflows.
 - Decision audit trail includes rationale chain and regulator export posture.
 - Per-decision explainability includes input, retrieval context, reasoning, tools, and output.
-- DSAR workflow includes API-driven export model and 30-day response target.
+- DSAR workflow includes programmatic export capability and 30-day response target.
 - Breach workflow includes detection, classification, and 72-hour reporting governance.
 - Consent lifecycle includes record, withdrawal, and immutable audit trail.
 - Data classification scheme defines sensitivity levels and control posture.
