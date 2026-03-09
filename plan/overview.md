@@ -191,6 +191,7 @@ Each document below is a self-contained reference for its domain. Files are numb
 ### Execution
 
 - [17 — Execution Plan](./17-execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
+- [21 — Release Pipeline](./21-release-pipeline.md) — CI/CD pipeline, PR governance, staged quality gates, release automation, canary deployment, rollback
 
 ---
 
