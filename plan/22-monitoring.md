@@ -19,6 +19,12 @@
 - [Token Cost Anomaly Detection](#token-cost-anomaly-detection)
 - [Prompt Deployment Correlation](#prompt-deployment-correlation)
 - [Business Metric Correlation](#business-metric-correlation)
+- [Chaos Engineering for AI Systems](#chaos-engineering-for-ai-systems)
+- [AIOps and ML-Based Anomaly Detection](#aiops-and-ml-based-anomaly-detection)
+- [Model Provider Health Monitoring](#model-provider-health-monitoring)
+- [Meta-Monitoring (Monitoring the Monitoring)](#meta-monitoring-monitoring-the-monitoring)
+- [Prompt A/B Testing Observability](#prompt-ab-testing-observability)
+- [Graceful Degradation Monitoring](#graceful-degradation-monitoring)
 - [Alert Rules and Escalation](#alert-rules-and-escalation)
 - [SLA Definitions](#sla-definitions)
 - [Dashboards](#dashboards)
@@ -1183,6 +1189,593 @@ flowchart TB
   - Mask sensitive cohort dimensions where required.
   - Maintain audit trails for correlation-driven incident decisions.
 
+## Chaos Engineering for AI Systems
+
+Chaos engineering for AI systems validates that monitoring detects and escalates the exact failures it claims to cover.
+The goal is not generic fault testing, but continuous proof that live alerting, burn-rate policy, and incident automation remain trustworthy under realistic AI failure modes.
+
+### Chaos Validation Objectives
+
+- Monitoring truth test:
+  - Treat each chaos scenario as a contract between injected fault and expected alert behavior.
+  - Require deterministic alert outcomes by severity, route, and time-to-detect target.
+  - Flag missing alert outcomes as monitoring coverage failures, not experiment failures.
+- Reliability hardening:
+  - Continuously verify fault isolation and degradation controls under production-like load.
+  - Detect stale alert rules that drift from current runtime behavior.
+  - Protect incident response quality by rehearsing rare but high-impact AI failure patterns.
+- Security and scalability posture:
+  - Ensure chaos execution remains isolated, access-controlled, and audit-visible.
+  - Keep experiment telemetry lightweight enough to avoid contaminating peak-path reliability signals.
+  - Support parallel chaos schedules across multiple service segments without alert routing collisions.
+
+### Model Provider Fault Injection
+
+- Latency injection:
+  - Inject elevated provider latency in controlled windows.
+  - Verify time-to-first-token objective alerts fire within policy windows.
+  - Verify burn-rate trajectories reflect sustained latency pressure.
+- Error injection:
+  - Inject provider server-error responses under controlled load slices.
+  - Verify circuit-breaker activation and fallback engagement are visible in responder dashboards.
+  - Verify critical escalation if fallback pathways are unavailable.
+- Response-quality degradation injection:
+  - Inject low-quality output profiles while preserving normal transport success.
+  - Verify sampled quality monitoring detects groundedness and relevance degradation.
+  - Verify quality divergence alerts activate even when latency appears healthy.
+
+### Context and Retrieval Fault Injection
+
+- Context-overflow injection:
+  - Inject oversized context payload patterns to force truncation pressure.
+  - Verify degraded-state handling is observable and policy-aligned.
+  - Verify user-impact indicators appear in quality and completion dashboards.
+- Embedding degradation injection:
+  - Inject embedding quality decline and delayed embedding pipeline behavior.
+  - Verify RAG relevance and hit-rate objectives detect drift quickly.
+  - Verify retrieval-related alerts remain independent from model-provider alerts.
+- Vector latency injection:
+  - Inject retrieval latency inflation at controlled percentiles.
+  - Verify retrieval service-level objective alerts trigger on both fast-burn and slow-burn windows.
+  - Verify responder views preserve segment-level blast-radius clarity.
+
+### Agentic Fault Injection
+
+- Memory unavailability injection:
+  - Inject memory dependency outage windows.
+  - Verify automatic fallback to stateless operation is visible and measured.
+  - Verify incident severity reflects journey-level impact rather than dependency state alone.
+- Tool dependency failure injection:
+  - Inject targeted tool failures and degraded tool response windows.
+  - Verify per-tool reliability monitoring identifies the failing dependency boundary.
+  - Verify anomaly grouping prevents downstream alert storms from masking root cause.
+- Forced loop-depth injection:
+  - Inject loop amplification patterns that mimic runaway planning behavior.
+  - Verify loop-depth alerts trigger before user-impact saturation.
+  - Verify session cost-protection controls activate before budget exposure becomes material.
+
+### Token and Cost Fault Injection
+
+- Token budget exhaustion simulation:
+  - Simulate high-frequency token consumption against configured budget policies.
+  - Verify rate-limiting and usage-protection alerts trigger at warning then critical thresholds.
+  - Verify affected user cohorts are visible for containment actions.
+- Runaway spend simulation:
+  - Simulate sustained cost acceleration under mixed workload classes.
+  - Verify cost circuit-breaker behavior triggers according to policy.
+  - Verify cost anomaly alerts correlate with model mix and loop-depth diagnostics.
+
+### Chaos-Monitoring Integration Principles
+
+- Alert expectation contract:
+  - Every chaos scenario defines expected alerts, expected severity, and expected time bounds.
+  - Missing expected alerts indicate monitoring blind spots that require immediate remediation.
+  - Unexpected extra alerts indicate rule hygiene, grouping, or threshold tuning defects.
+- Coverage audit feedback:
+  - Feed chaos outcomes into recurring alert coverage audits.
+  - Prioritize remediation of blind spots by user-impact risk and exploitability.
+  - Track closure of coverage gaps as a reliability maturity signal.
+- Operational safeguards:
+  - Restrict chaos activation to authorized operators and approved windows.
+  - Maintain immutable experiment logs for incident and governance review.
+  - Enforce blast-radius limits to protect user trust during validation exercises.
+
+```mermaid
+flowchart LR
+  CHAOS_SCENARIO[Chaos Experiment Scenario] --> FAULT_INJECTION[Inject Controlled Fault]
+  FAULT_INJECTION --> EXPECTED_ALERT[Expected Alert and Severity]
+  EXPECTED_ALERT --> VALIDATION_GATE{Alert Fired Within Policy Window}
+  VALIDATION_GATE -->|Yes| COVERAGE_PASS[Coverage Validated]
+  VALIDATION_GATE -->|No| COVERAGE_GAP[Monitoring Coverage Gap]
+  COVERAGE_GAP --> REMEDIATION[Alert Rule and Signal Remediation]
+  COVERAGE_PASS --> AUDIT_FEED[Coverage Audit Feed]
+  REMEDIATION --> AUDIT_FEED
+  AUDIT_FEED --> CHAOS_BACKLOG[Next Chaos Validation Cycle]
+```
+
+### Chaos Program Security and Scalability
+
+- Security controls:
+  - Keep experiment control planes isolated from public traffic entry points.
+  - Require approval trails for high-impact fault scenarios.
+  - Verify audit completeness for each scenario execution and alert outcome.
+- Scalability controls:
+  - Run scenario schedules by service segment to avoid fleet-wide telemetry shock.
+  - Keep experiment concurrency within safe operational envelopes.
+  - Preserve dashboard freshness while high-volume experiment telemetry is active.
+
+## AIOps and ML-Based Anomaly Detection
+
+AIOps extends monitoring from static thresholds to adaptive, context-aware operational intelligence.
+It reduces false positives, speeds investigation, and improves mitigation precision during high-cardinality AI incidents.
+
+### Dynamic Baseline Intelligence
+
+- Seasonal baseline learning:
+  - Learn daily and weekly seasonality for latency, error rate, quality scores, cost, and token consumption.
+  - Maintain separate baseline families by workload class, user tier, and geography.
+  - Recalculate baselines continuously to reflect traffic evolution without losing historical context.
+- Deviation-driven alerting:
+  - Alert only when deviation exceeds statistically significant boundaries.
+  - Prevent routine cyclical behavior from generating noisy alerts.
+  - Escalate confidence-weighted anomalies when persistence increases.
+- False-positive reduction:
+  - Compare adaptive baseline outcomes against static-threshold outcomes.
+  - Track precision and recall of anomaly decisions by incident class.
+  - Adjust baseline sensitivity to keep responder load sustainable.
+
+### AI-Assisted Root Cause Analysis
+
+- Multi-signal correlation at alert time:
+  - Correlate metrics, logs, traces, deployment events, and provider health snapshots.
+  - Assemble a probable-cause graph with confidence scoring.
+  - Surface leading hypotheses ranked by blast-radius impact.
+- Historical incident similarity:
+  - Compare current anomaly signatures to prior incident patterns.
+  - Surface likely remediation paths that previously restored service.
+  - Highlight known anti-patterns that prolong recovery.
+- Runbook relevance automation:
+  - Present responder-specific runbook paths based on anomaly context.
+  - Prioritize actions by expected mitigation speed and risk reduction.
+  - Track whether recommended actions improve mean-time-to-recovery.
+
+### Automated Incident Summarization
+
+- Structured incident brief generation:
+  - Generate concise summaries from correlated live signals.
+  - Include affected journeys, user segments, and dependency boundaries.
+  - Include confidence-scored likely root cause and mitigation options.
+- Blast-radius estimation:
+  - Estimate current and projected user impact under ongoing degradation.
+  - Distinguish direct impact from downstream secondary effects.
+  - Prioritize containment where projected risk grows fastest.
+- Action recommendation support:
+  - Suggest immediate containment, stabilization, and verification steps.
+  - Link recommendations to historical success rates.
+  - Flag higher-risk actions requiring senior responder review.
+
+### Natural Language Investigation Queries
+
+- Investigation acceleration:
+  - Allow responders to ask complex multi-signal questions in natural language.
+  - Resolve intent into correlated metric, trace, and incident evidence views.
+  - Reduce manual query overhead during high-pressure incidents.
+- Reliability safeguards:
+  - Show confidence and supporting evidence for each query answer.
+  - Prevent unsupported causal claims by requiring signal alignment.
+  - Log query usage for governance and improvement.
+
+### Anomaly Correlation Engine
+
+- Hidden dependency detection:
+  - Detect when multiple anomalies share a common upstream trigger.
+  - Map root anomalies and dependent symptom anomalies.
+  - Highlight cross-domain coupling between latency, quality, and cost signals.
+- Alert storm reduction:
+  - Group symptom alerts under probable root anomalies.
+  - Preserve critical severity pathways while suppressing duplicate noise.
+  - Keep escalation focused on root remediation.
+- Feedback learning:
+  - Learn from responder-confirmed root causes after each incident.
+  - Improve future grouping and prioritization decisions.
+  - Track improvement as reduced investigation time and reduced misroutes.
+
+```mermaid
+flowchart TB
+  ALERT_EVENT[Live Alert Event] --> SIGNAL_CORRELATION[AI Signal Correlation]
+  SIGNAL_CORRELATION --> RCA_HYPOTHESIS[Probable Root Cause Hypotheses]
+  RCA_HYPOTHESIS --> RUNBOOK_MATCH[Runbook and Action Suggestions]
+  RUNBOOK_MATCH --> RESPONDER_ACTION[Responder Mitigation Action]
+  RESPONDER_ACTION --> OUTCOME_CAPTURE[Incident Outcome Capture]
+  OUTCOME_CAPTURE --> FEEDBACK_MODEL[Correlation Learning Feedback]
+  FEEDBACK_MODEL --> SIGNAL_CORRELATION
+```
+
+### AIOps Security and Scalability
+
+- Security posture:
+  - Restrict sensitive anomaly context to authorized responders.
+  - Preserve auditability for generated hypotheses and action recommendations.
+  - Enforce redaction policies on user-sensitive incident summaries.
+- Scalability posture:
+  - Keep correlation execution near real time during alert bursts.
+  - Protect primary alerting pipelines from AIOps compute saturation.
+  - Maintain reliable operation across high-cardinality metric dimensions.
+
+## Model Provider Health Monitoring
+
+Model provider health monitoring treats upstream provider behavior as a first-class reliability domain.
+This prevents provider-side degradation from appearing as internal service instability and improves failover readiness.
+
+### Provider Latency Tracking
+
+- Continuous latency distribution tracking:
+  - Track provider latency distributions across percentile bands.
+  - Detect upstream degradation before objective burn accelerates.
+  - Compare latency trajectories across workload complexity tiers.
+- Segmentation strategy:
+  - Segment latency by provider, model family, and request complexity.
+  - Distinguish provider-wide events from model-family localized events.
+  - Surface region-sensitive latency shifts for targeted mitigation.
+
+### Provider Error and Quota Monitoring
+
+- Error-rate taxonomy:
+  - Track provider error classes for rate limiting, server instability, and timeout behavior.
+  - Separate transient spikes from sustained error regimes.
+  - Tie error classes to escalation tiers and fallback policies.
+- Rate-limit proximity monitoring:
+  - Track approach pace to provider rate ceilings.
+  - Alert before hard-limit impact reaches users.
+  - Coordinate pacing controls when demand exceeds safe provider headroom.
+- Quota utilization monitoring:
+  - Track quota consumption pace against allocation windows.
+  - Forecast exhaustion risk under current traffic growth.
+  - Trigger proactive workload routing shifts under elevated risk.
+
+### Provider Behavior Change Detection
+
+- Silent behavior-shift detection:
+  - Detect output distribution and response-style shifts without explicit provider incident notices.
+  - Compare semantic output patterns against recent stable baselines.
+  - Escalate when shifts correlate with quality, safety, or support-impact drift.
+- Golden prompt canaries:
+  - Run provider-specific golden prompts on controlled cadence.
+  - Detect provider drift through stable expectation checks.
+  - Use canary outcomes as early-warning inputs for routing policy.
+- Content-policy shift detection:
+  - Detect provider-side policy shifts that alter response acceptance profiles.
+  - Track increases in refusal patterns and topic sensitivity changes.
+  - Alert when policy shifts threaten critical user journeys.
+
+### Multi-Provider Health Comparison
+
+- Side-by-side provider health views:
+  - Compare latency, error, quality, and cost posture across active providers.
+  - Highlight best-current provider by journey objective.
+  - Preserve historical trend visibility for reliability governance.
+- Dynamic provider ranking:
+  - Rank providers by current health and expected user impact.
+  - Include confidence scoring for ranking decisions.
+  - Feed ranking outcomes into routing policy decisions.
+- Reliability trend benchmarking:
+  - Track long-horizon provider reliability consistency.
+  - Support vendor management with objective operational evidence.
+  - Prioritize strategic diversification where concentration risk is high.
+
+### Provider Failover Readiness
+
+- Fallback provider readiness:
+  - Continuously assess health of fallback providers, not only primaries.
+  - Alert when fallback reliability drops below policy minima.
+  - Keep readiness posture visible to on-call responders.
+- Pre-failover quality delta estimation:
+  - Estimate likely quality and latency deltas before failover activation.
+  - Use journey-specific impact projections to guide activation decisions.
+  - Track expected versus observed deltas for tuning.
+- Failover activation latency tracking:
+  - Measure failover decision-to-effect latency.
+  - Alert on failover friction that risks prolonged user impact.
+  - Validate recovery stability after primary restoration.
+
+### Provider SLA Compliance and Governance
+
+- SLA compliance tracking:
+  - Track provider performance against published commitments.
+  - Preserve objective evidence for reliability review and credit claims.
+  - Distinguish objective breaches by impact class and recurrence.
+- Reliability forecasting:
+  - Forecast provider reliability trend direction from historical telemetry.
+  - Identify early decline patterns before severe incidents occur.
+  - Inform capacity and routing planning with provider risk signals.
+- Security and contractual posture:
+  - Restrict provider health governance views to authorized stakeholders.
+  - Maintain immutable evidence trails for dispute support.
+  - Include data-protection checks when provider behavior shifts occur.
+
+## Meta-Monitoring (Monitoring the Monitoring)
+
+Meta-monitoring ensures monitoring systems stay trustworthy, fresh, and complete.
+Without meta-monitoring, incidents can be missed silently due to stale metrics, broken alert paths, or degraded evaluator pipelines.
+
+### Metrics Pipeline Health
+
+- Ingestion lag and freshness:
+  - Track ingestion lag continuously for core objective metrics.
+  - Alert when data freshness falls beyond operational limits.
+  - Distinguish source lag from storage and query lag.
+- Data loss and gap detection:
+  - Detect missing metric windows and unexplained signal gaps.
+  - Quantify data-loss blast radius by service and objective coverage.
+  - Trigger remediation workflows when blind spots appear.
+- Throughput and backpressure:
+  - Track pipeline throughput, queue depth, and processing contention.
+  - Alert before sustained backpressure causes stale dashboards.
+  - Preserve high-priority signal ingestion during load spikes.
+
+### Alert Delivery Verification
+
+- Routing-path validation:
+  - Continuously verify all severity routes remain functional.
+  - Confirm channel-specific delivery latency stays within policy windows.
+  - Detect routing drift after ownership or policy changes.
+- Scheduled delivery tests:
+  - Send controlled test alerts through every severity path on recurring cadence.
+  - Verify paging platform connectivity and acknowledgement loop integrity.
+  - Alert on silent delivery failures that bypass responders.
+- Escalation-chain integrity:
+  - Validate timeout-based escalation behavior under simulation.
+  - Verify secondary and leadership paths receive expected events.
+  - Track escalation reliability over time as an operational confidence signal.
+
+### Sampling and Evaluator Pipeline Health
+
+- Evaluator pipeline continuity:
+  - Verify sampled quality scoring remains active and current.
+  - Detect backlog growth before quality visibility degrades.
+  - Alert when evaluation cadence falls below policy minimums.
+- Coverage floor enforcement:
+  - Track sampling coverage against minimum quality-confidence thresholds.
+  - Detect segment-level blind spots hidden by global averages.
+  - Trigger corrective sampling policy when coverage erodes.
+- Evaluator health independence:
+  - Monitor evaluator-model latency, reliability, and drift separately.
+  - Prevent evaluator instability from appearing as product-quality movement.
+  - Expose evaluator confidence so responders interpret quality signals correctly.
+
+### Synthetic Probe Infrastructure Health
+
+- Scheduler and execution reliability:
+  - Monitor synthetic scheduler uptime and execution success rates.
+  - Detect missed probe windows and delayed probe completion.
+  - Alert on probe freshness violations for critical journeys.
+- Probe platform resource posture:
+  - Track synthetic execution resource usage to prevent probe starvation.
+  - Detect contention between synthetic and operational workloads.
+  - Protect probe continuity during incident surges.
+
+### Dashboard Freshness and Accuracy
+
+- Panel staleness detection:
+  - Monitor dashboard data age for responder-critical panels.
+  - Alert when stale panels risk misleading incident decisions.
+  - Prioritize restoration of incident-response dashboards first.
+- Query performance monitoring:
+  - Track dashboard query latency under peak incident load.
+  - Detect degraded panel responsiveness that slows triage.
+  - Keep dashboard availability within operational policy.
+
+### Coverage Gap Detection
+
+- Surface-area audit:
+  - Audit monitoring coverage against active service and feature surface area.
+  - Detect newly introduced capabilities lacking objective monitoring.
+  - Track unresolved coverage gaps with risk scoring.
+- Reliability maturity metric:
+  - Track coverage percentage across availability, latency, quality, security, and cost domains.
+  - Use maturity trend to prioritize instrumentation and policy improvements.
+  - Include coverage maturity in monthly reliability governance review.
+
+```mermaid
+flowchart TB
+  SIGNAL_LAYER[Signal Pipeline Health] --> ALERT_LAYER[Alert Delivery Health]
+  ALERT_LAYER --> SAMPLING_LAYER[Sampling and Evaluator Health]
+  SAMPLING_LAYER --> DASHBOARD_LAYER[Dashboard Freshness and Accuracy]
+  DASHBOARD_LAYER --> COVERAGE_LAYER[Coverage Gap Audit]
+  COVERAGE_LAYER --> GOVERNANCE_LOOP[Reliability Governance and Remediation]
+  GOVERNANCE_LOOP --> SIGNAL_LAYER
+```
+
+### Meta-Monitoring Security and Scalability
+
+- Security safeguards:
+  - Protect monitoring-control telemetry from unauthorized mutation.
+  - Enforce tamper-evident logging for alert delivery verification outcomes.
+  - Restrict meta-monitoring administration to designated reliability operators.
+- Scalability safeguards:
+  - Keep meta-monitoring overhead bounded to avoid self-induced saturation.
+  - Prioritize essential verification signals during telemetry bursts.
+  - Preserve deterministic alert timing despite high verification volume.
+
+## Prompt A/B Testing Observability
+
+Prompt A/B testing observability ensures controlled prompt experiments improve quality and efficiency without hidden regressions.
+It provides statistical confidence, operational safety gates, and reliable promotion or rollback decisions.
+
+### Experiment Traffic Management
+
+- Split-ratio monitoring:
+  - Track live traffic allocation across prompt variants.
+  - Detect split drift from intended allocation policy.
+  - Alert when allocation imbalance threatens experiment validity.
+- Sample-size sufficiency:
+  - Track per-variant sample growth for statistical power.
+  - Highlight under-sampled segments that block valid conclusions.
+  - Gate decisioning until minimum evidence depth is reached.
+- Assignment consistency:
+  - Verify user-level assignment consistency across sessions.
+  - Detect reassignment drift that contaminates outcomes.
+  - Preserve clean exposure histories for defensible analysis.
+
+### Per-Variant Quality Comparison
+
+- Multi-dimension quality comparison:
+  - Compare groundedness, relevance, coherence, and safety signals across variants.
+  - Track hallucination-rate deltas with confidence bounds.
+  - Surface segment-specific quality winners and losers.
+- User feedback comparison:
+  - Compare positive and negative feedback patterns by variant.
+  - Detect sentiment divergence early in experiment lifecycle.
+  - Correlate feedback shifts with quality-scoring movement.
+
+### Per-Variant Cost Comparison
+
+- Cost-per-task comparison:
+  - Compare token use and spend per successful task across variants.
+  - Detect cost regressions before broad rollout exposure.
+  - Track cost efficiency by workload complexity segment.
+- Context-utilization comparison:
+  - Compare context window usage patterns across variants.
+  - Detect excessive context pressure that threatens latency and cost objectives.
+  - Flag variants with unstable token behavior under burst traffic.
+
+### Per-Variant Latency Comparison
+
+- Responsiveness comparison:
+  - Compare time-to-first-token and total response duration by variant.
+  - Detect tail-latency regressions masked by median performance.
+  - Highlight journey-specific latency impact for promotion decisions.
+- Stability comparison:
+  - Track latency variance and jitter across variants.
+  - Detect unstable variants that risk inconsistent user experience.
+  - Escalate when latency instability aligns with quality degradation.
+
+### Statistical Significance Gating
+
+- Confidence tracking:
+  - Track confidence levels for quality, cost, and latency comparisons.
+  - Prevent promotion when confidence is below decision policy thresholds.
+  - Require balanced evidence across key user segments.
+- Inconclusive-risk alerting:
+  - Alert when experiments run long but fail to reach significance.
+  - Detect probable under-power or high-variance design issues.
+  - Trigger experiment redesign review before further exposure.
+
+### Experiment Lifecycle Monitoring
+
+- Lifecycle visibility:
+  - Track active experiments, start times, and planned windows.
+  - Alert when experiments exceed intended duration.
+  - Detect stale experiments that continue affecting users without decisions.
+- Decision evidence tracking:
+  - Record promotion and rollback decisions with supporting metrics.
+  - Preserve rationale for auditability and future learning.
+  - Track post-decision outcome performance to validate choice quality.
+
+### Guarding Against Experiment Interference
+
+- Interference detection:
+  - Detect overlapping experiments likely to contaminate outcomes.
+  - Surface conflicting assignment or traffic policies.
+  - Alert on cross-experiment coupling that weakens causal confidence.
+- Contamination controls:
+  - Enforce exclusion rules for incompatible experiment combinations.
+  - Track contamination risk as a live experiment health signal.
+  - Escalate high-risk overlap to reliability and product owners.
+
+### Prompt Experiment Security and Scalability
+
+- Security posture:
+  - Restrict experiment-control visibility to authorized operators.
+  - Preserve immutable decision and exposure records for governance review.
+  - Mask sensitive cohort attributes in shared experiment dashboards.
+- Scalability posture:
+  - Support concurrent experiments without degrading dashboard responsiveness.
+  - Keep significance computation efficient at high traffic volume.
+  - Preserve low-latency alerting for regression detection during experiment bursts.
+
+## Graceful Degradation Monitoring
+
+Graceful degradation monitoring verifies user experience quality during fallback and reduced-functionality operation.
+It ensures degradation controls protect users while preserving transparent recovery visibility.
+
+### Degradation Mode Detection
+
+- State-entry detection:
+  - Monitor entry into degraded operation modes, including fallback-model routing and reduced feature posture.
+  - Distinguish planned protective degradation from unplanned failure-driven degradation.
+  - Trigger alerts when degradation enters high-impact user journeys.
+- Duration governance:
+  - Track time spent in each degraded state.
+  - Alert on prolonged degradation beyond policy thresholds.
+  - Escalate when repeated degradation indicates structural reliability risk.
+
+### Degraded Experience Quality
+
+- Quality floor monitoring:
+  - Track quality scores separately for degraded and normal operation.
+  - Verify degraded mode remains above minimum acceptable quality bars.
+  - Alert when degraded quality approaches user-harm thresholds.
+- User-satisfaction delta tracking:
+  - Measure satisfaction movement between normal and degraded states.
+  - Detect segment-level dissatisfaction concentration under degradation.
+  - Use satisfaction deltas to prioritize mitigation sequencing.
+
+### Fallback Model Performance
+
+- Fallback quality, latency, and cost tracking:
+  - Monitor fallback performance independently from primary model performance.
+  - Detect fallback degradation that compounds ongoing incidents.
+  - Compare fallback efficiency under peak and steady demand.
+- Capacity headroom monitoring:
+  - Track fallback capacity utilization and saturation risk.
+  - Alert before fallback exhaustion causes cascading user impact.
+  - Protect critical journeys with priority-aware fallback policies.
+
+### Feature-Flag Interaction Monitoring
+
+- Disabled-feature visibility:
+  - Track which user-facing capabilities are disabled during degradation.
+  - Monitor completion rates for journeys affected by disabled capabilities.
+  - Detect unexpected disabled-feature combinations that raise risk.
+- State-combination safety checks:
+  - Monitor for unsafe or contradictory feature-state combinations.
+  - Alert when state combinations violate degradation policy.
+  - Preserve deterministic rollback to safe feature posture.
+
+### Recovery Monitoring
+
+- Transition quality:
+  - Track degraded-to-normal transition timing and smoothness.
+  - Verify quality, latency, and cost recovery after restoration.
+  - Detect incomplete recovery where only one signal family improves.
+- Flapping detection:
+  - Detect oscillation between degraded and normal states.
+  - Escalate persistent flapping as control-plane instability.
+  - Track stabilization success after mitigation actions.
+
+### User Communication During Degradation
+
+- Communication delivery verification:
+  - Monitor whether degraded-mode messaging reaches affected users.
+  - Detect delivery gaps that increase confusion and support load.
+  - Track message-timing alignment with actual degraded-state windows.
+- Trust-impact measurement:
+  - Measure user behavior changes during announced degradation.
+  - Track trust-impact indicators across repeated degradation events.
+  - Feed trust-impact trends into reliability investment prioritization.
+
+### Degradation Security and Scalability
+
+- Security posture:
+  - Restrict degradation controls to authorized responders.
+  - Audit all degradation-state transitions and communication events.
+  - Prevent unauthorized state manipulation during active incidents.
+- Scalability posture:
+  - Keep degradation controls effective under high-concurrency load.
+  - Ensure fallback routing remains stable during surge traffic.
+  - Preserve observability of degraded cohorts without cardinality explosion.
+
 ## Alert Rules and Escalation
 
 Alert design prioritizes fast action for user-impacting issues while minimizing alert fatigue.
@@ -1574,6 +2167,7 @@ Forecasting dimensions:
 | Plan File | Relevant Scope | How It Connects To This Document |
 |---|---|---|
 | 14 — Observability | Langfuse tracing, structured logging, Promptfoo eval, post-hoc diagnostics | Monitoring detects live incidents and SLA risk; observability explains root cause and validates mitigation outcomes |
+| 16 — Testing and QA | Functional testing, stress scenarios, resilience verification | Monitoring-owned chaos scenarios validate alert coverage and incident readiness, while broader system testing remains outside live monitoring governance |
 | 06 — Agents & Orchestration | Agent execution model, tool routing, handoff semantics, memory workflows | Monitoring tracks live agent loop depth, plan drift, handoff reliability, and tool success as production reliability signals |
 | 15 — Infrastructure | Service topology, degradation model, health checks, rate limiting, circuit breaker | Monitoring consumes infrastructure health and saturation signals, then routes actionable alerts and escalation workflows |
 | 12 — Server Implementation | Health endpoint semantics, dependency checks, middleware reliability behavior | Monitoring uses server health outputs as core availability signals and incident trigger inputs |
@@ -1586,6 +2180,8 @@ Integration notes:
 - Status communication must reflect both user impact and mitigation progress.
 - Monitoring owns live production quality and security objective enforcement, while observability owns deep trace diagnostics and post-hoc analysis.
 - Data access layer reliability signals from Drizzle ORM for PostgreSQL and surqlize for SurrealDB are first-class inputs for AI monitoring objectives.
+- Chaos engineering in this document is strictly for monitoring-validation coverage and alert-contract assurance, not general system test design.
+- AIOps in this document is strictly for live incident intelligence, not offline experimentation analytics.
 
 ## Task Specifications
 
@@ -1613,6 +2209,12 @@ Integration notes:
 - Add prompt deployment correlation markers with regression detection and rollback trigger policy.
 - Add business correlation dashboards linking AI quality signals to retention, support, revenue, and churn outcomes.
 - Ensure multi-window burn-rate alerts cover availability, latency, quality, and cost objectives.
+- Add chaos validation workflows that map each injected AI fault to expected alert outcomes and coverage-audit feedback.
+- Add adaptive anomaly detection with dynamic baselines, multi-signal correlation, and responder-facing root-cause assistance.
+- Add first-class provider health monitoring for latency, error taxonomy, behavior-shift detection, and failover readiness.
+- Add meta-monitoring for ingestion freshness, alert-delivery verification, evaluator-pipeline continuity, and monitoring coverage audits.
+- Add prompt experiment observability with per-variant quality, latency, cost, significance gating, and interference detection.
+- Add graceful degradation monitoring for degraded-state quality floors, fallback capacity, recovery smoothness, and flapping detection.
 
 **Depends On**
 - INFRASTRUCTURE
@@ -1638,6 +2240,12 @@ Integration notes:
 - Cost anomaly detection catches per-user spikes, feature regressions, model mix shifts, and runaway session spend.
 - Prompt deployment markers and automated post-change regression analysis are visible across operational dashboards.
 - Business correlation dashboards expose bidirectional AI quality and business outcome signals with divergence alerts.
+- Chaos experiments consistently trigger expected alerts within policy windows, and missing alerts are tracked as coverage defects.
+- Dynamic baseline anomaly detection reduces false positives while preserving incident detection sensitivity.
+- Provider health dashboards expose latency, error classes, quota pace, behavior shifts, and failover readiness posture.
+- Meta-monitoring dashboards expose ingestion freshness, alert delivery integrity, sampling coverage, and coverage-gap percentage.
+- Prompt experiment monitoring exposes per-variant quality, latency, and cost outcomes with confidence-gated promotion policy.
+- Degradation monitoring exposes degraded-state duration, quality-floor compliance, fallback headroom, and recovery stability.
 
 **QA Scenarios**
 - Simulate service outage and verify critical paging within target detection window.
@@ -1655,6 +2263,15 @@ Integration notes:
 - Simulate provider failover probe failure and verify incident workflow enters mitigation state.
 - Simulate post-prompt-change quality drop and verify automated regression detection and rollback trigger event.
 - Simulate business divergence where retention drops despite stable latency and verify correlation alerting.
+- Inject provider latency fault and verify time-to-first-token objective alerts fire within expected window.
+- Inject provider server-error fault and verify circuit-breaker, fallback visibility, and escalation behavior.
+- Inject retrieval latency and embedding degradation faults and verify independent RAG objective alerts.
+- Inject forced loop-depth growth and verify loop alert plus cost-protection containment triggers.
+- Simulate dynamic seasonality shift and verify adaptive baseline suppresses noise while flagging significant deviation.
+- Disable alert-delivery path in controlled test and verify silent-delivery failure alerting.
+- Simulate evaluator backlog growth and verify sampling-coverage minimum breach alert.
+- Simulate prompt experiment split drift and verify allocation-accuracy alert.
+- Simulate prolonged degraded operation and verify duration-threshold escalation and recovery validation.
 
 **Implementation Notes**
 - Keep alert rules risk-based and user-impact oriented.
@@ -1681,6 +2298,11 @@ Integration notes:
 - Extend cost-protection incident handling for runaway agent sessions and budget burn acceleration.
 - Add synthetic monitoring incident drills for canary degradation, RAG probe failures, and provider failover failures.
 - Define cross-functional triage protocol for business divergence incidents tied to AI quality signals.
+- Define chaos-result triage process where missing expected alerts create monitoring coverage incidents.
+- Define provider outage and provider behavior-shift incident playbooks with failover and quality-protection decision paths.
+- Define meta-monitoring incident playbooks for stale metrics, broken alert delivery, and evaluator-pipeline degradation.
+- Define prompt experiment incident playbooks for split drift, inconclusive significance risk, and variant regression containment.
+- Define graceful degradation incident playbooks for prolonged fallback operation, flapping states, and trust-impact communication.
 
 **Depends On**
 - MONITORING_INFRA
@@ -1700,6 +2322,11 @@ Integration notes:
 - Prompt deployment incident runbooks cover regression detection, rollback decisioning, and post-rollback verification windows.
 - Cost incident runbooks cover budget burn acceleration, model mix shifts, and per-session runaway spend containment.
 - Incident drill program includes synthetic probe failure scenarios and business divergence scenarios.
+- Incident runbooks include chaos validation failures where expected alerts do not trigger.
+- Incident runbooks include provider degradation and behavior-shift scenarios with failover readiness checks.
+- Incident runbooks include monitoring-control failures such as stale dashboards and alert-delivery outages.
+- Incident runbooks include prompt experiment regression and interference-contamination scenarios.
+- Incident runbooks include prolonged degraded-mode operation and repeated flapping recovery scenarios.
 
 **QA Scenarios**
 - Trigger simulated critical outage and verify full incident lifecycle execution.
@@ -1715,6 +2342,12 @@ Integration notes:
 - Trigger simulated prompt deployment regression and verify rollback path and recovery confirmation.
 - Trigger simulated provider failover probe failure and verify failover readiness mitigation runbook.
 - Trigger simulated business divergence incident and verify joint reliability and product triage workflow.
+- Trigger simulated chaos validation failure where expected alert is absent and verify coverage-gap incident workflow.
+- Trigger simulated provider behavior shift and verify canary-driven escalation and routing decision workflow.
+- Trigger simulated alert-delivery outage and verify backup-notification and escalation continuity workflow.
+- Trigger simulated evaluator pipeline backlog and verify quality-visibility risk escalation path.
+- Trigger simulated prompt experiment interference and verify contamination containment workflow.
+- Trigger simulated degraded-state flapping and verify stabilization and communication runbook execution.
 
 **Implementation Notes**
 - Keep response ownership unambiguous at every incident stage.
@@ -1740,5 +2373,11 @@ Integration notes:
 - Token cost anomaly detection is active for user spikes, feature regressions, model mix shifts, context utilization anomalies, and runaway sessions.
 - Prompt deployment correlation is active with dashboard markers, regression windows, and rollback trigger policies.
 - Business correlation dashboards are active with divergence alerts linking AI quality shifts to user and revenue outcomes.
+- Chaos validation program is active with explicit expected-alert contracts and coverage-audit remediation tracking.
+- AIOps correlation and dynamic baseline monitoring are active with responder-facing root-cause support.
+- Provider health monitoring is active with latency, error, quota, behavior-shift, and failover readiness visibility.
+- Meta-monitoring is active for ingestion freshness, alert-delivery integrity, evaluator continuity, and coverage maturity tracking.
+- Prompt experiment observability is active with per-variant outcome comparison and significance-based decision gating.
+- Graceful degradation monitoring is active with degraded-state quality-floor, fallback headroom, and recovery-stability controls.
 
 *Previous: 21 — Release Pipeline*
