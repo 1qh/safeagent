@@ -5114,6 +5114,137 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Performance budgets can be defined per extension category with budget breach governance alerts.
 - Throughput tests include mixed default and custom extension mixes at 10M user scale.
 
+### Module: Durable Execution and HITL (25)
+
+**Checkpoint persistence and recovery behavior**:
+
+- Checkpoint persistence preserves resumable workflow state across worker crashes without losing replay-critical context.
+- Pod restarts trigger deterministic recovery scans that restore resumable runs from canonical durable state.
+- Recovery after multi-day pause validates policy freshness and authorization before any resume transition.
+- Resume ownership is single-holder and idempotent so duplicate resume attempts do not create divergent run paths.
+- Recovery failures route to bounded retry or quarantine outcomes with operational visibility.
+
+**Time-travel replay and history fork behavior**:
+
+- Replay can resume from any prior checkpoint while preserving immutable historical lineage.
+- Forked replay creates a new branch with explicit parent linkage and reason attribution.
+- Corrected-state injection is accepted only within forked branches and remains fully auditable.
+- Replay comparison across branches preserves outcome traceability for investigation and root-cause analysis.
+
+**Background lifecycle and deterministic backbone behavior**:
+
+- Long-running workflows detach from request connections while preserving durable run identity continuity.
+- Background execution emits completion and failure outcomes through asynchronous lifecycle signaling.
+- Deterministic control flow governs state transitions around agent reasoning so side effects occur only at valid boundaries.
+- Deterministic checkpoint boundaries ensure replay reproducibility under equivalent inputs and policy state.
+
+**HITL and oversight mode behavior**:
+
+- Approval gates suspend high-risk actions until a valid human decision is recorded.
+- HITL waits and decisions persist durably and can resume correctly without an active client connection.
+- Human-on-the-loop mode observes and annotates actions without blocking routine execution.
+- Human-in-the-loop mode blocks selected actions until approve, reject, or edit outcomes are resolved.
+- Mode selection follows risk policy and remains auditable across workflow transitions.
+
+**Automation ratio and escalation behavior**:
+
+- Automation ratio policy enforces configured human-review share by risk class, tenant, and governance posture.
+- Ratio tightening and relaxation follow governed change controls with measurable safety and throughput impact.
+- Escalation routes trigger on deadline miss, authority mismatch, policy conflict, or emergency indicators.
+- Review queue behavior preserves assignment, overdue visibility, reassignment, and escalation depth continuity.
+
+**Checkpoint lifecycle and capacity behavior**:
+
+- Checkpoint TTL windows, cleanup, and archive transitions execute with lineage safety and auditability.
+- Lifecycle policies honor legal holds and preserve replay-addressable metadata through archive states.
+- Concurrent workflow limits enforce user, tenant, and global fairness under sustained load.
+- Failure isolation ensures one workflow fault or replay failure cannot corrupt unrelated workflows.
+
+### Module: AI Operations (26)
+
+**Semantic cache behavior**:
+
+- Semantic lookup reuses meaning-equivalent results only when similarity, policy, authorization, and TTL checks all pass.
+- Similarity thresholds are risk-tier aware and tuned to balance reuse savings against false-match quality risk.
+- Cache invalidation reacts to source, policy, authorization, and prompt-bundle changes before unsafe reuse can occur.
+- Cache warming raises hit-rate for stable high-frequency intents without violating spend or safety constraints.
+
+**Dynamic routing and prompt cache behavior**:
+
+- Dynamic routing classifies complexity, risk, and expected budget before generation and selects the lowest valid cost lane.
+- Routing decisions never bypass policy floor, capability requirements, or active budget contracts.
+- Prompt cache architecture maximizes provider cacheability through stable deterministic prefixes and bounded dynamic tails.
+- Cache-aware prompt assembly tracks miss causes and preserves deterministic ordering for repeatable cache-hit behavior.
+
+**Cost attribution and budget contract behavior**:
+
+- Cost events are attributable per agent, user, and workflow with consistent accounting for retries and tool overhead.
+- Budget contracts enforce limits for cost, steps, tool calls, output tokens, and retries using deterministic outcomes.
+- Soft budget pressure triggers controlled compression behaviors while hard breaches trigger controlled stop or handoff.
+
+**Prompt lifecycle experimentation behavior**:
+
+- Prompt A/B experiments apply deterministic traffic splitting, sticky assignment, and predefined guard-metric stop rules.
+- Statistical comparison and confidence thresholds govern winner selection without unsafe or premature promotions.
+- Atomic bundle rollout moves prompt, tools, policy, and retrieval settings together and rolls them back together.
+- Rollback behavior restores full prior bundle state with traceable reason and post-rollback verification continuity.
+
+**Shadow mode and evaluation behavior**:
+
+- Shadow mode runs candidate behavior in parallel, compares deltas, and preserves production output visibility for users.
+- Shadow divergence tracking covers quality, safety, latency, cost, and tool-validity dimensions.
+- LLM-as-judge scorers produce composable semantic evaluations for accuracy, relevance, and safety dimensions.
+- Judge outputs remain calibration-governed so scoring drift is detected before it distorts rollout decisions.
+
+**Dataset governance and regression behavior**:
+
+- Eval datasets maintain governed import, item identity, ground truth or rubric expectations, and freshness lifecycle state.
+- Item-level tracking preserves score history, failure categories, quarantine actions, and rollout-marker linkage.
+- Experiment tracking captures baseline deltas and detects regressions that trigger hold, block, or rollback decisions.
+- CI evaluation gates enforce promotion thresholds and block critical safety or quality regressions.
+
+**CLASSic governance behavior**:
+
+- CLASSic reporting tracks Cost, Latency, Accuracy, Stability, and Security across reasoning and action layers.
+- CLASSic deltas are required decision inputs for promotion, hold, rollback, and escalation governance states.
+
+### Module: Security and Compliance (27)
+
+**Threat governance and OWASP coverage behavior**:
+
+- Threat model governance covers LLM, data, infrastructure, and extension attack surfaces with explicit ownership and update cadence.
+- Threat classification combines severity, blast radius, and likelihood to drive response priority and mitigation depth.
+- Defense-in-depth composition remains resilient when a single layer fails and preserves containment through layered controls.
+- OWASP LLM Top 10 mapping remains complete with governance actions tied to each category.
+
+**Decision traceability and explainability behavior**:
+
+- Decision audit trails are immutable, tamper-evident, and exportable for regulator and enterprise due-diligence workflows.
+- Audit chain continuity links input context, retrieval context, reasoning summary, tool actions, oversight events, and final output.
+- Per-decision explainability provides clear trace narratives from request intent through outcome justification.
+- Explainability quality checks detect contradictions between recorded decisions and user-visible outcomes.
+
+**Regulatory workflow behavior**:
+
+- DSAR workflow enforces identity verification, scoped data collection, structured export, and completion evidence logging.
+- DSAR timeline governance enforces response deadlines and escalates delay risk before breach of obligations.
+- Breach workflow performs detection, triage, and classification, then enforces 72-hour regulator-notification governance from confirmation.
+- Breach response communications and remediation tracking remain synchronized with incident command records.
+
+**Consent and fairness governance behavior**:
+
+- Consent records capture scope, purpose, and timestamp with immutable history and immediate withdrawal propagation.
+- Consent history is queryable for runtime governance and included in subject-access exports.
+- Bias monitoring tracks output distribution and harmful-disparity signals across cohorts over time.
+- Disparate-impact detection routes threshold breaches into owned remediation workflows with sustained parity verification.
+
+**Security operations behavior**:
+
+- Security incident response enforces P0 through P3 classification with severity-aligned command structures and communication duties.
+- Incident playbooks execute predictable containment, investigation, and recovery sequences for major attack classes.
+- Security audit compliance enforces required cadence, scope, and evidence output across monthly to annual reviews.
+- Dependency scanning and vulnerability remediation governance maintain ownership, SLA tracking, and closure evidence.
+
 ## Coverage Map
 
 Every Must Have feature area maps to one or more testing layers.
@@ -5186,6 +5317,33 @@ Every Must Have feature area maps to one or more testing layers.
 | Extension composition patterns | ✓ | ✓ |  |  |  |  |  |
 | Contract test suites | ✓ | ✓ |  |  |  |  |  |
 | Extension performance budgets | ✓ |  |  |  | ✓ |  |  |
+| Checkpoint persistence and recovery | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Time-travel replay and forking | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Background run lifecycle | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| HITL approval gates | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Oversight modes and automation ratio | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Escalation and review queue | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Checkpoint TTL, cleanup, and archive | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| Concurrent workflow limits and failure isolation | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Semantic cache lifecycle | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| Dynamic model routing | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| Prompt cache optimization | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| Per-agent cost attribution and budgets | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| Prompt A/B testing and winner detection | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Atomic bundle rollout and rollback | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Shadow mode behavior comparison | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
+| LLM-as-judge scoring | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |
+| Eval dataset governance and tracking | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Experiment regression detection and CI gates | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| CLASSic dimension governance | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| Threat model and defense-in-depth governance | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| OWASP LLM Top 10 coverage | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Decision audit trail and explainability | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
+| DSAR workflow and timeline enforcement | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Breach notification governance | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Consent lifecycle governance | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Bias monitoring and disparate impact detection | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
+| Security audit cadence and dependency scanning | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
 
 ## Extended Coverage Map
 
@@ -5322,7 +5480,7 @@ All verification is automated and agent-executed. The thirteen testing types for
 - Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
 - Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
 - Property policy: invariant validation through randomized input generation covering modules with deterministic invariants with at least one hundred iterations per property.
-- Per-module coverage: every plan document (01 through 24) has explicit test specifications mapping testable behaviors to test layers.
+- Per-module coverage: every plan document (01 through 27) has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
 
@@ -5350,6 +5508,9 @@ Testing strategy aligns with and validates every plan document in the structure:
 - Monitoring and alerting: [22 — Monitoring & Alerting](./22-monitoring.md)
 - Coding standards: [23 — Coding Standards](./23-coding-standards.md)
 - Extensibility and plugin architecture: [24 — Extensibility](./24-extensibility.md)
+- Durable execution and HITL oversight: [25 — Durable Execution and HITL](./25-durable-execution.md)
+- AI operations and prompt lifecycle governance: [26 — AI Operations](./26-ai-operations.md)
+- Security strategy and compliance operations: [27 — Security & Compliance](./27-security-compliance.md)
 
 ## External References
 

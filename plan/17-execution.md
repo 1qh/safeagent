@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 116 implementation tasks + 4 final audit tasks = 120 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~69% faster than sequential execution.
+> **Scale**: 119 implementation tasks + 4 final audit tasks = 123 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -16,10 +16,10 @@
 - [Dependency Graph](#dependency-graph)
 - [Batch Parallelism Visualization](#batch-parallelism-visualization)
 - [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (120 Tasks) and Full Dependency Matrix](#complete-task-registry-120-tasks-and-full-dependency-matrix)
+- [Complete Task Registry (123 Tasks) and Full Dependency Matrix](#complete-task-registry-123-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24)
+- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24-25-26-27)
 
 ---
 
@@ -49,21 +49,21 @@ gantt
     Batch 5 — Agent Factory + Pipelines (4 parallel)      :crit, AGENT_PIPELINE_BATCH, after CONFIG_GUARDS_BATCH, 3d
 
     section Integration
-    Batch 6 — Integration Layer (17 parallel)    :INTEGRATION_BATCH, after AGENT_PIPELINE_BATCH, 3d
+    Batch 6 — Integration Layer (18 parallel)    :INTEGRATION_BATCH, after AGENT_PIPELINE_BATCH, 3d
 
     section Self-Test + Mid Integration
     Batch 7 — Self-test + Mid Integration (8 parallel):SELFTEST_MIDINTEGRATION_BATCH, after INTEGRATION_BATCH, 2d
 
     section Server + TUI + Pipeline
     Batch 8a — Server+TUI+Pipeline (16 parallel) :SERVER_TUI_PIPELINE_BATCH, after SELFTEST_MIDINTEGRATION_BATCH, 3d
-    Batch 8b — Extended Integration (12 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
+    Batch 8b — Extended Integration (13 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
 
     section Routes + API
     Batch 9a — Server Routes + Sub-Agent + React Hooks (3 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
     Batch 9b — Endpoints+Barrel+Frontend Components (7 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
 
     section Testing + Deploy
-    Batch 10 — E2E+Deploy+Publish+Ops+Docs (10 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
+    Batch 10 — E2E+Deploy+Publish+Ops+Docs (11 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
 
     section Frontend + Demos
     Batch 11 — Demos+Docs+Incident (4 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
@@ -83,13 +83,13 @@ gantt
 | 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
 | 4 | Config + Guards + Extensibility | 7 | 7 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
-| 6 | Integration Layer | 17 | 17 parallel | Streaming, grounding, core tools, intent routing, RAG infra |
+| 6 | Integration Layer | 18 | 18 parallel | Streaming, grounding, core tools, intent routing, RAG infra, durable execution |
 | 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
 | 8a | Server + TUI + Pipeline | 16 | 16 parallel | TUI integration, server config, search/visual tools, intent validator, extraction safeguards, context budget, style/fact calibration |
-| 8b | Extended Integration | 12 | 12 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification |
+| 8b | Extended Integration | 13 | 13 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification, AI operations |
 | 9a | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
 | 9b | Endpoints + Barrel | 7 | 7 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components |
-| 10 | E2E + Deploy + Ops + Docs Infra | 10 | 10 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation |
+| 10 | E2E + Deploy + Ops + Docs Infra | 11 | 11 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance |
 | 11 | Frontend Demos + Docs + Incident Ops | 4 | 4 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures |
 | FINAL | Audit | 4 | 4 parallel | Plan compliance, code quality, full QA, scope fidelity |
 
@@ -156,7 +156,7 @@ graph LR
 | SPIKE_CORE_STACK — Core stack validation spike | 0 | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
 | SPIKE_RAG_DEPS — RAG Dependencies Spike | 0.5 | Blocks document processing, RAG infra, and file storage. Three critical Batch 2 tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
 | CI_PIPELINE — CI/CD quality gates | 3 | Blocks RELEASE_PIPELINE. If CI gates are unstable, release automation cannot be trusted and late-stage delivery stalls. | Build CI_PIPELINE in Batch 3 with strict gating and keep it green continuously. |
-| AGENT_FACTORY — Agent Factory | 5 | Critical gate for most integration paths. 8 Batch 6 tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
+| AGENT_FACTORY — Agent Factory | 5 | Critical gate for most integration paths. 9 Batch 6 tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
 | SERVER_ROUTES — Server Routes | 9a | Key gate in Batch 9a. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
 
 ### Timing Estimates
@@ -164,10 +164,10 @@ graph LR
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 116 tasks) | ~405–515 hours estimated |
+| Sequential execution (all 119 tasks) | ~405–515 hours estimated |
 | Parallel execution (batch model) | ~125–160 hours estimated |
 | Parallel speedup | ~69% faster than sequential |
-| Maximum concurrency | 17 tasks (Batch 6) |
+| Maximum concurrency | 18 tasks (Batch 6) |
 | Single-task bottleneck batches | 2 (Batch 0, 0.5) |
 | Total batches | 16 (including FINAL) |
 
@@ -287,9 +287,9 @@ graph LR
 
 ---
 
-### Batch 6 — Integration Layer (17 parallel)
+### Batch 6 — Integration Layer (18 parallel)
 
-> Streaming, grounding, guardrail orchestration, memory tools, CTA, rate limiting, prompts, buffered guardrail, embedding router, RAGFlow client, and RAG infrastructure.
+> Streaming, grounding, guardrail orchestration, memory tools, CTA, rate limiting, prompts, buffered guardrail, embedding router, RAGFlow client, durable execution, and RAG infrastructure.
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -310,6 +310,7 @@ graph LR
 | LANG_GUARD | Language Guard (two-stage language enforcement + output drift scanner) | `deep` | CORE_TYPES, GUARD_FACTORY |
 | HATE_SPEECH_GUARD | Hate Speech Guard (hybrid obscenity + multilingual matching) | `deep` | CORE_TYPES, GUARD_FACTORY |
 | MEMORY_CONTROL | User memory control tools (inspect/delete) | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
+| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
 
 > **NEW**: EMBED_ROUTER (Document 05) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Document 05) wraps RAGFlow's retrieval API. LOCATION_TOOL (Document 06) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch 8a because both require EVIDENCE_GATE (Batch 7).
 
@@ -357,7 +358,7 @@ graph LR
 
 ---
 
-### Batch 8b — Extended Integration (12 parallel)
+### Batch 8b — Extended Integration (13 parallel)
 
 > TUI upload, cost tracking, TTL cleanup, cross-conversation RAG, speculative pre-fetch coordination, query rewrite tool, and orchestrator agent.
 
@@ -375,6 +376,7 @@ graph LR
 | CLARIFICATION_MODEL | Proactive clarification + multi-turn patience model | `deep` | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY |
 | ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
 | QUERY_REPLAY | Query replay detection and rewriting (+ humanlikeness enhancements) | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
+| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
 
 > **NEW**: PREFETCH_COORD (Document 05) coordinates the speculative pre-fetch pattern — runs embedding router and LLM validator concurrently, starts sources speculatively, cancels on disagreement. REWRITE_TOOL (Document 05) checks all 7 rewrite triggers (pronoun referent, short query, multi-intent, highly specific, jargon mismatch, ordinal reference, query replay) and applies per-source strategies with the entity-preservation guardrail.
 
@@ -406,7 +408,7 @@ graph LR
 
 ---
 
-### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (10 parallel)
+### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (11 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -420,6 +422,7 @@ graph LR
 | RELEASE_PIPELINE | Release automation with canary deployment and rollback flow | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
 | DOCS_SITE | Documentation site infrastructure (Fumadocs) | `unspecified-high` | SCAFFOLD_LIB |
 | MONITORING_INFRA | Monitoring infrastructure, dashboards, AI monitoring, and alerts | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
+| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
 ---
 
@@ -463,13 +466,13 @@ graph TB
     BATCH_SCHEMAS_MEMORY["Batch 3<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
     BATCH_CONFIG_GUARDS["Batch 4<br/>7 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility"]
     BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
-    BATCH_STREAMING_TOOLS["Batch 6<br/>17 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base"]
+    BATCH_STREAMING_TOOLS["Batch 6<br/>18 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base,<br/>Durable Execution"]
     BATCH_EVIDENCE_UPLOAD["Batch 7<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
     BATCH_SERVER_TUI["Batch 8a<br/>16 tasks — Server, TUI,<br/>Intent, Search, Visual,<br/>Humanlikeness Signals"]
-    BATCH_UPLOAD_COST["Batch 8b<br/>12 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification"]
+    BATCH_UPLOAD_COST["Batch 8b<br/>13 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification,<br/>AI Operations"]
     BATCH_ROUTES_SUBAGENT["Batch 9a<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
     BATCH_ENDPOINTS["Batch 9b<br/>7 tasks — Endpoints,<br/>Barrel Exports, Frontend Components"]
-    BATCH_END_TO_END_DEPLOY["Batch 10<br/>10 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring"]
+    BATCH_END_TO_END_DEPLOY["Batch 10<br/>11 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring,<br/>Security Compliance"]
     BATCH_FRONTEND_DEMOS["Batch 11<br/>4 tasks — Demos,<br/>Docs Content, Incident Ops"]
     BATCH_FINAL_AUDIT["FINAL<br/>4 tasks — Audit"]
 
@@ -559,6 +562,7 @@ graph TB
     AGENT_FACTORY --> CTA_STREAMING["CTA_STREAMING CTA Tool"]:::crit
     AGENT_FACTORY --> LOCATION_TOOL["LOCATION_TOOL Location Tool"]:::new
     AGENT_FACTORY --> EMBED_ROUTER["EMBED_ROUTER Embedding Router"]:::new
+    AGENT_FACTORY --> DURABLE_EXECUTION["DURABLE_EXECUTION Durable Execution"]:::new
 
     INPUT_GUARD["INPUT_GUARD"] --> GUARD_PIPELINE
     OUTPUT_GUARD["OUTPUT_GUARD"] --> GUARD_PIPELINE
@@ -574,6 +578,8 @@ graph TB
     OUTPUT_GUARD --> ZERO_LEAK_GUARD["ZERO_LEAK_GUARD Zero-leak Guard"]
     CORE_TYPES --> LOCATION_TOOL
     VALKEY_CACHE --> LOCATION_TOOL
+    STORAGE_WRAPPER --> DURABLE_EXECUTION
+    SSE_STREAMING --> DURABLE_EXECUTION
 
     FILE_REGISTRY["FILE_REGISTRY FileRegistry"]:::new --> DOC_SEARCH["DOC_SEARCH Doc Search"]:::new
     EVIDENCE_GATE["EVIDENCE_GATE Evidence Gate"]:::new --> DOC_SEARCH
@@ -596,6 +602,9 @@ graph TB
     LLM_INTENT --> REWRITE_TOOL
     EMBED_ROUTER --> FRUSTRATION_SIGNAL["FRUSTRATION_SIGNAL Frustration Signal"]:::new
     LLM_INTENT --> FRUSTRATION_SIGNAL
+    AGENT_FACTORY --> AI_OPERATIONS["AI_OPERATIONS AI Operations"]:::new
+    LANGFUSE_MODULE --> AI_OPERATIONS
+    EMBED_ROUTER --> AI_OPERATIONS
     LLM_INTENT --> CLARIFICATION_MODEL["CLARIFICATION_MODEL Clarification Model"]:::new
     EMBED_ROUTER --> CLARIFICATION_MODEL
     AGENT_FACTORY --> CLARIFICATION_MODEL
@@ -655,6 +664,9 @@ graph TB
     DOCKER_COMPOSE --> MONITORING_INFRA["MONITORING_INFRA Monitoring"]:::new
     SERVER_ROUTES --> MONITORING_INFRA
     LANGFUSE_MODULE --> MONITORING_INFRA
+    MONITORING_INFRA --> SECURITY_COMPLIANCE["SECURITY_COMPLIANCE Security Compliance"]:::new
+    JWT_AUTH --> SECURITY_COMPLIANCE
+    GUARD_PIPELINE --> SECURITY_COMPLIANCE
     MONITORING_INFRA --> INCIDENT_PROCEDURES["INCIDENT_PROCEDURES Incident Procedures"]:::new
 
     E2E_TESTS --> FINAL_AUDIT_BLOCK["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
@@ -783,7 +795,7 @@ graph TB
         STRUCTURED_RESULT_MEM_P["STRUCTURED_RESULT_MEM (new)"]
     end
 
-    subgraph BATCH_STREAMING_TOOLS["Batch 6 — 17 parallel (MAX CONCURRENCY)"]
+    subgraph BATCH_STREAMING_TOOLS["Batch 6 — 18 parallel (MAX CONCURRENCY)"]
         SSE_STREAMING_P["SSE_STREAMING"]
         GEMINI_GROUNDING_P["GEMINI_GROUNDING"]
         GUARD_PIPELINE_P["GUARD_PIPELINE"]
@@ -801,6 +813,7 @@ graph TB
         LANG_GUARD_P["LANG_GUARD"]
         HATE_SPEECH_GUARD_P["HATE_SPEECH_GUARD"]
         MEMORY_CONTROL_P["MEMORY_CONTROL (new)"]
+        DURABLE_EXECUTION_P["DURABLE_EXECUTION (new)"]
     end
 
     subgraph BATCH_EVIDENCE_UPLOAD["Batch 7 — 8 parallel"]
@@ -833,7 +846,7 @@ graph TB
         CONTEXT_BUDGET_P["CONTEXT_BUDGET (new)"]
     end
 
-    subgraph BATCH_UPLOAD_COST["Batch 8b — 12 parallel"]
+    subgraph BATCH_UPLOAD_COST["Batch 8b — 13 parallel"]
         TUI_UPLOAD_P["TUI_UPLOAD"]
         COST_TRACKING_P["COST_TRACKING"]
         TTL_CLEANUP_P["TTL_CLEANUP"]
@@ -846,6 +859,7 @@ graph TB
         CLARIFICATION_MODEL_P["CLARIFICATION_MODEL (new)"]
         ATTRIBUTE_NEGATION_P["ATTRIBUTE_NEGATION (new)"]
         QUERY_REPLAY_P["QUERY_REPLAY (new)"]
+        AI_OPERATIONS_P["AI_OPERATIONS (new)"]
     end
 
     subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 3 parallel"]
@@ -864,7 +878,7 @@ graph TB
         RN_COMPONENTS_P["RN_COMPONENTS (frontend)"]
     end
 
-    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 10 parallel"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 11 parallel"]
         E2E_TESTS_P["E2E_TESTS"]
         PKG_PUBLISH_P["PKG_PUBLISH"]
         SMOKE_TESTS_P["SMOKE_TESTS"]
@@ -875,6 +889,7 @@ graph TB
         RELEASE_PIPELINE_P["RELEASE_PIPELINE (new)"]
         DOCS_SITE_P["DOCS_SITE (new)"]
         MONITORING_INFRA_P["MONITORING_INFRA (new)"]
+        SECURITY_COMPLIANCE_P["SECURITY_COMPLIANCE (new)"]
     end
 
     subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 4 parallel"]
@@ -896,7 +911,7 @@ graph TB
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
 
-> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23, 24)
+> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23, 24, 25, 26, 27)
 > (frontend) = New task from frontend SDK requirements (Documents 18, 19)
 
 ---
@@ -915,13 +930,13 @@ graph LR
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DEEP_TASKS["deep Tasks (52)"]
+    subgraph DEEP_TASKS["deep Tasks (54)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
-        DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE"]
+        DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE, DURABLE_EXECUTION"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
         DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM, EXTENSIBILITY_INFRA"]
         DEEP_INTENT["EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL"]
-        DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL"]
+        DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL, AI_OPERATIONS"]
         DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE, MONITORING_INFRA"]
     end
 
@@ -937,12 +952,12 @@ graph LR
         VIS_TUI_TASKS["TUI_SHELL, TUI_CHAT, TUI_INPUT, TUI_COMMANDS, TUI_UPLOAD"]
     end
 
-    subgraph U_HIGH_TASKS["unspecified-high Tasks (32)"]
+    subgraph U_HIGH_TASKS["unspecified-high Tasks (33)"]
         UHIGH_GUARD_MCP["GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, EVAL_CONFIG, SELF_TEST"]
         UHIGH_SERVER_SMOKE["SERVER_ROUTES, SMOKE_TESTS, UPLOAD_ENDPOINT, CUSTOM_SPANS, CTA_STREAMING"]
         UHIGH_CLIENT_COST["CLIENT_SDK, COST_TRACKING, LOAD_TESTS, FILE_CRUD, JWT_AUTH, ADMIN_API, REWRITE_TOOL, CONTEXT_BUDGET, RESPONSE_CALIBRATION"]
         UHIGH_INTENT["ATTRIBUTE_NEGATION, QUERY_REPLAY, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS"]
-        UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, CI_PIPELINE, RELEASE_PIPELINE, DOCS_SITE"]
+        UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, CI_PIPELINE, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE"]
         UHIGH_AUDIT_CODE["AUDIT_CODE"]
     end
 
@@ -978,13 +993,13 @@ graph LR
 | 3 | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
 | 4 | 7 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA → `deep`; GUARD_FACTORY → `unspecified-high` |
 | 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
-| 6 | 17 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
+| 6 | 18 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL, DURABLE_EXECUTION → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
 | 7 | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
 | 8a | 16 | TUI_AGENT, AGENT_ROUTER, LLM_INTENT, SOURCE_ROUTER, DOC_SEARCH, VISUAL_GROUNDING, EXTRACTION_SAFEGUARDS, STYLE_PREFERENCES, FACT_SUPERSESSION → `deep`; SERVER_AGENT_CFG, SERVER_MCP, SERVER_GUARDRAILS → `quick`; CLIENT_SDK, JWT_AUTH, CONTEXT_BUDGET, RESPONSE_CALIBRATION → `unspecified-high` |
-| 8b | 12 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL → `deep` |
+| 8b | 13 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS → `deep` |
 | 9a | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
 | 9b | 7 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high` |
-| 10 | 10 | E2E_TESTS, MONITORING_INFRA → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE → `unspecified-high` |
+| 10 | 11 | E2E_TESTS, MONITORING_INFRA → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
 | 11 | 4 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing` |
 | FINAL | 4 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
 
@@ -992,18 +1007,18 @@ graph LR
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| `deep` | 52 | 43% |
-| `quick` | 27 | 23% |
-| `unspecified-high` | 32 | 27% |
+| `deep` | 54 | 44% |
+| `quick` | 27 | 22% |
+| `unspecified-high` | 33 | 27% |
 | `writing` | 2 | 2% |
 | `visual-engineering` | 5 | 4% |
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **120** | |
+| **Total** | **123** | |
 
 ---
 
-## Complete Task Registry (120 Tasks) and Full Dependency Matrix
+## Complete Task Registry (123 Tasks) and Full Dependency Matrix
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -1018,7 +1033,7 @@ graph LR
 | CODE_STANDARDS | SCAFFOLD_LIB, SCAFFOLD_SERVER | — | 1 |
 | SCAFFOLD_FRONTEND | SCAFFOLD_LIB | REACT_HOOKS | 2 |
 | CORE_TYPES | SCAFFOLD_LIB | ZOD_SCHEMAS, CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, LANGFUSE_MODULE, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, CIRCUIT_BREAKER, JWT_AUTH, EMBED_ROUTER, RAGFLOW_CLIENT, REWRITE_STRATEGIES, EVIDENCE_GATE, LANG_GUARD, HATE_SPEECH_GUARD, RESPONSE_CALIBRATION | 2 |
-| STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM | 2 |
+| STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM, DURABLE_EXECUTION | 2 |
 | MCP_HEALTH | SCAFFOLD_LIB | MCP_CLIENT | 2 |
 | PROVIDER_HELPERS | SCAFFOLD_LIB | AGENT_FACTORY, PROVIDER_FALLBACK | 2 |
 | TUI_SHELL | SCAFFOLD_LIB | TUI_CHAT, TUI_INPUT, TUI_COMMANDS | 2 |
@@ -1035,7 +1050,7 @@ graph LR
 | TUI_INPUT | TUI_SHELL | TUI_AGENT | 3 |
 | TUI_COMMANDS | TUI_SHELL | TUI_UPLOAD | 3 |
 | RAG_INFRA | STORAGE_WRAPPER, DOC_PIPELINE | CUSTOM_SPANS, TRIGGER_TASKS, TTL_CLEANUP, CROSS_CONV_RAG, EVIDENCE_GATE, DOC_SEARCH | 6 |
-| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT, MONITORING_INFRA | 3 |
+| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT, MONITORING_INFRA, AI_OPERATIONS | 3 |
 | KEY_POOL | CORE_TYPES, SCAFFOLD_LIB | BARREL_EXPORTS | 3 |
 | VALKEY_CACHE | CORE_TYPES, SCAFFOLD_LIB | COST_TRACKING, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL, EMBED_ROUTER, FILE_REGISTRY | 3 |
 | CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | 3 |
@@ -1051,11 +1066,11 @@ graph LR
 | SUMMARY_CAP | SHORT_TERM_MEM | — | 4 |
 | EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | 4 |
 | EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING | 7 |
-| AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL | 5 |
+| AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL, DURABLE_EXECUTION, AI_OPERATIONS | 5 |
 | STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | 5 |
-| SSE_STREAMING | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB | SERVER_ROUTES, COST_TRACKING, AGENT_ROUTER | 6 |
+| SSE_STREAMING | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB | SERVER_ROUTES, COST_TRACKING, AGENT_ROUTER, DURABLE_EXECUTION | 6 |
 | GEMINI_GROUNDING | AGENT_FACTORY | — | 6 |
-| GUARD_PIPELINE | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
+| GUARD_PIPELINE | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY | SERVER_GUARDRAILS, SECURITY_COMPLIANCE | 6 |
 | EVAL_CONFIG | AGENT_FACTORY | SELF_TEST | 6 |
 | FACT_EXTRACTION | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS, THREAD_RESURRECTION, EXTRACTION_SAFEGUARDS, CONTEXT_BUDGET, STYLE_PREFERENCES, FACT_SUPERSESSION | 6 |
 | MEMORY_RECALL | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS | 6 |
@@ -1071,7 +1086,8 @@ graph LR
 | RATE_LIMITING | CORE_TYPES, VALKEY_CACHE | — | 6 |
 | PROMPT_MGMT | LANGFUSE_MODULE | BARREL_EXPORTS | 6 |
 | ZERO_LEAK_GUARD | OUTPUT_GUARD | BARREL_EXPORTS | 6 |
-| EMBED_ROUTER | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY | LLM_INTENT, PREFETCH_COORD, ORCHESTRATOR, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | 6 |
+| EMBED_ROUTER | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY | LLM_INTENT, PREFETCH_COORD, ORCHESTRATOR, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS | 6 |
+| DURABLE_EXECUTION | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING | — | 6 |
 | RAGFLOW_CLIENT | CORE_TYPES, CONFIG_DEFAULTS | SOURCE_ROUTER | 6 |
 | DOC_SEARCH | FILE_REGISTRY, RAG_INFRA, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | 8a |
 | VISUAL_GROUNDING | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | 8a |
@@ -1088,7 +1104,7 @@ graph LR
 | FACT_SUPERSESSION | FACT_EXTRACTION, SURREALDB_CLIENT | — | 8a |
 | RESPONSE_CALIBRATION | CORE_TYPES, AGENT_FACTORY | — | 8a |
 | AGENT_ROUTER | AGENT_FACTORY, SSE_STREAMING | E2E_TESTS | 8a |
-| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API | 8a |
+| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE | 8a |
 | LLM_INTENT | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER | PREFETCH_COORD, REWRITE_TOOL, ORCHESTRATOR, DEPENDENT_INTENT, ATTRIBUTE_NEGATION, QUERY_REPLAY, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | 8a |
 | SOURCE_ROUTER | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS | PREFETCH_COORD | 8a |
 | TUI_UPLOAD | TUI_SHELL, TUI_COMMANDS, TUI_AGENT | E2E_TESTS | 8b |
@@ -1103,6 +1119,7 @@ graph LR
 | CLARIFICATION_MODEL | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY | — | 8b |
 | ATTRIBUTE_NEGATION | LLM_INTENT, REWRITE_TOOL | — | 8b |
 | QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | 8b |
+| AI_OPERATIONS | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER | — | 8b |
 | SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 9a |
 | REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | 9a |
 | SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | 9a |
@@ -1122,7 +1139,8 @@ graph LR
 | STORYBOOK_FRONTEND | WEB_COMPONENTS | — | 10 |
 | RELEASE_PIPELINE | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES | — | 10 |
 | DOCS_SITE | SCAFFOLD_LIB | DOCS_CONTENT | 10 |
-| MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES | 10 |
+| MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES, SECURITY_COMPLIANCE | 10 |
+| SECURITY_COMPLIANCE | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE | — | 10 |
 | DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | 11 |
 | DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
 | DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | 11 |
@@ -1240,14 +1258,14 @@ flowchart TB
 |-------------|--------------|-------------|
 | SPIKE_CORE_STACK (Spike) | Everything blocked | Project halted — tech stack re-evaluation |
 | CI_PIPELINE (CI/CD) | RELEASE_PIPELINE blocked | Release automation delayed until quality gates are stable |
-| AGENT_FACTORY (Agent Factory) | 17 Batch 6 tasks blocked | Largest blast radius — prioritize fix |
+| AGENT_FACTORY (Agent Factory) | 18 Batch 6 tasks blocked | Largest blast radius — prioritize fix |
 | SERVER_ROUTES (Server Routes) | BARREL_EXPORTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API blocked | All server endpoints and barrel exports delayed |
 | CORE_TYPES (Types) | 20+ downstream tasks blocked | Foundation failure — second largest blast radius |
 | Any Batch 6 task | Specific downstream chain | Limited — other Batch 6 tasks continue |
 
 ---
 
-## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24)
+## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
@@ -1312,7 +1330,7 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 
 ### Operations and Quality Tasks
 
-The following 8 tasks were added for coding standards, CI quality gates, release automation, documentation platform and content, observability operations, and extensibility infrastructure. Each is integrated into the batch structure above.
+The following 11 tasks were added for coding standards, CI quality gates, release automation, documentation platform and content, observability operations, extensibility infrastructure, durable execution, AI operations, and security/compliance. Each is integrated into the batch structure above.
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
@@ -1324,10 +1342,13 @@ The following 8 tasks were added for coding standards, CI quality gates, release
 | MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Document 22 | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Document 22 | 11 | `writing` | MONITORING_INFRA |
 | EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Document 24 | 4 | `deep` | FOUNDATION, CORE_TYPES |
+| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Document 25 | 6 | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
+| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | Document 26 | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
+| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Document 27 | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
 ---
 
-*Covers all 116 implementation tasks + 4 final audit tasks = 120 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 8 operations and quality tasks (Documents 20, 21, 22, 23, 24), all fully integrated into the batch structure and dependency matrix.*
+*Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 11 operations and quality tasks (Documents 20, 21, 22, 23, 24, 25, 26, 27), all fully integrated into the batch structure and dependency matrix.*
 
 ---
 
