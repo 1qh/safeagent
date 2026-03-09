@@ -2089,6 +2089,105 @@ Foundation tests are primarily unit tests validating configuration, types, schem
 - Any new public function, type, or class updates its module-group barrel in the same change.
 - Top-level barrel aggregates subpath barrels only and does not bypass module-group ownership.
 
+**Environment variable contracts — full foundation matrix**:
+
+- GOOGLE_API_KEY accepts comma-separated key pools and rotates keys in deterministic order.
+- GOOGLE_API_KEY allows startup when absent, while model-dependent endpoints return explicit unavailable behavior.
+- OPENAI_API_KEY is treated as moderation-only credential and does not gate unrelated request paths.
+- Missing OPENAI_API_KEY disables moderation guardrail path while keeping other guardrails active.
+- JWT_SECRET is mandatory in production mode and startup is refused when missing.
+- JWT_SECRET missing in non-production mode enables documented development bypass behavior.
+- PORT defaults to 3000 when unset.
+- DATABASE_URL is hard-required and startup is refused when missing.
+- SURREALDB_URL missing disables long-term memory features only.
+- VALKEY_URL missing activates in-memory cache fallback without blocking startup.
+- VALKEY_URL validation accepts redis URI scheme inputs for remote cache configuration.
+- S3_ENDPOINT missing disables upload behavior while non-upload flows remain available.
+- S3_ACCESS_KEY is required whenever S3_ENDPOINT is configured.
+- S3_SECRET_KEY is required whenever S3_ENDPOINT is configured.
+- S3_BUCKET is required whenever S3_ENDPOINT is configured.
+- TRIGGER_DEV_API_URL missing keeps background job execution in-process.
+- TRIGGER_DEV_API_KEY is required whenever TRIGGER_DEV_API_URL is configured.
+- CORS_ALLOWED_ORIGINS defaults to wildcard behavior when unset.
+- CORS_ALLOWED_ORIGINS parses comma-separated values into normalized allowed-origins list.
+- LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL missing together disable observability export path.
+- RAGFLOW_BASE_URL missing disables external retrieval integration while other sources continue.
+- RAGFLOW_API_KEY is required whenever RAGFLOW_BASE_URL is configured.
+- RAGFLOW_DATASET_IDS is required whenever RAGFLOW_BASE_URL is configured.
+- LOG_LEVEL defaults to info when unset.
+- Production mode plus missing JWT_SECRET always enforces fail-closed startup refusal as a security boundary.
+
+**Foundation core stack validation spike**:
+
+- Agent core validations confirm factory output preserves required identity, instruction, and runtime configuration contracts.
+- Agent core validations confirm primary model selection is canonical across classification, rewriting, and synthesis paths.
+- Agent core validations confirm stream output emits expected incremental events and clean terminal completion.
+- Agent core validations confirm guardrail tripwire transitions execute blocking behavior on unsafe input.
+- Agent core validations confirm connected tool listing reflects configured tool ownership and availability.
+- Agent core validations confirm grounding mode emits grounding metadata with response output.
+- Agent core validations confirm memory thread isolation prevents cross-thread leakage.
+- Agent core validations confirm request context fields propagate to downstream runtime and tool execution.
+- Agent core validations confirm concurrent streams remain isolated without event interleaving corruption.
+- Agent core validations confirm trace identity is stable per request and unique across unrelated requests.
+- Agent core validations confirm usage payload shape includes expected accounting fields and typed values.
+- Stream and guard validations confirm emitted event envelopes follow documented shape across all stream phases.
+- Stream and guard validations confirm input tripwire activates before unsafe requests enter execution flow.
+- Stream and guard validations confirm output tripwire activates when generated content violates safety policy.
+- Stream and guard validations confirm handoff event appears with transfer metadata during orchestrated routing.
+- Stream and guard validations confirm asynchronous abort edges terminate stream safely without dangling work.
+- Stream and guard validations confirm tool-call suppression prevents disallowed tool execution when safety policy requires suppression.
+- Framework and SDK validations confirm streaming path remains operational through current integration layer.
+- Framework and SDK validations confirm historical import compatibility for prior consumer import patterns.
+- Framework and SDK validations confirm Zod v4 contracts remain valid across runtime validation and typing boundaries.
+- Framework and SDK validations confirm AI SDK integration behavior remains compatible for generation and streaming.
+- Framework and SDK validations confirm terminal rendering path displays progressive output and final state correctly.
+- Framework and SDK validations confirm evaluation workflows remain compatible with expected runner and scorer behavior.
+- Framework and SDK validations confirm custom scorer wiring accepts user-defined scoring behavior.
+- Framework and SDK validations confirm direct SDK usage can coexist with framework wrappers in one deployment.
+- Server and route validations confirm historical HTTP behavior notes remain accurate against current route behavior.
+- Server and route validations confirm lifecycle hooks run in correct order for startup, readiness, and shutdown.
+- Server and route validations confirm CORS preflight handling returns expected allow responses for permitted origins.
+- External service validations confirm SurrealDB WebSocket connectivity path establishes and maintains healthy connection state.
+- External service validations confirm SurrealDB graph operations handle linked records with expected traversal behavior.
+- External service validations confirm SurrealDB vector operations support embedding storage and similarity access patterns.
+- External service validations confirm SurrealDB embedded-mode behavior matches documented local deployment expectations.
+- External service validations confirm MTREE limitation behavior is documented and guarded by fallback query strategy.
+- External service validations confirm SQL-backed memory path persists and retrieves memory records reliably.
+- External service validations confirm embedding-dimension contracts reject mismatched vector lengths.
+- External service validations confirm Langfuse API integration records traces when credentials are present.
+- External service validations confirm worker SDK integration dispatches and tracks background jobs correctly.
+- External service validations confirm Valkey operations cover set, get, hash, ttl, and deletion reliability.
+- External service validations confirm ORM adapter interactions execute typed query paths without raw string fallbacks.
+- External service validations confirm typed SurrealDB access remains within strongly-typed query boundaries.
+- External service validations confirm typed environment loading enforces expected presence and default contracts.
+- External service validations confirm result-wrapper behavior distinguishes success payloads from structured failures.
+- External service validations confirm structured logger emits machine-parseable fields for request and error contexts.
+- External service validations confirm SQL adapter initialization fails fast on invalid connection configuration.
+- External service validations confirm OpenAPI re-spike coverage matches current route and payload contracts.
+- External service validations confirm language detector behavior remains accurate near multilingual confidence boundaries.
+- External service validations confirm evasion-resistant moderation detects obfuscated unsafe content patterns.
+- External service validations confirm multilingual profanity handling applies policy consistently across supported languages.
+- External service validations confirm supplemental dictionary updates affect moderation and detection outcomes as expected.
+
+**Foundation RAG and multimodal dependency spike**:
+
+- PDF processing slices documents into per-page units with deterministic page ordering.
+- Multimodal summarization path accepts page imagery inputs and returns coherent page-level summaries.
+- Base64 text payload inputs are accepted and decoded for downstream extraction workflows.
+- Concurrency limiter caps simultaneous page-processing work to configured upper bounds.
+- Per-page object storage upload stores each page artifact with stable mapping to source page index.
+- Office-document conversion path transforms supported office formats into processable intermediate artifacts.
+- Per-page text extraction returns text content aligned to each page slice.
+- Image resize path normalizes oversized page renders before multimodal analysis.
+- Text chunking path produces bounded-size chunks suitable for retrieval indexing.
+- Hybrid retrieval schema stores both lexical and vector retrieval metadata for each chunk.
+- Hybrid retrieval query path combines lexical and vector signals into merged ranking results.
+- Text RAG vector path stores and retrieves embeddings for text-only retrieval workflows.
+- Batch embedding workflow submits chunk groups and handles partial-failure retry behavior.
+- Object storage client behavior covers upload, retrieval, and error surfacing under transient failures.
+- Raster extraction path produces image outputs compatible with multimodal page-analysis input requirements.
+- Vector chart rendering path produces chart assets used in retrieval and synthesis visualization workflows.
+
 ### Module: Conversation Pipeline (05)
 
 Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete five-phase flow (Phase 0 through Phase 4).
@@ -2133,6 +2232,13 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Attribute negation: property-level exclusion distinct from entity exclusion.
 - Query replay: parameter substitution with thread context recovery.
 - Temporal resolution: phrases resolved to concrete ranges using user timezone with UTC fallback.
+
+**Phase 3 — multi-intent dependency patterns**:
+
+- Feedback plus constrained-search chains apply exclusion constraints from feedback before search execution begins.
+- Comparison plus selection chains require selection stage to consume ranked comparison output rather than raw candidate list.
+- Context-establishment plus follow-up-query chains require query stage to consume established context from prior stage.
+- Negation plus alternative-request chains require alternative generation to target the explicitly negated entity or attribute.
 
 **Phase 4 — rewrite and source routing**:
 
@@ -2212,6 +2318,20 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Intent configuration changes invalidate cached vectors and trigger re-embedding.
 - Vague new-thread follow-ups remain classifiable when cross-thread context provides disambiguation signal.
 
+**Phase 3 — embedding router cache mechanics**:
+
+- Startup path extracts topic examples from intent configuration before serving live routing requests.
+- Startup path batches example embedding generation to reduce repeated embedding calls.
+- Startup path stores generated topic vectors in a Valkey hash for runtime lookup.
+- Per-query routing embeds the incoming query before similarity scoring.
+- Per-query routing fetches cached topic vectors from Valkey hash storage.
+- Per-query routing computes cosine similarity between query embedding and each cached topic embedding.
+- Per-query routing sorts similarity results in descending score order.
+- Per-query routing returns highest-scoring topic match together with confidence score.
+- Cache invalidation deletes the existing Valkey hash when intent configuration changes.
+- Cache invalidation triggers full re-embedding of topic examples after hash deletion.
+- Similarity fetch and cosine scoring overhead remains minor relative to embedding latency.
+
 **Phase 3 — LLM validator authority and structured output fields**:
 
 - LLM validator always runs, including when embedding router confidence is high.
@@ -2253,6 +2373,13 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Topic abandonment signal flushes stale active-topic context before synthesis.
 - Low-confidence ambiguous cases trigger proactive clarification rather than forced assumptions.
 - Clarification route is used for no-match and low-confidence ambiguous outcomes.
+
+**Phase 3 — low-confidence investigation routing**:
+
+- No-match fallback remains fixed to clarification route.
+- Low-confidence outcomes route to agent investigation with available tools before clarification fallback.
+- High-confidence outcomes route directly to matched pipeline execution.
+- Multi-intent outcomes route through orchestrator splitting rather than single-pipeline execution.
 
 **Temporal and language piggyback behaviors**:
 
@@ -2581,6 +2708,22 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Production full mode routes all requests through queue for uniform scaling.
 - Queue mode preserves orchestration semantics and result synthesis behavior.
 
+**MCP client resilience and configuration**:
+
+- Tool blocklist filtering removes blocked tools from the exposed set even when the server advertises them.
+- Tool allowlist and blocklist applied together produces only the intersection minus exclusions.
+- Tool list caching for stable servers avoids re-listing on every request and serves cached tool definitions.
+- Cached tool list invalidation triggers re-listing when server health state transitions from unhealthy to healthy.
+- Health monitor detects availability changes in connected MCP servers and updates connection state continuously.
+- Health monitor transitions server state to unhealthy after configured consecutive probe failures.
+- Health monitor transitions server state back to healthy after a successful probe following unhealthy period.
+- Reconnection retries with exponential backoff after MCP server disconnects and restores tool availability on success.
+- Reconnection backoff caps at a configured maximum delay and does not grow unboundedly.
+- Runtime MCP server disconnect triggers automatic reconnection without caller intervention.
+- Runtime MCP server disconnect updates health status immediately before reconnection attempt begins.
+- Successful reconnection after runtime disconnect restores full tool availability to the agent.
+- Failed reconnection after maximum retry attempts marks the server as permanently unavailable until manual reset.
+
 ### Module: Memory and Intelligence (07)
 
 Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
@@ -2752,6 +2895,17 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Long-term recall respects configured recall-token cap before any non-truncatable segments are considered.
 - Budget enforcement rejects only when non-truncatable core alone exceeds total budget.
 
+**Communication style memory influence on response tone**:
+
+- Active emotional context with positive valence produces measurably warmer response tone compared to neutral baseline.
+- Active emotional context with negative valence produces measurably more careful and empathetic response tone.
+- Communication style preferences stored in long-term memory influence response formality, verbosity, and vocabulary choices.
+- Style memory influence persists across conversation threads for the same user.
+- Emotional context tone influence decays and ceases once the emotional state transitions to inactive.
+- Inactive emotional states do not influence response tone even when they remain queryable in audit outputs.
+- Multiple concurrent active emotional states produce a blended tone influence rather than last-write-wins.
+- Tone calibration respects the response energy matching constraint from the conversation pipeline.
+
 ### Module: Document Processing (08)
 
 **Upload validation**:
@@ -2899,6 +3053,15 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Optional distributed lock prevents concurrent cleanup double-release races on quota counters.
 - Lock contention does not bypass non-negative quota floor safeguards.
 - Thread cleanup excludes global-scope files by default.
+
+**Image extraction boundary conditions**:
+
+- Image at exactly 100x100 pixels meets the minimum dimension threshold and is extracted.
+- Image at 99x100 pixels falls below the minimum width threshold and is not extracted.
+- Image at 100x99 pixels falls below the minimum height threshold and is not extracted.
+- Page containing only decorative icons where all images are below 100x100 pixels produces no extracted images at all.
+- Page with a mix of small decorative icons and one qualifying image extracts only the qualifying image.
+- Boundary dimension check uses greater-than-or-equal comparison, not strict greater-than.
 
 ### Module: Retrieval and Evidence (09)
 
