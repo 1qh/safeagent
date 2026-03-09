@@ -17,6 +17,7 @@
 - [Language Guard (LANG_GUARD)](#language-guard-lang_guard)
 - [Hate Speech Guard (HATE_SPEECH_GUARD)](#hate-speech-guard-hate_speech_guard)
 - [Memory Deletion Guardrail](#memory-deletion-guardrail)
+- [Code Execution Sandboxing](#code-execution-sandboxing)
 - [Multi-Guardrail Aggregation (Worst-Wins)](#multi-guardrail-aggregation-worst-wins)
 - [Pipeline Orchestrator (GUARD_PIPELINE)](#pipeline-orchestrator-guard_pipeline)
 - [Integration with the Agent Architecture](#integration-with-the-agent-architecture)
@@ -654,6 +655,77 @@ flowchart TB
     VALKEY_QUERY --> CACHE_PURGE
     CACHE_PURGE --> AUDIT_LOG
     AUDIT_LOG --> CONFIRMATION
+```
+
+---
+
+## Code Execution Sandboxing
+
+When any agent executes model-generated code for coding, analysis, or tool orchestration, execution must occur outside application servers in a hardened isolation boundary. This requirement is mandatory for all tenants and all environments.
+
+### Mandatory Isolation Boundary
+
+- All model-generated code execution MUST run in an isolated sandbox environment with strong separation guarantees, such as microVM, container, or equivalent hardware-level isolation.
+- Direct execution on application servers MUST be disallowed by default.
+- Isolation controls MUST cover process, filesystem, memory, and network boundaries.
+
+### Sandbox Provider Abstraction
+
+The framework SHALL provide a provider-agnostic sandbox capability layer that supports:
+
+- Execute code workloads
+- Controlled file upload and download
+- Sandbox lifecycle management (create, monitor, terminate, dispose)
+- Deterministic cleanup and disposal
+
+Reference provider plugins:
+
+- E2B (Firecracker microVMs, approximately 150ms cold start)
+- Modal (gVisor isolation)
+- Daytona (Docker containers, approximately 90ms cold start)
+
+### Security Boundary Requirements
+
+- Sandboxes MUST prevent secret leakage from host or control-plane environments.
+- Sandboxes MUST enforce controls against resource exhaustion, including runaway compute and disk growth.
+- Sandboxes MUST maintain escape-resistant boundaries to reduce container or VM breakout risk.
+- Sandboxes MUST restrict outbound and inbound network access to an explicit allowlist.
+
+### Runtime Controls
+
+- Resource limits MUST be configurable per sandbox instance, including CPU, memory, disk, and network quotas.
+- Maximum execution duration MUST be enforced with hard termination at timeout.
+- File transfer flows MUST enforce size limits, content validation, and policy checks before acceptance.
+- Ephemeral lifecycle MUST be the default mode: create per execution and destroy after completion.
+- Persistent lifecycle MAY be enabled only for approved multi-step workflows that require state continuity.
+
+### Secure Fallback Behavior
+
+- If code execution is requested without a configured sandbox provider, the framework SHALL emit a prominent runtime warning.
+- Any insecure execution path MUST require explicit opt-out acknowledgment before execution can continue.
+- This warning and acknowledgment event MUST be captured in audit telemetry.
+
+### MCP and Compliance Integration
+
+- Sandboxes MAY expose MCP servers so sandbox capabilities are available as agent tools, aligned with MCP client orchestration in file 06.
+- Every code execution MUST produce an audit trail containing execution request metadata, inputs, outputs, policy decisions, and resource usage, aligned with provenance requirements in file 14.
+- Sandbox compute costs MUST be attributed to the requesting agent, user, and tenant for budget governance alignment with files 12 and 15.
+
+### Sandbox Execution Flow
+
+```mermaid
+flowchart TB
+    AGENT_REQUEST[AGENT_REQUEST]
+    SANDBOX_PROVIDER[SANDBOX_PROVIDER]
+    ISOLATED_ENVIRONMENT[ISOLATED_ENVIRONMENT]
+    RESULT_STREAM[RESULT_STREAM]
+    AUDIT_CAPTURE[AUDIT_CAPTURE]
+
+    AGENT_REQUEST --> SANDBOX_PROVIDER
+    SANDBOX_PROVIDER --> ISOLATED_ENVIRONMENT
+    ISOLATED_ENVIRONMENT --> RESULT_STREAM
+    ISOLATED_ENVIRONMENT --> AUDIT_CAPTURE
+    RESULT_STREAM --> AUDIT_CAPTURE
 ```
 
 ---

@@ -24,6 +24,7 @@ It is the single source of truth for type contracts, schema validation, environm
 - [Storage Factory](#storage-factory)
 - [MCP Health Check](#mcp-health-check)
 - [Provider Resolution](#provider-resolution)
+- [Structured Output Guarantees](#structured-output-guarantees)
 - [Guardrail Safety Dependencies](#guardrail-safety-dependencies)
 - [Foundation Dependency Graph](#foundation-dependency-graph)
 - [Dependency Policy](#dependency-policy)
@@ -735,6 +736,63 @@ Provider export policy:
 - Primary provider factory is re-exported.
 - Other provider factories are not re-exported by default.
 - Load-balancing and circuit-breaker concerns are separate modules.
+
+---
+
+## Structured Output Guarantees
+
+Beyond Zod v4 validation, foundation contracts require provider-level structured output guarantees so typed output remains reliable across heterogeneous inference backends.
+
+Three-tier guarantee model:
+
+- Tier 1 - Provider-enforced: providers with constrained decoding and grammar-based token masking produce fully schema-compliant output, and the framework must pass the Zod v4 schema into the provider structured output mode.
+- Tier 2 - Validated retry: providers without native constrained decoding receive schema-constrained instructions, then output is validated with Zod v4 and automatically retried on validation failure with the validation error included in the retry context.
+- Tier 3 - Plugin-extended: self-hosted inference engines can register a constrained decoding plugin for token-level grammar enforcement, including engines that expose capabilities such as XGrammar or Outlines.
+
+Automatic tier selection:
+
+- The framework shall detect available provider capability at runtime and select the strongest guarantee tier without consumer configuration.
+
+Schema passthrough:
+
+- Zod v4 schemas are automatically translated into provider-native structured output definitions.
+- OpenAI receives JSON Schema form.
+- Anthropic receives tool-definition form.
+
+Retry budget and failure contract:
+
+- Validated retry mode uses a configurable maximum retry count with exponential backoff.
+- If retries are exhausted without valid structured output, the framework returns raw provider output plus a structured error payload rather than failing silently.
+
+Streaming compatibility and schema depth:
+
+- Structured output must remain compatible with streaming responses.
+- Partial JSON fragments are buffered until a complete valid object is available.
+- Deeply nested Zod v4 schemas, unions, discriminated unions, and recursive types must all be supported.
+
+Constrained decoding plugin interface:
+
+- Self-hosted providers can register a plugin that intercepts token generation and enforces grammar constraints during decoding.
+
+Reference:
+
+- OpenAI Structured Outputs: https://platform.openai.com/docs/guides/structured-outputs
+
+```mermaid
+flowchart TD
+    PROVIDER_CHECK["PROVIDER_CHECK\nProvider Capability Check"]
+    TIER_ONE["TIER_ONE\nProvider-Enforced"]
+    TIER_TWO["TIER_TWO\nValidated Retry"]
+    TIER_THREE["TIER_THREE\nPlugin-Extended"]
+    VALIDATED_OUTPUT["VALIDATED_OUTPUT\nValidated Structured Output"]
+
+    PROVIDER_CHECK --> TIER_ONE
+    PROVIDER_CHECK --> TIER_TWO
+    PROVIDER_CHECK --> TIER_THREE
+    TIER_ONE --> VALIDATED_OUTPUT
+    TIER_TWO --> VALIDATED_OUTPUT
+    TIER_THREE --> VALIDATED_OUTPUT
+```
 
 ---
 

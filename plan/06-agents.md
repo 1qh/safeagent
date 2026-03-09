@@ -11,12 +11,14 @@
 
 - [Architecture Overview](#architecture-overview)
 - [Agent Factory (Agent Creation Factory)](#agent-factory-agent-creation-factory)
+- [Computer Use and Browser Agent Patterns](#computer-use-and-browser-agent-patterns)
 - [Orchestrator Agent Pattern](#orchestrator-agent-pattern)
 - [Dynamic Fan-Out & Map-Reduce Orchestration](#dynamic-fan-out--map-reduce-orchestration)
 - [Context Assembly, Budgeting, and Response Calibration](#context-assembly-budgeting-and-response-calibration)
 - [Live Synthesis Streaming](#live-synthesis-streaming)
 - [Dependent Intent Handling](#dependent-intent-handling)
 - [Tool Registry](#tool-registry)
+- [MCP Client Protocol Integration](#mcp-client-protocol-integration)
 - [Location Enrichment Tool (LOCATION_TOOL)](#location-enrichment-tool-location_tool)
 - [Agent Router (Query Classification)](#agent-router-query-classification)
 - [Scaling: Queue-Based Execution](#scaling-queue-based-execution)
@@ -150,6 +152,50 @@ sequenceDiagram
     RESPONSE_MERGER-->>STREAM_HANDLER: Merged response
     STREAM_HANDLER->>USER: Unified SSE stream
 ```
+
+## Computer Use and Browser Agent Patterns
+
+Computer use is an emerging agent type with distinct perception, safety, and governance requirements. Browser-first operation is now established in production-grade systems and should be treated as a first-class orchestration pattern rather than an ad hoc tool behavior.
+
+Core requirements:
+
+- **Provider abstraction**: the framework SHALL define a provider-agnostic computer use interface that supports screenshot capture, action execution (click, type, scroll, drag), accessibility-tree reads, and viewport dimension management.
+- **Dual perception modes**: two perception modes MUST be available and selectable per run.
+  - Screenshot-based perception uses rendered frames and works across any user interface.
+  - Accessibility-tree perception uses structured page semantics and is preferred for web workflows due to substantially lower token cost (commonly around four times lower than screenshot-heavy flows).
+- **Reference providers**: Playwright MCP, Anthropic Computer Use, and OpenAI CUA should be provided as interchangeable plugin implementations behind the same abstraction.
+- **Plugin boundary**: computer use providers MUST ship as separate installable plugins and MUST NOT be bundled into the core Bun package `safeagent`.
+- **Mandatory sandboxing**: all computer use execution MUST run in isolated environments (virtual machine, container, or remote browser). Direct host-machine control is prohibited and must align with the sandbox isolation model in file 10.
+- **Action-surface governance**: the orchestrator MUST enforce a configurable allowlist of permitted actions, including read-only profiles that allow observation (screenshots and accessibility-tree reads) while blocking mutation actions.
+- **Viewport streaming**: browser viewport output may be streamed as a live visual feed for real-time observation, aligned with transport streaming behavior in file 11.
+- **Session state continuity**: browser sessions MUST preserve page state, cookies, and navigation history across multi-step agent execution.
+- **Cost accounting**: visual token usage MUST be tracked separately from text token usage because screenshot-based perception has materially higher cost; this must integrate with budget policy in files 12 and 15.
+- **Human oversight gates**: high-risk actions (such as submissions, purchases, and account changes) MUST require explicit human approval checkpoints, aligned with human-in-the-loop policy in file 25.
+- **Audit trail**: screenshots, actions, and page-state transitions MUST be logged for compliance, replay, and debugging, aligned with provenance requirements in file 14.
+
+```mermaid
+flowchart LR
+    OBSERVE_STAGE[OBSERVE\nCapture viewport or accessibility state]
+    THINK_STAGE[THINK\nPlan next safe step]
+    ACT_STAGE[ACT\nExecute allowed interaction]
+    VERIFY_STAGE[VERIFY\nConfirm expected state change]
+    APPROVAL_GATE{HUMAN_APPROVAL_REQUIRED}
+    POLICY_CHECK{ACTION_ALLOWED}
+
+    OBSERVE_STAGE --> THINK_STAGE
+    THINK_STAGE --> POLICY_CHECK
+    POLICY_CHECK -->|YES| APPROVAL_GATE
+    POLICY_CHECK -->|NO| OBSERVE_STAGE
+    APPROVAL_GATE -->|APPROVED| ACT_STAGE
+    APPROVAL_GATE -->|REJECTED| OBSERVE_STAGE
+    ACT_STAGE --> VERIFY_STAGE
+    VERIFY_STAGE --> OBSERVE_STAGE
+```
+
+Reference material:
+
+- Playwright MCP quickstart: https://github.com/anthropics/anthropic-quickstarts
+- Anthropic Computer Use documentation: https://docs.anthropic.com/en/docs/agents-and-tools/computer-use
 
 ---
 
@@ -529,6 +575,55 @@ flowchart TB
 
     MAP_RAGFLOW & MAP_DOCUMENT_QA & MAP_GROUNDING_SEARCH & MAP_MEMORY_RECALL & MAP_DIRECT_ANSWER --> SCOPED_SUB_AGENT["Sub-Agent created with<br/>selected tools only"]
 ```
+
+---
+
+## MCP Client Protocol Integration
+
+MCP is the interoperability standard for AI tool ecosystems and is now established across major agent runtimes and editors. This plan treats MCP as a native client capability of the agent system, not an add-on around tools. The runtime context remains Bun-only delivery with a single package, safeagent.
+
+Core integration requirements:
+
+- **First-class agent parameter**: every agent type SHALL accept MCP server connections as a peer parameter alongside local tools.
+- **Three transport modes**: stdio, SSE, and streamable HTTP MUST all be supported.
+- **Transport auto-detection**: the client SHALL infer transport mode directly from connection configuration.
+- **Tool discovery**: tool definitions from MCP servers are merged into the same agent tool registry so MCP and local tools are treated identically.
+- **Tool filtering**: consumers can apply allowlist and denylist controls per MCP server to expose only approved tools to an agent.
+- **Cache invalidation**: tool-definition caches refresh when MCP servers signal capability changes.
+- **Lazy connection**: MCP connections are established on demand at first use, aligned with deferred tool loading in 24.
+- **Connection lifecycle**: pooled connection management includes health checks, reconnect behavior, and graceful shutdown.
+- **Security model**: MCP connections inherit the agent trust boundary; untrusted servers MUST run inside sandbox constraints.
+- **Multi-server composition**: agents can attach to multiple MCP servers simultaneously, and tool-name conflicts are resolved by server priority.
+
+```mermaid
+flowchart LR
+    LOCAL_TOOLS[LOCAL_TOOLS]
+
+    subgraph MCP_SERVERS[MCP_SERVER_SET]
+        MCP_SERVER_1[MCP_SERVER_1]
+        MCP_SERVER_2[MCP_SERVER_2]
+        MCP_SERVER_N[MCP_SERVER_N]
+    end
+
+    TOOL_FILTER_POLICY[TOOL_FILTER_POLICY]
+    TOOL_DISCOVERY[TOOL_DISCOVERY]
+    TOOL_CACHE_REFRESH[TOOL_CACHE_REFRESH]
+    UNIFIED_TOOL_REGISTRY[UNIFIED_TOOL_REGISTRY]
+    AGENT_RUNTIME[AGENT]
+
+    LOCAL_TOOLS --> UNIFIED_TOOL_REGISTRY
+    MCP_SERVER_1 --> TOOL_FILTER_POLICY
+    MCP_SERVER_2 --> TOOL_FILTER_POLICY
+    MCP_SERVER_N --> TOOL_FILTER_POLICY
+    TOOL_FILTER_POLICY --> TOOL_DISCOVERY
+    TOOL_DISCOVERY --> UNIFIED_TOOL_REGISTRY
+    TOOL_CACHE_REFRESH --> UNIFIED_TOOL_REGISTRY
+    UNIFIED_TOOL_REGISTRY --> AGENT_RUNTIME
+```
+
+Reference:
+
+- MCP specification: https://modelcontextprotocol.io/specification
 
 ---
 

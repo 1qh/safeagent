@@ -15,6 +15,7 @@
 - [Trace-Step Events](#trace-step-events)
 - [Verbosity Levels](#verbosity-levels)
 - [Concurrent Invocation Policy (Double-Texting)](#concurrent-invocation-policy-double-texting)
+- [Real-Time Voice and Audio Transport](#real-time-voice-and-audio-transport)
 - [CTA Streaming (CTA_STREAMING)](#cta-streaming-cta_streaming)
 - [Client SDK (CLIENT_SDK)](#client-sdk-client_sdk)
 - [SSE Event Type Reference](#sse-event-type-reference)
@@ -267,6 +268,117 @@ stateDiagram-v2
     FIRST_CONTINUES --> [*]
     NEXT_RUN_STARTS --> [*]
 ```
+
+---
+
+## Real-Time Voice and Audio Transport
+
+Voice and audio transport is defined as a transport-layer extension with plugin boundaries so the core `safeagent` package stays lean while still supporting production voice workloads.
+
+### Voice Provider Abstraction
+
+The framework SHALL define a provider-agnostic voice interface with four required capabilities:
+
+- Speech-to-text listen capability for incremental transcript production
+- Text-to-speech speak capability for low-latency audio playback streaming
+- Bidirectional streaming connect capability for continuous real-time exchange
+- Structured event emission for transcript updates, speaker audio output, and writing indicator state
+
+This interface is transport-contract focused and independent of any single vendor.
+
+### Architecture Modes
+
+Two architecture modes are first-class and selectable per voice session:
+
+- Cascaded pipeline: STT to LLM to TTS, prioritizing control, safety gating points, and provider flexibility per stage
+- Speech-to-speech (S2S): direct real-time speech model session, prioritizing lowest possible latency with reduced intermediate control points
+
+```mermaid
+flowchart LR
+    subgraph CASCADED_MODE["CASCADED PIPELINE"]
+        USER_AUDIO_IN["USER AUDIO"] --> STT_STAGE["SPEECH TO TEXT"]
+        STT_STAGE --> TEXT_REASONING["LLM REASONING"]
+        TEXT_REASONING --> TTS_STAGE["TEXT TO SPEECH"]
+        TTS_STAGE --> USER_AUDIO_OUT["SPEAKER AUDIO"]
+        TEXT_REASONING --> TOOL_CONTINUITY["TOOL USE CONTINUES DURING SESSION"]
+    end
+
+    subgraph S2S_MODE["SPEECH TO SPEECH"]
+        USER_AUDIO_STREAM["USER AUDIO STREAM"] --> REALTIME_MODEL["REAL-TIME SPEECH MODEL"]
+        REALTIME_MODEL --> SPEAKER_STREAM["SPEAKER AUDIO STREAM"]
+        REALTIME_MODEL --> TOOL_PARALLEL["TOOL USE WITHOUT AUDIO BREAK"]
+    end
+
+    CASCADED_MODE --> SHARED_CONTEXT["MULTI-MODAL CONTEXT: TEXT + IMAGE + AUDIO"]
+    S2S_MODE --> SHARED_CONTEXT
+```
+
+### Transport Requirements
+
+- Primary media transport: WebRTC for real-time duplex audio streaming
+- Session signaling and control channel: WebSocket for connection negotiation and live state updates
+- Fallback transport: HTTP chunked transfer when real-time channels are unavailable
+
+This preserves real-time quality while maintaining broad network compatibility.
+
+### Turn Detection and Interruption
+
+Voice turn management SHALL use voice activity detection with configurable controls:
+
+- Sensitivity tuning for noisy and quiet environments
+- Silence threshold duration for turn-finalization timing
+- Interruption handling that allows user barge-in and immediate generation cancellation or pause
+
+### Event Model
+
+Voice sessions emit a structured transport event model:
+
+- `transcript_partial`
+- `transcript_final`
+- `speech_started`
+- `speech_ended`
+- `interruption`
+- `connection_state`
+
+These events are transport-level contracts for SDK and UI synchronization.
+
+### Plugin Boundary and Packaging
+
+Voice providers are shipped as separate installable plugins and are NOT bundled in core `safeagent`.
+
+- Runtime package policy: Bun only
+- Core package policy: single npm package `safeagent`
+- Voice integrations remain optional plugin modules to avoid default install bloat
+
+### Reference Provider Plugins
+
+Reference plugin implementations include:
+
+- OpenAI Realtime API
+- ElevenLabs
+- Deepgram
+- LiveKit
+
+Reference material:
+
+- OpenAI Realtime API: https://platform.openai.com/docs/guides/realtime
+- LiveKit Agents: https://docs.livekit.io/agents/
+
+### Tool Continuity During Voice
+
+Agents MUST be able to invoke tools during active voice sessions without breaking audio continuity. Tool execution, transcript updates, and speaker streaming remain synchronized as a single live session timeline.
+
+### Multi-Modal Context
+
+Voice sessions can carry text, images, and audio in one shared conversation context, allowing real-time speech interaction to reference non-audio context without mode switching.
+
+### Latency Budget
+
+End-to-end voice response latency target SHALL be measured from user silence detection to first audio byte returned to the client, with a target of 700 ms or less under normal network conditions.
+
+### Session Persistence and Durability
+
+Voice session state ties into conversation memory in File 05 and durable execution guarantees in File 25 so interruptions, reconnects, and resumed turns preserve coherent context and execution state.
 
 ---
 
