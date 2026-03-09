@@ -4484,6 +4484,52 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Verbosity toggle label communicates the current mode distinction between standard and full.
 - Web demo time-to-interactive remains low despite rich component surface.
 
+### Module: Documentation Site (20)
+
+**TypeScript API reference pipeline**:
+
+- API reference pages generate from safeagent TypeScript source without manual authoring.
+- Type tables reflect current exported types and update automatically on source changes.
+- Internal-only types are excluded from generated reference output.
+- Remark annotations in source produce descriptive labels in rendered type tables.
+
+**OpenAPI server reference pipeline**:
+
+- Server endpoint reference generates from the Elysia OpenAPI specification.
+- Generated endpoint pages include request and response schema documentation.
+- Interactive API playground allows endpoint testing from the documentation site.
+- Endpoint grouping by tag produces logical navigation sections.
+- OpenAPI regeneration reflects current server routes without manual synchronization.
+
+**Search and discoverability**:
+
+- Full-text search returns relevant results across guides, API reference, and server reference.
+- Search operates without external API keys or third-party service dependencies.
+- Keyboard shortcut activates the search dialog.
+- Search results render markdown-aware content previews.
+
+**Content authoring and rendering**:
+
+- MDX content renders with callouts, tab groups, and code blocks with syntax highlighting.
+- Mermaid diagrams render inline within documentation pages.
+- Code blocks support line highlighting, titles, and copy-to-clipboard.
+- Dark mode renders all content surfaces with correct contrast and readability.
+- Responsive layout adapts documentation pages for mobile reading.
+
+**Documentation site build and deployment**:
+
+- Documentation site builds successfully from source content and generated reference material.
+- Build detects broken internal links and reports them as errors.
+- Preview deployments generate for documentation pull requests.
+- Deployed site serves pages with acceptable load performance.
+
+**Content coverage validation**:
+
+- Every public API export from the safeagent package has a corresponding reference page.
+- Every server endpoint has a corresponding reference page generated from the OpenAPI spec.
+- Every core module (conversation, agents, memory, documents, retrieval, guardrails, streaming) has a corresponding guide.
+- Getting started tutorial works end-to-end from installation through first agent interaction.
+
 ### Module: Testing Strategy (16)
 
 **Testing infrastructure self-validation**:

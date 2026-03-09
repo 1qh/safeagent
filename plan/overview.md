@@ -184,6 +184,10 @@ Each document below is a self-contained reference for its domain. Files are numb
 - [18 — Frontend SDK](./18-frontend-sdk.md) — React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety
 - [19 — Demo Applications](./19-demos.md) — Next.js web demo, Expo mobile demo, server switching, verbosity toggle
 
+### Documentation
+
+- [20 — Documentation Site](./20-documentation.md) — Fumadocs platform, TypeScript API reference, OpenAPI server reference, guides, search, theming
+
 ### Execution
 
 - [17 — Execution Plan](./17-execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
