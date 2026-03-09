@@ -142,7 +142,7 @@ oxlint plugin domains enabled:
 - jsdoc
 - jsx-a11y
 - nextjs
-- node-style rules interpreted under Bun runtime constraints
+- Bun-native runtime rules and constraints
 - oxc
 - promise
 - react
@@ -201,9 +201,9 @@ Reference:
 
 ## Flowmark Coverage and Policy
 
-Flowmark enforces markdown prose wrapping for readable and diff-friendly documentation.
+Flowmark, when available, enforces markdown prose wrapping for readable and diff-friendly documentation.
 It complements markdown formatting with strong line-wrap consistency.
-This is critical for long planning documents and governance artifacts.
+This is valuable for long planning documents and governance artifacts.
 
 Policy outcomes:
 - Consistent prose density.
@@ -228,7 +228,7 @@ flowchart TB
     BIOME[Biome\nFormatting and Linting\nJS TS JSX TSX CSS JSON]
     OXLINT[oxlint\nFast Correctness and Performance Linting]
     ESLINT[ESLint\nType-Aware Semantic Linting]
-    FLOWMARK[Flowmark\nMarkdown Prose Wrapping]
+    FLOWMARK[Flowmark (Optional)\nMarkdown Prose Wrapping]
     PRETTIER[Prettier\nMarkdown Formatting]
   end
 
@@ -394,7 +394,7 @@ Auto-fix operation execution order:
 3. oxlint fast lint fixes.
 4. ESLint type-aware lint fixes.
 5. Second Biome pass to normalize post-ESLint output.
-6. Markdown prose wrapping.
+6. Markdown prose wrapping (when Flowmark is available).
 7. Markdown formatting.
 
 Workflow guarantees:
@@ -553,7 +553,7 @@ flowchart LR
 ## Delivery Checklist
 
 - lintmax installed and initialized with default maximum strictness settings.
-- Six-tool pipeline verified across Biome, oxlint, ESLint, Prettier, sort-package-json, and Flowmark.
+- Six-tool pipeline verified across Biome, oxlint, ESLint, Prettier, sort-package-json, and Flowmark (when available).
 - TypeScript strictness fully active with the full additional check set.
 - CI quality gate blocks on any linting, formatting, or type violation.
 - Editor integration scaffolded with format-on-save and type-aware feedback.
