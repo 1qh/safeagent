@@ -4775,6 +4775,83 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Churn events are correlated with recent quality degradation incidents.
 - Divergence alerting triggers when business outcomes diverge from expected patterns inferred from AI quality signals.
 
+**Chaos engineering validation behavior**:
+
+- Model provider latency injection triggers time-to-first-token objective alerts within policy windows.
+- Model provider error injection triggers circuit-breaker activation visible in responder dashboards.
+- Response quality degradation injection triggers sampled quality monitoring alerts even when latency is healthy.
+- Context overflow injection triggers degraded-state handling observable in quality dashboards.
+- Embedding degradation injection triggers RAG relevance and hit-rate objective alerts.
+- Vector latency injection triggers retrieval SLI alerts on both fast-burn and slow-burn windows.
+- Memory unavailability injection triggers fallback to stateless mode visible in monitoring.
+- Tool dependency failure injection triggers per-tool reliability alerts with correct dependency identification.
+- Forced loop-depth injection triggers loop alerts and cost circuit-breaker before budget exposure.
+- Token budget exhaustion simulation triggers rate-limiting alerts at warning and critical thresholds.
+- Missing expected alert during chaos experiment is flagged as monitoring coverage gap.
+- Chaos outcomes feed into recurring alert coverage audits.
+
+**AIOps and anomaly detection behavior**:
+
+- Dynamic baselines learn daily and weekly seasonality patterns for key metrics.
+- Anomaly alerts trigger only on statistically significant deviations from dynamic baseline.
+- Dynamic baselines reduce false positive rate compared to equivalent static thresholds.
+- AI-assisted root cause analysis correlates logs, metrics, traces, and recent deployments when alert fires.
+- Root cause analysis surfaces relevant runbook and probable cause within target time.
+- Automated incident summarization includes blast radius estimation and affected user segments.
+- Natural language querying returns valid investigation results across monitoring data.
+- Anomaly correlation engine detects shared root cause across multiple independent anomalies.
+- Correlation reduces alert storms by grouping downstream effects under root anomaly.
+
+**Model provider health monitoring behavior**:
+
+- Per-provider latency distribution is tracked continuously and segmented by model family.
+- Provider error rate monitoring distinguishes rate limits, server errors, and timeouts.
+- Rate limit proximity warnings trigger before hard limits are reached.
+- Quota utilization pace alerts when consumption rate threatens allocation exhaustion.
+- Provider behavior change detection identifies silent output distribution shifts via golden prompt canaries.
+- Multi-provider health comparison dashboard ranks providers by current health for routing decisions.
+- Fallback provider health is assessed continuously with pre-failover quality delta estimation.
+- Provider SLA compliance tracking records evidence for credit claims.
+
+**Meta-monitoring behavior**:
+
+- Metric ingestion lag alerts when data freshness falls beyond operational limits.
+- Metric pipeline data loss or gap detection triggers remediation workflows.
+- Scheduled test alerts verify all severity routing paths remain functional.
+- Silent alert delivery failure detection triggers backup notification paths.
+- LLM-as-judge evaluator pipeline health is monitored independently from product quality signals.
+- Sampling coverage alerts when coverage drops below minimum confidence thresholds.
+- Synthetic probe scheduler health monitors uptime, execution success, and freshness.
+- Dashboard panel staleness detection alerts when stale data risks misleading responders.
+- Coverage gap audit detects new services or features lacking objective monitoring.
+- Coverage percentage is tracked as a reliability maturity metric.
+
+**Prompt A/B testing observability behavior**:
+
+- Traffic split ratios across prompt variants are monitored for drift from configured allocation.
+- Per-variant sample sizes are tracked for statistical power sufficiency.
+- Quality scores are compared across prompt variants with confidence bounds.
+- Hallucination rate deltas across variants are tracked with statistical significance.
+- Cost per task is compared across variants to detect cost regressions before full rollout.
+- Latency comparison across variants detects regressions in experimental variants.
+- Statistical significance gating prevents premature promotion decisions.
+- Experiments running beyond planned windows trigger alerts.
+- Concurrent experiment interference detection prevents result contamination.
+- User-level assignment consistency is verified across sessions.
+
+**Graceful degradation monitoring behavior**:
+
+- System entry into degraded states is detected and tracked with time-in-degradation metrics.
+- Prolonged degradation beyond policy thresholds triggers escalation alerts.
+- Quality scores during degraded operation are monitored separately from normal operation.
+- Degraded mode quality floor enforcement alerts when minimum acceptable bars are approached.
+- Fallback model performance is tracked independently for quality, latency, and cost.
+- Fallback capacity headroom monitoring alerts before fallback exhaustion causes cascading impact.
+- Feature flag state combinations are monitored for unexpected or unsafe configurations.
+- Recovery from degradation is validated for quality, latency, and cost restoration.
+- Flapping detection identifies oscillation between degraded and normal states.
+- Degraded-mode user messaging delivery is verified.
+
 ### Module: Testing Strategy (16)
 
 **Testing infrastructure self-validation**:
