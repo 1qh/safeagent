@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 115 implementation tasks + 4 final audit tasks = 119 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~69% faster than sequential execution.
+> **Scale**: 116 implementation tasks + 4 final audit tasks = 120 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -16,10 +16,10 @@
 - [Dependency Graph](#dependency-graph)
 - [Batch Parallelism Visualization](#batch-parallelism-visualization)
 - [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (119 Tasks) and Full Dependency Matrix](#complete-task-registry-119-tasks-and-full-dependency-matrix)
+- [Complete Task Registry (120 Tasks) and Full Dependency Matrix](#complete-task-registry-120-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23)
+- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24)
 
 ---
 
@@ -81,7 +81,7 @@ gantt
 | 1 | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
 | 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
 | 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
-| 4 | Config + Guards | 6 | 6 parallel | Configuration system, guardrails, FileRegistry, summary cap |
+| 4 | Config + Guards | 7 | 7 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
 | 6 | Integration Layer | 17 | 17 parallel | Streaming, grounding, core tools, intent routing, RAG infra |
 | 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
@@ -254,9 +254,9 @@ graph LR
 
 ---
 
-### Batch 4 — Configuration + Guardrails (6 parallel)
+### Batch 4 — Configuration + Guardrails + Extensibility (7 parallel)
 
-> Configuration system, input/output/external guardrails, and FileRegistry.
+> Configuration system, input/output/external guardrails, FileRegistry, and extension point infrastructure.
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -266,6 +266,7 @@ graph LR
 | GUARD_FACTORY | External guardrail adapter | `unspecified-high` | CORE_TYPES |
 | **FILE_REGISTRY** | **FileRegistry — Temporal + ordinal + named resolution engine** | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
+| **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | FOUNDATION, CORE_TYPES |
 
 > **NEW**: FILE_REGISTRY (from Document 09) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from Document 09) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch 7.
 
@@ -460,7 +461,7 @@ graph TB
     BATCH_SCAFFOLD["Batch 1<br/>3 tasks — Scaffold +<br/>Code Standards"]
     BATCH_TYPES_STORAGE["Batch 2<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
     BATCH_SCHEMAS_MEMORY["Batch 3<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
-    BATCH_CONFIG_GUARDS["Batch 4<br/>6 tasks — Config, Guards,<br/>FileRegistry, Summary"]
+    BATCH_CONFIG_GUARDS["Batch 4<br/>7 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility"]
     BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
     BATCH_STREAMING_TOOLS["Batch 6<br/>17 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base"]
     BATCH_EVIDENCE_UPLOAD["Batch 7<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
@@ -526,6 +527,7 @@ graph TB
     DOC_PIPELINE --> RAG_INFRA
     STORAGE_WRAPPER --> FILE_REGISTRY["FILE_REGISTRY FileRegistry"]:::new
     VALKEY_CACHE --> FILE_REGISTRY
+    CORE_TYPES --> EXTENSIBILITY_INFRA["EXTENSIBILITY_INFRA Extensibility"]:::new
     CORE_TYPES --> EVIDENCE_GATE["EVIDENCE_GATE Evidence Gate"]:::new
     RAG_INFRA --> EVIDENCE_GATE
 
@@ -764,13 +766,14 @@ graph TB
         CI_PIPELINE_P["CI_PIPELINE (new)"]
     end
 
-    subgraph BATCH_CONFIG_GUARDS["Batch 4 — 6 parallel"]
+    subgraph BATCH_CONFIG_GUARDS["Batch 4 — 7 parallel"]
         CONFIG_DEFAULTS_P["CONFIG_DEFAULTS"]
         INPUT_GUARD_P["INPUT_GUARD"]
         OUTPUT_GUARD_P["OUTPUT_GUARD"]
         GUARD_FACTORY_P["GUARD_FACTORY"]
         FILE_REGISTRY_P["FILE_REGISTRY (new)"]
         SUMMARY_CAP_P["SUMMARY_CAP (new)"]
+        EXTENSIBILITY_INFRA_P["EXTENSIBILITY_INFRA (new)"]
     end
 
     subgraph BATCH_AGENT_DOCS["Batch 5 — 4 parallel"]
@@ -893,7 +896,7 @@ graph TB
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
 
-> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23)
+> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23, 24)
 > (frontend) = New task from frontend SDK requirements (Documents 18, 19)
 
 ---
@@ -912,11 +915,11 @@ graph LR
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DEEP_TASKS["deep Tasks (51)"]
+    subgraph DEEP_TASKS["deep Tasks (52)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
         DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
-        DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM"]
+        DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM, EXTENSIBILITY_INFRA"]
         DEEP_INTENT["EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL"]
         DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL"]
         DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE, MONITORING_INFRA"]
@@ -973,7 +976,7 @@ graph LR
 | 1 | 3 | SCAFFOLD_LIB, SCAFFOLD_SERVER, CODE_STANDARDS → `quick` |
 | 2 | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
 | 3 | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
-| 4 | 6 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY → `deep`; GUARD_FACTORY → `unspecified-high` |
+| 4 | 7 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA → `deep`; GUARD_FACTORY → `unspecified-high` |
 | 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
 | 6 | 17 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
 | 7 | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
@@ -989,18 +992,18 @@ graph LR
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| `deep` | 51 | 43% |
+| `deep` | 52 | 43% |
 | `quick` | 27 | 23% |
 | `unspecified-high` | 32 | 27% |
 | `writing` | 2 | 2% |
 | `visual-engineering` | 5 | 4% |
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **119** | |
+| **Total** | **120** | |
 
 ---
 
-## Complete Task Registry (119 Tasks) and Full Dependency Matrix
+## Complete Task Registry (120 Tasks) and Full Dependency Matrix
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -1046,6 +1049,7 @@ graph LR
 | HATE_SPEECH_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
 | FILE_REGISTRY | STORAGE_WRAPPER, VALKEY_CACHE | DOC_SEARCH, VISUAL_GROUNDING | 4 |
 | SUMMARY_CAP | SHORT_TERM_MEM | — | 4 |
+| EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | 4 |
 | EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING | 7 |
 | AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL | 5 |
 | STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | 5 |
@@ -1243,7 +1247,7 @@ flowchart TB
 
 ---
 
-## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23)
+## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24)
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
@@ -1308,7 +1312,7 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 
 ### Operations and Quality Tasks
 
-The following 7 tasks were added for coding standards, CI quality gates, release automation, documentation platform and content, and observability operations. Each is integrated into the batch structure above.
+The following 8 tasks were added for coding standards, CI quality gates, release automation, documentation platform and content, observability operations, and extensibility infrastructure. Each is integrated into the batch structure above.
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
@@ -1319,10 +1323,11 @@ The following 7 tasks were added for coding standards, CI quality gates, release
 | DOCS_CONTENT | Documentation content authoring | Document 20 | 11 | `writing` | DOCS_SITE, ALL core module tasks |
 | MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Document 22 | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Document 22 | 11 | `writing` | MONITORING_INFRA |
+| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Document 24 | 4 | `deep` | FOUNDATION, CORE_TYPES |
 
 ---
 
-*Covers all 115 implementation tasks + 4 final audit tasks = 119 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 7 operations and quality tasks (Documents 20, 21, 22, 23), all fully integrated into the batch structure and dependency matrix.*
+*Covers all 116 implementation tasks + 4 final audit tasks = 120 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 8 operations and quality tasks (Documents 20, 21, 22, 23, 24), all fully integrated into the batch structure and dependency matrix.*
 
 ---
 

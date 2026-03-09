@@ -180,6 +180,7 @@ Each document below is a self-contained reference for its domain. Files are numb
 - [16 — Testing](./16-testing.md) — Test pyramid, coverage map, CI pipeline, audit tasks, QA policy
 - [22 — Monitoring & Alerting](./22-monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
 - [23 — Coding Standards](./23-coding-standards.md) — lintmax maximum strictness, Biome + oxlint + ESLint + Prettier, TypeScript strict mode, zero-warnings policy
+- [24 — Extensibility](./24-extensibility.md) — 12 typed extension point contracts, lifecycle hooks, registration validation, composition patterns, security model, contract testing for extension authors
 
 ### Frontend
 

@@ -562,4 +562,4 @@ flowchart LR
 
 ## Navigation
 
-*Previous: [22 — Monitoring & Alerting](./22-monitoring.md)*
+*Previous: [22 — Monitoring & Alerting](./22-monitoring.md) | Next: [24 — Extensibility](./24-extensibility.md)*
