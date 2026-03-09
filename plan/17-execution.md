@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 108 implementation tasks + 4 final audit tasks = 112 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~70% faster than sequential execution.
+> **Scale**: 115 implementation tasks + 4 final audit tasks = 119 total. 16 batches. Maximum concurrency: 17 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -16,10 +16,10 @@
 - [Dependency Graph](#dependency-graph)
 - [Batch Parallelism Visualization](#batch-parallelism-visualization)
 - [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (112 Tasks) and Full Dependency Matrix](#complete-task-registry-112-tasks-and-full-dependency-matrix)
+- [Complete Task Registry (119 Tasks) and Full Dependency Matrix](#complete-task-registry-119-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19)](#new-task-registry-documents-05-06-07-09-10-18-19)
+- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23)
 
 ---
 
@@ -36,11 +36,11 @@ gantt
     Batch 0.5 — SPIKE_RAG_DEPS RAG Spike               :crit, SPIKE_RAG_DEPENDENCY_GATE, after SPIKE_CORE_STACK_GATE, 2d
 
     section Scaffolding
-    Batch 1 — Repo Setup (2 parallel)           :SCAFFOLDING_BATCH, after SPIKE_RAG_DEPENDENCY_GATE, 1d
+    Batch 1 — Repo Setup (3 parallel)           :SCAFFOLDING_BATCH, after SPIKE_RAG_DEPENDENCY_GATE, 1d
 
     section Foundation
     Batch 2 — Foundation A (9 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
-    Batch 3 — Foundation B (13 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
+    Batch 3 — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
     section Config + Guards
     Batch 4 — Config+Guards (6 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
@@ -63,10 +63,10 @@ gantt
     Batch 9b — Endpoints+Barrel+Frontend Components (7 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
 
     section Testing + Deploy
-    Batch 10 — E2E+Deploy+Publish+Frontend Tools (7 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 3d
+    Batch 10 — E2E+Deploy+Publish+Ops+Docs (10 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
 
     section Frontend + Demos
-    Batch 11 — Demos (2 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
+    Batch 11 — Demos+Docs+Incident (4 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
 
     section Final Audit
     FINAL — Compliance+QA (4 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
@@ -78,9 +78,9 @@ gantt
 |------|------|-------|-------------|-------|
 | 0 | BLOCKING | 1 | — | Validates all tech assumptions |
 | 0.5 | RAG Validation | 1 | — | Validates RAG dependency chain |
-| 1 | Scaffolding | 2 | 2 parallel | Repo structure for library + server |
+| 1 | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
 | 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
-| 3 | Foundation B | 13 | 13 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies |
+| 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
 | 4 | Config + Guards | 6 | 6 parallel | Configuration system, guardrails, FileRegistry, summary cap |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
 | 6 | Integration Layer | 17 | 17 parallel | Streaming, grounding, core tools, intent routing, RAG infra |
@@ -89,8 +89,8 @@ gantt
 | 8b | Extended Integration | 12 | 12 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification |
 | 9a | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
 | 9b | Endpoints + Barrel | 7 | 7 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components |
-| 10 | E2E + Deploy | 7 | 7 parallel | Integration tests, publish prep, smoke tests, load tests, trace UI, CLI, Storybook |
-| 11 | Frontend Demos | 2 | 2 parallel | Next.js web demo, Expo mobile demo |
+| 10 | E2E + Deploy + Ops + Docs Infra | 10 | 10 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation |
+| 11 | Frontend Demos + Docs + Incident Ops | 4 | 4 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures |
 | FINAL | Audit | 4 | 4 parallel | Plan compliance, code quality, full QA, scope fidelity |
 
 ### Milestone Markers
@@ -101,8 +101,10 @@ timeline
     SPIKE_CORE_STACK_MARKER : SPIKE_CORE_STACK complete
     SPIKE_RAG_DEPENDENCY_MARKER : SPIKE_RAG_DEPS complete
     SCAFFOLDING_MARKER : SCAFFOLD_LIB + SCAFFOLD_SERVER complete
+    CODE_STANDARDS_MARKER : CODE_STANDARDS baseline complete
     FOUNDATION_A_MARKER : Foundation A complete
     FOUNDATION_B_MARKER : Foundation B complete
+    CI_PIPELINE_MARKER : CI_PIPELINE quality gates complete
     CONFIG_GUARDRAIL_MARKER : CONFIG_DEFAULTS + guardrail baseline complete
     AGENT_PIPELINE_MARKER : AGENT_FACTORY + document/file pipeline foundation complete
     INTEGRATION_MARKER : Integration layer complete
@@ -112,7 +114,10 @@ timeline
     SERVER_ROUTES_MARKER : SERVER_ROUTES + SUBAGENT_FACTORY complete
     ENDPOINT_SURFACE_MARKER : Endpoint surface + BARREL_EXPORTS complete
     E2E_DEPLOY_MARKER : E2E + publish + smoke + load complete
+    OPERATIONS_INFRA_MARKER : MONITORING_INFRA + DOCS_SITE complete
+    RELEASE_MARKER : RELEASE_PIPELINE complete
     FRONTEND_DEMOS_MARKER : DEMO_WEB + DEMO_MOBILE complete
+    DOCS_OPS_MARKER : DOCS_CONTENT + INCIDENT_PROCEDURES complete
     FINAL_AUDIT_MARKER : AUDIT_PLAN + AUDIT_CODE + AUDIT_QA + AUDIT_SCOPE complete
 ```
 
@@ -150,6 +155,7 @@ graph LR
 |------------|------|--------------------|------------|
 | SPIKE_CORE_STACK — Core stack validation spike | 0 | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
 | SPIKE_RAG_DEPS — RAG Dependencies Spike | 0.5 | Blocks document processing, RAG infra, and file storage. Three critical Batch 2 tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
+| CI_PIPELINE — CI/CD quality gates | 3 | Blocks RELEASE_PIPELINE. If CI gates are unstable, release automation cannot be trusted and late-stage delivery stalls. | Build CI_PIPELINE in Batch 3 with strict gating and keep it green continuously. |
 | AGENT_FACTORY — Agent Factory | 5 | Critical gate for most integration paths. 8 Batch 6 tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
 | SERVER_ROUTES — Server Routes | 9a | Key gate in Batch 9a. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
 
@@ -158,9 +164,9 @@ graph LR
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 108 tasks) | ~380–480 hours estimated |
-| Parallel execution (batch model) | ~110–140 hours estimated |
-| Parallel speedup | ~70% faster than sequential |
+| Sequential execution (all 115 tasks) | ~405–515 hours estimated |
+| Parallel execution (batch model) | ~125–160 hours estimated |
+| Parallel speedup | ~69% faster than sequential |
 | Maximum concurrency | 17 tasks (Batch 6) |
 | Single-task bottleneck batches | 2 (Batch 0, 0.5) |
 | Total batches | 16 (including FINAL) |
@@ -193,14 +199,15 @@ graph LR
 
 ---
 
-### Batch 1 — Scaffolding (2 parallel)
+### Batch 1 — Scaffolding (3 parallel)
 
 > Sets up both repositories with build tooling, workspace config, and project structure.
 
-| Task | Description | Category |
-|------|-------------|----------|
-| SCAFFOLD_LIB | safeagent repo setup (Bun workspace with core library, TUI app, and client SDK stubs) | `quick` |
-| SCAFFOLD_SERVER | Server repo setup (Elysia, project config, TypeScript config) | `quick` |
+| Task | Description | Category | Depends On |
+|------|-------------|----------|------------|
+| SCAFFOLD_LIB | safeagent repo setup (Bun workspace with core library, TUI app, and client SDK stubs) | `quick` | SPIKE_CORE_STACK |
+| SCAFFOLD_SERVER | Server repo setup (Elysia, project config, TypeScript config) | `quick` | SPIKE_CORE_STACK |
+| CODE_STANDARDS | Coding standards enforcement with lintmax max strictness | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
 
 ---
 
@@ -222,7 +229,7 @@ graph LR
 
 ---
 
-### Batch 3 — Foundation B (13 parallel)
+### Batch 3 — Foundation B (14 parallel)
 
 > Schemas, MCP client, memory, provider fallback, TUI components, observability, key pool, cache, circuit breaker, and rewrite strategies.
 
@@ -241,6 +248,7 @@ graph LR
 | CIRCUIT_BREAKER | Circuit breaker for external calls | `deep` | CORE_TYPES |
 | **REWRITE_STRATEGIES** | **Rewrite Strategy Modules (HyDE, EntityExtraction, DenseKeywords)** | `quick` | CORE_TYPES |
 | USER_SHORTTERM_MEM | User short-term memory (cross-thread) | `unspecified-high` | SHORT_TERM_MEM |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
 
 > **NEW**: REWRITE_STRATEGIES (from Document 05) delivers three independently importable rewrite strategy modules. Depends only on types — fits naturally alongside other CORE_TYPES-dependent tasks.
 
@@ -397,7 +405,7 @@ graph LR
 
 ---
 
-### Batch 10 — E2E + Deploy + Publish + Load + Frontend Tools (7 parallel)
+### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (10 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -408,10 +416,13 @@ graph LR
 | TRACE_UI | Trace visualization components (trace timeline component, trace step component, trace latency bar component, trace detail component) | `unspecified-high` | WEB_COMPONENTS |
 | FRONTEND_CLI | Component installation CLI (registry, resolver, copier, validator) | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
 | STORYBOOK_FRONTEND | Storybook documentation (stories, mock generators, visual regression baseline) | `unspecified-high` | WEB_COMPONENTS |
+| RELEASE_PIPELINE | Release automation with canary deployment and rollback flow | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
+| DOCS_SITE | Documentation site infrastructure (Fumadocs) | `unspecified-high` | SCAFFOLD_LIB |
+| MONITORING_INFRA | Monitoring infrastructure, dashboards, AI monitoring, and alerts | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
 
 ---
 
-### Batch 11 — Frontend Demos (2 parallel)
+### Batch 11 — Frontend Demos + Docs + Incident Ops (4 parallel)
 
 > Full-featured demo applications exercising the complete frontend SDK stack.
 
@@ -419,6 +430,8 @@ graph LR
 |------|-------------|----------|------------|
 | DEMO_WEB | Next.js web demo (server switching, verbosity toggle, trace timeline, file upload, feedback, dark mode) | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
 | DEMO_MOBILE | Expo mobile demo (offline-first, server management, tab navigation, local SQLite persistence) | `deep` | RN_COMPONENTS, SERVER_ROUTES |
+| DOCS_CONTENT | Documentation content authoring | `writing` | DOCS_SITE, ALL core module tasks |
+| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | `writing` | MONITORING_INFRA |
 
 ---
 
@@ -444,9 +457,9 @@ graph LR
 graph TB
     BATCH_SPIKE["Batch 0<br/>SPIKE_CORE_STACK Spike"]
     BATCH_RAG_SPIKE["Batch 0.5<br/>SPIKE_RAG_DEPS RAG Spike"]
-    BATCH_SCAFFOLD["Batch 1<br/>SCAFFOLD_LIB, SCAFFOLD_SERVER Scaffold"]
+    BATCH_SCAFFOLD["Batch 1<br/>3 tasks — Scaffold +<br/>Code Standards"]
     BATCH_TYPES_STORAGE["Batch 2<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
-    BATCH_SCHEMAS_MEMORY["Batch 3<br/>13 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite"]
+    BATCH_SCHEMAS_MEMORY["Batch 3<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
     BATCH_CONFIG_GUARDS["Batch 4<br/>6 tasks — Config, Guards,<br/>FileRegistry, Summary"]
     BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
     BATCH_STREAMING_TOOLS["Batch 6<br/>17 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base"]
@@ -455,8 +468,8 @@ graph TB
     BATCH_UPLOAD_COST["Batch 8b<br/>12 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification"]
     BATCH_ROUTES_SUBAGENT["Batch 9a<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
     BATCH_ENDPOINTS["Batch 9b<br/>7 tasks — Endpoints,<br/>Barrel Exports, Frontend Components"]
-    BATCH_END_TO_END_DEPLOY["Batch 10<br/>7 tasks — E2E, Deploy,<br/>Publish, Load, Frontend Tools"]
-    BATCH_FRONTEND_DEMOS["Batch 11<br/>2 tasks — Demos"]
+    BATCH_END_TO_END_DEPLOY["Batch 10<br/>10 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring"]
+    BATCH_FRONTEND_DEMOS["Batch 11<br/>4 tasks — Demos,<br/>Docs Content, Incident Ops"]
     BATCH_FINAL_AUDIT["FINAL<br/>4 tasks — Audit"]
 
     BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
@@ -475,6 +488,11 @@ graph TB
     SPIKE_CORE_STACK["SPIKE_CORE_STACK Spike"]:::crit --> SPIKE_RAG_DEPS["SPIKE_RAG_DEPS RAG Spike"]:::crit
     SPIKE_CORE_STACK --> SCAFFOLD_LIB["SCAFFOLD_LIB Repo"]:::crit
     SPIKE_CORE_STACK --> SCAFFOLD_SERVER["SCAFFOLD_SERVER Server Repo"]
+    SCAFFOLD_LIB --> CODE_STANDARDS["CODE_STANDARDS Standards"]:::new
+    SCAFFOLD_SERVER --> CODE_STANDARDS
+    SCAFFOLD_LIB --> CI_PIPELINE["CI_PIPELINE CI Gates"]:::new
+    SCAFFOLD_LIB --> DOCS_SITE["DOCS_SITE Docs Infra"]:::new
+    DOCS_SITE --> DOCS_CONTENT["DOCS_CONTENT Docs Content"]:::new
 
     SPIKE_RAG_DEPS --> DOC_PIPELINE["DOC_PIPELINE Doc Pipeline"]
 
@@ -627,10 +645,21 @@ graph TB
 
     UPLOAD_ENDPOINT --> E2E_TESTS["E2E_TESTS E2E Tests"]:::crit
     BARREL_EXPORTS --> PKG_PUBLISH["PKG_PUBLISH Publish"]
+    CI_PIPELINE["CI_PIPELINE CI Gates"]:::new --> RELEASE_PIPELINE["RELEASE_PIPELINE Release Automation"]:::new
+    PKG_PUBLISH --> RELEASE_PIPELINE
+    SERVER_ROUTES --> RELEASE_PIPELINE
+    SCAFFOLD_LIB --> DOCS_SITE["DOCS_SITE Docs Infra"]:::new
+    DOCS_SITE --> DOCS_CONTENT["DOCS_CONTENT Docs Content"]:::new
+    DOCKER_COMPOSE --> MONITORING_INFRA["MONITORING_INFRA Monitoring"]:::new
+    SERVER_ROUTES --> MONITORING_INFRA
+    LANGFUSE_MODULE --> MONITORING_INFRA
+    MONITORING_INFRA --> INCIDENT_PROCEDURES["INCIDENT_PROCEDURES Incident Procedures"]:::new
 
     E2E_TESTS --> FINAL_AUDIT_BLOCK["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
     DEMO_WEB --> FINAL_AUDIT_BLOCK
     DEMO_MOBILE --> FINAL_AUDIT_BLOCK
+    DOCS_CONTENT --> FINAL_AUDIT_BLOCK
+    INCIDENT_PROCEDURES --> FINAL_AUDIT_BLOCK
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
@@ -700,9 +729,10 @@ graph TB
         SPIKE_RAG_DEPS_P["SPIKE_RAG_DEPS"]
     end
 
-    subgraph BATCH_SCAFFOLD["Batch 1 — 2 parallel"]
+    subgraph BATCH_SCAFFOLD["Batch 1 — 3 parallel"]
         SCAFFOLD_LIB_P["SCAFFOLD_LIB"]
         SCAFFOLD_SERVER_P["SCAFFOLD_SERVER"]
+        CODE_STANDARDS_P["CODE_STANDARDS (new)"]
     end
 
     subgraph BATCH_TYPES_STORAGE["Batch 2 — 9 parallel"]
@@ -717,7 +747,7 @@ graph TB
         SCAFFOLD_FRONTEND_P["SCAFFOLD_FRONTEND (frontend)"]
     end
 
-    subgraph BATCH_SCHEMAS_MEMORY["Batch 3 — 13 parallel"]
+    subgraph BATCH_SCHEMAS_MEMORY["Batch 3 — 14 parallel"]
         ZOD_SCHEMAS_P["ZOD_SCHEMAS"]
         MCP_CLIENT_P["MCP_CLIENT"]
         SHORT_TERM_MEM_P["SHORT_TERM_MEM"]
@@ -731,6 +761,7 @@ graph TB
         CIRCUIT_BREAKER_P["CIRCUIT_BREAKER"]
         REWRITE_STRATEGIES_P["REWRITE_STRATEGIES (new)"]
         USER_SHORTTERM_MEM_P["USER_SHORTTERM_MEM (new)"]
+        CI_PIPELINE_P["CI_PIPELINE (new)"]
     end
 
     subgraph BATCH_CONFIG_GUARDS["Batch 4 — 6 parallel"]
@@ -830,7 +861,7 @@ graph TB
         RN_COMPONENTS_P["RN_COMPONENTS (frontend)"]
     end
 
-    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 7 parallel"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 10 parallel"]
         E2E_TESTS_P["E2E_TESTS"]
         PKG_PUBLISH_P["PKG_PUBLISH"]
         SMOKE_TESTS_P["SMOKE_TESTS"]
@@ -838,11 +869,16 @@ graph TB
         TRACE_UI_P["TRACE_UI (frontend)"]
         FRONTEND_CLI_P["FRONTEND_CLI (frontend)"]
         STORYBOOK_FRONTEND_P["STORYBOOK_FRONTEND (frontend)"]
+        RELEASE_PIPELINE_P["RELEASE_PIPELINE (new)"]
+        DOCS_SITE_P["DOCS_SITE (new)"]
+        MONITORING_INFRA_P["MONITORING_INFRA (new)"]
     end
 
-    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 2 parallel"]
+    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 4 parallel"]
         DEMO_WEB_P["DEMO_WEB (frontend)"]
         DEMO_MOBILE_P["DEMO_MOBILE (frontend)"]
+        DOCS_CONTENT_P["DOCS_CONTENT (new)"]
+        INCIDENT_PROCEDURES_P["INCIDENT_PROCEDURES (new)"]
     end
 
     subgraph BATCH_FINAL_AUDIT["FINAL — 4 parallel"]
@@ -857,7 +893,7 @@ graph TB
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
 
-> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12)
+> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23)
 > (frontend) = New task from frontend SDK requirements (Documents 18, 19)
 
 ---
@@ -871,39 +907,44 @@ graph LR
         QUICK["quick<br/>(single-file,<br/>straightforward)"]
         VIS["visual-engineering<br/>(UI components,<br/>Playwright verification)"]
         UHIGH["unspecified-high<br/>(substantial effort,<br/>cross-system)"]
+        WRITING["writing<br/>(documentation,<br/>runbooks, procedures)"]
         MIXED["Mixed<br/>(unspecified-high<br/>+ playwright)"]
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DEEP_TASKS["deep Tasks (50)"]
+    subgraph DEEP_TASKS["deep Tasks (51)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
         DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
         DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM"]
         DEEP_INTENT["EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL"]
         DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL"]
-        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE"]
+        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE, MONITORING_INFRA"]
     end
 
-    subgraph QUICK_TASKS["quick Tasks (26)"]
+    subgraph QUICK_TASKS["quick Tasks (27)"]
         QUICK_FOUND["SCAFFOLD_LIB, SCAFFOLD_SERVER, CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER"]
         QUICK_INFRA["MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, BARREL_EXPORTS, SERVER_AGENT_CFG"]
         QUICK_SERVER["SERVER_MCP, SERVER_GUARDRAILS, PKG_PUBLISH, DOCKER_COMPOSE, LANGFUSE_MODULE"]
         QUICK_UTIL["FEEDBACK_ENDPOINT, KEY_POOL, VALKEY_CACHE, STRUCT_LOGGING, REWRITE_STRATEGIES, SUMMARY_CAP"]
-        QUICK_ENGINE["NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION, SCAFFOLD_FRONTEND"]
+        QUICK_ENGINE["NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION, SCAFFOLD_FRONTEND, CODE_STANDARDS"]
     end
 
     subgraph VIS_TASKS["visual-engineering Tasks (5)"]
         VIS_TUI_TASKS["TUI_SHELL, TUI_CHAT, TUI_INPUT, TUI_COMMANDS, TUI_UPLOAD"]
     end
 
-    subgraph U_HIGH_TASKS["unspecified-high Tasks (29)"]
+    subgraph U_HIGH_TASKS["unspecified-high Tasks (32)"]
         UHIGH_GUARD_MCP["GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, EVAL_CONFIG, SELF_TEST"]
         UHIGH_SERVER_SMOKE["SERVER_ROUTES, SMOKE_TESTS, UPLOAD_ENDPOINT, CUSTOM_SPANS, CTA_STREAMING"]
         UHIGH_CLIENT_COST["CLIENT_SDK, COST_TRACKING, LOAD_TESTS, FILE_CRUD, JWT_AUTH, ADMIN_API, REWRITE_TOOL, CONTEXT_BUDGET, RESPONSE_CALIBRATION"]
         UHIGH_INTENT["ATTRIBUTE_NEGATION, QUERY_REPLAY, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS"]
-        UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND"]
+        UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, CI_PIPELINE, RELEASE_PIPELINE, DOCS_SITE"]
         UHIGH_AUDIT_CODE["AUDIT_CODE"]
+    end
+
+    subgraph WRITING_TASKS["writing Tasks (2)"]
+        WRITING_OPS["DOCS_CONTENT, INCIDENT_PROCEDURES"]
     end
 
     subgraph MIXED_TASKS["Mixed Tasks (1)"]
@@ -918,6 +959,7 @@ graph LR
     QUICK --> QUICK_TASKS
     VIS --> VIS_TASKS
     UHIGH --> U_HIGH_TASKS
+    WRITING --> WRITING_TASKS
     MIXED --> MIXED_TASKS
     ORACLE --> ORACLE_TASKS
 ```
@@ -928,9 +970,9 @@ graph LR
 |------|-------|-----------|
 | 0 | 1 | SPIKE_CORE_STACK → `deep` |
 | 0.5 | 1 | SPIKE_RAG_DEPS → `deep` |
-| 1 | 2 | SCAFFOLD_LIB, SCAFFOLD_SERVER → `quick` |
+| 1 | 3 | SCAFFOLD_LIB, SCAFFOLD_SERVER, CODE_STANDARDS → `quick` |
 | 2 | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
-| 3 | 13 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
+| 3 | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
 | 4 | 6 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY → `deep`; GUARD_FACTORY → `unspecified-high` |
 | 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
 | 6 | 17 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
@@ -939,25 +981,26 @@ graph LR
 | 8b | 12 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL → `deep` |
 | 9a | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
 | 9b | 7 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high` |
-| 10 | 7 | E2E_TESTS → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND → `unspecified-high` |
-| 11 | 2 | DEMO_WEB, DEMO_MOBILE → `deep` |
+| 10 | 10 | E2E_TESTS, MONITORING_INFRA → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE → `unspecified-high` |
+| 11 | 4 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing` |
 | FINAL | 4 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
 
 ### Category Totals
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| `deep` | 50 | 45% |
-| `quick` | 26 | 23% |
-| `unspecified-high` | 29 | 26% |
+| `deep` | 51 | 43% |
+| `quick` | 27 | 23% |
+| `unspecified-high` | 32 | 27% |
+| `writing` | 2 | 2% |
 | `visual-engineering` | 5 | 4% |
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **112** | |
+| **Total** | **119** | |
 
 ---
 
-## Complete Task Registry (112 Tasks) and Full Dependency Matrix
+## Complete Task Registry (119 Tasks) and Full Dependency Matrix
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -967,8 +1010,9 @@ graph LR
 |------|-----------|--------|------|
 | SPIKE_CORE_STACK | None (Batch 0) | SCAFFOLD_LIB, SCAFFOLD_SERVER, SPIKE_RAG_DEPS | 0 |
 | SPIKE_RAG_DEPS | SPIKE_CORE_STACK | DOC_PIPELINE | 0.5 |
-| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING, SCAFFOLD_FRONTEND | 1 |
-| SCAFFOLD_SERVER | SPIKE_CORE_STACK | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS | 1 |
+| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING, SCAFFOLD_FRONTEND, CODE_STANDARDS, CI_PIPELINE, DOCS_SITE | 1 |
+| SCAFFOLD_SERVER | SPIKE_CORE_STACK | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, CODE_STANDARDS | 1 |
+| CODE_STANDARDS | SCAFFOLD_LIB, SCAFFOLD_SERVER | — | 1 |
 | SCAFFOLD_FRONTEND | SCAFFOLD_LIB | REACT_HOOKS | 2 |
 | CORE_TYPES | SCAFFOLD_LIB | ZOD_SCHEMAS, CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, LANGFUSE_MODULE, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, CIRCUIT_BREAKER, JWT_AUTH, EMBED_ROUTER, RAGFLOW_CLIENT, REWRITE_STRATEGIES, EVIDENCE_GATE, LANG_GUARD, HATE_SPEECH_GUARD, RESPONSE_CALIBRATION | 2 |
 | STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM | 2 |
@@ -988,11 +1032,12 @@ graph LR
 | TUI_INPUT | TUI_SHELL | TUI_AGENT | 3 |
 | TUI_COMMANDS | TUI_SHELL | TUI_UPLOAD | 3 |
 | RAG_INFRA | STORAGE_WRAPPER, DOC_PIPELINE | CUSTOM_SPANS, TRIGGER_TASKS, TTL_CLEANUP, CROSS_CONV_RAG, EVIDENCE_GATE, DOC_SEARCH | 6 |
-| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT | 3 |
+| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT, MONITORING_INFRA | 3 |
 | KEY_POOL | CORE_TYPES, SCAFFOLD_LIB | BARREL_EXPORTS | 3 |
 | VALKEY_CACHE | CORE_TYPES, SCAFFOLD_LIB | COST_TRACKING, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL, EMBED_ROUTER, FILE_REGISTRY | 3 |
 | CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | 3 |
 | REWRITE_STRATEGIES | CORE_TYPES | REWRITE_TOOL | 3 |
+| CI_PIPELINE | SCAFFOLD_LIB, TEST_INFRA | RELEASE_PIPELINE | 3 |
 | CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER | 4 |
 | INPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS | 4 |
 | OUTPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS, ZERO_LEAK_GUARD | 4 |
@@ -1031,7 +1076,7 @@ graph LR
 | SERVER_AGENT_CFG | SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL | SERVER_ROUTES, E2E_TESTS, SMOKE_TESTS | 8a |
 | SERVER_MCP | SCAFFOLD_SERVER, MCP_CLIENT | E2E_TESTS, SMOKE_TESTS | 8a |
 | SERVER_GUARDRAILS | SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD | E2E_TESTS, SMOKE_TESTS | 8a |
-| DOCKER_COMPOSE | SCAFFOLD_SERVER | FILE_STORAGE, UPLOAD_PIPELINE, E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | 2 |
+| DOCKER_COMPOSE | SCAFFOLD_SERVER | FILE_STORAGE, UPLOAD_PIPELINE, E2E_TESTS, SMOKE_TESTS, LOAD_TESTS, MONITORING_INFRA | 2 |
 | CLIENT_SDK | SSE_STREAMING, CTA_STREAMING, CORE_TYPES | E2E_TESTS, REACT_HOOKS | 8a |
 | EXTRACTION_SAFEGUARDS | FACT_EXTRACTION | — | 8a |
 | CONTEXT_BUDGET | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | 8a |
@@ -1056,7 +1101,7 @@ graph LR
 | QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | 8b |
 | SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 9a |
 | REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | 9a |
-| SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API | 9a |
+| SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | 9a |
 | WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | 9b |
 | RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | 9b |
 | BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES | PKG_PUBLISH | 9b |
@@ -1065,14 +1110,19 @@ graph LR
 | FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | 9b |
 | ADMIN_API | SERVER_ROUTES, JWT_AUTH, COST_TRACKING | E2E_TESTS, SMOKE_TESTS | 9b |
 | E2E_TESTS | TUI_AGENT, SELF_TEST, SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, TUI_UPLOAD, DOCKER_COMPOSE, FEEDBACK_ENDPOINT, CLIENT_SDK, COST_TRACKING, AGENT_ROUTER, VALKEY_CACHE, TRIGGER_TASKS, RATE_LIMITING, FILE_CRUD, TTL_CLEANUP, JWT_AUTH, CROSS_CONV_RAG, ADMIN_API | — | 10 |
-| PKG_PUBLISH | BARREL_EXPORTS | — | 10 |
+| PKG_PUBLISH | BARREL_EXPORTS | RELEASE_PIPELINE | 10 |
 | SMOKE_TESTS | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API | — | 10 |
 | LOAD_TESTS | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE | — | 10 |
 | TRACE_UI | WEB_COMPONENTS | DEMO_WEB | 10 |
 | FRONTEND_CLI | WEB_COMPONENTS, RN_COMPONENTS | — | 10 |
 | STORYBOOK_FRONTEND | WEB_COMPONENTS | — | 10 |
+| RELEASE_PIPELINE | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES | — | 10 |
+| DOCS_SITE | SCAFFOLD_LIB | DOCS_CONTENT | 10 |
+| MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES | 10 |
 | DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | 11 |
 | DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
+| DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | 11 |
+| INCIDENT_PROCEDURES | MONITORING_INFRA | — | 11 |
 | AUDIT_PLAN | PKG_PUBLISH | — | FINAL |
 | AUDIT_CODE | PKG_PUBLISH | — | FINAL |
 | AUDIT_QA | PKG_PUBLISH | — | FINAL |
@@ -1185,6 +1235,7 @@ flowchart TB
 | Failed Task | Direct Impact | Batch Impact |
 |-------------|--------------|-------------|
 | SPIKE_CORE_STACK (Spike) | Everything blocked | Project halted — tech stack re-evaluation |
+| CI_PIPELINE (CI/CD) | RELEASE_PIPELINE blocked | Release automation delayed until quality gates are stable |
 | AGENT_FACTORY (Agent Factory) | 17 Batch 6 tasks blocked | Largest blast radius — prioritize fix |
 | SERVER_ROUTES (Server Routes) | BARREL_EXPORTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API blocked | All server endpoints and barrel exports delayed |
 | CORE_TYPES (Types) | 20+ downstream tasks blocked | Foundation failure — second largest blast radius |
@@ -1192,7 +1243,7 @@ flowchart TB
 
 ---
 
-## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19)
+## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23)
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
@@ -1255,9 +1306,23 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 | DEMO_WEB | Next.js demo app | Document 19 | 11 | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
 | DEMO_MOBILE | Expo demo app | Document 19 | 11 | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 
+### Operations and Quality Tasks
+
+The following 7 tasks were added for coding standards, CI quality gates, release automation, documentation platform and content, and observability operations. Each is integrated into the batch structure above.
+
+| Task | Name | Source | Batch | Category | Depends On |
+|------|------|--------|------|----------|------------|
+| CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Document 23 | 1 | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Document 21 | 3 | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
+| RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Document 21 | 10 | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
+| DOCS_SITE | Documentation site infrastructure (Fumadocs) | Document 20 | 10 | `unspecified-high` | SCAFFOLD_LIB |
+| DOCS_CONTENT | Documentation content authoring | Document 20 | 11 | `writing` | DOCS_SITE, ALL core module tasks |
+| MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Document 22 | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
+| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Document 22 | 11 | `writing` | MONITORING_INFRA |
+
 ---
 
-*Covers all 108 implementation tasks + 4 final audit tasks = 112 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, and 9 frontend SDK tasks (Document 18, 19), all fully integrated into the batch structure and dependency matrix.*
+*Covers all 115 implementation tasks + 4 final audit tasks = 119 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 7 operations and quality tasks (Documents 20, 21, 22, 23), all fully integrated into the batch structure and dependency matrix.*
 
 ---
 
