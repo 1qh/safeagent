@@ -1,6 +1,6 @@
 # 21 — Release Pipeline
 
-> **Scope**: End-to-end CI/CD pipeline, deployment workflow, and release process across the safeagent and server repositories, including PR governance, staged quality gates, containerized test orchestration, release automation, canary rollout control, rollback safety, dependency governance, secrets handling, and operational pipeline monitoring at 10M-user scale.
+> **Scope**: End-to-end CI/CD pipeline, deployment workflow, and release process across both projects, including PR governance, staged quality gates, containerized test orchestration, release automation, canary rollout control, rollback safety, dependency governance, secrets handling, and operational pipeline monitoring at 10M-user scale.
 >
 > **Tasks**: CI_PIPELINE (CI/CD Pipeline), RELEASE_PIPELINE (Release Automation and Deployment Workflow)
 
@@ -22,13 +22,14 @@
 - [Scalability and Security Guardrails](#scalability-and-security-guardrails)
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
+- [Delivery Checklist](#delivery-checklist)
 
 ## Architecture Overview
 
-Release operations are split across two repositories with clear responsibility boundaries.
-The safeagent repository governs library packaging, quality gates, and artifact publication.
-The server repository governs container image promotion and runtime rollout safety.
-Both repositories share CI quality standards, deployment signals, and rollback discipline.
+Release operations are split across both projects with clear responsibility boundaries.
+The library project governs library packaging, quality gates, and artifact publication.
+The server project governs container image promotion and runtime rollout safety.
+Both projects share CI quality standards, deployment signals, and rollback discipline.
 
 ```mermaid
 flowchart LR
@@ -49,10 +50,10 @@ flowchart LR
 
 ```mermaid
 graph TB
-  subgraph REPOSITORIES[REPOSITORIES]
-    SAFEAGENT_REPO[SAFEAGENT REPOSITORY]
-    SERVER_REPO[SERVER REPOSITORY]
-  end
+   subgraph PROJECTS[PROJECTS]
+     LIBRARY_PROJECT[LIBRARY PROJECT]
+     SERVER_PROJECT[SERVER PROJECT]
+   end
 
   subgraph CI_CONTROL[CI CONTROL PLANE]
     PR_CHECKS[PR STATUS CHECKS]
@@ -66,8 +67,8 @@ graph TB
     PROD_ENV[PRODUCTION]
   end
 
-  SAFEAGENT_REPO --> PR_CHECKS
-  SERVER_REPO --> PR_CHECKS
+   LIBRARY_PROJECT --> PR_CHECKS
+   SERVER_PROJECT --> PR_CHECKS
   PR_CHECKS --> RELEASE_GATES
   RELEASE_GATES --> DEV_ENV
   RELEASE_GATES --> STAGING_ENV
@@ -90,14 +91,14 @@ stateDiagram-v2
 ```
 
 Operating principles:
-- Enforce identical quality bars across both repositories while preserving repo-specific release outputs.
+- Enforce identical quality bars across both projects while preserving project-specific release outputs.
 - Keep CI fast for contributor feedback and deep for merge and release confidence.
 - Treat rollout safety as a first-class release criterion, not a post-release activity.
 - Keep security policy embedded in every gate from pre-commit to production promotion.
 
 ## PR Workflow
 
-Pull requests are the single change admission path for both repositories.
+Pull requests are the single change admission path for both projects.
 
 ### Branch Protection
 
@@ -132,8 +133,8 @@ Pull requests are the single change admission path for both repositories.
 Local quality gates prevent low-quality changes from entering PR pipelines.
 
 - Staged files run Biome lint and format checks through pre-commit hook automation.
-- Monorepo-wide type checking runs before commit acceptance in safeagent repository.
-- Server repository enforces equivalent type checking discipline before commit acceptance.
+- Monorepo-wide type checking runs before commit acceptance in the library project.
+- Server project enforces equivalent type checking discipline before commit acceptance.
 - ORM-only data access policy blocks raw SQL and raw SurrealQL patterns from commit entry.
 - Hook failures block commit completion and require correction before re-attempt.
 - Gate configuration favors deterministic failures with actionable diagnostics.
@@ -189,7 +190,7 @@ Comprehensive test stages rely on disposable infrastructure containers for repro
 
 Library release is commit-driven, automated, and traceable.
 
-- Conventional commit history drives semantic release calculation.
+- Conventional commit history drives automated release calculation.
 - Changelog is generated automatically from accepted commit history.
 - Public registry publication executes only after release gate success.
 - GitHub release is generated with changelog narrative and release artifacts.
@@ -336,7 +337,7 @@ Integration notes:
 - Implement automated release publication and deployment promotion with staged safety checks, canary control, and instant rollback readiness.
 
 **What To Do**
-- Automate semantic-release publication flow for safeagent with changelog generation.
+- Automate release publication flow for the library with automated changelog generation.
 - Automate server container image release and registry publication workflow.
 - Enforce staging validation before canary and production promotion.
 - Implement canary progression controls with automated and manual decision gates.
