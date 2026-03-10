@@ -346,6 +346,21 @@ flowchart TB
 
 ## Test Specifications
 
+**Incident lifecycle**:
+
+- Detection phase fires an alert within the defined mean-time-to-detect target.
+- Triage phase classifies incident severity and assigns an incident commander.
+- Mitigation applies fix or rollback and restores service within the mean-time-to-recover target.
+- Status page updates reflect current incident state for public visibility.
+- Post-mortem produces a blameless review document with root cause and preventive actions.
+
+**Status page behavior**:
+
+- Public status page displays per-component health status.
+- Historical uptime percentage is accurate over the trailing measurement window.
+- Planned maintenance announcements appear before the maintenance window begins.
+- Status update subscriptions deliver notifications to subscribers on state change.
+
 **Incident response behavior**:
 
 - Trigger simulated critical outage and verify full incident lifecycle execution.

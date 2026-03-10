@@ -1,8 +1,8 @@
-# Monitoring, Alerting, and Incident Response
+# Monitoring & Alerting
 
-> **Scope**: Real-time operational monitoring, health signal collection, alerting, escalation, SLA governance, incident response, status communication, and capacity forecasting for the safeagent library plus thin server deployment at 10M-user scale.
+> **Scope**: Real-time operational monitoring, health signal collection, alerting, escalation, SLA governance, dashboard design, and capacity forecasting for the safeagent library plus thin server deployment at 10M-user scale. Incident response procedures, runbooks, and disaster recovery are in [Incident Response & DR](./incident-response.md).
 >
-> **Tasks**: MONITORING_INFRA (Monitoring Infrastructure and Dashboards), INCIDENT_PROCEDURES (Incident Response Procedures and Runbooks)
+> **Tasks**: MONITORING_INFRA (Monitoring Infrastructure and Dashboards)
 
 ---
 
@@ -31,6 +31,7 @@
 - [Capacity Monitoring and Forecasting](#capacity-monitoring-and-forecasting)
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
+- [Test Specifications](#test-specifications)
 
 ## Architecture Overview
 
@@ -2086,14 +2087,14 @@ Integration notes:
 - MONITORING_INFRA
 
 **Objective**
-- Establish production-grade monitoring infrastructure, dashboards, health aggregation, alert routing, and status communication for real-time reliability management.
+- Establish production-grade monitoring infrastructure, dashboards, health aggregation, and alert routing for real-time reliability management.
 
 **What To Do**
 - Set up pull-based metric collection across application and infrastructure layers.
 - Define and publish health checks for shallow and deep dependency states.
 - Configure severity-based alert rules with deduplication, grouping, silencing, and escalation.
 - Build dashboard suites for executive, service, infrastructure, AI operations, and user experience views.
-- Launch public status communication with component-level health and incident timelines.
+- Produce health signals and alert outputs consumed by incident response procedures (see [Incident Response & DR](./incident-response.md)).
 - Wire SLA tracking, error budget calculations, and monthly reliability reporting.
 - Add live LLM quality monitoring with sampled evaluator scoring, hallucination objective tracking, and regression detection.
 - Add agentic workflow monitoring for loop depth, plan drift, stuck-state detection, tool reliability, and handoff failures.
@@ -2124,7 +2125,7 @@ Integration notes:
 - Dashboards are populated and segmented by responder and stakeholder needs.
 - Health checks report accurate per-service and fleet-level status.
 - Alert rules are configured for critical, warning, and info severities with escalation behavior.
-- Public status page is live with component health visibility and incident timeline support.
+- Health signals and alert outputs are available for consumption by incident response procedures.
 - SLA and error budget calculations are available in rolling windows.
 - LLM quality monitoring samples live responses and tracks groundedness, relevance, coherence, and safety with time-series regression detection.
 - Hallucination objective remains under target with burn-rate alerting active for budget risk.
@@ -2231,21 +2232,6 @@ Integration notes:
 - Rolling window SLA calculation reflects the configured measurement period.
 - SLA breach triggers an alert when availability drops below the defined target.
 - Error budget tracking shows remaining allowable downtime for the current period.
-
-**Incident lifecycle**:
-
-- Detection phase fires an alert within the defined mean-time-to-detect target.
-- Triage phase classifies incident severity and assigns an incident commander.
-- Mitigation applies fix or rollback and restores service within the mean-time-to-recover target.
-- Status page updates reflect current incident state for public visibility.
-- Post-mortem produces a blameless review document with root cause and preventive actions.
-
-**Status page behavior**:
-
-- Public status page displays per-component health status.
-- Historical uptime percentage is accurate over the trailing measurement window.
-- Planned maintenance announcements appear before the maintenance window begins.
-- Status update subscriptions deliver notifications to subscribers on state change.
 
 **LLM quality monitoring behavior**:
 

@@ -74,7 +74,7 @@ Core integration requirements:
 - **Tool discovery**: tool definitions from MCP servers are merged into the same agent tool registry so MCP and local tools are treated identically.
 - **Tool filtering**: consumers can apply allowlist and denylist controls per MCP server to expose only approved tools to an agent.
 - **Cache invalidation**: tool-definition caches refresh when MCP servers signal capability changes.
-- **Lazy connection**: MCP connections are established on demand at first use, aligned with deferred tool loading in 24.
+- **Lazy connection**: MCP connections are established on demand at first use, aligned with deferred tool loading in the [Extensibility](./extensibility.md) document.
 - **Connection lifecycle**: pooled connection management includes health checks, reconnect behavior, and graceful shutdown.
 - **Security model**: MCP connections inherit the agent trust boundary; untrusted servers MUST run inside sandbox constraints.
 - **Multi-server composition**: agents can attach to multiple MCP servers simultaneously, and tool-name conflicts are resolved by server priority.

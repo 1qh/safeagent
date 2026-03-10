@@ -12,10 +12,10 @@
 - [Architecture Overview](#architecture-overview)
 - [Agent Factory (Agent Creation Factory)](#agent-factory-agent-creation-factory)
 - [Orchestrator Agent Pattern](#orchestrator-agent-pattern)
-- [Dynamic Fan-Out & Map-Reduce Orchestration](#dynamic-fan-out--map-reduce-orchestration)
 - [Context Assembly, Budgeting, and Response Calibration](#context-assembly-budgeting-and-response-calibration)
 - [Live Synthesis Streaming](#live-synthesis-streaming)
 - [Dependent Intent Handling](#dependent-intent-handling)
+- [Dynamic Fan-Out & Map-Reduce Orchestration](#dynamic-fan-out--map-reduce-orchestration)
 - [Tool Registry](#tool-registry)
 - [Agent Router (Query Classification)](#agent-router-query-classification)
 - [Scaling: Queue-Based Execution](#scaling-queue-based-execution)
@@ -23,6 +23,7 @@
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
 - [External References](#external-references)
+- [Test Specifications](#test-specifications)
 
 ---
 
