@@ -81,4 +81,4 @@ Use this sequence to start implementation quickly:
 - 24 module docs: repeated Task/Test relationship boilerplate was shortened to a compact equivalent sentence.
 - 30 source docs: per-file `Table of Contents` blocks were removed under [Compact Authoring Standard](./compact-authoring-standard.md) to reduce token overhead without changing normative schemas.
 - 4 source docs: Mermaid `style ... fill:` directives were removed as non-semantic visual metadata.
-- 44 docs in `plan`: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.
+- 46 docs in `plan`: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.
