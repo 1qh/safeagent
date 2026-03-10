@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
+> **Scale**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch INTEGRATION_BATCH). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -33,66 +33,66 @@ gantt
     excludes weekends
 
     section Blocking Spikes
-    Batch 0 — SPIKE_CORE_STACK Core stack validation spike          :crit, SPIKE_CORE_STACK_GATE, 2024-01-01, 2d
-    Batch 0.5 — SPIKE_RAG_DEPS RAG Spike               :crit, SPIKE_RAG_DEPENDENCY_GATE, after SPIKE_CORE_STACK_GATE, 2d
+    Batch BLOCKING_SPIKE_BATCH — SPIKE_CORE_STACK Core stack validation spike          :crit, SPIKE_CORE_STACK_GATE, 2024-01-01, 2d
+    Batch RAG_VALIDATION_BATCH — SPIKE_RAG_DEPS RAG Spike               :crit, SPIKE_RAG_DEPENDENCY_GATE, after SPIKE_CORE_STACK_GATE, 2d
 
     section Scaffolding
-    Batch 1 — Repo Setup (3 parallel)           :SCAFFOLDING_BATCH, after SPIKE_RAG_DEPENDENCY_GATE, 1d
+    Batch SCAFFOLDING_BATCH — Repo Setup (3 parallel)           :SCAFFOLDING_BATCH, after SPIKE_RAG_DEPENDENCY_GATE, 1d
 
     section Foundation
-    Batch 2 — Foundation A (9 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
-    Batch 3 — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
+    Batch FOUNDATION_A_BATCH — Foundation A (9 parallel)          :FOUNDATION_A_BATCH, after SCAFFOLDING_BATCH, 3d
+    Batch FOUNDATION_B_BATCH — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
     section Config + Guards + Extensibility
-    Batch 4 — Config+Guards+Extensibility (8 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
+    Batch CONFIG_GUARDS_BATCH — Config+Guards+Extensibility (8 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
 
     section Agent Factory + Pipelines
-    Batch 5 — Agent Factory + Pipelines (4 parallel)      :crit, AGENT_PIPELINE_BATCH, after CONFIG_GUARDS_BATCH, 3d
+    Batch AGENT_PIPELINE_BATCH — Agent Factory + Pipelines (4 parallel)      :crit, AGENT_PIPELINE_BATCH, after CONFIG_GUARDS_BATCH, 3d
 
     section Integration
-    Batch 6 — Integration Layer (18 parallel)    :INTEGRATION_BATCH, after AGENT_PIPELINE_BATCH, 3d
+    Batch INTEGRATION_BATCH — Integration Layer (18 parallel)    :INTEGRATION_BATCH, after AGENT_PIPELINE_BATCH, 3d
 
     section Self-Test + Mid Integration
-    Batch 7 — Self-test + Mid Integration (8 parallel):SELFTEST_MIDINTEGRATION_BATCH, after INTEGRATION_BATCH, 2d
+    Batch SELFTEST_MIDINTEGRATION_BATCH — Self-test + Mid Integration (8 parallel):SELFTEST_MIDINTEGRATION_BATCH, after INTEGRATION_BATCH, 2d
 
     section Server + TUI + Pipeline
-    Batch 8a — Server+TUI+Pipeline (16 parallel) :SERVER_TUI_PIPELINE_BATCH, after SELFTEST_MIDINTEGRATION_BATCH, 3d
-    Batch 8b — Extended Integration (14 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
+    Batch SERVER_TUI_PIPELINE_BATCH — Server+TUI+Pipeline (16 parallel) :SERVER_TUI_PIPELINE_BATCH, after SELFTEST_MIDINTEGRATION_BATCH, 3d
+    Batch EXTENDED_INTEGRATION_BATCH — Extended Integration (14 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
 
     section Routes + API
-    Batch 9a — Server Routes + Sub-Agent + React Hooks (3 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
-    Batch 9b — Endpoints+Barrel+Frontend Components (8 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
+    Batch SERVER_ROUTES_SUBAGENT_BATCH — Server Routes + Sub-Agent + React Hooks (3 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
+    Batch ENDPOINTS_BARREL_BATCH — Endpoints+Barrel+Frontend Components (8 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
 
     section Testing + Deploy
-    Batch 10 — E2E+Deploy+Publish+Ops+Docs (12 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
+    Batch E2E_DEPLOY_BATCH — E2E+Deploy+Publish+Ops+Docs (12 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
 
     section Frontend + Demos
-    Batch 11 — Demos+Docs+Incident (5 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
+    Batch FRONTEND_DEMOS_BATCH — Demos+Docs+Incident (5 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
 
     section Final Audit
-    FINAL — Compliance+QA (5 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
+    FINAL_AUDIT_BATCH — Compliance+QA (5 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
 ```
 
 ### Batch Summary
 
 | Batch | Name | Tasks | Parallelism | Theme |
 |------|------|-------|-------------|-------|
-| 0 | BLOCKING | 1 | — | Validates all tech assumptions |
-| 0.5 | RAG Validation | 1 | — | Validates RAG dependency chain |
-| 1 | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
-| 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
-| 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
-| 4 | Config + Guards + Extensibility | 8 | 8 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra, multi-tenant config |
-| 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
-| 6 | Integration Layer | 18 | 18 parallel | Streaming, grounding, core tools, intent routing, RAG infra, durable execution |
-| 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
-| 8a | Server + TUI + Pipeline | 16 | 16 parallel | TUI integration, server config, search/visual tools, intent validator, extraction safeguards, context budget, style/fact calibration |
-| 8b | Extended Integration | 14 | 14 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification, AI operations, retrieval feedback loop |
-| 9a | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
-| 9b | Endpoints + Barrel | 8 | 8 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components + generative UI pipeline |
-| 10 | E2E + Deploy + Ops + Docs Infra | 12 | 12 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance, conversation intelligence |
-| 11 | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
-| FINAL | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
+| BLOCKING_SPIKE_BATCH | BLOCKING | 1 | — | Validates all tech assumptions |
+| RAG_VALIDATION_BATCH | RAG Validation | 1 | — | Validates RAG dependency chain |
+| SCAFFOLDING_BATCH | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
+| FOUNDATION_A_BATCH | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
+| FOUNDATION_B_BATCH | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
+| CONFIG_GUARDS_BATCH | Config + Guards + Extensibility | 8 | 8 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra, multi-tenant config |
+| AGENT_PIPELINE_BATCH | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
+| INTEGRATION_BATCH | Integration Layer | 18 | 18 parallel | Streaming, grounding, core tools, intent routing, RAG infra, durable execution |
+| SELFTEST_MIDINTEGRATION_BATCH | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
+| SERVER_TUI_PIPELINE_BATCH | Server + TUI + Pipeline | 16 | 16 parallel | TUI integration, server config, search/visual tools, intent validator, extraction safeguards, context budget, style/fact calibration |
+| EXTENDED_INTEGRATION_BATCH | Extended Integration | 14 | 14 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification, AI operations, retrieval feedback loop |
+| SERVER_ROUTES_SUBAGENT_BATCH | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
+| ENDPOINTS_BARREL_BATCH | Endpoints + Barrel | 8 | 8 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components + generative UI pipeline |
+| E2E_DEPLOY_BATCH | E2E + Deploy + Ops + Docs Infra | 12 | 12 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance, conversation intelligence |
+| FRONTEND_DEMOS_BATCH | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
+| FINAL_AUDIT_BATCH | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
 | TOTAL | Execution Plan | 129 | — | 125 implementation tasks + 4 final audit tasks |
 
 ### Milestone Markers
@@ -159,11 +159,11 @@ graph LR
 
 | Bottleneck | Batch | Why It's Dangerous | Mitigation |
 |------------|------|--------------------|------------|
-| SPIKE_CORE_STACK — Core stack validation spike | 0 | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
-| SPIKE_RAG_DEPS — RAG Dependencies Spike | 0.5 | Blocks document processing, RAG infra, and file storage. Three critical Batch 2 tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
-| CI_PIPELINE — CI/CD quality gates | 3 | Blocks RELEASE_PIPELINE. If CI gates are unstable, release automation cannot be trusted and late-stage delivery stalls. | Build CI_PIPELINE in Batch 3 with strict gating and keep it green continuously. |
-| AGENT_FACTORY — Agent Factory | 5 | Critical gate for most integration paths. 9 Batch 6 tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
-| SERVER_ROUTES — Server Routes | 9a | Key gate in Batch 9a. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
+| SPIKE_CORE_STACK — Core stack validation spike | BLOCKING_SPIKE_BATCH | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
+| SPIKE_RAG_DEPS — RAG Dependencies Spike | RAG_VALIDATION_BATCH | Blocks document processing, RAG infra, and file storage. Three critical Batch FOUNDATION_A_BATCH tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
+| CI_PIPELINE — CI/CD quality gates | FOUNDATION_B_BATCH | Blocks RELEASE_PIPELINE. If CI gates are unstable, release automation cannot be trusted and late-stage delivery stalls. | Build CI_PIPELINE in Batch FOUNDATION_B_BATCH with strict gating and keep it green continuously. |
+| AGENT_FACTORY — Agent Factory | AGENT_PIPELINE_BATCH | Critical gate for most integration paths. 9 Batch INTEGRATION_BATCH tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
+| SERVER_ROUTES — Server Routes | SERVER_ROUTES_SUBAGENT_BATCH | Key gate in Batch SERVER_ROUTES_SUBAGENT_BATCH. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
 
 ### Timing Estimates
 
@@ -173,15 +173,15 @@ graph LR
 | Sequential execution (all 125 implementation tasks) | ~405–515 hours estimated |
 | Parallel execution (batch model) | ~125–160 hours estimated |
 | Parallel speedup | ~69% faster than sequential |
-| Maximum concurrency | 18 tasks (Batch 6) |
-| Single-task bottleneck batches | 2 (Batch 0, 0.5) |
+| Maximum concurrency | 18 tasks (Batch INTEGRATION_BATCH) |
+| Single-task bottleneck batches | 2 (Batch BLOCKING_SPIKE_BATCH, Batch RAG_VALIDATION_BATCH) |
 | Total batches | 16 (including FINAL) |
 
 ---
 
 ## Parallel Execution Batches
 
-### Batch 0 — BLOCKING (1 task)
+### Batch BLOCKING_SPIKE_BATCH — BLOCKING (1 task)
 
 > Validates ALL technology assumptions. Nothing else runs until this passes.
 
@@ -193,7 +193,7 @@ graph LR
 
 ---
 
-### Batch 0.5 — RAG Validation (1 task)
+### Batch RAG_VALIDATION_BATCH — RAG Validation (1 task)
 
 > Validates the RAG dependency chain. Runs after SPIKE_CORE_STACK confirms the runtime.
 
@@ -205,7 +205,7 @@ graph LR
 
 ---
 
-### Batch 1 — Scaffolding (3 parallel)
+### Batch SCAFFOLDING_BATCH — Scaffolding (3 parallel)
 
 > Sets up both repositories with build tooling, workspace config, and project structure.
 
@@ -217,7 +217,7 @@ graph LR
 
 ---
 
-### Batch 2 — Foundation A (9 parallel)
+### Batch FOUNDATION_A_BATCH — Foundation A (9 parallel)
 
 > Core types, storage, MCP, TUI shell, Docker infra bootstrap, and logging.
 
@@ -235,7 +235,7 @@ graph LR
 
 ---
 
-### Batch 3 — Foundation B (14 parallel)
+### Batch FOUNDATION_B_BATCH — Foundation B (14 parallel)
 
 > Schemas, MCP client, memory, provider fallback, TUI components, observability, key pool, cache, circuit breaker, and rewrite strategies.
 
@@ -260,7 +260,7 @@ graph LR
 
 ---
 
-### Batch 4 — Configuration + Guardrails + Extensibility (8 parallel)
+### Batch CONFIG_GUARDS_BATCH — Configuration + Guardrails + Extensibility (8 parallel)
 
 > Configuration system, input/output/external guardrails, FileRegistry, and extension point infrastructure.
 
@@ -275,11 +275,11 @@ graph LR
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
 | **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | FOUNDATION, CORE_TYPES |
 
-> **NEW**: FILE_REGISTRY (from the Retrieval document) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from the Retrieval document) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch 7.
+> **NEW**: FILE_REGISTRY (from the Retrieval document) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from the Retrieval document) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch SELFTEST_MIDINTEGRATION_BATCH.
 
 ---
 
-### Batch 5 — Agent Factory + Pipeline Foundation (4 parallel)
+### Batch AGENT_PIPELINE_BATCH — Agent Factory + Pipeline Foundation (4 parallel)
 
 > AGENT_FACTORY remains critical. DOC_PIPELINE and FILE_STORAGE now run here after KEY_POOL and CONFIG_DEFAULTS are available.
 
@@ -294,7 +294,7 @@ graph LR
 
 ---
 
-### Batch 6 — Integration Layer (18 parallel)
+### Batch INTEGRATION_BATCH — Integration Layer (18 parallel)
 
 > Streaming, grounding, guardrail orchestration, memory tools, CTA, rate limiting, prompts, buffered guardrail, embedding router, RAGFlow client, durable execution, and RAG infrastructure.
 
@@ -319,11 +319,11 @@ graph LR
 | MEMORY_CONTROL | User memory control tools (inspect/delete) | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
 | DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
 
-> **NEW**: EMBED_ROUTER (Conversation Pipeline) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Conversation Pipeline) wraps RAGFlow's retrieval API. LOCATION_TOOL (Agents) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch 8a because both require EVIDENCE_GATE (Batch 7).
+> **NEW**: EMBED_ROUTER (Conversation Pipeline) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Conversation Pipeline) wraps RAGFlow's retrieval API. LOCATION_TOOL (Agents) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch SERVER_TUI_PIPELINE_BATCH because both require EVIDENCE_GATE (Batch SELFTEST_MIDINTEGRATION_BATCH).
 
 ---
 
-### Batch 7 — Self-test + Mid Integration (8 parallel)
+### Batch SELFTEST_MIDINTEGRATION_BATCH — Self-test + Mid Integration (8 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -338,7 +338,7 @@ graph LR
 
 ---
 
-### Batch 8a — Server + TUI + Intent Pipeline (16 parallel)
+### Batch SERVER_TUI_PIPELINE_BATCH — Server + TUI + Intent Pipeline (16 parallel)
 
 > TUI agent integration, server configuration, client SDK, query router, JWT auth, LLM intent validator, source priority router, and evidence-gated search/visual tools.
 
@@ -365,7 +365,7 @@ graph LR
 
 ---
 
-### Batch 8b — Extended Integration (14 parallel)
+### Batch EXTENDED_INTEGRATION_BATCH — Extended Integration (14 parallel)
 
 > TUI upload, cost tracking, TTL cleanup, cross-conversation RAG, speculative pre-fetch coordination, query rewrite tool, and orchestrator agent.
 
@@ -390,7 +390,7 @@ graph LR
 
 ---
 
-### Batch 9a — Server Routes + Lifecycle + React Hooks (3 parallel)
+### Batch SERVER_ROUTES_SUBAGENT_BATCH — Server Routes + Lifecycle + React Hooks (3 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -400,7 +400,7 @@ graph LR
 
 ---
 
-### Batch 9b — Barrel Exports + Server Endpoints + Frontend Components (8 parallel)
+### Batch ENDPOINTS_BARREL_BATCH — Barrel Exports + Server Endpoints + Frontend Components (8 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -417,7 +417,7 @@ graph LR
 
 ---
 
-### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (12 parallel)
+### Batch E2E_DEPLOY_BATCH — E2E + Deploy + Publish + Ops + Docs Infra (12 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -436,7 +436,7 @@ graph LR
 
 ---
 
-### Batch 11 — Frontend Demos + Docs + Incident Ops (5 parallel)
+### Batch FRONTEND_DEMOS_BATCH — Frontend Demos + Docs + Incident Ops (5 parallel)
 
 > Full-featured demo applications exercising the complete frontend SDK stack.
 
@@ -450,10 +450,10 @@ graph LR
 
 ---
 
-### Batch FINAL — Audit (5 parallel)
+### Batch FINAL_AUDIT_BATCH — Audit (5 parallel)
 
 > After ALL tasks complete. Independent review across plan, code, QA, scope, and API governance.
-> FINAL is scheduled after Batch 11, so audit coverage includes both frontend demo tasks.
+> FINAL is scheduled after Batch FRONTEND_DEMOS_BATCH, so audit coverage includes both frontend demo tasks.
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -471,21 +471,21 @@ graph LR
 
 ```mermaid
 graph TB
-    BATCH_SPIKE["Batch 0<br/>SPIKE_CORE_STACK Spike"]
-    BATCH_RAG_SPIKE["Batch 0.5<br/>SPIKE_RAG_DEPS RAG Spike"]
-    BATCH_SCAFFOLD["Batch 1<br/>3 tasks — Scaffold +<br/>Code Standards"]
-    BATCH_TYPES_STORAGE["Batch 2<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
-    BATCH_SCHEMAS_MEMORY["Batch 3<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
-    BATCH_CONFIG_GUARDS["Batch 4<br/>8 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility, Multi-tenant"]
-    BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
-    BATCH_STREAMING_TOOLS["Batch 6<br/>18 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base,<br/>Durable Execution"]
-    BATCH_EVIDENCE_UPLOAD["Batch 7<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
-    BATCH_SERVER_TUI["Batch 8a<br/>16 tasks — Server, TUI,<br/>Intent, Search, Visual,<br/>Humanlikeness Signals"]
-    BATCH_UPLOAD_COST["Batch 8b<br/>14 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification,<br/>AI Ops, Retrieval Feedback"]
-    BATCH_ROUTES_SUBAGENT["Batch 9a<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
-    BATCH_ENDPOINTS["Batch 9b<br/>8 tasks — Endpoints,<br/>Barrel Exports, Frontend Components,<br/>Generative UI"]
-    BATCH_END_TO_END_DEPLOY["Batch 10<br/>12 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring,<br/>Security, Conversation Intel"]
-    BATCH_FRONTEND_DEMOS["Batch 11<br/>5 tasks — Demos,<br/>Docs Content, Incident Ops,<br/>Dev Experience"]
+    BATCH_SPIKE["Batch BLOCKING_SPIKE_BATCH<br/>SPIKE_CORE_STACK Spike"]
+    BATCH_RAG_SPIKE["Batch RAG_VALIDATION_BATCH<br/>SPIKE_RAG_DEPS RAG Spike"]
+    BATCH_SCAFFOLD["Batch SCAFFOLDING_BATCH<br/>3 tasks — Scaffold +<br/>Code Standards"]
+    BATCH_TYPES_STORAGE["Batch FOUNDATION_A_BATCH<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
+    BATCH_SCHEMAS_MEMORY["Batch FOUNDATION_B_BATCH<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
+    BATCH_CONFIG_GUARDS["Batch CONFIG_GUARDS_BATCH<br/>8 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility, Multi-tenant"]
+    BATCH_AGENT_DOCS["Batch AGENT_PIPELINE_BATCH<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
+    BATCH_STREAMING_TOOLS["Batch INTEGRATION_BATCH<br/>18 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base,<br/>Durable Execution"]
+    BATCH_EVIDENCE_UPLOAD["Batch SELFTEST_MIDINTEGRATION_BATCH<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
+    BATCH_SERVER_TUI["Batch SERVER_TUI_PIPELINE_BATCH<br/>16 tasks — Server, TUI,<br/>Intent, Search, Visual,<br/>Humanlikeness Signals"]
+    BATCH_UPLOAD_COST["Batch EXTENDED_INTEGRATION_BATCH<br/>14 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification,<br/>AI Ops, Retrieval Feedback"]
+    BATCH_ROUTES_SUBAGENT["Batch SERVER_ROUTES_SUBAGENT_BATCH<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
+    BATCH_ENDPOINTS["Batch ENDPOINTS_BARREL_BATCH<br/>8 tasks — Endpoints,<br/>Barrel Exports, Frontend Components,<br/>Generative UI"]
+    BATCH_END_TO_END_DEPLOY["Batch E2E_DEPLOY_BATCH<br/>12 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring,<br/>Security, Conversation Intel"]
+    BATCH_FRONTEND_DEMOS["Batch FRONTEND_DEMOS_BATCH<br/>5 tasks — Demos,<br/>Docs Content, Incident Ops,<br/>Dev Experience"]
     BATCH_FINAL_AUDIT["FINAL<br/>5 tasks — Audit + Governance"]
 
     BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
@@ -710,35 +710,35 @@ graph TB
 ```mermaid
 graph TB
     subgraph INTENT_PIPELINE["Intent Detection Pipeline (Conversation)"]
-        EMBED_ROUTER["EMBED_ROUTER<br/>Embedding Router<br/>Batch 6"]:::new
-        LLM_INTENT["LLM_INTENT<br/>LLM Intent Validator<br/>+ Query Rewriter<br/>Batch 8a"]:::new
-        PREFETCH_COORD["PREFETCH_COORD<br/>Speculative Pre-Fetch<br/>Coordinator<br/>Batch 8b"]:::new
+        EMBED_ROUTER["EMBED_ROUTER<br/>Embedding Router<br/>Batch INTEGRATION_BATCH"]:::new
+        LLM_INTENT["LLM_INTENT<br/>LLM Intent Validator<br/>+ Query Rewriter<br/>Batch SERVER_TUI_PIPELINE_BATCH"]:::new
+        PREFETCH_COORD["PREFETCH_COORD<br/>Speculative Pre-Fetch<br/>Coordinator<br/>Batch EXTENDED_INTEGRATION_BATCH"]:::new
     end
 
     subgraph QUERY_PIPELINE["Query Pipeline (Conversation)"]
-        REWRITE_STRATEGIES["REWRITE_STRATEGIES<br/>Rewrite Strategy<br/>Modules<br/>Batch 3"]:::new
-        RAGFLOW_CLIENT["RAGFLOW_CLIENT<br/>RAGFlow Client<br/>+ Tool<br/>Batch 6"]:::new
-        SOURCE_ROUTER["SOURCE_ROUTER<br/>Source Priority<br/>Router<br/>Batch 8a"]:::new
-        REWRITE_TOOL["REWRITE_TOOL<br/>Query Rewrite<br/>Tool<br/>Batch 8b"]:::new
+        REWRITE_STRATEGIES["REWRITE_STRATEGIES<br/>Rewrite Strategy<br/>Modules<br/>Batch FOUNDATION_B_BATCH"]:::new
+        RAGFLOW_CLIENT["RAGFLOW_CLIENT<br/>RAGFlow Client<br/>+ Tool<br/>Batch INTEGRATION_BATCH"]:::new
+        SOURCE_ROUTER["SOURCE_ROUTER<br/>Source Priority<br/>Router<br/>Batch SERVER_TUI_PIPELINE_BATCH"]:::new
+        REWRITE_TOOL["REWRITE_TOOL<br/>Query Rewrite<br/>Tool<br/>Batch EXTENDED_INTEGRATION_BATCH"]:::new
     end
 
     subgraph FILE_INTELLIGENCE["File Intelligence (Retrieval)"]
-        FILE_REGISTRY["FILE_REGISTRY<br/>FileRegistry<br/>Batch 4"]:::new
-        EVIDENCE_GATE["EVIDENCE_GATE<br/>Evidence Bundle<br/>Gate<br/>Batch 7"]:::new
-        DOC_SEARCH["DOC_SEARCH<br/>Per-Document<br/>Search Tool<br/>Batch 8a"]:::new
-        VISUAL_GROUNDING["VISUAL_GROUNDING<br/>Visual Grounding<br/>Batch 8a"]:::new
+        FILE_REGISTRY["FILE_REGISTRY<br/>FileRegistry<br/>Batch CONFIG_GUARDS_BATCH"]:::new
+        EVIDENCE_GATE["EVIDENCE_GATE<br/>Evidence Bundle<br/>Gate<br/>Batch SELFTEST_MIDINTEGRATION_BATCH"]:::new
+        DOC_SEARCH["DOC_SEARCH<br/>Per-Document<br/>Search Tool<br/>Batch SERVER_TUI_PIPELINE_BATCH"]:::new
+        VISUAL_GROUNDING["VISUAL_GROUNDING<br/>Visual Grounding<br/>Batch SERVER_TUI_PIPELINE_BATCH"]:::new
     end
 
     subgraph ORCHESTRATION["Orchestration (Agents)"]
-        ORCHESTRATOR["ORCHESTRATOR<br/>Orchestrator Agent<br/>Framework<br/>Batch 8b"]:::new
-        SUBAGENT_FACTORY["SUBAGENT_FACTORY<br/>Sub-Agent Factory<br/>Batch 9a"]:::new
+        ORCHESTRATOR["ORCHESTRATOR<br/>Orchestrator Agent<br/>Framework<br/>Batch EXTENDED_INTEGRATION_BATCH"]:::new
+        SUBAGENT_FACTORY["SUBAGENT_FACTORY<br/>Sub-Agent Factory<br/>Batch SERVER_ROUTES_SUBAGENT_BATCH"]:::new
     end
 
     subgraph PLATFORM_EXTENSIONS["Platform and Gap Extensions"]
-        MULTI_TENANT_CONFIG["MULTI_TENANT_CONFIG<br/>Tenant Config Hierarchy<br/>Batch 4"]:::new
-        RAG_FEEDBACK_LOOP["RAG_FEEDBACK_LOOP<br/>Retrieval Feedback Loop<br/>Batch 8b"]:::new
-        GENERATIVE_UI["GENERATIVE_UI<br/>Generative UI Pipeline<br/>Batch 9b"]:::new
-        CONVERSATION_INTELLIGENCE["CONVERSATION_INTELLIGENCE<br/>Conversation Intelligence<br/>Batch 10"]:::new
+        MULTI_TENANT_CONFIG["MULTI_TENANT_CONFIG<br/>Tenant Config Hierarchy<br/>Batch CONFIG_GUARDS_BATCH"]:::new
+        RAG_FEEDBACK_LOOP["RAG_FEEDBACK_LOOP<br/>Retrieval Feedback Loop<br/>Batch EXTENDED_INTEGRATION_BATCH"]:::new
+        GENERATIVE_UI["GENERATIVE_UI<br/>Generative UI Pipeline<br/>Batch ENDPOINTS_BARREL_BATCH"]:::new
+        CONVERSATION_INTELLIGENCE["CONVERSATION_INTELLIGENCE<br/>Conversation Intelligence<br/>Batch E2E_DEPLOY_BATCH"]:::new
     end
 
     EMBED_ROUTER --> LLM_INTENT --> PREFETCH_COORD
@@ -772,21 +772,21 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph BATCH_SPIKE["Batch 0 — 1 task"]
+    subgraph BATCH_SPIKE["Batch BLOCKING_SPIKE_BATCH — 1 task"]
         SPIKE_CORE_STACK_P["SPIKE_CORE_STACK"]
     end
 
-    subgraph BATCH_RAG_SPIKE["Batch 0.5 — 1 task"]
+    subgraph BATCH_RAG_SPIKE["Batch RAG_VALIDATION_BATCH — 1 task"]
         SPIKE_RAG_DEPS_P["SPIKE_RAG_DEPS"]
     end
 
-    subgraph BATCH_SCAFFOLD["Batch 1 — 3 parallel"]
+    subgraph BATCH_SCAFFOLD["Batch SCAFFOLDING_BATCH — 3 parallel"]
         SCAFFOLD_LIB_P["SCAFFOLD_LIB"]
         SCAFFOLD_SERVER_P["SCAFFOLD_SERVER"]
         CODE_STANDARDS_P["CODE_STANDARDS (new)"]
     end
 
-    subgraph BATCH_TYPES_STORAGE["Batch 2 — 9 parallel"]
+    subgraph BATCH_TYPES_STORAGE["Batch FOUNDATION_A_BATCH — 9 parallel"]
         CORE_TYPES_P["CORE_TYPES"]
         STORAGE_WRAPPER_P["STORAGE_WRAPPER"]
         MCP_HEALTH_P["MCP_HEALTH"]
@@ -798,7 +798,7 @@ graph TB
         SCAFFOLD_FRONTEND_P["SCAFFOLD_FRONTEND (frontend)"]
     end
 
-    subgraph BATCH_SCHEMAS_MEMORY["Batch 3 — 14 parallel"]
+    subgraph BATCH_SCHEMAS_MEMORY["Batch FOUNDATION_B_BATCH — 14 parallel"]
         ZOD_SCHEMAS_P["ZOD_SCHEMAS"]
         MCP_CLIENT_P["MCP_CLIENT"]
         SHORT_TERM_MEM_P["SHORT_TERM_MEM"]
@@ -815,7 +815,7 @@ graph TB
         CI_PIPELINE_P["CI_PIPELINE (new)"]
     end
 
-    subgraph BATCH_CONFIG_GUARDS["Batch 4 — 8 parallel"]
+    subgraph BATCH_CONFIG_GUARDS["Batch CONFIG_GUARDS_BATCH — 8 parallel"]
         CONFIG_DEFAULTS_P["CONFIG_DEFAULTS"]
         INPUT_GUARD_P["INPUT_GUARD"]
         OUTPUT_GUARD_P["OUTPUT_GUARD"]
@@ -826,14 +826,14 @@ graph TB
         EXTENSIBILITY_INFRA_P["EXTENSIBILITY_INFRA (new)"]
     end
 
-    subgraph BATCH_AGENT_DOCS["Batch 5 — 4 parallel"]
+    subgraph BATCH_AGENT_DOCS["Batch AGENT_PIPELINE_BATCH — 4 parallel"]
         DOC_PIPELINE_P["DOC_PIPELINE"]
         FILE_STORAGE_P["FILE_STORAGE"]
         AGENT_FACTORY_P["AGENT_FACTORY"]:::crit
         STRUCTURED_RESULT_MEM_P["STRUCTURED_RESULT_MEM (new)"]
     end
 
-    subgraph BATCH_STREAMING_TOOLS["Batch 6 — 18 parallel (MAX CONCURRENCY)"]
+    subgraph BATCH_STREAMING_TOOLS["Batch INTEGRATION_BATCH — 18 parallel (MAX CONCURRENCY)"]
         SSE_STREAMING_P["SSE_STREAMING"]
         GEMINI_GROUNDING_P["GEMINI_GROUNDING"]
         GUARD_PIPELINE_P["GUARD_PIPELINE"]
@@ -854,7 +854,7 @@ graph TB
         DURABLE_EXECUTION_P["DURABLE_EXECUTION (new)"]
     end
 
-    subgraph BATCH_EVIDENCE_UPLOAD["Batch 7 — 8 parallel"]
+    subgraph BATCH_EVIDENCE_UPLOAD["Batch SELFTEST_MIDINTEGRATION_BATCH — 8 parallel"]
         EVIDENCE_GATE_P["EVIDENCE_GATE (new)"]
         UPLOAD_PIPELINE_P["UPLOAD_PIPELINE"]
         CUSTOM_SPANS_P["CUSTOM_SPANS"]
@@ -865,7 +865,7 @@ graph TB
         THREAD_RESURRECTION_P["THREAD_RESURRECTION (new)"]
     end
 
-    subgraph BATCH_SERVER_TUI["Batch 8a — 16 parallel"]
+    subgraph BATCH_SERVER_TUI["Batch SERVER_TUI_PIPELINE_BATCH — 16 parallel"]
         TUI_AGENT_P["TUI_AGENT"]
         SERVER_AGENT_CFG_P["SERVER_AGENT_CFG"]
         SERVER_MCP_P["SERVER_MCP"]
@@ -884,7 +884,7 @@ graph TB
         CONTEXT_BUDGET_P["CONTEXT_BUDGET (new)"]
     end
 
-    subgraph BATCH_UPLOAD_COST["Batch 8b — 14 parallel"]
+    subgraph BATCH_UPLOAD_COST["Batch EXTENDED_INTEGRATION_BATCH — 14 parallel"]
         TUI_UPLOAD_P["TUI_UPLOAD"]
         COST_TRACKING_P["COST_TRACKING"]
         TTL_CLEANUP_P["TTL_CLEANUP"]
@@ -901,13 +901,13 @@ graph TB
         RAG_FEEDBACK_LOOP_P["RAG_FEEDBACK_LOOP (new)"]
     end
 
-    subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 3 parallel"]
+    subgraph BATCH_ROUTES_SUBAGENT["Batch SERVER_ROUTES_SUBAGENT_BATCH — 3 parallel"]
         SUBAGENT_FACTORY_P["SUBAGENT_FACTORY (new)"]
         SERVER_ROUTES_P["SERVER_ROUTES"]
         REACT_HOOKS_P["REACT_HOOKS (frontend)"]
     end
 
-    subgraph BATCH_ENDPOINTS["Batch 9b — 8 parallel"]
+    subgraph BATCH_ENDPOINTS["Batch ENDPOINTS_BARREL_BATCH — 8 parallel"]
         BARREL_EXPORTS_P["BARREL_EXPORTS"]
         UPLOAD_ENDPOINT_P["UPLOAD_ENDPOINT"]
         FEEDBACK_ENDPOINT_P["FEEDBACK_ENDPOINT"]
@@ -918,7 +918,7 @@ graph TB
         RN_COMPONENTS_P["RN_COMPONENTS (frontend)"]
     end
 
-    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 12 parallel"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch E2E_DEPLOY_BATCH — 12 parallel"]
         E2E_TESTS_P["E2E_TESTS"]
         PKG_PUBLISH_P["PKG_PUBLISH"]
         SMOKE_TESTS_P["SMOKE_TESTS"]
@@ -933,7 +933,7 @@ graph TB
         CONVERSATION_INTELLIGENCE_P["CONVERSATION_INTELLIGENCE (new)"]
     end
 
-    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 5 parallel"]
+    subgraph BATCH_FRONTEND_DEMOS["Batch FRONTEND_DEMOS_BATCH — 5 parallel"]
         DEMO_WEB_P["DEMO_WEB (frontend)"]
         DEMO_MOBILE_P["DEMO_MOBILE (frontend)"]
         DOCS_CONTENT_P["DOCS_CONTENT (new)"]
@@ -1029,22 +1029,22 @@ graph LR
 
 | Batch | Tasks | Categories |
 |------|-------|-----------|
-| 0 | 1 | SPIKE_CORE_STACK → `deep` |
-| 0.5 | 1 | SPIKE_RAG_DEPS → `deep` |
-| 1 | 3 | SCAFFOLD_LIB, SCAFFOLD_SERVER, CODE_STANDARDS → `quick` |
-| 2 | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
-| 3 | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
-| 4 | 8 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA, MULTI_TENANT_CONFIG → `deep`; GUARD_FACTORY → `unspecified-high` |
-| 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
-| 6 | 18 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL, DURABLE_EXECUTION → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
-| 7 | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
-| 8a | 16 | TUI_AGENT, AGENT_ROUTER, LLM_INTENT, SOURCE_ROUTER, DOC_SEARCH, VISUAL_GROUNDING, EXTRACTION_SAFEGUARDS, STYLE_PREFERENCES, FACT_SUPERSESSION → `deep`; SERVER_AGENT_CFG, SERVER_MCP, SERVER_GUARDRAILS → `quick`; CLIENT_SDK, JWT_AUTH, CONTEXT_BUDGET, RESPONSE_CALIBRATION → `unspecified-high` |
-| 8b | 14 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS, RAG_FEEDBACK_LOOP → `deep` |
-| 9a | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
-| 9b | 8 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high`; GENERATIVE_UI → `deep` |
-| 10 | 12 | E2E_TESTS, MONITORING_INFRA, CONVERSATION_INTELLIGENCE → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
-| 11 | 5 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing`; DEVELOPER_EXPERIENCE → `unspecified-high` |
-| FINAL | 5 | AUDIT_PLAN → `oracle`; AUDIT_CODE, API_GOVERNANCE → `unspecified-high`; AUDIT_QA → `unspecified-high` + `playwright`; AUDIT_SCOPE → `deep` |
+| BLOCKING_SPIKE_BATCH | 1 | SPIKE_CORE_STACK → `deep` |
+| RAG_VALIDATION_BATCH | 1 | SPIKE_RAG_DEPS → `deep` |
+| SCAFFOLDING_BATCH | 3 | SCAFFOLD_LIB, SCAFFOLD_SERVER, CODE_STANDARDS → `quick` |
+| FOUNDATION_A_BATCH | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
+| FOUNDATION_B_BATCH | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
+| CONFIG_GUARDS_BATCH | 8 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA, MULTI_TENANT_CONFIG → `deep`; GUARD_FACTORY → `unspecified-high` |
+| AGENT_PIPELINE_BATCH | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
+| INTEGRATION_BATCH | 18 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL, DURABLE_EXECUTION → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
+| SELFTEST_MIDINTEGRATION_BATCH | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
+| SERVER_TUI_PIPELINE_BATCH | 16 | TUI_AGENT, AGENT_ROUTER, LLM_INTENT, SOURCE_ROUTER, DOC_SEARCH, VISUAL_GROUNDING, EXTRACTION_SAFEGUARDS, STYLE_PREFERENCES, FACT_SUPERSESSION → `deep`; SERVER_AGENT_CFG, SERVER_MCP, SERVER_GUARDRAILS → `quick`; CLIENT_SDK, JWT_AUTH, CONTEXT_BUDGET, RESPONSE_CALIBRATION → `unspecified-high` |
+| EXTENDED_INTEGRATION_BATCH | 14 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS, RAG_FEEDBACK_LOOP → `deep` |
+| SERVER_ROUTES_SUBAGENT_BATCH | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
+| ENDPOINTS_BARREL_BATCH | 8 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high`; GENERATIVE_UI → `deep` |
+| E2E_DEPLOY_BATCH | 12 | E2E_TESTS, MONITORING_INFRA, CONVERSATION_INTELLIGENCE → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
+| FRONTEND_DEMOS_BATCH | 5 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing`; DEVELOPER_EXPERIENCE → `unspecified-high` |
+| FINAL_AUDIT_BATCH | 5 | AUDIT_PLAN → `oracle`; AUDIT_CODE, API_GOVERNANCE → `unspecified-high`; AUDIT_QA → `unspecified-high` + `playwright`; AUDIT_SCOPE → `deep` |
 
 ### Category Totals
 
@@ -1065,139 +1065,139 @@ graph LR
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
-> **Batch ordering policy**: Tasks within the same batch may have internal dependencies. The batch number indicates when a task becomes eligible to start, not that all tasks in the batch run simultaneously. Within a batch, tasks execute in dependency order. A task in batch N means all its dependencies in batch N-1 or earlier must complete first, and any same-batch dependencies complete within the batch window.
+> **Batch ordering policy**: Tasks within the same batch may have internal dependencies. The batch label indicates when a task becomes eligible to start, not that all tasks in the batch run simultaneously. Within a batch, tasks execute in dependency order. A task in batch N means all its dependencies in earlier batches must complete first, and any same-batch dependencies complete within the batch window.
 
 | Task | Depends On | Blocks | Batch |
 |------|-----------|--------|------|
-| SPIKE_CORE_STACK | None (Batch 0) | SCAFFOLD_LIB, SCAFFOLD_SERVER, SPIKE_RAG_DEPS | 0 |
-| SPIKE_RAG_DEPS | SPIKE_CORE_STACK | DOC_PIPELINE | 0.5 |
-| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING, SCAFFOLD_FRONTEND, CODE_STANDARDS, CI_PIPELINE, DOCS_SITE | 1 |
-| SCAFFOLD_SERVER | SPIKE_CORE_STACK | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, CODE_STANDARDS | 1 |
-| CODE_STANDARDS | SCAFFOLD_LIB, SCAFFOLD_SERVER | — | 1 |
-| SCAFFOLD_FRONTEND | SCAFFOLD_LIB | REACT_HOOKS | 2 |
-| CORE_TYPES | SCAFFOLD_LIB | ZOD_SCHEMAS, CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, LANGFUSE_MODULE, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, CIRCUIT_BREAKER, JWT_AUTH, EMBED_ROUTER, RAGFLOW_CLIENT, REWRITE_STRATEGIES, EVIDENCE_GATE, LANG_GUARD, HATE_SPEECH_GUARD, RESPONSE_CALIBRATION | 2 |
-| STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM, DURABLE_EXECUTION | 2 |
-| MCP_HEALTH | SCAFFOLD_LIB | MCP_CLIENT | 2 |
-| PROVIDER_HELPERS | SCAFFOLD_LIB | AGENT_FACTORY, PROVIDER_FALLBACK | 2 |
-| TUI_SHELL | SCAFFOLD_LIB | TUI_CHAT, TUI_INPUT, TUI_COMMANDS | 2 |
-| SURREALDB_CLIENT | SCAFFOLD_LIB | FACT_EXTRACTION, MEMORY_RECALL, STYLE_PREFERENCES, FACT_SUPERSESSION | 2 |
-| DOC_PIPELINE | SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS | RAG_INFRA | 5 |
-| FILE_STORAGE | DOCKER_COMPOSE, CONFIG_DEFAULTS | UPLOAD_PIPELINE, COST_TRACKING, TRIGGER_TASKS, TTL_CLEANUP, VISUAL_GROUNDING | 5 |
-| STRUCT_LOGGING | SCAFFOLD_LIB | BARREL_EXPORTS | 2 |
-| ZOD_SCHEMAS | CORE_TYPES | CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, MULTI_TENANT_CONFIG | 3 |
-| MCP_CLIENT | CORE_TYPES, MCP_HEALTH | SERVER_MCP | 3 |
-| SHORT_TERM_MEM | CORE_TYPES, STORAGE_WRAPPER | USER_SHORTTERM_MEM, SUMMARY_CAP, CONTEXT_BUDGET, THREAD_RESURRECTION | 3 |
-| USER_SHORTTERM_MEM | SHORT_TERM_MEM | CONTEXT_BUDGET | 3 |
-| PROVIDER_FALLBACK | PROVIDER_HELPERS | BARREL_EXPORTS | 3 |
-| TUI_CHAT | TUI_SHELL | TUI_AGENT | 3 |
-| TUI_INPUT | TUI_SHELL | TUI_AGENT | 3 |
-| TUI_COMMANDS | TUI_SHELL | TUI_UPLOAD | 3 |
-| RAG_INFRA | STORAGE_WRAPPER, DOC_PIPELINE | CUSTOM_SPANS, TRIGGER_TASKS, TTL_CLEANUP, CROSS_CONV_RAG, EVIDENCE_GATE, DOC_SEARCH | 6 |
-| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT, MONITORING_INFRA, AI_OPERATIONS | 3 |
-| KEY_POOL | CORE_TYPES, SCAFFOLD_LIB | BARREL_EXPORTS | 3 |
-| VALKEY_CACHE | CORE_TYPES, SCAFFOLD_LIB | COST_TRACKING, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL, EMBED_ROUTER, FILE_REGISTRY | 3 |
-| CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | 3 |
-| REWRITE_STRATEGIES | CORE_TYPES | REWRITE_TOOL | 3 |
-| CI_PIPELINE | SCAFFOLD_LIB, TEST_INFRA | RELEASE_PIPELINE | 3 |
-| CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER, MULTI_TENANT_CONFIG | 4 |
-| INPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS | 4 |
-| OUTPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS, ZERO_LEAK_GUARD | 4 |
-| GUARD_FACTORY | CORE_TYPES | GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD | 4 |
-| LANG_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
-| HATE_SPEECH_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
-| FILE_REGISTRY | STORAGE_WRAPPER, VALKEY_CACHE | DOC_SEARCH, VISUAL_GROUNDING | 4 |
-| MULTI_TENANT_CONFIG | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH | — | 4 |
-| SUMMARY_CAP | SHORT_TERM_MEM | — | 4 |
-| EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | 4 |
-| EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING, RAG_FEEDBACK_LOOP | 7 |
-| AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL, DURABLE_EXECUTION, AI_OPERATIONS | 5 |
-| STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | 5 |
-| SSE_STREAMING | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB | SERVER_ROUTES, COST_TRACKING, AGENT_ROUTER, DURABLE_EXECUTION | 6 |
-| GEMINI_GROUNDING | AGENT_FACTORY | — | 6 |
-| GUARD_PIPELINE | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY | SERVER_GUARDRAILS, SECURITY_COMPLIANCE | 6 |
-| EVAL_CONFIG | AGENT_FACTORY | SELF_TEST | 6 |
-| FACT_EXTRACTION | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS, THREAD_RESURRECTION, EXTRACTION_SAFEGUARDS, CONTEXT_BUDGET, STYLE_PREFERENCES, FACT_SUPERSESSION | 6 |
-| MEMORY_RECALL | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS | 6 |
-| MEMORY_CONTROL | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY | — | 6 |
-| UPLOAD_PIPELINE | FILE_STORAGE, STORAGE_WRAPPER, VALKEY_CACHE, DOCKER_COMPOSE | UPLOAD_ENDPOINT | 7 |
-| NON_ACTIONABLE_DETECT | EMBED_ROUTER | — | 7 |
-| INPUT_VALIDATION | SSE_STREAMING | — | 7 |
-| THREAD_RESURRECTION | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | 7 |
-| CUSTOM_SPANS | LANGFUSE_MODULE, INPUT_GUARD, OUTPUT_GUARD, RAG_INFRA | BARREL_EXPORTS | 7 |
-| CTA_STREAMING | AGENT_FACTORY, CORE_TYPES | SERVER_AGENT_CFG, GENERATIVE_UI | 6 |
-| LOCATION_TOOL | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE | SERVER_AGENT_CFG | 6 |
-| TRIGGER_TASKS | CORE_TYPES, RAG_INFRA, FILE_STORAGE, VALKEY_CACHE | TTL_CLEANUP | 7 |
-| RATE_LIMITING | CORE_TYPES, VALKEY_CACHE | — | 6 |
-| PROMPT_MGMT | LANGFUSE_MODULE | BARREL_EXPORTS | 6 |
-| ZERO_LEAK_GUARD | OUTPUT_GUARD | BARREL_EXPORTS | 6 |
-| EMBED_ROUTER | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY | LLM_INTENT, PREFETCH_COORD, ORCHESTRATOR, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS | 6 |
-| DURABLE_EXECUTION | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING | — | 6 |
-| RAGFLOW_CLIENT | CORE_TYPES, CONFIG_DEFAULTS | SOURCE_ROUTER | 6 |
-| DOC_SEARCH | FILE_REGISTRY, RAG_INFRA, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | 8a |
-| VISUAL_GROUNDING | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | 8a |
-| SELF_TEST | EVAL_CONFIG | E2E_TESTS | 7 |
-| TUI_AGENT | TUI_SHELL, TUI_CHAT, TUI_INPUT | E2E_TESTS, TUI_UPLOAD | 8a |
-| SERVER_AGENT_CFG | SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL | SERVER_ROUTES, E2E_TESTS, SMOKE_TESTS | 8a |
-| SERVER_MCP | SCAFFOLD_SERVER, MCP_CLIENT | E2E_TESTS, SMOKE_TESTS | 8a |
-| SERVER_GUARDRAILS | SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD | E2E_TESTS, SMOKE_TESTS | 8a |
-| DOCKER_COMPOSE | SCAFFOLD_SERVER | FILE_STORAGE, UPLOAD_PIPELINE, E2E_TESTS, SMOKE_TESTS, LOAD_TESTS, MONITORING_INFRA | 2 |
-| CLIENT_SDK | SSE_STREAMING, CTA_STREAMING, CORE_TYPES | E2E_TESTS, REACT_HOOKS | 8a |
-| EXTRACTION_SAFEGUARDS | FACT_EXTRACTION | — | 8a |
-| CONTEXT_BUDGET | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | 8a |
-| STYLE_PREFERENCES | FACT_EXTRACTION, SURREALDB_CLIENT | — | 8a |
-| FACT_SUPERSESSION | FACT_EXTRACTION, SURREALDB_CLIENT | — | 8a |
-| RESPONSE_CALIBRATION | CORE_TYPES, AGENT_FACTORY | — | 8a |
-| AGENT_ROUTER | AGENT_FACTORY, SSE_STREAMING | E2E_TESTS | 8a |
-| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE, MULTI_TENANT_CONFIG | 8a |
-| LLM_INTENT | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER | PREFETCH_COORD, REWRITE_TOOL, ORCHESTRATOR, DEPENDENT_INTENT, ATTRIBUTE_NEGATION, QUERY_REPLAY, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | 8a |
-| SOURCE_ROUTER | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS | PREFETCH_COORD | 8a |
-| TUI_UPLOAD | TUI_SHELL, TUI_COMMANDS, TUI_AGENT | E2E_TESTS | 8b |
-| COST_TRACKING | FILE_STORAGE, SSE_STREAMING, VALKEY_CACHE | E2E_TESTS, ADMIN_API | 8b |
-| TTL_CLEANUP | FILE_STORAGE, TRIGGER_TASKS, RAG_INFRA | E2E_TESTS | 8b |
-| CROSS_CONV_RAG | RAG_INFRA | E2E_TESTS | 8b |
-| PREFETCH_COORD | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 8b |
-| REWRITE_TOOL | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT | BARREL_EXPORTS, E2E_TESTS | 8b |
-| ORCHESTRATOR | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER | SUBAGENT_FACTORY, DEPENDENT_INTENT, BARREL_EXPORTS, E2E_TESTS | 8b |
-| DEPENDENT_INTENT | ORCHESTRATOR, LLM_INTENT | — | 8b |
-| FRUSTRATION_SIGNAL | EMBED_ROUTER, LLM_INTENT | — | 8b |
-| CLARIFICATION_MODEL | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY | — | 8b |
-| ATTRIBUTE_NEGATION | LLM_INTENT, REWRITE_TOOL | — | 8b |
-| QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | 8b |
-| AI_OPERATIONS | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER | — | 8b |
-| RAG_FEEDBACK_LOOP | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE | — | 8b |
-| SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 9a |
-| REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | 9a |
-| GENERATIVE_UI | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS | — | 9b |
-| SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | 9a |
-| WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | 9b |
-| RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | 9b |
-| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE | PKG_PUBLISH | 9b |
-| UPLOAD_ENDPOINT | SERVER_ROUTES, UPLOAD_PIPELINE | E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | 9b |
-| FEEDBACK_ENDPOINT | SERVER_ROUTES, LANGFUSE_MODULE | E2E_TESTS | 9b |
-| FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | 9b |
-| ADMIN_API | SERVER_ROUTES, JWT_AUTH, COST_TRACKING | E2E_TESTS, SMOKE_TESTS | 9b |
-| E2E_TESTS | TUI_AGENT, SELF_TEST, SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, TUI_UPLOAD, DOCKER_COMPOSE, FEEDBACK_ENDPOINT, CLIENT_SDK, COST_TRACKING, AGENT_ROUTER, VALKEY_CACHE, TRIGGER_TASKS, RATE_LIMITING, FILE_CRUD, TTL_CLEANUP, JWT_AUTH, CROSS_CONV_RAG, ADMIN_API | — | 10 |
-| PKG_PUBLISH | BARREL_EXPORTS | RELEASE_PIPELINE | 10 |
-| SMOKE_TESTS | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API | — | 10 |
-| LOAD_TESTS | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE | — | 10 |
-| TRACE_UI | WEB_COMPONENTS | DEMO_WEB | 10 |
-| FRONTEND_CLI | WEB_COMPONENTS, RN_COMPONENTS | — | 10 |
-| STORYBOOK_FRONTEND | WEB_COMPONENTS | — | 10 |
-| RELEASE_PIPELINE | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES | — | 10 |
-| DOCS_SITE | SCAFFOLD_LIB | DOCS_CONTENT | 10 |
-| MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES, SECURITY_COMPLIANCE | 10 |
-| SECURITY_COMPLIANCE | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE | — | 10 |
-| CONVERSATION_INTELLIGENCE | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER | — | 10 |
-| DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | 11 |
-| DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
-| DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | 11 |
-| INCIDENT_PROCEDURES | MONITORING_INFRA | — | 11 |
-| DEVELOPER_EXPERIENCE | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY | API_GOVERNANCE | 11 |
-| AUDIT_PLAN | PKG_PUBLISH | — | FINAL |
-| AUDIT_CODE | PKG_PUBLISH | — | FINAL |
-| AUDIT_QA | PKG_PUBLISH | — | FINAL |
-| AUDIT_SCOPE | PKG_PUBLISH | — | FINAL |
-| API_GOVERNANCE | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE | — | FINAL |
+| SPIKE_CORE_STACK | None (Batch BLOCKING_SPIKE_BATCH) | SCAFFOLD_LIB, SCAFFOLD_SERVER, SPIKE_RAG_DEPS | BLOCKING_SPIKE_BATCH |
+| SPIKE_RAG_DEPS | SPIKE_CORE_STACK | DOC_PIPELINE | RAG_VALIDATION_BATCH |
+| SCAFFOLD_LIB | SPIKE_CORE_STACK | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, TUI_SHELL, SURREALDB_CLIENT, STRUCT_LOGGING, SCAFFOLD_FRONTEND, CODE_STANDARDS, CI_PIPELINE, DOCS_SITE | SCAFFOLDING_BATCH |
+| SCAFFOLD_SERVER | SPIKE_CORE_STACK | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, CODE_STANDARDS | SCAFFOLDING_BATCH |
+| CODE_STANDARDS | SCAFFOLD_LIB, SCAFFOLD_SERVER | — | SCAFFOLDING_BATCH |
+| SCAFFOLD_FRONTEND | SCAFFOLD_LIB | REACT_HOOKS | FOUNDATION_A_BATCH |
+| CORE_TYPES | SCAFFOLD_LIB | ZOD_SCHEMAS, CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, LANGFUSE_MODULE, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, CIRCUIT_BREAKER, JWT_AUTH, EMBED_ROUTER, RAGFLOW_CLIENT, REWRITE_STRATEGIES, EVIDENCE_GATE, LANG_GUARD, HATE_SPEECH_GUARD, RESPONSE_CALIBRATION | FOUNDATION_A_BATCH |
+| STORAGE_WRAPPER | SCAFFOLD_LIB | AGENT_FACTORY, SHORT_TERM_MEM, DURABLE_EXECUTION | FOUNDATION_A_BATCH |
+| MCP_HEALTH | SCAFFOLD_LIB | MCP_CLIENT | FOUNDATION_A_BATCH |
+| PROVIDER_HELPERS | SCAFFOLD_LIB | AGENT_FACTORY, PROVIDER_FALLBACK | FOUNDATION_A_BATCH |
+| TUI_SHELL | SCAFFOLD_LIB | TUI_CHAT, TUI_INPUT, TUI_COMMANDS | FOUNDATION_A_BATCH |
+| SURREALDB_CLIENT | SCAFFOLD_LIB | FACT_EXTRACTION, MEMORY_RECALL, STYLE_PREFERENCES, FACT_SUPERSESSION | FOUNDATION_A_BATCH |
+| DOC_PIPELINE | SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS | RAG_INFRA | AGENT_PIPELINE_BATCH |
+| FILE_STORAGE | DOCKER_COMPOSE, CONFIG_DEFAULTS | UPLOAD_PIPELINE, COST_TRACKING, TRIGGER_TASKS, TTL_CLEANUP, VISUAL_GROUNDING | AGENT_PIPELINE_BATCH |
+| STRUCT_LOGGING | SCAFFOLD_LIB | BARREL_EXPORTS | FOUNDATION_A_BATCH |
+| ZOD_SCHEMAS | CORE_TYPES | CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, MULTI_TENANT_CONFIG | FOUNDATION_B_BATCH |
+| MCP_CLIENT | CORE_TYPES, MCP_HEALTH | SERVER_MCP | FOUNDATION_B_BATCH |
+| SHORT_TERM_MEM | CORE_TYPES, STORAGE_WRAPPER | USER_SHORTTERM_MEM, SUMMARY_CAP, CONTEXT_BUDGET, THREAD_RESURRECTION | FOUNDATION_B_BATCH |
+| USER_SHORTTERM_MEM | SHORT_TERM_MEM | CONTEXT_BUDGET | FOUNDATION_B_BATCH |
+| PROVIDER_FALLBACK | PROVIDER_HELPERS | BARREL_EXPORTS | FOUNDATION_B_BATCH |
+| TUI_CHAT | TUI_SHELL | TUI_AGENT | FOUNDATION_B_BATCH |
+| TUI_INPUT | TUI_SHELL | TUI_AGENT | FOUNDATION_B_BATCH |
+| TUI_COMMANDS | TUI_SHELL | TUI_UPLOAD | FOUNDATION_B_BATCH |
+| RAG_INFRA | STORAGE_WRAPPER, DOC_PIPELINE | CUSTOM_SPANS, TRIGGER_TASKS, TTL_CLEANUP, CROSS_CONV_RAG, EVIDENCE_GATE, DOC_SEARCH | INTEGRATION_BATCH |
+| LANGFUSE_MODULE | CORE_TYPES | CUSTOM_SPANS, FEEDBACK_ENDPOINT, PROMPT_MGMT, MONITORING_INFRA, AI_OPERATIONS | FOUNDATION_B_BATCH |
+| KEY_POOL | CORE_TYPES, SCAFFOLD_LIB | BARREL_EXPORTS | FOUNDATION_B_BATCH |
+| VALKEY_CACHE | CORE_TYPES, SCAFFOLD_LIB | COST_TRACKING, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL, EMBED_ROUTER, FILE_REGISTRY | FOUNDATION_B_BATCH |
+| CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | FOUNDATION_B_BATCH |
+| REWRITE_STRATEGIES | CORE_TYPES | REWRITE_TOOL | FOUNDATION_B_BATCH |
+| CI_PIPELINE | SCAFFOLD_LIB, TEST_INFRA | RELEASE_PIPELINE | FOUNDATION_B_BATCH |
+| CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER, MULTI_TENANT_CONFIG | CONFIG_GUARDS_BATCH |
+| INPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS | CONFIG_GUARDS_BATCH |
+| OUTPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS, ZERO_LEAK_GUARD | CONFIG_GUARDS_BATCH |
+| GUARD_FACTORY | CORE_TYPES | GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD | CONFIG_GUARDS_BATCH |
+| LANG_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | INTEGRATION_BATCH |
+| HATE_SPEECH_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | INTEGRATION_BATCH |
+| FILE_REGISTRY | STORAGE_WRAPPER, VALKEY_CACHE | DOC_SEARCH, VISUAL_GROUNDING | CONFIG_GUARDS_BATCH |
+| MULTI_TENANT_CONFIG | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH | — | CONFIG_GUARDS_BATCH |
+| SUMMARY_CAP | SHORT_TERM_MEM | — | CONFIG_GUARDS_BATCH |
+| EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | CONFIG_GUARDS_BATCH |
+| EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING, RAG_FEEDBACK_LOOP | SELFTEST_MIDINTEGRATION_BATCH |
+| AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL, DURABLE_EXECUTION, AI_OPERATIONS | AGENT_PIPELINE_BATCH |
+| STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | AGENT_PIPELINE_BATCH |
+| SSE_STREAMING | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB | SERVER_ROUTES, COST_TRACKING, AGENT_ROUTER, DURABLE_EXECUTION | INTEGRATION_BATCH |
+| GEMINI_GROUNDING | AGENT_FACTORY | — | INTEGRATION_BATCH |
+| GUARD_PIPELINE | INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY | SERVER_GUARDRAILS, SECURITY_COMPLIANCE | INTEGRATION_BATCH |
+| EVAL_CONFIG | AGENT_FACTORY | SELF_TEST | INTEGRATION_BATCH |
+| FACT_EXTRACTION | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS, THREAD_RESURRECTION, EXTRACTION_SAFEGUARDS, CONTEXT_BUDGET, STYLE_PREFERENCES, FACT_SUPERSESSION | INTEGRATION_BATCH |
+| MEMORY_RECALL | SURREALDB_CLIENT, AGENT_FACTORY | BARREL_EXPORTS | INTEGRATION_BATCH |
+| MEMORY_CONTROL | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY | — | INTEGRATION_BATCH |
+| UPLOAD_PIPELINE | FILE_STORAGE, STORAGE_WRAPPER, VALKEY_CACHE, DOCKER_COMPOSE | UPLOAD_ENDPOINT | SELFTEST_MIDINTEGRATION_BATCH |
+| NON_ACTIONABLE_DETECT | EMBED_ROUTER | — | SELFTEST_MIDINTEGRATION_BATCH |
+| INPUT_VALIDATION | SSE_STREAMING | — | SELFTEST_MIDINTEGRATION_BATCH |
+| THREAD_RESURRECTION | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | SELFTEST_MIDINTEGRATION_BATCH |
+| CUSTOM_SPANS | LANGFUSE_MODULE, INPUT_GUARD, OUTPUT_GUARD, RAG_INFRA | BARREL_EXPORTS | SELFTEST_MIDINTEGRATION_BATCH |
+| CTA_STREAMING | AGENT_FACTORY, CORE_TYPES | SERVER_AGENT_CFG, GENERATIVE_UI | INTEGRATION_BATCH |
+| LOCATION_TOOL | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE | SERVER_AGENT_CFG | INTEGRATION_BATCH |
+| TRIGGER_TASKS | CORE_TYPES, RAG_INFRA, FILE_STORAGE, VALKEY_CACHE | TTL_CLEANUP | SELFTEST_MIDINTEGRATION_BATCH |
+| RATE_LIMITING | CORE_TYPES, VALKEY_CACHE | — | INTEGRATION_BATCH |
+| PROMPT_MGMT | LANGFUSE_MODULE | BARREL_EXPORTS | INTEGRATION_BATCH |
+| ZERO_LEAK_GUARD | OUTPUT_GUARD | BARREL_EXPORTS | INTEGRATION_BATCH |
+| EMBED_ROUTER | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY | LLM_INTENT, PREFETCH_COORD, ORCHESTRATOR, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS | INTEGRATION_BATCH |
+| DURABLE_EXECUTION | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING | — | INTEGRATION_BATCH |
+| RAGFLOW_CLIENT | CORE_TYPES, CONFIG_DEFAULTS | SOURCE_ROUTER | INTEGRATION_BATCH |
+| DOC_SEARCH | FILE_REGISTRY, RAG_INFRA, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| VISUAL_GROUNDING | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE | BARREL_EXPORTS, E2E_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| SELF_TEST | EVAL_CONFIG | E2E_TESTS | SELFTEST_MIDINTEGRATION_BATCH |
+| TUI_AGENT | TUI_SHELL, TUI_CHAT, TUI_INPUT | E2E_TESTS, TUI_UPLOAD | SERVER_TUI_PIPELINE_BATCH |
+| SERVER_AGENT_CFG | SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL | SERVER_ROUTES, E2E_TESTS, SMOKE_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| SERVER_MCP | SCAFFOLD_SERVER, MCP_CLIENT | E2E_TESTS, SMOKE_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| SERVER_GUARDRAILS | SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD | E2E_TESTS, SMOKE_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| DOCKER_COMPOSE | SCAFFOLD_SERVER | FILE_STORAGE, UPLOAD_PIPELINE, E2E_TESTS, SMOKE_TESTS, LOAD_TESTS, MONITORING_INFRA | FOUNDATION_A_BATCH |
+| CLIENT_SDK | SSE_STREAMING, CTA_STREAMING, CORE_TYPES | E2E_TESTS, REACT_HOOKS | SERVER_TUI_PIPELINE_BATCH |
+| EXTRACTION_SAFEGUARDS | FACT_EXTRACTION | — | SERVER_TUI_PIPELINE_BATCH |
+| CONTEXT_BUDGET | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | SERVER_TUI_PIPELINE_BATCH |
+| STYLE_PREFERENCES | FACT_EXTRACTION, SURREALDB_CLIENT | — | SERVER_TUI_PIPELINE_BATCH |
+| FACT_SUPERSESSION | FACT_EXTRACTION, SURREALDB_CLIENT | — | SERVER_TUI_PIPELINE_BATCH |
+| RESPONSE_CALIBRATION | CORE_TYPES, AGENT_FACTORY | — | SERVER_TUI_PIPELINE_BATCH |
+| AGENT_ROUTER | AGENT_FACTORY, SSE_STREAMING | E2E_TESTS | SERVER_TUI_PIPELINE_BATCH |
+| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE, MULTI_TENANT_CONFIG | SERVER_TUI_PIPELINE_BATCH |
+| LLM_INTENT | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER | PREFETCH_COORD, REWRITE_TOOL, ORCHESTRATOR, DEPENDENT_INTENT, ATTRIBUTE_NEGATION, QUERY_REPLAY, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | SERVER_TUI_PIPELINE_BATCH |
+| SOURCE_ROUTER | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS | PREFETCH_COORD | SERVER_TUI_PIPELINE_BATCH |
+| TUI_UPLOAD | TUI_SHELL, TUI_COMMANDS, TUI_AGENT | E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| COST_TRACKING | FILE_STORAGE, SSE_STREAMING, VALKEY_CACHE | E2E_TESTS, ADMIN_API | EXTENDED_INTEGRATION_BATCH |
+| TTL_CLEANUP | FILE_STORAGE, TRIGGER_TASKS, RAG_INFRA | E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| CROSS_CONV_RAG | RAG_INFRA | E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| PREFETCH_COORD | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| REWRITE_TOOL | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT | BARREL_EXPORTS, E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| ORCHESTRATOR | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER | SUBAGENT_FACTORY, DEPENDENT_INTENT, BARREL_EXPORTS, E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
+| DEPENDENT_INTENT | ORCHESTRATOR, LLM_INTENT | — | EXTENDED_INTEGRATION_BATCH |
+| FRUSTRATION_SIGNAL | EMBED_ROUTER, LLM_INTENT | — | EXTENDED_INTEGRATION_BATCH |
+| CLARIFICATION_MODEL | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY | — | EXTENDED_INTEGRATION_BATCH |
+| ATTRIBUTE_NEGATION | LLM_INTENT, REWRITE_TOOL | — | EXTENDED_INTEGRATION_BATCH |
+| QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | EXTENDED_INTEGRATION_BATCH |
+| AI_OPERATIONS | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER | — | EXTENDED_INTEGRATION_BATCH |
+| RAG_FEEDBACK_LOOP | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE | — | EXTENDED_INTEGRATION_BATCH |
+| SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | SERVER_ROUTES_SUBAGENT_BATCH |
+| REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | SERVER_ROUTES_SUBAGENT_BATCH |
+| GENERATIVE_UI | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS | — | ENDPOINTS_BARREL_BATCH |
+| SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | SERVER_ROUTES_SUBAGENT_BATCH |
+| WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | ENDPOINTS_BARREL_BATCH |
+| RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | ENDPOINTS_BARREL_BATCH |
+| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE | PKG_PUBLISH | ENDPOINTS_BARREL_BATCH |
+| UPLOAD_ENDPOINT | SERVER_ROUTES, UPLOAD_PIPELINE | E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | ENDPOINTS_BARREL_BATCH |
+| FEEDBACK_ENDPOINT | SERVER_ROUTES, LANGFUSE_MODULE | E2E_TESTS | ENDPOINTS_BARREL_BATCH |
+| FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | ENDPOINTS_BARREL_BATCH |
+| ADMIN_API | SERVER_ROUTES, JWT_AUTH, COST_TRACKING | E2E_TESTS, SMOKE_TESTS | ENDPOINTS_BARREL_BATCH |
+| E2E_TESTS | TUI_AGENT, SELF_TEST, SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, TUI_UPLOAD, DOCKER_COMPOSE, FEEDBACK_ENDPOINT, CLIENT_SDK, COST_TRACKING, AGENT_ROUTER, VALKEY_CACHE, TRIGGER_TASKS, RATE_LIMITING, FILE_CRUD, TTL_CLEANUP, JWT_AUTH, CROSS_CONV_RAG, ADMIN_API | — | E2E_DEPLOY_BATCH |
+| PKG_PUBLISH | BARREL_EXPORTS | RELEASE_PIPELINE | E2E_DEPLOY_BATCH |
+| SMOKE_TESTS | SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API | — | E2E_DEPLOY_BATCH |
+| LOAD_TESTS | SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE | — | E2E_DEPLOY_BATCH |
+| TRACE_UI | WEB_COMPONENTS | DEMO_WEB | E2E_DEPLOY_BATCH |
+| FRONTEND_CLI | WEB_COMPONENTS, RN_COMPONENTS | — | E2E_DEPLOY_BATCH |
+| STORYBOOK_FRONTEND | WEB_COMPONENTS | — | E2E_DEPLOY_BATCH |
+| RELEASE_PIPELINE | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES | — | E2E_DEPLOY_BATCH |
+| DOCS_SITE | SCAFFOLD_LIB | DOCS_CONTENT | E2E_DEPLOY_BATCH |
+| MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES, SECURITY_COMPLIANCE | E2E_DEPLOY_BATCH |
+| SECURITY_COMPLIANCE | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE | — | E2E_DEPLOY_BATCH |
+| CONVERSATION_INTELLIGENCE | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER | — | E2E_DEPLOY_BATCH |
+| DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | FRONTEND_DEMOS_BATCH |
+| DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | FRONTEND_DEMOS_BATCH |
+| DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | FRONTEND_DEMOS_BATCH |
+| INCIDENT_PROCEDURES | MONITORING_INFRA | — | FRONTEND_DEMOS_BATCH |
+| DEVELOPER_EXPERIENCE | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY | API_GOVERNANCE | FRONTEND_DEMOS_BATCH |
+| AUDIT_PLAN | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
+| AUDIT_CODE | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
+| AUDIT_QA | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
+| AUDIT_SCOPE | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
+| API_GOVERNANCE | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE | — | FINAL_AUDIT_BATCH |
 
 ### BARREL_EXPORTS Full Dependency List (Barrel Exports)
 
@@ -1299,7 +1299,7 @@ flowchart TB
 | **Failure scoping** | A failed task blocks only its downstream dependents (tasks that list it in `Depends On`). Independent tasks in the same batch continue. Independent tasks in future batches continue if none of their transitive dependencies failed. |
 | **Retry policy** | Failed tasks may be retried within the same batch window. A task is not "failed" until retries are exhausted. |
 | **Batch skip** | If all tasks in a batch were already completed (e.g., by a prior partial run), the batch is skipped and the next batch begins immediately. |
-| **DOCKER_COMPOSE dependency gate** | DOCKER_COMPOSE (Docker Compose) depends on SCAFFOLD_SERVER (server repo scaffold) and is scheduled in Batch 2 so FILE_STORAGE and UPLOAD_PIPELINE can depend on initialized infrastructure. |
+| **DOCKER_COMPOSE dependency gate** | DOCKER_COMPOSE (Docker Compose) depends on SCAFFOLD_SERVER (server repo scaffold) and is scheduled in Batch FOUNDATION_A_BATCH so FILE_STORAGE and UPLOAD_PIPELINE can depend on initialized infrastructure. |
 
 ### Failure Impact Analysis
 
@@ -1307,10 +1307,10 @@ flowchart TB
 |-------------|--------------|-------------|
 | SPIKE_CORE_STACK (Spike) | Everything blocked | Project halted — tech stack re-evaluation |
 | CI_PIPELINE (CI/CD) | RELEASE_PIPELINE blocked | Release automation delayed until quality gates are stable |
-| AGENT_FACTORY (Agent Factory) | 18 Batch 6 tasks blocked | Largest blast radius — prioritize fix |
+| AGENT_FACTORY (Agent Factory) | 18 Batch INTEGRATION_BATCH tasks blocked | Largest blast radius — prioritize fix |
 | SERVER_ROUTES (Server Routes) | BARREL_EXPORTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API blocked | All server endpoints and barrel exports delayed |
 | CORE_TYPES (Types) | 20+ downstream tasks blocked | Foundation failure — second largest blast radius |
-| Any Batch 6 task | Specific downstream chain | Limited — other Batch 6 tasks continue |
+| Any Batch INTEGRATION_BATCH task | Specific downstream chain | Limited — other Batch INTEGRATION_BATCH tasks continue |
 
 ---
 
@@ -1322,31 +1322,31 @@ The following 25 tasks were added from the expanded requirements (three-layer me
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| USER_SHORTTERM_MEM | User short-term memory (cross-thread) | Memory | 3 | `unspecified-high` | SHORT_TERM_MEM |
-| STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | Memory | 5 | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
-| MEMORY_CONTROL | User memory control tools (inspect/delete) | Memory | 6 | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
-| STYLE_PREFERENCES | Communication style meta-preference extraction and storage | Memory | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
-| FACT_SUPERSESSION | Fact contradiction detection and resolution in SurrealDB | Memory | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
-| DEPENDENT_INTENT | Dependent intent coordination in orchestrator | Agents + Guardrails | 8b | `deep` | ORCHESTRATOR, LLM_INTENT |
-| RESPONSE_CALIBRATION | Response length/energy matching signal computation | Agents | 8a | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
-| CLARIFICATION_MODEL | Proactive clarification + multi-turn patience model | Agents | 8b | `deep` | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY |
-| LANG_GUARD | Language Guard — two-stage language enforcement + output drift scanner | Guardrails | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
-| HATE_SPEECH_GUARD | Hate Speech Guard — hybrid obscenity + multilingual matching | Guardrails | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
-| LOCATION_TOOL | Location Enrichment Tool — geocoding, optional image enrichment, and streamed location events | Agents | 6 | `deep` | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE |
-| EMBED_ROUTER | Embedding Router — vector similarity classifier | Conversation Pipeline | 6 | `deep` | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY |
-| LLM_INTENT | LLM Intent Validator + Query Rewriter | Conversation Pipeline | 8a | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
-| FRUSTRATION_SIGNAL | Frustration escalation detection across turns | Conversation Pipeline | 8b | `deep` | EMBED_ROUTER, LLM_INTENT |
-| PREFETCH_COORD | Speculative Pre-Fetch Coordinator | Conversation Pipeline | 8b | `deep` | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
-| RAGFLOW_CLIENT | RAGFlow Client + Tool — raw fetch wrapper | Conversation Pipeline | 6 | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
-| SOURCE_ROUTER | Source Priority Router — parallel fan-out + weighted merge | Conversation Pipeline | 8a | `deep` | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS |
-| REWRITE_TOOL | Query Rewrite Tool — 7-trigger conditional rewriting | Conversation Pipeline | 8b | `unspecified-high` | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT |
-| REWRITE_STRATEGIES | Rewrite Strategy Modules — HyDE, EntityExtraction, DenseKeywords | Conversation Pipeline | 3 | `quick` | CORE_TYPES |
-| FILE_REGISTRY | FileRegistry — temporal, ordinal, named resolution | Retrieval | 4 | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
-| EVIDENCE_GATE | Evidence Bundle Gate — sufficiency scoring + thresholds | Retrieval | 7 | `deep` | EMBED_ROUTER, RAG_INFRA, CORE_TYPES |
-| DOC_SEARCH | Per-Document Search Tool — document search capability (evidence bundle) | Retrieval | 8a | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
-| VISUAL_GROUNDING | Visual Grounding — multimodal LLM for charts/tables/images | Retrieval | 8a | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
-| ORCHESTRATOR | Orchestrator Agent Framework — supervisor + parallel sub-agent synthesis | Agents | 8b | `deep` | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
-| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped agent + handoff assembly with tool assignment | Agents | 9a | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
+| USER_SHORTTERM_MEM | User short-term memory (cross-thread) | Memory | FOUNDATION_B_BATCH | `unspecified-high` | SHORT_TERM_MEM |
+| STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | Memory | AGENT_PIPELINE_BATCH | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
+| MEMORY_CONTROL | User memory control tools (inspect/delete) | Memory | INTEGRATION_BATCH | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
+| STYLE_PREFERENCES | Communication style meta-preference extraction and storage | Memory | SERVER_TUI_PIPELINE_BATCH | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
+| FACT_SUPERSESSION | Fact contradiction detection and resolution in SurrealDB | Memory | SERVER_TUI_PIPELINE_BATCH | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
+| DEPENDENT_INTENT | Dependent intent coordination in orchestrator | Agents + Guardrails | EXTENDED_INTEGRATION_BATCH | `deep` | ORCHESTRATOR, LLM_INTENT |
+| RESPONSE_CALIBRATION | Response length/energy matching signal computation | Agents | SERVER_TUI_PIPELINE_BATCH | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
+| CLARIFICATION_MODEL | Proactive clarification + multi-turn patience model | Agents | EXTENDED_INTEGRATION_BATCH | `deep` | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY |
+| LANG_GUARD | Language Guard — two-stage language enforcement + output drift scanner | Guardrails | INTEGRATION_BATCH | `deep` | CORE_TYPES, GUARD_FACTORY |
+| HATE_SPEECH_GUARD | Hate Speech Guard — hybrid obscenity + multilingual matching | Guardrails | INTEGRATION_BATCH | `deep` | CORE_TYPES, GUARD_FACTORY |
+| LOCATION_TOOL | Location Enrichment Tool — geocoding, optional image enrichment, and streamed location events | Agents | INTEGRATION_BATCH | `deep` | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE |
+| EMBED_ROUTER | Embedding Router — vector similarity classifier | Conversation Pipeline | INTEGRATION_BATCH | `deep` | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY |
+| LLM_INTENT | LLM Intent Validator + Query Rewriter | Conversation Pipeline | SERVER_TUI_PIPELINE_BATCH | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
+| FRUSTRATION_SIGNAL | Frustration escalation detection across turns | Conversation Pipeline | EXTENDED_INTEGRATION_BATCH | `deep` | EMBED_ROUTER, LLM_INTENT |
+| PREFETCH_COORD | Speculative Pre-Fetch Coordinator | Conversation Pipeline | EXTENDED_INTEGRATION_BATCH | `deep` | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
+| RAGFLOW_CLIENT | RAGFlow Client + Tool — raw fetch wrapper | Conversation Pipeline | INTEGRATION_BATCH | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
+| SOURCE_ROUTER | Source Priority Router — parallel fan-out + weighted merge | Conversation Pipeline | SERVER_TUI_PIPELINE_BATCH | `deep` | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS |
+| REWRITE_TOOL | Query Rewrite Tool — 7-trigger conditional rewriting | Conversation Pipeline | EXTENDED_INTEGRATION_BATCH | `unspecified-high` | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT |
+| REWRITE_STRATEGIES | Rewrite Strategy Modules — HyDE, EntityExtraction, DenseKeywords | Conversation Pipeline | FOUNDATION_B_BATCH | `quick` | CORE_TYPES |
+| FILE_REGISTRY | FileRegistry — temporal, ordinal, named resolution | Retrieval | CONFIG_GUARDS_BATCH | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
+| EVIDENCE_GATE | Evidence Bundle Gate — sufficiency scoring + thresholds | Retrieval | SELFTEST_MIDINTEGRATION_BATCH | `deep` | EMBED_ROUTER, RAG_INFRA, CORE_TYPES |
+| DOC_SEARCH | Per-Document Search Tool — document search capability (evidence bundle) | Retrieval | SERVER_TUI_PIPELINE_BATCH | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
+| VISUAL_GROUNDING | Visual Grounding — multimodal LLM for charts/tables/images | Retrieval | SERVER_TUI_PIPELINE_BATCH | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
+| ORCHESTRATOR | Orchestrator Agent Framework — supervisor + parallel sub-agent synthesis | Agents | EXTENDED_INTEGRATION_BATCH | `deep` | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
+| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped agent + handoff assembly with tool assignment | Agents | SERVER_ROUTES_SUBAGENT_BATCH | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 
 ### Engine Gap Tasks
 
@@ -1354,14 +1354,14 @@ The following 8 tasks address engine-level edge cases for response quality (extr
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| EXTRACTION_SAFEGUARDS | Fact extraction safeguards (attribution, sarcasm, hypothetical, hallucination filters) | Memory | 8a | `deep` | FACT_EXTRACTION |
-| NON_ACTIONABLE_DETECT | Non-actionable message detection (pleasantries, gibberish short-circuit) | Conversation Pipeline | 7 | `quick` | EMBED_ROUTER |
-| ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | Conversation Pipeline | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
-| QUERY_REPLAY | Query replay detection and rewriting | Conversation Pipeline | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
-| THREAD_RESURRECTION | Thread resurrection detection and re-hydration | Memory | 7 | `quick` | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
-| CONTEXT_BUDGET | Context window budget management with truncation | Agents + Memory | 8a | `unspecified-high` | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
-| SUMMARY_CAP | Rolling summary size cap with compaction | Memory | 4 | `quick` | SHORT_TERM_MEM |
-| INPUT_VALIDATION | Input message length validation | Server | 7 | `quick` | SSE_STREAMING |
+| EXTRACTION_SAFEGUARDS | Fact extraction safeguards (attribution, sarcasm, hypothetical, hallucination filters) | Memory | SERVER_TUI_PIPELINE_BATCH | `deep` | FACT_EXTRACTION |
+| NON_ACTIONABLE_DETECT | Non-actionable message detection (pleasantries, gibberish short-circuit) | Conversation Pipeline | SELFTEST_MIDINTEGRATION_BATCH | `quick` | EMBED_ROUTER |
+| ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | Conversation Pipeline | EXTENDED_INTEGRATION_BATCH | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
+| QUERY_REPLAY | Query replay detection and rewriting | Conversation Pipeline | EXTENDED_INTEGRATION_BATCH | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
+| THREAD_RESURRECTION | Thread resurrection detection and re-hydration | Memory | SELFTEST_MIDINTEGRATION_BATCH | `quick` | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
+| CONTEXT_BUDGET | Context window budget management with truncation | Agents + Memory | SERVER_TUI_PIPELINE_BATCH | `unspecified-high` | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
+| SUMMARY_CAP | Rolling summary size cap with compaction | Memory | CONFIG_GUARDS_BATCH | `quick` | SHORT_TERM_MEM |
+| INPUT_VALIDATION | Input message length validation | Server | SELFTEST_MIDINTEGRATION_BATCH | `quick` | SSE_STREAMING |
 
 ### Frontend SDK Tasks
 
@@ -1369,15 +1369,15 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| SCAFFOLD_FRONTEND | Frontend workspace setup | Frontend SDK | 2 | `quick` | SCAFFOLD_LIB |
-| REACT_HOOKS | React hooks package (React Hooks Package) | Frontend SDK | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
-| WEB_COMPONENTS | Web UI components (Web Components Package) | Frontend SDK | 9b | `unspecified-high` | REACT_HOOKS |
-| RN_COMPONENTS | React Native components (Native Components Package) | Frontend SDK | 9b | `unspecified-high` | REACT_HOOKS |
-| TRACE_UI | Trace visualization components | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS |
-| FRONTEND_CLI | Component installation CLI | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
-| STORYBOOK_FRONTEND | Storybook documentation | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS |
-| DEMO_WEB | Next.js demo app | Demos | 11 | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
-| DEMO_MOBILE | Expo demo app | Demos | 11 | `deep` | RN_COMPONENTS, SERVER_ROUTES |
+| SCAFFOLD_FRONTEND | Frontend workspace setup | Frontend SDK | FOUNDATION_A_BATCH | `quick` | SCAFFOLD_LIB |
+| REACT_HOOKS | React hooks package (React Hooks Package) | Frontend SDK | SERVER_ROUTES_SUBAGENT_BATCH | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
+| WEB_COMPONENTS | Web UI components (Web Components Package) | Frontend SDK | ENDPOINTS_BARREL_BATCH | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (Native Components Package) | Frontend SDK | ENDPOINTS_BARREL_BATCH | `unspecified-high` | REACT_HOOKS |
+| TRACE_UI | Trace visualization components | Frontend SDK | E2E_DEPLOY_BATCH | `unspecified-high` | WEB_COMPONENTS |
+| FRONTEND_CLI | Component installation CLI | Frontend SDK | E2E_DEPLOY_BATCH | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
+| STORYBOOK_FRONTEND | Storybook documentation | Frontend SDK | E2E_DEPLOY_BATCH | `unspecified-high` | WEB_COMPONENTS |
+| DEMO_WEB | Next.js demo app | Demos | FRONTEND_DEMOS_BATCH | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
+| DEMO_MOBILE | Expo demo app | Demos | FRONTEND_DEMOS_BATCH | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 
 ### Operations and Quality Tasks
 
@@ -1385,17 +1385,17 @@ The following 11 tasks were added for coding standards, CI quality gates, releas
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Coding Standards | 1 | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
-| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Release Pipeline | 3 | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
-| RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Release Pipeline | 10 | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
-| DOCS_SITE | Documentation site infrastructure (Fumadocs) | Documentation | 10 | `unspecified-high` | SCAFFOLD_LIB |
-| DOCS_CONTENT | Documentation content authoring | Documentation | 11 | `writing` | DOCS_SITE, ALL core module tasks |
-| MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Monitoring | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
-| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Monitoring | 11 | `writing` | MONITORING_INFRA |
-| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Extensibility | 4 | `deep` | FOUNDATION, CORE_TYPES |
-| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Durable Execution | 6 | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
-| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | AI Operations | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
-| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Security | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
+| CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Coding Standards | SCAFFOLDING_BATCH | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Release Pipeline | FOUNDATION_B_BATCH | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
+| RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Release Pipeline | E2E_DEPLOY_BATCH | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
+| DOCS_SITE | Documentation site infrastructure (Fumadocs) | Documentation | E2E_DEPLOY_BATCH | `unspecified-high` | SCAFFOLD_LIB |
+| DOCS_CONTENT | Documentation content authoring | Documentation | FRONTEND_DEMOS_BATCH | `writing` | DOCS_SITE, ALL core module tasks |
+| MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Monitoring | E2E_DEPLOY_BATCH | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
+| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Monitoring | FRONTEND_DEMOS_BATCH | `writing` | MONITORING_INFRA |
+| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Extensibility | CONFIG_GUARDS_BATCH | `deep` | FOUNDATION, CORE_TYPES |
+| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Durable Execution | INTEGRATION_BATCH | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
+| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | AI Operations | EXTENDED_INTEGRATION_BATCH | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
+| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Security | E2E_DEPLOY_BATCH | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
 ### Platform Governance and Gap Round Tasks
 
@@ -1403,12 +1403,12 @@ The following 6 tasks were added for developer workflow maturity, public API gov
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | 11 | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
-| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
-| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Retrieval extension | 8b | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
-| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | 9b | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
-| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | 10 | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
-| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | FRONTEND_DEMOS_BATCH | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL_AUDIT_BATCH | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
+| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Retrieval extension | EXTENDED_INTEGRATION_BATCH | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
+| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | ENDPOINTS_BARREL_BATCH | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
+| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | E2E_DEPLOY_BATCH | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | CONFIG_GUARDS_BATCH | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
 
 *Covers all 125 implementation tasks + 4 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
 
@@ -1421,135 +1421,135 @@ Column guide: `Task` = UPPER_SNAKE task ID; `Batch` = execution batch; `Spec Fil
 
 | Task | Batch | Spec File | Context Sections | Test Spec File |
 |------|-------|-----------|------------------|----------------|
-| SPIKE_CORE_STACK | 0 | foundation.md | foundation.md | foundation.md |
-| SPIKE_RAG_DEPS | 0.5 | documents.md | documents.md | documents.md |
-| CODE_STANDARDS | 1 | coding-standards.md | coding-standards.md, foundation.md, server.md | coding-standards.md |
-| SCAFFOLD_LIB | 1 | foundation.md | foundation.md | foundation.md |
-| SCAFFOLD_SERVER | 1 | server.md | server.md, foundation.md, transport.md | server.md |
-| CORE_TYPES | 2 | foundation.md | foundation.md | foundation.md |
-| DOCKER_COMPOSE | 2 | infrastructure.md | infrastructure.md, server.md | infrastructure.md |
-| MCP_HEALTH | 2 | foundation.md | foundation.md | foundation.md |
-| PROVIDER_HELPERS | 2 | foundation.md | foundation.md | foundation.md |
-| SCAFFOLD_FRONTEND | 2 | foundation.md | foundation.md, frontend-sdk.md | foundation.md |
-| STORAGE_WRAPPER | 2 | foundation.md | foundation.md | foundation.md |
-| STRUCT_LOGGING | 2 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
-| SURREALDB_CLIENT | 2 | memory.md | memory.md, foundation.md | memory.md |
-| TUI_SHELL | 2 | tui.md | tui.md, foundation.md | tui.md |
-| CIRCUIT_BREAKER | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
-| CI_PIPELINE | 3 | release-pipeline.md | release-pipeline.md, foundation.md, testing.md | release-pipeline.md |
-| KEY_POOL | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
-| LANGFUSE_MODULE | 3 | observability.md | observability.md, foundation.md | observability.md |
-| MCP_CLIENT | 3 | agents.md | agents.md, foundation.md | agents.md |
-| PROVIDER_FALLBACK | 3 | agents.md | agents.md, foundation.md | agents.md |
-| REWRITE_STRATEGIES | 3 | conversation.md | conversation.md, foundation.md | conversation.md |
-| SHORT_TERM_MEM | 3 | memory.md | memory.md, foundation.md | memory.md |
-| TUI_CHAT | 3 | tui.md | tui.md | tui.md |
-| TUI_COMMANDS | 3 | tui.md | tui.md | tui.md |
-| TUI_INPUT | 3 | tui.md | tui.md | tui.md |
-| USER_SHORTTERM_MEM | 3 | memory.md | memory.md | memory.md |
-| VALKEY_CACHE | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
-| ZOD_SCHEMAS | 3 | foundation.md | foundation.md | foundation.md |
-| CONFIG_DEFAULTS | 4 | foundation.md | foundation.md | foundation.md |
-| EXTENSIBILITY_INFRA | 4 | extensibility.md | extensibility.md, foundation.md, architecture.md | extensibility.md |
-| FILE_REGISTRY | 4 | retrieval.md | retrieval.md, foundation.md, infrastructure.md | retrieval.md |
-| GUARD_FACTORY | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
-| INPUT_GUARD | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
-| MULTI_TENANT_CONFIG | 4 | security-compliance.md | security-compliance.md, foundation.md, server.md | security-compliance.md |
-| OUTPUT_GUARD | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
-| SUMMARY_CAP | 4 | memory.md | memory.md | memory.md |
-| AGENT_FACTORY | 5 | agents.md | agents.md, foundation.md, architecture.md | agents.md |
-| DOC_PIPELINE | 5 | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
-| FILE_STORAGE | 5 | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
-| STRUCTURED_RESULT_MEM | 5 | memory.md | memory.md, foundation.md, agents.md | memory.md |
-| CTA_STREAMING | 6 | transport.md | transport.md, foundation.md, agents.md | transport.md |
-| DURABLE_EXECUTION | 6 | durable-execution.md | durable-execution.md, agents.md, foundation.md, transport.md, architecture.md | durable-execution.md |
-| EMBED_ROUTER | 6 | conversation.md | conversation.md, foundation.md, infrastructure.md, agents.md | conversation.md |
-| EVAL_CONFIG | 6 | observability.md | observability.md, agents.md | observability.md |
-| FACT_EXTRACTION | 6 | memory.md | memory.md, agents.md | memory.md |
-| GEMINI_GROUNDING | 6 | agents.md | agents.md | agents.md |
-| GUARD_PIPELINE | 6 | guardrails.md | guardrails.md | guardrails.md |
-| HATE_SPEECH_GUARD | 6 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
-| LANG_GUARD | 6 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
-| LOCATION_TOOL | 6 | agents.md | agents.md, foundation.md, infrastructure.md | agents.md |
-| MEMORY_CONTROL | 6 | memory.md | memory.md, agents.md | memory.md |
-| MEMORY_RECALL | 6 | memory.md | memory.md, agents.md | memory.md |
-| PROMPT_MGMT | 6 | observability.md | observability.md | observability.md |
-| RAGFLOW_CLIENT | 6 | conversation.md | conversation.md, retrieval.md, foundation.md | conversation.md |
-| RAG_INFRA | 6 | retrieval.md | retrieval.md, foundation.md, documents.md | retrieval.md |
-| RATE_LIMITING | 6 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
-| SSE_STREAMING | 6 | transport.md | transport.md, agents.md, guardrails.md, foundation.md | transport.md |
-| ZERO_LEAK_GUARD | 6 | guardrails.md | guardrails.md | guardrails.md |
-| CUSTOM_SPANS | 7 | observability.md | observability.md, guardrails.md, retrieval.md | observability.md |
-| EVIDENCE_GATE | 7 | retrieval.md | retrieval.md, conversation.md, foundation.md | retrieval.md |
-| INPUT_VALIDATION | 7 | guardrails.md | guardrails.md, transport.md | guardrails.md |
-| NON_ACTIONABLE_DETECT | 7 | conversation.md | conversation.md | conversation.md |
-| SELF_TEST | 7 | observability.md | observability.md | observability.md |
-| THREAD_RESURRECTION | 7 | memory.md | memory.md | memory.md |
-| TRIGGER_TASKS | 7 | infrastructure.md | infrastructure.md, foundation.md, retrieval.md, documents.md | infrastructure.md |
-| UPLOAD_PIPELINE | 7 | documents.md | documents.md, foundation.md, infrastructure.md | documents.md |
-| AGENT_ROUTER | 8a | agents.md | agents.md, transport.md | agents.md |
-| CLIENT_SDK | 8a | transport.md | transport.md, foundation.md, frontend-sdk.md | transport.md |
-| CONTEXT_BUDGET | 8a | memory.md | memory.md | memory.md |
-| DOC_SEARCH | 8a | retrieval.md | retrieval.md | retrieval.md |
-| EXTRACTION_SAFEGUARDS | 8a | memory.md | memory.md | memory.md |
-| FACT_SUPERSESSION | 8a | memory.md | memory.md | memory.md |
-| JWT_AUTH | 8a | server.md | server.md, transport.md | server.md |
-| LLM_INTENT | 8a | conversation.md | conversation.md, foundation.md, agents.md | conversation.md |
-| RESPONSE_CALIBRATION | 8a | agents.md | agents.md, foundation.md | agents.md |
-| SERVER_AGENT_CFG | 8a | server.md | server.md, transport.md, agents.md | server.md |
-| SERVER_GUARDRAILS | 8a | server.md | server.md, guardrails.md, transport.md | server.md |
-| SERVER_MCP | 8a | server.md | server.md, agents.md, transport.md | server.md |
-| SOURCE_ROUTER | 8a | conversation.md | conversation.md, foundation.md | conversation.md |
-| STYLE_PREFERENCES | 8a | memory.md | memory.md | memory.md |
-| TUI_AGENT | 8a | tui.md | tui.md | tui.md |
-| VISUAL_GROUNDING | 8a | retrieval.md | retrieval.md, documents.md, foundation.md | retrieval.md |
-| AI_OPERATIONS | 8b | ai-operations.md | ai-operations.md, agents.md, observability.md, conversation.md | ai-operations.md |
-| ATTRIBUTE_NEGATION | 8b | conversation.md | conversation.md | conversation.md |
-| CLARIFICATION_MODEL | 8b | conversation.md | conversation.md, agents.md | conversation.md |
-| COST_TRACKING | 8b | infrastructure.md | infrastructure.md, documents.md, transport.md | infrastructure.md |
-| CROSS_CONV_RAG | 8b | retrieval.md | retrieval.md | retrieval.md |
-| DEPENDENT_INTENT | 8b | agents.md | agents.md, conversation.md | agents.md |
-| FRUSTRATION_SIGNAL | 8b | conversation.md | conversation.md | conversation.md |
-| ORCHESTRATOR | 8b | agents.md | agents.md, conversation.md, architecture.md | agents.md |
-| PREFETCH_COORD | 8b | conversation.md | conversation.md | conversation.md |
-| QUERY_REPLAY | 8b | conversation.md | conversation.md, memory.md | conversation.md |
-| RAG_FEEDBACK_LOOP | 8b | retrieval.md | retrieval.md, observability.md, infrastructure.md | retrieval.md |
-| REWRITE_TOOL | 8b | conversation.md | conversation.md, foundation.md | conversation.md |
-| TTL_CLEANUP | 8b | infrastructure.md | infrastructure.md, documents.md, retrieval.md | infrastructure.md |
-| TUI_UPLOAD | 8b | tui.md | tui.md | tui.md |
-| REACT_HOOKS | 9a | frontend-sdk.md | frontend-sdk.md, transport.md, foundation.md | frontend-sdk.md |
-| SERVER_ROUTES | 9a | server.md | server.md, transport.md | server.md |
-| SUBAGENT_FACTORY | 9a | agents.md | agents.md, conversation.md, architecture.md | agents.md |
-| ADMIN_API | 9b | server.md | server.md, infrastructure.md, transport.md | server.md |
-| BARREL_EXPORTS | 9b | foundation.md | foundation.md, server.md | foundation.md |
-| FEEDBACK_ENDPOINT | 9b | server.md | server.md, observability.md, transport.md | server.md |
-| FILE_CRUD | 9b | server.md | server.md, retrieval.md, transport.md | server.md |
-| GENERATIVE_UI | 9b | agents.md | agents.md, transport.md, frontend-sdk.md | agents.md |
-| RN_COMPONENTS | 9b | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
-| UPLOAD_ENDPOINT | 9b | server.md | server.md, documents.md, transport.md | server.md |
-| WEB_COMPONENTS | 9b | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
-| CONVERSATION_INTELLIGENCE | 10 | conversation.md | conversation.md, ai-operations.md, observability.md | conversation.md |
-| DOCS_SITE | 10 | documentation.md | documentation.md, foundation.md | documentation.md |
-| E2E_TESTS | 10 | testing.md | testing.md, tui.md, observability.md, server.md, infrastructure.md | testing.md |
-| FRONTEND_CLI | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
-| LOAD_TESTS | 10 | testing.md | testing.md, server.md, infrastructure.md | testing.md |
-| MONITORING_INFRA | 10 | monitoring.md | monitoring.md, infrastructure.md, server.md, observability.md | monitoring.md |
-| PKG_PUBLISH | 10 | testing.md | testing.md, foundation.md | testing.md |
-| RELEASE_PIPELINE | 10 | release-pipeline.md | release-pipeline.md, testing.md, server.md | release-pipeline.md |
-| SECURITY_COMPLIANCE | 10 | security-compliance.md | security-compliance.md, monitoring.md, server.md, guardrails.md | security-compliance.md |
-| SMOKE_TESTS | 10 | testing.md | testing.md, server.md, infrastructure.md | testing.md |
-| STORYBOOK_FRONTEND | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
-| TRACE_UI | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
-| DEMO_MOBILE | 11 | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
-| DEMO_WEB | 11 | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
-| DEVELOPER_EXPERIENCE | 11 | developer-experience.md | developer-experience.md, foundation.md, observability.md, testing.md, documentation.md | developer-experience.md |
-| DOCS_CONTENT | 11 | documentation.md | documentation.md | documentation.md |
-| INCIDENT_PROCEDURES | 11 | monitoring.md | monitoring.md | monitoring.md |
-| API_GOVERNANCE | FINAL | api-governance.md | api-governance.md, foundation.md, release-pipeline.md, coding-standards.md, extensibility.md | api-governance.md |
-| AUDIT_CODE | FINAL | testing.md | testing.md | testing.md |
-| AUDIT_PLAN | FINAL | testing.md | testing.md | testing.md |
-| AUDIT_QA | FINAL | testing.md | testing.md | testing.md |
-| AUDIT_SCOPE | FINAL | testing.md | testing.md | testing.md |
+| SPIKE_CORE_STACK | BLOCKING_SPIKE_BATCH | foundation.md | foundation.md | foundation.md |
+| SPIKE_RAG_DEPS | RAG_VALIDATION_BATCH | documents.md | documents.md | documents.md |
+| CODE_STANDARDS | SCAFFOLDING_BATCH | coding-standards.md | coding-standards.md, foundation.md, server.md | coding-standards.md |
+| SCAFFOLD_LIB | SCAFFOLDING_BATCH | foundation.md | foundation.md | foundation.md |
+| SCAFFOLD_SERVER | SCAFFOLDING_BATCH | server.md | server.md, foundation.md, transport.md | server.md |
+| CORE_TYPES | FOUNDATION_A_BATCH | foundation.md | foundation.md | foundation.md |
+| DOCKER_COMPOSE | FOUNDATION_A_BATCH | infrastructure.md | infrastructure.md, server.md | infrastructure.md |
+| MCP_HEALTH | FOUNDATION_A_BATCH | foundation.md | foundation.md | foundation.md |
+| PROVIDER_HELPERS | FOUNDATION_A_BATCH | foundation.md | foundation.md | foundation.md |
+| SCAFFOLD_FRONTEND | FOUNDATION_A_BATCH | foundation.md | foundation.md, frontend-sdk.md | frontend-sdk.md |
+| STORAGE_WRAPPER | FOUNDATION_A_BATCH | foundation.md | foundation.md | foundation.md |
+| STRUCT_LOGGING | FOUNDATION_A_BATCH | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| SURREALDB_CLIENT | FOUNDATION_A_BATCH | memory.md | memory.md, foundation.md | memory.md |
+| TUI_SHELL | FOUNDATION_A_BATCH | tui.md | tui.md, foundation.md | tui.md |
+| CIRCUIT_BREAKER | FOUNDATION_B_BATCH | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| CI_PIPELINE | FOUNDATION_B_BATCH | release-pipeline.md | release-pipeline.md, foundation.md, testing.md | release-pipeline.md |
+| KEY_POOL | FOUNDATION_B_BATCH | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| LANGFUSE_MODULE | FOUNDATION_B_BATCH | observability.md | observability.md, foundation.md | observability.md |
+| MCP_CLIENT | FOUNDATION_B_BATCH | agents.md | agents.md, foundation.md | agents.md |
+| PROVIDER_FALLBACK | FOUNDATION_B_BATCH | agents.md | agents.md, foundation.md | agents.md |
+| REWRITE_STRATEGIES | FOUNDATION_B_BATCH | conversation.md | conversation.md, foundation.md | conversation.md |
+| SHORT_TERM_MEM | FOUNDATION_B_BATCH | memory.md | memory.md, foundation.md | memory.md |
+| TUI_CHAT | FOUNDATION_B_BATCH | tui.md | tui.md | tui.md |
+| TUI_COMMANDS | FOUNDATION_B_BATCH | tui.md | tui.md | tui.md |
+| TUI_INPUT | FOUNDATION_B_BATCH | tui.md | tui.md | tui.md |
+| USER_SHORTTERM_MEM | FOUNDATION_B_BATCH | memory.md | memory.md | memory.md |
+| VALKEY_CACHE | FOUNDATION_B_BATCH | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| ZOD_SCHEMAS | FOUNDATION_B_BATCH | foundation.md | foundation.md | foundation.md |
+| CONFIG_DEFAULTS | CONFIG_GUARDS_BATCH | foundation.md | foundation.md | foundation.md |
+| EXTENSIBILITY_INFRA | CONFIG_GUARDS_BATCH | extensibility.md | extensibility.md, foundation.md, architecture.md | extensibility.md |
+| FILE_REGISTRY | CONFIG_GUARDS_BATCH | retrieval.md | retrieval.md, foundation.md, infrastructure.md | retrieval.md |
+| GUARD_FACTORY | CONFIG_GUARDS_BATCH | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| INPUT_GUARD | CONFIG_GUARDS_BATCH | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| MULTI_TENANT_CONFIG | CONFIG_GUARDS_BATCH | security-compliance.md | security-compliance.md, foundation.md, server.md | security-compliance.md |
+| OUTPUT_GUARD | CONFIG_GUARDS_BATCH | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| SUMMARY_CAP | CONFIG_GUARDS_BATCH | memory.md | memory.md | memory.md |
+| AGENT_FACTORY | AGENT_PIPELINE_BATCH | agents.md | agents.md, foundation.md, architecture.md | agents.md |
+| DOC_PIPELINE | AGENT_PIPELINE_BATCH | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
+| FILE_STORAGE | AGENT_PIPELINE_BATCH | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
+| STRUCTURED_RESULT_MEM | AGENT_PIPELINE_BATCH | memory.md | memory.md, foundation.md, agents.md | memory.md |
+| CTA_STREAMING | INTEGRATION_BATCH | transport.md | transport.md, foundation.md, agents.md | transport.md |
+| DURABLE_EXECUTION | INTEGRATION_BATCH | durable-execution.md | durable-execution.md, agents.md, foundation.md, transport.md, architecture.md | durable-execution.md |
+| EMBED_ROUTER | INTEGRATION_BATCH | conversation.md | conversation.md, foundation.md, infrastructure.md, agents.md | conversation.md |
+| EVAL_CONFIG | INTEGRATION_BATCH | observability.md | observability.md, agents.md | observability.md |
+| FACT_EXTRACTION | INTEGRATION_BATCH | memory.md | memory.md, agents.md | memory.md |
+| GEMINI_GROUNDING | INTEGRATION_BATCH | agents.md | agents.md | agents.md |
+| GUARD_PIPELINE | INTEGRATION_BATCH | guardrails.md | guardrails.md | guardrails.md |
+| HATE_SPEECH_GUARD | INTEGRATION_BATCH | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| LANG_GUARD | INTEGRATION_BATCH | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| LOCATION_TOOL | INTEGRATION_BATCH | agents.md | agents.md, foundation.md, infrastructure.md | agents.md |
+| MEMORY_CONTROL | INTEGRATION_BATCH | memory.md | memory.md, agents.md | memory.md |
+| MEMORY_RECALL | INTEGRATION_BATCH | memory.md | memory.md, agents.md | memory.md |
+| PROMPT_MGMT | INTEGRATION_BATCH | observability.md | observability.md | observability.md |
+| RAGFLOW_CLIENT | INTEGRATION_BATCH | retrieval.md | retrieval.md, conversation.md, foundation.md | retrieval.md |
+| RAG_INFRA | INTEGRATION_BATCH | retrieval.md | retrieval.md, foundation.md, documents.md | retrieval.md |
+| RATE_LIMITING | INTEGRATION_BATCH | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| SSE_STREAMING | INTEGRATION_BATCH | transport.md | transport.md, agents.md, guardrails.md, foundation.md | transport.md |
+| ZERO_LEAK_GUARD | INTEGRATION_BATCH | guardrails.md | guardrails.md | guardrails.md |
+| CUSTOM_SPANS | SELFTEST_MIDINTEGRATION_BATCH | observability.md | observability.md, guardrails.md, retrieval.md | observability.md |
+| EVIDENCE_GATE | SELFTEST_MIDINTEGRATION_BATCH | retrieval.md | retrieval.md, conversation.md, foundation.md | retrieval.md |
+| INPUT_VALIDATION | SELFTEST_MIDINTEGRATION_BATCH | guardrails.md | guardrails.md, transport.md | guardrails.md |
+| NON_ACTIONABLE_DETECT | SELFTEST_MIDINTEGRATION_BATCH | conversation.md | conversation.md | conversation.md |
+| SELF_TEST | SELFTEST_MIDINTEGRATION_BATCH | observability.md | observability.md | observability.md |
+| THREAD_RESURRECTION | SELFTEST_MIDINTEGRATION_BATCH | memory.md | memory.md | memory.md |
+| TRIGGER_TASKS | SELFTEST_MIDINTEGRATION_BATCH | infrastructure.md | infrastructure.md, foundation.md, retrieval.md, documents.md | infrastructure.md |
+| UPLOAD_PIPELINE | SELFTEST_MIDINTEGRATION_BATCH | documents.md | documents.md, foundation.md, infrastructure.md | documents.md |
+| AGENT_ROUTER | SERVER_TUI_PIPELINE_BATCH | agents.md | agents.md, transport.md | agents.md |
+| CLIENT_SDK | SERVER_TUI_PIPELINE_BATCH | transport.md | transport.md, foundation.md, frontend-sdk.md | transport.md |
+| CONTEXT_BUDGET | SERVER_TUI_PIPELINE_BATCH | memory.md | memory.md | memory.md |
+| DOC_SEARCH | SERVER_TUI_PIPELINE_BATCH | retrieval.md | retrieval.md | retrieval.md |
+| EXTRACTION_SAFEGUARDS | SERVER_TUI_PIPELINE_BATCH | memory.md | memory.md | memory.md |
+| FACT_SUPERSESSION | SERVER_TUI_PIPELINE_BATCH | memory.md | memory.md | memory.md |
+| JWT_AUTH | SERVER_TUI_PIPELINE_BATCH | server.md | server.md, transport.md | server.md |
+| LLM_INTENT | SERVER_TUI_PIPELINE_BATCH | conversation.md | conversation.md, foundation.md, agents.md | conversation.md |
+| RESPONSE_CALIBRATION | SERVER_TUI_PIPELINE_BATCH | agents.md | agents.md, foundation.md | agents.md |
+| SERVER_AGENT_CFG | SERVER_TUI_PIPELINE_BATCH | server.md | server.md, transport.md, agents.md | server.md |
+| SERVER_GUARDRAILS | SERVER_TUI_PIPELINE_BATCH | server.md | server.md, guardrails.md, transport.md | server.md |
+| SERVER_MCP | SERVER_TUI_PIPELINE_BATCH | server.md | server.md, agents.md, transport.md | server.md |
+| SOURCE_ROUTER | SERVER_TUI_PIPELINE_BATCH | conversation.md | conversation.md, foundation.md | conversation.md |
+| STYLE_PREFERENCES | SERVER_TUI_PIPELINE_BATCH | memory.md | memory.md | memory.md |
+| TUI_AGENT | SERVER_TUI_PIPELINE_BATCH | tui.md | tui.md | tui.md |
+| VISUAL_GROUNDING | SERVER_TUI_PIPELINE_BATCH | retrieval.md | retrieval.md, documents.md, foundation.md | retrieval.md |
+| AI_OPERATIONS | EXTENDED_INTEGRATION_BATCH | ai-operations.md | ai-operations.md, agents.md, observability.md, conversation.md | ai-operations.md |
+| ATTRIBUTE_NEGATION | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md | conversation.md |
+| CLARIFICATION_MODEL | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md, agents.md | conversation.md |
+| COST_TRACKING | EXTENDED_INTEGRATION_BATCH | infrastructure.md | infrastructure.md, documents.md, transport.md | infrastructure.md |
+| CROSS_CONV_RAG | EXTENDED_INTEGRATION_BATCH | retrieval.md | retrieval.md | retrieval.md |
+| DEPENDENT_INTENT | EXTENDED_INTEGRATION_BATCH | agents.md | agents.md, conversation.md | agents.md |
+| FRUSTRATION_SIGNAL | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md | conversation.md |
+| ORCHESTRATOR | EXTENDED_INTEGRATION_BATCH | agents.md | agents.md, conversation.md, architecture.md | agents.md |
+| PREFETCH_COORD | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md | conversation.md |
+| QUERY_REPLAY | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md, memory.md | conversation.md |
+| RAG_FEEDBACK_LOOP | EXTENDED_INTEGRATION_BATCH | retrieval.md | retrieval.md, observability.md, infrastructure.md | retrieval.md |
+| REWRITE_TOOL | EXTENDED_INTEGRATION_BATCH | conversation.md | conversation.md, foundation.md | conversation.md |
+| TTL_CLEANUP | EXTENDED_INTEGRATION_BATCH | infrastructure.md | infrastructure.md, documents.md, retrieval.md | infrastructure.md |
+| TUI_UPLOAD | EXTENDED_INTEGRATION_BATCH | tui.md | tui.md | tui.md |
+| REACT_HOOKS | SERVER_ROUTES_SUBAGENT_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md, foundation.md | frontend-sdk.md |
+| SERVER_ROUTES | SERVER_ROUTES_SUBAGENT_BATCH | server.md | server.md, transport.md | server.md |
+| SUBAGENT_FACTORY | SERVER_ROUTES_SUBAGENT_BATCH | agents.md | agents.md, conversation.md, architecture.md | agents.md |
+| ADMIN_API | ENDPOINTS_BARREL_BATCH | server.md | server.md, infrastructure.md, transport.md | server.md |
+| BARREL_EXPORTS | ENDPOINTS_BARREL_BATCH | foundation.md | foundation.md, server.md | foundation.md |
+| FEEDBACK_ENDPOINT | ENDPOINTS_BARREL_BATCH | server.md | server.md, observability.md, transport.md | server.md |
+| FILE_CRUD | ENDPOINTS_BARREL_BATCH | server.md | server.md, retrieval.md, transport.md | server.md |
+| GENERATIVE_UI | ENDPOINTS_BARREL_BATCH | agents.md | agents.md, transport.md, frontend-sdk.md | agents.md |
+| RN_COMPONENTS | ENDPOINTS_BARREL_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| UPLOAD_ENDPOINT | ENDPOINTS_BARREL_BATCH | server.md | server.md, documents.md, transport.md | server.md |
+| WEB_COMPONENTS | ENDPOINTS_BARREL_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| CONVERSATION_INTELLIGENCE | E2E_DEPLOY_BATCH | conversation.md | conversation.md, ai-operations.md, observability.md | conversation.md |
+| DOCS_SITE | E2E_DEPLOY_BATCH | documentation.md | documentation.md, foundation.md | documentation.md |
+| E2E_TESTS | E2E_DEPLOY_BATCH | testing.md | testing.md, tui.md, observability.md, server.md, infrastructure.md | testing.md |
+| FRONTEND_CLI | E2E_DEPLOY_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| LOAD_TESTS | E2E_DEPLOY_BATCH | testing.md | testing.md, server.md, infrastructure.md | testing.md |
+| MONITORING_INFRA | E2E_DEPLOY_BATCH | monitoring.md | monitoring.md, infrastructure.md, server.md, observability.md | monitoring.md |
+| PKG_PUBLISH | E2E_DEPLOY_BATCH | testing.md | testing.md, foundation.md | testing.md |
+| RELEASE_PIPELINE | E2E_DEPLOY_BATCH | release-pipeline.md | release-pipeline.md, testing.md, server.md | release-pipeline.md |
+| SECURITY_COMPLIANCE | E2E_DEPLOY_BATCH | security-compliance.md | security-compliance.md, monitoring.md, server.md, guardrails.md | security-compliance.md |
+| SMOKE_TESTS | E2E_DEPLOY_BATCH | testing.md | testing.md, server.md, infrastructure.md | testing.md |
+| STORYBOOK_FRONTEND | E2E_DEPLOY_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| TRACE_UI | E2E_DEPLOY_BATCH | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| DEMO_MOBILE | FRONTEND_DEMOS_BATCH | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
+| DEMO_WEB | FRONTEND_DEMOS_BATCH | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
+| DEVELOPER_EXPERIENCE | FRONTEND_DEMOS_BATCH | developer-experience.md | developer-experience.md, foundation.md, observability.md, testing.md, documentation.md | developer-experience.md |
+| DOCS_CONTENT | FRONTEND_DEMOS_BATCH | documentation.md | documentation.md | documentation.md |
+| INCIDENT_PROCEDURES | FRONTEND_DEMOS_BATCH | monitoring.md | monitoring.md | monitoring.md |
+| API_GOVERNANCE | FINAL_AUDIT_BATCH | api-governance.md | api-governance.md, foundation.md, release-pipeline.md, coding-standards.md, extensibility.md | api-governance.md |
+| AUDIT_CODE | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
+| AUDIT_PLAN | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
+| AUDIT_QA | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
+| AUDIT_SCOPE | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
 
 ---
 
