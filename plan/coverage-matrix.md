@@ -78,3 +78,9 @@ Use this sequence to start implementation quickly:
 - Additions check: reader-first files are additive and do not replace source files.
 - Content loss check: no removed lines from source files unless explicitly documented.
 - Scheduling authority check: task ordering and dependency truth remain centralized in [Execution Plan](./execution.md).
+
+---
+
+## Documented Source Deltas
+
+- `execution.md`: count wording and gate-layer wording were corrected for consistency with the current 129-task model and task-level versus project-level gate separation.
