@@ -20,6 +20,7 @@
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
 - [New Task Registry (Expanded Plan Documents)](#new-task-registry-expanded-plan-documents)
+- [Per-Task Routing Index](#per-task-routing-index)
 
 ---
 
@@ -1410,6 +1411,145 @@ The following 6 tasks were added for developer workflow maturity, public API gov
 | MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
 
 *Covers all 125 implementation tasks + 4 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
+
+
+## Per-Task Routing Index
+
+> **Purpose**: Fast task-to-doc routing for builders. Each row points to the primary spec, the minimum context files to read, and where behavioral test assertions live.
+
+Column guide: `Task` = UPPER_SNAKE task ID; `Batch` = execution batch; `Spec File` = primary task specification file; `Context Sections` = concise context filenames to read first; `Test Spec File` = file containing behavioral test specs for the task.
+
+| Task | Batch | Spec File | Context Sections | Test Spec File |
+|------|-------|-----------|------------------|----------------|
+| SPIKE_CORE_STACK | 0 | foundation.md | foundation.md | foundation.md |
+| SPIKE_RAG_DEPS | 0.5 | documents.md | documents.md | documents.md |
+| CODE_STANDARDS | 1 | coding-standards.md | coding-standards.md, foundation.md, server.md | coding-standards.md |
+| SCAFFOLD_LIB | 1 | foundation.md | foundation.md | foundation.md |
+| SCAFFOLD_SERVER | 1 | server.md | server.md, foundation.md, transport.md | server.md |
+| CORE_TYPES | 2 | foundation.md | foundation.md | foundation.md |
+| DOCKER_COMPOSE | 2 | infrastructure.md | infrastructure.md, server.md | infrastructure.md |
+| MCP_HEALTH | 2 | foundation.md | foundation.md | foundation.md |
+| PROVIDER_HELPERS | 2 | foundation.md | foundation.md | foundation.md |
+| SCAFFOLD_FRONTEND | 2 | foundation.md | foundation.md, frontend-sdk.md | foundation.md |
+| STORAGE_WRAPPER | 2 | foundation.md | foundation.md | foundation.md |
+| STRUCT_LOGGING | 2 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| SURREALDB_CLIENT | 2 | memory.md | memory.md, foundation.md | memory.md |
+| TUI_SHELL | 2 | tui.md | tui.md, foundation.md | tui.md |
+| CIRCUIT_BREAKER | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| CI_PIPELINE | 3 | release-pipeline.md | release-pipeline.md, foundation.md, testing.md | release-pipeline.md |
+| KEY_POOL | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| LANGFUSE_MODULE | 3 | observability.md | observability.md, foundation.md | observability.md |
+| MCP_CLIENT | 3 | agents.md | agents.md, foundation.md | agents.md |
+| PROVIDER_FALLBACK | 3 | agents.md | agents.md, foundation.md | agents.md |
+| REWRITE_STRATEGIES | 3 | conversation.md | conversation.md, foundation.md | conversation.md |
+| SHORT_TERM_MEM | 3 | memory.md | memory.md, foundation.md | memory.md |
+| TUI_CHAT | 3 | tui.md | tui.md | tui.md |
+| TUI_COMMANDS | 3 | tui.md | tui.md | tui.md |
+| TUI_INPUT | 3 | tui.md | tui.md | tui.md |
+| USER_SHORTTERM_MEM | 3 | memory.md | memory.md | memory.md |
+| VALKEY_CACHE | 3 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| ZOD_SCHEMAS | 3 | foundation.md | foundation.md | foundation.md |
+| CONFIG_DEFAULTS | 4 | foundation.md | foundation.md | foundation.md |
+| EXTENSIBILITY_INFRA | 4 | extensibility.md | extensibility.md, foundation.md, architecture.md | extensibility.md |
+| FILE_REGISTRY | 4 | retrieval.md | retrieval.md, foundation.md, infrastructure.md | retrieval.md |
+| GUARD_FACTORY | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| INPUT_GUARD | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| MULTI_TENANT_CONFIG | 4 | security-compliance.md | security-compliance.md, foundation.md, server.md | security-compliance.md |
+| OUTPUT_GUARD | 4 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| SUMMARY_CAP | 4 | memory.md | memory.md | memory.md |
+| AGENT_FACTORY | 5 | agents.md | agents.md, foundation.md, architecture.md | agents.md |
+| DOC_PIPELINE | 5 | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
+| FILE_STORAGE | 5 | documents.md | documents.md, infrastructure.md, foundation.md | documents.md |
+| STRUCTURED_RESULT_MEM | 5 | memory.md | memory.md, foundation.md, agents.md | memory.md |
+| CTA_STREAMING | 6 | transport.md | transport.md, foundation.md, agents.md | transport.md |
+| DURABLE_EXECUTION | 6 | durable-execution.md | durable-execution.md, agents.md, foundation.md, transport.md, architecture.md | durable-execution.md |
+| EMBED_ROUTER | 6 | conversation.md | conversation.md, foundation.md, infrastructure.md, agents.md | conversation.md |
+| EVAL_CONFIG | 6 | observability.md | observability.md, agents.md | observability.md |
+| FACT_EXTRACTION | 6 | memory.md | memory.md, agents.md | memory.md |
+| GEMINI_GROUNDING | 6 | agents.md | agents.md | agents.md |
+| GUARD_PIPELINE | 6 | guardrails.md | guardrails.md | guardrails.md |
+| HATE_SPEECH_GUARD | 6 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| LANG_GUARD | 6 | guardrails.md | guardrails.md, foundation.md | guardrails.md |
+| LOCATION_TOOL | 6 | agents.md | agents.md, foundation.md, infrastructure.md | agents.md |
+| MEMORY_CONTROL | 6 | memory.md | memory.md, agents.md | memory.md |
+| MEMORY_RECALL | 6 | memory.md | memory.md, agents.md | memory.md |
+| PROMPT_MGMT | 6 | observability.md | observability.md | observability.md |
+| RAGFLOW_CLIENT | 6 | conversation.md | conversation.md, retrieval.md, foundation.md | conversation.md |
+| RAG_INFRA | 6 | retrieval.md | retrieval.md, foundation.md, documents.md | retrieval.md |
+| RATE_LIMITING | 6 | infrastructure.md | infrastructure.md, foundation.md | infrastructure.md |
+| SSE_STREAMING | 6 | transport.md | transport.md, agents.md, guardrails.md, foundation.md | transport.md |
+| ZERO_LEAK_GUARD | 6 | guardrails.md | guardrails.md | guardrails.md |
+| CUSTOM_SPANS | 7 | observability.md | observability.md, guardrails.md, retrieval.md | observability.md |
+| EVIDENCE_GATE | 7 | retrieval.md | retrieval.md, conversation.md, foundation.md | retrieval.md |
+| INPUT_VALIDATION | 7 | guardrails.md | guardrails.md, transport.md | guardrails.md |
+| NON_ACTIONABLE_DETECT | 7 | conversation.md | conversation.md | conversation.md |
+| SELF_TEST | 7 | observability.md | observability.md | observability.md |
+| THREAD_RESURRECTION | 7 | memory.md | memory.md | memory.md |
+| TRIGGER_TASKS | 7 | infrastructure.md | infrastructure.md, foundation.md, retrieval.md, documents.md | infrastructure.md |
+| UPLOAD_PIPELINE | 7 | documents.md | documents.md, foundation.md, infrastructure.md | documents.md |
+| AGENT_ROUTER | 8a | agents.md | agents.md, transport.md | agents.md |
+| CLIENT_SDK | 8a | transport.md | transport.md, foundation.md, frontend-sdk.md | transport.md |
+| CONTEXT_BUDGET | 8a | memory.md | memory.md | memory.md |
+| DOC_SEARCH | 8a | retrieval.md | retrieval.md | retrieval.md |
+| EXTRACTION_SAFEGUARDS | 8a | memory.md | memory.md | memory.md |
+| FACT_SUPERSESSION | 8a | memory.md | memory.md | memory.md |
+| JWT_AUTH | 8a | server.md | server.md, transport.md | server.md |
+| LLM_INTENT | 8a | conversation.md | conversation.md, foundation.md, agents.md | conversation.md |
+| RESPONSE_CALIBRATION | 8a | agents.md | agents.md, foundation.md | agents.md |
+| SERVER_AGENT_CFG | 8a | server.md | server.md, transport.md, agents.md | server.md |
+| SERVER_GUARDRAILS | 8a | server.md | server.md, guardrails.md, transport.md | server.md |
+| SERVER_MCP | 8a | server.md | server.md, agents.md, transport.md | server.md |
+| SOURCE_ROUTER | 8a | conversation.md | conversation.md, foundation.md | conversation.md |
+| STYLE_PREFERENCES | 8a | memory.md | memory.md | memory.md |
+| TUI_AGENT | 8a | tui.md | tui.md | tui.md |
+| VISUAL_GROUNDING | 8a | retrieval.md | retrieval.md, documents.md, foundation.md | retrieval.md |
+| AI_OPERATIONS | 8b | ai-operations.md | ai-operations.md, agents.md, observability.md, conversation.md | ai-operations.md |
+| ATTRIBUTE_NEGATION | 8b | conversation.md | conversation.md | conversation.md |
+| CLARIFICATION_MODEL | 8b | conversation.md | conversation.md, agents.md | conversation.md |
+| COST_TRACKING | 8b | infrastructure.md | infrastructure.md, documents.md, transport.md | infrastructure.md |
+| CROSS_CONV_RAG | 8b | retrieval.md | retrieval.md | retrieval.md |
+| DEPENDENT_INTENT | 8b | agents.md | agents.md, conversation.md | agents.md |
+| FRUSTRATION_SIGNAL | 8b | conversation.md | conversation.md | conversation.md |
+| ORCHESTRATOR | 8b | agents.md | agents.md, conversation.md, architecture.md | agents.md |
+| PREFETCH_COORD | 8b | conversation.md | conversation.md | conversation.md |
+| QUERY_REPLAY | 8b | conversation.md | conversation.md, memory.md | conversation.md |
+| RAG_FEEDBACK_LOOP | 8b | retrieval.md | retrieval.md, observability.md, infrastructure.md | retrieval.md |
+| REWRITE_TOOL | 8b | conversation.md | conversation.md, foundation.md | conversation.md |
+| TTL_CLEANUP | 8b | infrastructure.md | infrastructure.md, documents.md, retrieval.md | infrastructure.md |
+| TUI_UPLOAD | 8b | tui.md | tui.md | tui.md |
+| REACT_HOOKS | 9a | frontend-sdk.md | frontend-sdk.md, transport.md, foundation.md | frontend-sdk.md |
+| SERVER_ROUTES | 9a | server.md | server.md, transport.md | server.md |
+| SUBAGENT_FACTORY | 9a | agents.md | agents.md, conversation.md, architecture.md | agents.md |
+| ADMIN_API | 9b | server.md | server.md, infrastructure.md, transport.md | server.md |
+| BARREL_EXPORTS | 9b | foundation.md | foundation.md, server.md | foundation.md |
+| FEEDBACK_ENDPOINT | 9b | server.md | server.md, observability.md, transport.md | server.md |
+| FILE_CRUD | 9b | server.md | server.md, retrieval.md, transport.md | server.md |
+| GENERATIVE_UI | 9b | agents.md | agents.md, transport.md, frontend-sdk.md | agents.md |
+| RN_COMPONENTS | 9b | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| UPLOAD_ENDPOINT | 9b | server.md | server.md, documents.md, transport.md | server.md |
+| WEB_COMPONENTS | 9b | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| CONVERSATION_INTELLIGENCE | 10 | conversation.md | conversation.md, ai-operations.md, observability.md | conversation.md |
+| DOCS_SITE | 10 | documentation.md | documentation.md, foundation.md | documentation.md |
+| E2E_TESTS | 10 | testing.md | testing.md, tui.md, observability.md, server.md, infrastructure.md | testing.md |
+| FRONTEND_CLI | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| LOAD_TESTS | 10 | testing.md | testing.md, server.md, infrastructure.md | testing.md |
+| MONITORING_INFRA | 10 | monitoring.md | monitoring.md, infrastructure.md, server.md, observability.md | monitoring.md |
+| PKG_PUBLISH | 10 | testing.md | testing.md, foundation.md | testing.md |
+| RELEASE_PIPELINE | 10 | release-pipeline.md | release-pipeline.md, testing.md, server.md | release-pipeline.md |
+| SECURITY_COMPLIANCE | 10 | security-compliance.md | security-compliance.md, monitoring.md, server.md, guardrails.md | security-compliance.md |
+| SMOKE_TESTS | 10 | testing.md | testing.md, server.md, infrastructure.md | testing.md |
+| STORYBOOK_FRONTEND | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| TRACE_UI | 10 | frontend-sdk.md | frontend-sdk.md, transport.md | frontend-sdk.md |
+| DEMO_MOBILE | 11 | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
+| DEMO_WEB | 11 | demos.md | demos.md, frontend-sdk.md, server.md, transport.md | demos.md |
+| DEVELOPER_EXPERIENCE | 11 | developer-experience.md | developer-experience.md, foundation.md, observability.md, testing.md, documentation.md | developer-experience.md |
+| DOCS_CONTENT | 11 | documentation.md | documentation.md | documentation.md |
+| INCIDENT_PROCEDURES | 11 | monitoring.md | monitoring.md | monitoring.md |
+| API_GOVERNANCE | FINAL | api-governance.md | api-governance.md, foundation.md, release-pipeline.md, coding-standards.md, extensibility.md | api-governance.md |
+| AUDIT_CODE | FINAL | testing.md | testing.md | testing.md |
+| AUDIT_PLAN | FINAL | testing.md | testing.md | testing.md |
+| AUDIT_QA | FINAL | testing.md | testing.md | testing.md |
+| AUDIT_SCOPE | FINAL | testing.md | testing.md | testing.md |
 
 ---
 

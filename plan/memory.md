@@ -2091,6 +2091,8 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ## Test Specifications
 
+> **Relationship to Task Specifications**: The QA Scenarios in each task spec above verify task completion through action-oriented acceptance checks. The test specifications below define comprehensive behavioral assertions for property-based and integration testing. Both are complementary — QA Scenarios confirm "the task is done," test specifications confirm "the system behaves correctly under all conditions."
+
 Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
 
 **Thread short-term memory**:

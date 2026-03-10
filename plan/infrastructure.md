@@ -931,6 +931,8 @@ Object keys use user-prefixed hierarchy for ownership cleanup. Concentrated uplo
 
 ## Test Specifications
 
+> **Relationship to Task Specifications**: The QA Scenarios in each task spec above verify task completion through action-oriented acceptance checks. The test specifications below define comprehensive behavioral assertions for property-based and integration testing. Both are complementary — QA Scenarios confirm "the task is done," test specifications confirm "the system behaves correctly under all conditions."
+
 **Docker Compose**:
 
 - Core profile five services start correctly with health checks.
