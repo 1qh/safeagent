@@ -166,6 +166,7 @@ Each document below is a self-contained reference for its domain. Documents are 
 
 - [Conversation Pipeline](./conversation.md) — Input validation → intent detection → query rewriting → source routing → response assembly
 - [Agents & Orchestration](./agents.md) — Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors
+- [Agent Capabilities & Integrations](./agent-capabilities.md) — Computer use, MCP client protocol, location enrichment tool, generative UI component governance
 - [Memory & Intelligence](./memory.md) — Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle
 - [Document Processing](./documents.md) — Upload pipeline, multimodal-first processing, per-page summarization, file status management
 - [Retrieval & Evidence](./retrieval.md) — Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding
@@ -183,7 +184,8 @@ Each document below is a self-contained reference for its domain. Documents are 
 ### Operations
 
 - [Observability](./observability.md) — Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering
-- [Monitoring & Alerting](./monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
+- [Monitoring & Alerting](./monitoring.md) — Real-time health, metrics collection, alerting, SLAs, dashboards, capacity forecasting
+- [Incident Response & DR](./incident-response.md) — Status page, incident lifecycle, runbooks, on-call rotation, disaster recovery, backup strategy
 - [Infrastructure](./infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
 - [Durable Execution & HITL](./durable-execution.md) — Checkpoint backends, crash recovery, time-travel replay, background runs, human-in-the-loop approval gates, async suspension, escalation queues, configurable automation ratio
 - [AI Operations](./ai-operations.md) — Semantic caching, dynamic model routing, prompt A/B testing, atomic bundle rollout, shadow mode, LLM-as-judge evaluation, CLASSic framework, per-agent cost attribution
