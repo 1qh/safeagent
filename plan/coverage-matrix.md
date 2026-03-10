@@ -84,3 +84,4 @@ Use this sequence to start implementation quickly:
 ## Documented Source Deltas
 
 - `execution.md`: count wording and gate-layer wording were corrected for consistency with the current 129-task model and task-level versus project-level gate separation.
+- `ai-operations.md`: top metadata label was clarified from task-style wording to internal-layer wording to avoid execution-task ambiguity.
