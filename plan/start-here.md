@@ -46,8 +46,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 4. [Task Verification Index](./task-verification-index.md)
 5. [Handoff Packet Template](./handoff-packet-template.md)
 6. [Readiness Scoreboard](./readiness-scoreboard.md)
-7. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
-8. [Coverage Matrix](./coverage-matrix.md)
+7. [Readiness Decision Record Template](./readiness-decision-record-template.md)
+8. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+9. [Coverage Matrix](./coverage-matrix.md)
 
 ### Operations and Security
 
@@ -77,6 +78,7 @@ Supporting rollup views:
 
 - Readiness rollup visibility: [Readiness Scoreboard](./readiness-scoreboard.md)
 - Adversarial stress coverage map: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+- Project-level readiness decision capture: [Readiness Decision Record Template](./readiness-decision-record-template.md)
 
 ---
 

@@ -42,3 +42,4 @@ This document gives operators and implementers a single operational reading path
 - Verification and release gates: [Quality Gates](./quality-gates.md)
 - Runtime optimization governance: [AI Operations Plan](./ai-operations.md)
 - Readiness visibility and escalation posture: [Readiness Scoreboard](./readiness-scoreboard.md)
+- Release and audit decision capture: [Readiness Decision Record Template](./readiness-decision-record-template.md)

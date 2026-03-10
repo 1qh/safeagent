@@ -43,6 +43,7 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - Scheduling/dependency order statements remain centralized in [Execution Plan](./execution.md).
 - [Readiness Scoreboard](./readiness-scoreboard.md) remains a rollup view and does not define readiness criteria.
 - [Eval and Adversarial Matrix](./eval-adversarial-matrix.md) remains supplementary and does not override [Testing](./testing.md).
+- [Readiness Decision Record Template](./readiness-decision-record-template.md) is used for project-level release and audit decisions only.
 
 ### Preservation and Scope Consistency
 
@@ -69,4 +70,5 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - [Coverage Matrix](./coverage-matrix.md)
 - [Quality Gates](./quality-gates.md)
 - [Readiness Scoreboard](./readiness-scoreboard.md)
+- [Readiness Decision Record Template](./readiness-decision-record-template.md)
 - [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
