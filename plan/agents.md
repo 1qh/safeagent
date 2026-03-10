@@ -1099,7 +1099,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - CORE_TYPES, AGENT_FACTORY
 
 **Batch**
-- 8b
+- 8a
 
 **Acceptance Criteria**
 - Input complexity signals map to a deterministic response-energy band.
@@ -1148,7 +1148,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS
 
 **Batch**
-- 10
+- 9b
 
 **Acceptance Criteria**
 - Only catalog-approved component categories are emitted.
