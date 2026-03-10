@@ -5247,33 +5247,218 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 ### Module: Developer Experience and Onboarding (28)
 
-- Project scaffolder generates valid project structure with all required artifacts.
-- Generated project produces output on first run with mock provider.
-- Progressive API tiers (quick, standard, expert) each produce the expected agent behavior profile.
-- Error taxonomy covers all named error classes with correct domain and category assignment.
-- Error messages include clear sections for what happened, why it happened, and what to do next.
+**Project onboarding behavior**:
+
+- Project creation flow is interactive and guides users through provider choice, use case, and framework integration selection.
+- Template selection prompts include clear language explaining the implications of each choice.
+- Generated project produces visible output on first run with mock provider and no cloud credentials.
+- Environment template defaults to local-first provider behavior and avoids accidental cloud coupling.
+- Template metadata identifies intended audience level for each template choice.
+- Onboarding recovery guidance enables first-time users to resolve setup issues without external support.
+
+**Progressive API tier behavior**:
+
+- Tier one provides zero-config happy-path behavior that produces useful outcomes without expert controls.
+- Tier two provides explicit configuration overrides for common production adjustments.
+- Tier three provides builder composition with middleware extensibility and lifecycle controls.
+- Tier transitions are incremental and preserve behavior clarity without requiring disruptive rewrites.
+- Beginners are never forced into expert controls to complete core tasks.
+- Discriminated union outcomes include stable identifiers and structured payload variants for safe narrowing.
+- Runtime validation failures map to documented error taxonomy categories.
+
+**Error taxonomy and diagnostics behavior**:
+
+- Error taxonomy provides at least fifteen distinct named error types covering all documented categories.
+- Every error is classified into one of at least eight semantic domains.
+- Every error is classified into one of three fault-origin categories: developer, framework, or external.
+- Every error message answers what happened, why it happened, and what should happen next.
+- Error identification uses stable discriminants that work across transpilation and bundling differences.
+- Step-level error isolation prevents one tool failure from terminating entire agent execution.
+- Partial success outcomes remain visible with structured failure records.
+- Recovery policies support retry, skip, and fallback decisions by error category.
+
+**Local development environment behavior**:
+
+- Ollama is supported as first-class local provider with documented primary provider path.
+- Mock provider mode requires zero API keys for local development and testing.
+- Core architecture is offline-capable for memory, tools, and tracing workflows.
+- Environment validation checks setup readiness and returns actionable guidance on missing prerequisites.
+- Provider switching requires only a single configuration decision point change.
+- Offline behavior degrades gracefully and reports precise missing capabilities.
+- Local provider behavior is parity-tested against cloud-backed providers for core flows.
+
+**Interactive development studio behavior**:
+
+- Local browser-based studio starts correctly and renders agent chat, trace viewer, and tool sandbox surfaces.
+- Agent chat interface supports real-time behavioral testing with streaming responses.
+- Step trace viewer displays timing data at both step granularity and end-to-end granularity.
+- Tool sandbox validates tools in isolation before agent attachment with schema validation.
+- Token usage and cost visibility differentiate estimated and observed values clearly.
+- Tracing activation requires zero configuration through middleware-based defaults.
+- Traces are stored locally and automatically excluded from source control workflows.
+
+**Testing utilities behavior**:
+
 - Mock provider returns fixture-based responses and supports streaming simulation behavior.
+- Mock provider supports controlled error injection for failure path testing.
+- Agent run simulation helper returns complete step trace for assertions.
 - Fixture recording mode captures real responses and replays deterministically.
-- Deterministic mode produces identical results across repeated runs.
-- Local studio starts correctly and renders agent chat, trace viewer, and tool sandbox surfaces.
-- Template gallery scaffolds all templates successfully and each one runs successfully.
-- Type-checking performance stays within the defined budget with thirty or more tools configured.
-- OpenTelemetry export emits valid trace data to configured endpoints.
-- Tool sandbox executes tools in isolation with correct schema validation behavior.
+- Deterministic mode produces identical results across repeated runs with fixed temperature, seeded identifiers, and retry suppression.
+- Custom test matchers support expressive agent-specific assertions.
+- Fixture governance prohibits sensitive data capture in fixtures by default.
+- Recording cadence validation ensures fixtures do not drift from live provider behavior.
+
+**Template and starter ecosystem behavior**:
+
+- Template gallery scaffolds all six required templates (basic, tool-enabled, multi-agent, RAG, HITL, local-model-first) successfully.
+- Every template produces visible output on first run and includes adaptation notes for real deployment.
+- Every template aligns with Bun-only and single-package constraints.
+- Template lifecycle states (active, maintenance, archived) are enforced by governance.
+- Framework integration guidance covers Elysia and Hono while preserving framework-native patterns.
+- Standalone runnable examples are independently executable with declared dependencies.
+
+**AI coding agent integration behavior**:
+
 - AI coding agent skill definition loads with correct metadata and instruction payloads.
+- Lightweight metadata loads by default within a small token budget.
+- Full instruction set loads on demand when deeper guidance is needed.
+- Metadata layer includes core principles, safety constraints, and key terminology.
+- Drift detection identifies outdated assistant guidance before release publication.
+- Multi-assistant ecosystem support covers Claude Code, Cursor, and Gemini CLI.
+
+**TypeScript performance budget behavior**:
+
+- Type-checking performance stays within the defined budget with thirty or more tools configured.
+- Incremental edit feedback latency remains within acceptable bounds in common development flows.
+- Memory pressure under high-schema and high-tool workloads stays within governance limits.
+- Diagnostic latency for complex discriminated union outcomes remains responsive.
+- Regression thresholds trigger intervention before release promotion.
+
+**OpenTelemetry and observability integration behavior**:
+
+- OpenTelemetry export emits valid trace data to configured endpoints.
+- Export compatibility is verified against Langfuse, Braintrust, and Jaeger.
+- Trace schema captures step lifecycle, tool invocations, guardrail decisions, and error category metadata.
+- Local trace persistence supports short-loop debugging with easy cleanup.
+- Export behavior avoids coupling to a single vendor data model.
+- Instrumentation defaults are safe, informative, and low overhead.
+
+**Tool development workflow behavior**:
+
+- Tool sandbox executes tools in isolation with correct schema validation behavior.
+- Tool contracts define input and output schema expectations validated before agent attachment.
+- Trace replay reproduces specific executions with preserved timing and context metadata.
+- MCP-first publishing model produces publishable MCP server output per tool.
+- Tool metadata format includes ownership, maturity, trust level, and support policy.
+- Publishing readiness checks include security, reliability, and documentation validation.
+- Deprecated tools remain discoverable with migration guidance until retirement window closes.
 
 ### Module: API Governance and Consumer Migration (29)
 
+**Public API surface governance behavior**:
+
 - Public API surface matches the documented export list exactly.
+- Export additions require governance review for naming, contract clarity, and stability assignment.
+- Export removals require deprecation and migration artifacts before release admission.
+- Re-exporting internal symbols is prohibited and detected by automated checks.
+- Public API inventory is regenerated during release validation and drift blocks release promotion.
+- Export aggregation governance detects duplicate surfaces before release acceptance.
+- Top-level exports are curated for mainstream usage and avoid broad passthrough behavior.
+- Category-level exports are organized by domain and avoid exposing implementation detail.
+
+**Stability tier governance behavior**:
+
 - Stability tier annotations exist on all public exports.
-- Deprecated APIs emit runtime warnings with migration-guide references.
-- Breaking changes are detected by automated compatibility checks.
-- Migration codemods transform prior API usage into current API usage correctly.
-- Consumer canary fixtures pass against the current release.
-- Type contract changes are classified correctly as breaking or non-breaking.
-- Extension contracts maintain backward compatibility within each stability tier.
+- Tier assignment is visible in package documentation, API reference metadata, and release notes.
+- Experimental tier is visibly marked at every discovery point and is opt-in by consumer choice.
+- Internal tier symbols do not leak through top-level export surfaces.
+- Tier transition from experimental to stable requires readiness review including adoption data and defect rate.
+- Tier mislabeling discovered in release prep blocks release admission.
+- Extension contracts carry independent tier labels in addition to base API tier labels.
+
+**Semantic release policy behavior**:
+
 - Semantic release rules derive the correct release type from commit history.
-- Pre-release channel publishes successfully and installs correctly.
+- Release classification is validated by change review automation.
+- Release classification conflicts require human adjudication before publication.
+- Pre-release channel publishes successfully and installs correctly with clear instability risk marking.
+- Release safety gates require clean type contract checks, API inventory diff checks, and compatibility test pass status.
+- Release artifacts include compatibility matrix references and deprecation timelines when applicable.
+
+**Deprecation policy behavior**:
+
+- Deprecated APIs emit runtime warnings with migration-guide references.
+- Minimum grace period of one full major release cycle is enforced.
+- Deprecation records include rationale, scope, target removal release, and recommended replacement path.
+- Migration guidance is available before the first deprecation release ships.
+- CI checks validate deprecation metadata completeness, warning text presence, documentation link integrity, and block undocumented deprecations.
+- CI checks fail on expired grace periods without removal decision.
+- Removal readiness review confirms migration support quality and communication obligations were met.
+
+**Breaking change protocol behavior**:
+
+- Breaking changes are detected by automated compatibility checks.
+- Proposal intake requires problem statement, alternatives, impact narrative, and stability-tier scope classification.
+- Impact assessment covers adoption breadth, migration complexity, operational risk, and ecosystem risk for extension authors.
+- Approved proposals require migration plan and communication plan commitment before implementation.
+- Consumer communications use consistent terminology with timeline checkpoints and clear replacement guidance.
+- Automated migration tooling is required when mechanical transition exists.
+- Emergency breakage exceptions require incident-level governance approval and post-event migration documentation.
+
+**Migration guide framework behavior**:
+
+- Migration codemods transform prior API usage into current API usage correctly.
+- Every migration guide follows standardized structure including impact summary, prerequisites, risk profile, and validation checklist.
+- Conceptual before-and-after comparisons focus on behavior and outcomes without source-level snippets.
+- Migration tooling includes dry-run insight for impact visibility and deterministic output expectations.
+- Incremental migration is preferred over big-bang cutovers with old and new API shapes coexisting during transition windows.
+- Coexistence windows include explicit conflict-resolution guidance and clear sunset milestones.
+- Migration guides remain maintained throughout grace periods and updated when field feedback reveals ambiguity.
+
+**Consumer upgrade testing behavior**:
+
+- Consumer canary fixtures pass against the current release.
+- Compatibility matrix defines which release lines are tested together including current and prior major line pairings.
+- Matrix coverage includes stable-only, stable-plus-experimental, extension-heavy, and type-contract-sensitive consumer patterns.
+- Matrix regressions block publication until addressed or waived by governance.
+- Canary participants receive pre-release artifacts and migration briefings with triaged feedback severity labels.
+- Regression fixtures reflect real consumer integration patterns sourced from anonymized support learnings.
+- CI checks include API inventory diffs, type-contract diffs, migration-document linkage, deprecation-lifecycle consistency, and extension contract compatibility gates.
+- Compatibility reports are retained for audit and trend analysis.
+
+**Extension contract stability behavior**:
+
+- Extension contracts maintain backward compatibility within each stability tier.
+- Extension contracts are governed independently from core feature rollout speed with explicit stability tier assignments.
+- Contract change notice includes impact narrative, migration timeline checkpoints, and compatibility testing expectations.
+- Contract changes require migration path documentation and fallback behavior guidance before release approval.
+- Extension contract test suites are part of routine release qualification.
+- Extension contract regression signals receive high-priority triage.
+- Extension author communication channels require predictable cadence and archived announcements for traceability.
+
+**Type contract governance behavior**:
+
+- Type contract changes are classified correctly as breaking or non-breaking.
+- Narrowing a union, adding required fields, tightening generic constraints, and re-shaping discriminants are classified as breaking changes.
+- Type-level breakage requires major release classification.
+- Zod v4 schema governance mirrors type governance and drift between type and schema contracts blocks release.
+- Type contract review requires consumer ergonomics, inference behavior, and migration complexity assessments.
+- Type contract diff reports are generated in release preparation in both human-readable and machine-readable formats.
+
+**Governance operating cadence behavior**:
+
+- Weekly triage reviews evaluate active deprecations, pending breaks, migration gaps, support trends, and canary feedback.
+- Monthly governance reviews evaluate tier accuracy, labeling consistency, documentation quality, and adoption telemetry.
+- Quarterly strategy reviews evaluate API surface growth, simplification opportunities, and long-horizon ecosystem risk.
+- Governance decision records are retained with rationale, expected consumer impact, and explicit success signals.
+- Governance KPIs track migration completion rate, regression frequency, notice lead time, deprecation completion rate, and extension contract incident rate.
+
+**Exception and escalation handling behavior**:
+
+- Emergency API changes follow fast-track governance with incident-level approval and audit logging.
+- Exception requests require business and technical rationale with explicit risk acceptance.
+- Post-exception stabilization plans are required with follow-up compatibility verification.
+- Governance exceptions are reviewed in retrospective cadence to prevent pattern normalization.
 
 ### Module: Content Provenance (14-extension)
 
@@ -5638,6 +5823,26 @@ Every Must Have feature area maps to one or more testing layers.
 | Generative UI renderer | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Conversation intelligence | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Multi-tenant config hierarchy | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Project onboarding and scaffolding | ✓ |  | ✓ |  |  |  | ✓ |
+| Progressive API tiers | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Error taxonomy and diagnostics | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Local development environment | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Interactive development studio | ✓ | ✓ | ✓ |  |  |  |  |
+| Testing utilities and mock provider | ✓ | ✓ |  |  |  |  | ✓ |
+| Template and starter ecosystem | ✓ |  | ✓ |  |  |  | ✓ |
+| AI coding agent integration | ✓ |  |  |  |  |  | ✓ |
+| TypeScript performance budget | ✓ |  |  |  | ✓ |  | ✓ |
+| OpenTelemetry integration | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Tool development workflow | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Public API surface governance |  |  |  |  |  |  | ✓ |
+| Stability tier enforcement | ✓ | ✓ |  |  |  |  | ✓ |
+| Deprecation lifecycle | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Breaking change protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Migration guide and codemods | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Consumer upgrade and canary testing | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Extension contract stability | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Type contract governance | ✓ | ✓ |  |  |  |  | ✓ |
+| Governance operating cadence |  |  |  |  |  |  | ✓ |
 
 ## Extended Coverage Map
 
@@ -5731,6 +5936,26 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Generative UI renderer |  |  |  | ✓ |  |  |
 | Conversation intelligence |  |  |  |  |  | ✓ |
 | Multi-tenant config hierarchy |  | ✓ |  |  |  | ✓ |
+| Project onboarding and scaffolding |  |  |  | ✓ |  |  |
+| Progressive API tiers |  | ✓ |  | ✓ |  | ✓ |
+| Error taxonomy and diagnostics |  |  | ✓ | ✓ |  | ✓ |
+| Local development environment | ✓ |  |  |  |  |  |
+| Interactive development studio |  |  |  | ✓ |  |  |
+| Testing utilities and mock provider |  | ✓ |  |  | ✓ | ✓ |
+| Template and starter ecosystem |  |  |  | ✓ |  |  |
+| AI coding agent integration |  |  |  | ✓ |  |  |
+| TypeScript performance budget |  |  |  |  |  | ✓ |
+| OpenTelemetry integration |  | ✓ |  |  |  |  |
+| Tool development workflow |  | ✓ |  |  |  |  |
+| Public API surface governance |  | ✓ |  | ✓ |  |  |
+| Stability tier enforcement |  | ✓ |  | ✓ |  |  |
+| Deprecation lifecycle |  |  | ✓ |  |  |  |
+| Breaking change protocol |  | ✓ |  |  |  |  |
+| Migration guide and codemods |  |  |  |  |  | ✓ |
+| Consumer upgrade and canary testing |  | ✓ |  |  |  |  |
+| Extension contract stability |  | ✓ |  |  |  |  |
+| Type contract governance |  | ✓ |  | ✓ |  | ✓ |
+| Governance operating cadence |  |  |  |  |  |  |
 
 ## Requirement-Level Coverage (MH_*, MN_*)
 
@@ -5791,7 +6016,7 @@ All verification is automated and agent-executed. The thirteen testing types for
 - Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
 - Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
 - Property policy: invariant validation through randomized input generation covering modules with deterministic invariants with at least one hundred iterations per property.
-- Per-module coverage: every plan document (01 through 27) has explicit test specifications mapping testable behaviors to test layers.
+- Per-module coverage: every plan document (01 through 29) has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
 
@@ -5822,6 +6047,8 @@ Testing strategy aligns with and validates every plan document in the structure:
 - Durable execution and HITL oversight: [25 — Durable Execution and HITL](./25-durable-execution.md)
 - AI operations and prompt lifecycle governance: [26 — AI Operations](./26-ai-operations.md)
 - Security strategy and compliance operations: [27 — Security & Compliance](./27-security-compliance.md)
+- Developer experience and onboarding: [28 — Developer Experience](./28-developer-experience.md)
+- API governance and consumer migration: [29 — API Governance](./29-api-governance.md)
 
 ## External References
 
