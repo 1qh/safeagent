@@ -859,7 +859,7 @@ Scalability and security are mandatory, not optional optimizations.
 - EMBED_ROUTER
 
 **Batch**
-- 8b
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Cost-control layer enforces proactive optimization paths before expensive generation is executed.

@@ -1313,7 +1313,7 @@ flowchart TD
 - CONFIG_DEFAULTS
 
 **Batch**
-- 6
+- INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Client wrapper executes retrieval requests and returns normalized structured output.
@@ -1444,7 +1444,7 @@ flowchart TD
 - VALKEY_CACHE
 
 **Batch**
-- 10
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Feedback events are trace-linked to query, evidence bundle, and contributing retrieval sources.

@@ -2441,7 +2441,7 @@ Integration notes:
 - MONITORING_INFRA
 
 **Batch**
-- 10
+- FRONTEND_DEMOS_BATCH
 
 **Acceptance Criteria**
 - Runbooks are documented for all required common scenarios.

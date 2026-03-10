@@ -960,7 +960,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - SSE_STREAMING
 
 **Batch**
-- 3
+- SELFTEST_MIDINTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Inputs exceeding configured size limits are rejected before model execution.
@@ -1007,7 +1007,7 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - GUARD_FACTORY
 
 **Batch**
-- 3
+- INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - obscenity RegExpMatcher configured with English dataset and recommended transformers

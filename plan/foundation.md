@@ -1145,7 +1145,7 @@ The foundation layer task specifications remain authoritative.
 - None
 
 **Batch**
-- 0
+- BLOCKING_SPIKE_BATCH
 
 **Acceptance Criteria**
 - A complete spike result set exists for all critical core stack assumptions.
@@ -1190,7 +1190,7 @@ The foundation layer task specifications remain authoritative.
 - SPIKE_CORE_STACK
 
 **Batch**
-- 1
+- SCAFFOLDING_BATCH
 
 **Acceptance Criteria**
 - Workspace installs and resolves dependencies without configuration conflicts.
@@ -1233,7 +1233,7 @@ The foundation layer task specifications remain authoritative.
 - SCAFFOLD_LIB
 
 **Batch**
-- 1
+- FOUNDATION_A_BATCH
 
 **Acceptance Criteria**
 - Frontend workspace packages initialize and build in the shared monorepo context.
@@ -1277,7 +1277,7 @@ The foundation layer task specifications remain authoritative.
 - SCAFFOLD_LIB
 
 **Batch**
-- 2
+- FOUNDATION_A_BATCH
 
 **Acceptance Criteria**
 - All major domain families have canonical contracts with clear ownership.
@@ -1321,7 +1321,7 @@ The foundation layer task specifications remain authoritative.
 - SCAFFOLD_LIB
 
 **Batch**
-- 2
+- FOUNDATION_A_BATCH
 
 **Acceptance Criteria**
 - Storage wrapper supports PostgreSQL, SurrealDB-related contracts, and memory fallback semantics.
@@ -1365,7 +1365,7 @@ The foundation layer task specifications remain authoritative.
 - SCAFFOLD_LIB
 
 **Batch**
-- 2
+- FOUNDATION_A_BATCH
 
 **Acceptance Criteria**
 - Health output includes per-server status with deterministic classification.
@@ -1409,7 +1409,7 @@ The foundation layer task specifications remain authoritative.
 - SCAFFOLD_LIB
 
 **Batch**
-- 2
+- FOUNDATION_A_BATCH
 
 **Acceptance Criteria**
 - Resolver accepts all supported provider input forms and returns deterministic output.
@@ -1452,7 +1452,7 @@ The foundation layer task specifications remain authoritative.
 - CORE_TYPES
 
 **Batch**
-- 2
+- FOUNDATION_B_BATCH
 
 **Acceptance Criteria**
 - All required core contract families have corresponding validation schemas.
@@ -1497,7 +1497,7 @@ The foundation layer task specifications remain authoritative.
 - ZOD_SCHEMAS
 
 **Batch**
-- 3
+- CONFIG_GUARDS_BATCH
 
 **Acceptance Criteria**
 - Default configuration resolves to a valid runtime config with no overrides.
@@ -1542,7 +1542,7 @@ The foundation layer task specifications remain authoritative.
 - ALL_LIBRARY_MODULE_TASKS
 
 **Batch**
-- 9b
+- ENDPOINTS_BARREL_BATCH
 
 **Acceptance Criteria**
 - Top-level exports include all required public module surfaces.

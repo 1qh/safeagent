@@ -455,7 +455,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - EXTENSIBILITY
 
 **Batch**
-- 11
+- FRONTEND_DEMOS_BATCH
 
 **Acceptance Criteria**
 - Onboarding flow supports local-first setup and reaches first visible output without cloud dependency.

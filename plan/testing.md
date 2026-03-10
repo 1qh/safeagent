@@ -1621,7 +1621,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - API_GOVERNANCE
 
 **Batch**
-- FINAL
+- FINAL_AUDIT_BATCH
 
 **Acceptance Criteria**
 - Lint audit confirms zero unresolved quality-gate violations.

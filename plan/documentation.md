@@ -312,7 +312,7 @@ Integration notes:
 - FOUNDATION
 
 **Batch**
-- 10
+- E2E_DEPLOY_BATCH
 
 **Acceptance Criteria**
 - Documentation site builds successfully and renders all core navigation sections.
@@ -357,7 +357,7 @@ Integration notes:
 - All core module tasks
 
 **Batch**
-- 11
+- FRONTEND_DEMOS_BATCH
 
 **Acceptance Criteria**
 - Every public API has reference documentation coverage.

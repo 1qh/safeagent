@@ -599,7 +599,7 @@ flowchart TD
 - SSE_STREAMING
 
 **Batch**
-- 6
+- INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Workflows resume deterministically from durable checkpoints after process interruption.

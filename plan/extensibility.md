@@ -772,7 +772,7 @@ flowchart LR
 - Verify custom guardrails cannot disable or weaken built-in safety controls.
 
 #### Implementation Notes
-- EXTENSIBILITY_INFRA is planned for Batch 4 after foundational types and config stabilize.
+- EXTENSIBILITY_INFRA is planned for CONFIG_GUARDS_BATCH after foundational types and config stabilize.
 - Extension contracts enforce strong compile-time integrity through typed definitions.
 - Contract tests are exportable for third-party extension author workflows.
 - MCP tool integration reuses the shared MCP health check behavior defined in the agent orchestration layer.

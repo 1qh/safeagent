@@ -307,7 +307,7 @@ Integration notes:
 - TEST_INFRA
 
 **Batch**
-- 3
+- FOUNDATION_B_BATCH
 
 **Acceptance Criteria**
 - All four CI stages execute with trigger-scoped behavior.
@@ -350,7 +350,7 @@ Integration notes:
 - SERVER_ROUTES
 
 **Batch**
-- 9
+- E2E_DEPLOY_BATCH
 
 **Acceptance Criteria**
 - safeagent publishes successfully to the public package registry through automated release flow.

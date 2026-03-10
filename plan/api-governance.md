@@ -375,7 +375,7 @@
 - DEVELOPER_EXPERIENCE
 
 **Batch**
-- FINAL
+- FINAL_AUDIT_BATCH
 
 **Acceptance Criteria**
 - Public API inventory is explicit, reproducible, and release-gated against undocumented drift.

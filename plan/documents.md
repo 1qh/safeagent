@@ -808,7 +808,7 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - SPIKE_CORE_STACK
 
 **Batch**
-- 0.5
+- RAG_VALIDATION_BATCH
 
 **Acceptance Criteria**
 - Spike covers all critical RAG and document-processing dependencies.

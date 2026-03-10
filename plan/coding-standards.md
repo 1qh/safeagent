@@ -512,7 +512,7 @@ flowchart TB
 
 **Depends On**: FOUNDATION
 
-**Batch**: 1
+**Batch**: SCAFFOLDING_BATCH
 
 **Acceptance Criteria**:
 - lintmax is active in both projects with maximum strictness defaults.
@@ -533,7 +533,7 @@ flowchart TB
 - Validate strictness by introducing patterns that only pass under weaker type policy.
 
 **Implementation Notes**:
-- CODE_STANDARDS is Batch 1 and should precede feature work.
+- CODE_STANDARDS is SCAFFOLDING_BATCH and should precede feature work.
 - Test-related exceptions are expected and must be scoped carefully.
 - Generated content can be excluded from strict linting when justified.
 - Thin server policy should remain aligned with library policy to prevent drift.

@@ -503,7 +503,7 @@ Integration notes:
 - SERVER_ROUTES
 
 **Batch**
-- 11
+- FRONTEND_DEMOS_BATCH
 
 **Acceptance Criteria**
 - Chat streaming works end-to-end and message chunks render smoothly.
@@ -555,7 +555,7 @@ Integration notes:
 - SERVER_ROUTES
 
 **Batch**
-- 11
+- FRONTEND_DEMOS_BATCH
 
 **Acceptance Criteria**
 - Streaming chat works on both iOS and Android simulators.

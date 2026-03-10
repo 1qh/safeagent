@@ -520,7 +520,7 @@ flowchart LR
 - GUARD_PIPELINE
 
 **Batch**
-- 10
+- E2E_DEPLOY_BATCH
 
 **Acceptance Criteria**
 - Threat governance exists with explicit ownership, severity model, and remediation SLAs.
@@ -569,7 +569,7 @@ flowchart LR
 - JWT_AUTH
 
 **Batch**
-- 4
+- CONFIG_GUARDS_BATCH
 
 **Acceptance Criteria**
 - Configuration precedence across all five levels is deterministic and documented.
