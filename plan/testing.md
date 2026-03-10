@@ -1498,7 +1498,9 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 **Output format**: `Tasks [N/N compliant] | Contamination [CLEAN/ISSUES] | Unaccounted [CLEAN/ISSUES] | VERDICT`.
 
-### Task FINAL
+### FINAL Audit Consolidation Wrapper (Non-Execution)
+
+> This is a consolidation wrapper for final-audit evidence. It is not a separate routed execution task in [Execution Plan](./execution.md).
 
 **Task Name**
 - FINAL

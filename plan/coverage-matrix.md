@@ -1,6 +1,6 @@
 # Coverage Matrix
 
-This matrix tracks preservation from `plan_v0` into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
+This matrix tracks preservation from the historical `plan_v0` baseline into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
 
 ## Preservation Status
 
@@ -68,7 +68,7 @@ Use this sequence to start implementation quickly:
 
 ## Verification Procedure
 
-- File parity check: all source filenames in `plan_v0` exist in `plan`.
+- File parity check: all source filenames from the historical `plan_v0` baseline exist in `plan`.
 - Missing check: no source file is absent from `plan`.
 - Additions check: reader-first files are additive and do not replace source files.
 - Content loss check: no removed lines from source files unless explicitly documented.
@@ -81,4 +81,4 @@ Use this sequence to start implementation quickly:
 - 24 module docs: repeated Task/Test relationship boilerplate was shortened to a compact equivalent sentence.
 - 30 source docs: per-file `Table of Contents` blocks were removed under [Compact Authoring Standard](./compact-authoring-standard.md) to reduce token overhead without changing normative schemas.
 - 4 source docs: Mermaid `style ... fill:` directives were removed as non-semantic visual metadata.
-- 44 source docs: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.
+- 44 docs in `plan`: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.

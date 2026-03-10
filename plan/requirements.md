@@ -625,9 +625,9 @@ Every QA scenario that calls a real LLM or external API must be in the integrati
 
 Task and requirement IDs keep uppercase snake case. Industry-standard abbreviations that include digits are allowed when they are canonical names, not ordinal numbering schemes. Examples: `E2E_TESTS` (end-to-end), `MH_S3_STORAGE` (Amazon S3), `JWT_AUTH` (JWT).
 
-## Final Verification Pipeline (AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE)
+## Final Verification Pipeline (AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE, API_GOVERNANCE)
 
-Four review agents run in **PARALLEL**. ALL must APPROVE. Rejection → fix → re-run.
+Five review lanes run in **PARALLEL**. ALL must APPROVE. Rejection → fix → re-run.
 
 ```mermaid
 flowchart TB
@@ -639,26 +639,30 @@ flowchart TB
         AUDIT_CODE["AUDIT_CODE: Code Quality<br/>Review<br/>(executor agent)"]
         AUDIT_QA["AUDIT_QA: Full QA<br/>Run<br/>(executor agent)"]
         AUDIT_SCOPE["AUDIT_SCOPE: Scope Fidelity<br/>Check<br/>(deep agent)"]
+        API_GOVERNANCE["API_GOVERNANCE: API Governance<br/>Review<br/>(governance lane)"]
     end
 
     AUDIT_PLAN --> VERDICT_A{Verdict}
     AUDIT_CODE --> VERDICT_B{Verdict}
     AUDIT_QA --> VERDICT_C{Verdict}
     AUDIT_SCOPE --> VERDICT_D{Verdict}
+    API_GOVERNANCE --> VERDICT_E{Verdict}
 
     VERDICT_A -->|APPROVE| GATE
     VERDICT_B -->|APPROVE| GATE
     VERDICT_C -->|APPROVE| GATE
     VERDICT_D -->|APPROVE| GATE
+    VERDICT_E -->|APPROVE| GATE
 
     VERDICT_A -->|REJECT| FIX([Fix Issues])
     VERDICT_B -->|REJECT| FIX
     VERDICT_C -->|REJECT| FIX
     VERDICT_D -->|REJECT| FIX
+    VERDICT_E -->|REJECT| FIX
 
     FIX --> START
 
-    GATE{All 4<br/>APPROVED?} -->|YES| DONE([Project Complete])
+    GATE{All 5<br/>APPROVED?} -->|YES| DONE([Project Complete])
     GATE -->|NO| FIX
 ```
 
@@ -707,7 +711,8 @@ flowchart TD
 | **AUDIT_CODE: Code Quality** | Final batch | Build + lint + test + slop check | Project sign-off |
 | **AUDIT_QA: Full QA** | Final batch | Every scenario + 15 integration checks | Project sign-off |
 | **AUDIT_SCOPE: Scope Fidelity** | Final batch | 1:1 spec compliance, zero creep | Project sign-off |
-| **All AUDIT APPROVE** | Final gate | All four verdicts are APPROVE | Project complete |
+| **API_GOVERNANCE: API Governance** | Final batch | Public surface governance and migration policy compliance | Project sign-off |
+| **All AUDIT APPROVE** | Final gate | All five final-audit verdicts are APPROVE | Project complete |
 
 ## Test Specifications
 
