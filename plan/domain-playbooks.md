@@ -2,6 +2,8 @@
 
 This document provides domain-by-domain implementation paths so teams can execute in parallel without losing dependency discipline.
 
+Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery-playbook.md), and scheduling authority remains in [Execution Plan](./execution.md).
+
 ---
 
 ## How to Use Playbooks

@@ -81,5 +81,7 @@ A task is handoff-ready only when evidence includes:
 - [Start Here](./start-here.md)
 - [Execution Plan](./execution.md)
 - [Task Verification Index](./task-verification-index.md)
+- [Batch Delivery Playbook](./batch-delivery-playbook.md)
+- [Handoff Packet Template](./handoff-packet-template.md)
 - [Quality Gates](./quality-gates.md)
 - [Testing](./testing.md)
