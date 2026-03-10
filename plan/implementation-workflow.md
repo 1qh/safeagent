@@ -51,7 +51,9 @@ Use this fixed order for every task:
 3. Task QA scenarios in the task specification
 4. Behavioral assertions in the mapped test-spec owner file
 5. Cross-domain checks required by context files
-6. Release and audit gates from [Quality Gates](./quality-gates.md)
+6. Task handoff evidence completeness using [Handoff Packet Template](./handoff-packet-template.md)
+
+Release and audit gates from [Quality Gates](./quality-gates.md) are tracked as project-level readiness impacts, not per-task completion prerequisites.
 
 ---
 

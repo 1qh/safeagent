@@ -4,7 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch INTEGRATION_BATCH). Estimated ~69% faster than sequential execution.
+> **Scale**: 124 implementation tasks + 5 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch INTEGRATION_BATCH). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -140,7 +140,7 @@ gantt
 | E2E_DEPLOY_BATCH | E2E + Deploy + Ops + Docs Infra | 12 | 12 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance, conversation intelligence |
 | FRONTEND_DEMOS_BATCH | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
 | FINAL_AUDIT_BATCH | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
-| TOTAL | Execution Plan | 129 | — | 125 implementation tasks + 4 final audit tasks |
+| TOTAL | Execution Plan | 129 | — | 124 implementation tasks + 5 final audit tasks |
 
 ### Milestone Markers
 
@@ -217,7 +217,7 @@ graph LR
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 125 implementation tasks) | ~405–515 hours estimated |
+| Sequential execution (all 124 implementation tasks) | ~405–515 hours estimated |
 | Parallel execution (batch model) | ~125–160 hours estimated |
 | Parallel speedup | ~69% faster than sequential |
 | Maximum concurrency | 18 tasks (Batch INTEGRATION_BATCH) |
@@ -1457,7 +1457,7 @@ The following 6 tasks were added for developer workflow maturity, public API gov
 | CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | E2E_DEPLOY_BATCH | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
 | MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, token-aware resolution | Foundation extension | CONFIG_GUARDS_BATCH | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS |
 
-*Covers all 125 implementation tasks + 4 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
+*Covers all 124 implementation tasks + 5 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
 
 
 ## Per-Task Routing Index

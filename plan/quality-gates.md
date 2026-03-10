@@ -1,18 +1,26 @@
 # Quality Gates
 
-This document defines the verification sequence that every implementation task must pass before it is considered complete.
+This document defines task-level completion gates and separate project-level readiness gates.
 
 ---
 
-## Gate Sequence
+## Task-Level Gate Sequence
 
 1. Requirement and constraint compliance
 2. Task acceptance criteria completion
 3. QA scenario completion
 4. Domain test assertion coverage
 5. Cross-domain regression validation
-6. Release pipeline quality checks
-7. Final audit readiness
+6. Task handoff evidence completeness
+
+---
+
+## Project-Level Readiness Gates
+
+These gates are not per-task prerequisites. They are project-level completion gates aligned with later execution batches.
+
+1. Release pipeline quality checks
+2. Final audit readiness
 
 ---
 
