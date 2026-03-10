@@ -4,10 +4,6 @@
 >
 > **Tasks**: SSE_STREAMING (SSE Streaming Layer), CTA_STREAMING (CTA Streaming), CLIENT_SDK (Client SDK)
 
----
-
----
-
 ## Architecture Overview
 
 The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `ui-component`, `tripwire`, `done`, `error`) designed for the client SDK module and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
@@ -63,8 +59,6 @@ graph TB
     PARSER --> TYPED --> QUEUE
     QUEUE --> RECONNECT
 ```
-
----
 
 ## SSE Streaming Layer (SSE_STREAMING)
 
@@ -254,8 +248,6 @@ stateDiagram-v2
     NEXT_RUN_STARTS --> [*]
 ```
 
----
-
 ## Real-Time Voice and Audio Transport
 
 Voice and audio transport is defined as a transport-layer extension with plugin boundaries so the core `safeagent` package stays lean while still supporting production voice workloads.
@@ -377,8 +369,6 @@ End-to-end voice response latency target SHALL be measured from user silence det
 
 Voice session state ties into conversation memory in the Conversation Pipeline document and durable execution guarantees in the Durable Execution document so interruptions, reconnects, and resumed turns preserve coherent context and execution state.
 
----
-
 ## Generative UI Event Protocol
 
 - **Tenth event type**: the SSE protocol adds a tenth named event for agent-generated dynamic UI, extending the existing nine-event protocol.
@@ -388,8 +378,6 @@ Voice session state ties into conversation memory in the Conversation Pipeline d
 - **Ordering guarantee**: `ui-component` events appear at their natural position in the response stream, interleaved with text-delta events, preserving the agent's intended content flow.
 - **Security invariant**: payloads are data-only with no executable content and no raw markup; client renderers interpret payload data through registered rendering implementations.
 - **Scalability**: per-response emission limits and payload size caps prevent unbounded component generation from degrading transport throughput under high concurrency.
-
----
 
 ## Stream Format Boundary
 
@@ -430,8 +418,6 @@ The wire protocol is custom SSE named events, not any framework-specific data fo
 
 Location enrichment events are emitted during the live stream, never batched at the end. A single response can emit multiple `location` events, typically one per detected place. The underlying `search_locations` tool-call and tool-result chunks are suppressed from the outbound SSE stream using a location stream processor that mirrors the CTA suppression pattern, and only the clean `location` event payload is emitted to clients. When no image provider is configured, each `location` event still includes `lat` and `lng`, and `images` is emitted as an empty array.
 
----
-
 ## Session Metadata Delivery
 
 Every stream starts with a `session-meta` event before any text delta arrives. This event carries the identifiers the client needs to correlate the stream with backend records.
@@ -464,8 +450,6 @@ The `trace_owners` Postgres table (managed by Drizzle ORM) enables feedback owne
 | createdAt | timestamp | NOT NULL, DEFAULT now() |
 
 No additional indexes beyond the primary key — lookups are always by trace identifier.
-
----
 
 ## Trace-Step Events
 
@@ -591,8 +575,6 @@ flowchart LR
     TC --> HTTP_OUT
 ```
 
----
-
 ## Verbosity Levels
 
 The chat streaming endpoint accepts a verbosity control parameter that controls which events are emitted on the SSE stream. This parameter is passed from the server route to stream handler factory.
@@ -629,8 +611,6 @@ This design means:
 ### Verbosity and Security
 
 Trace-step data may contain internal pipeline details (intent names, guardrail concept IDs, tool names, token counts). When verbosity is `full`, the server trusts that the requesting client is a developer who should see this information. The server should enforce that `full` verbosity requires an authenticated user with developer-level permissions. This is an authorization concern owned by the server, not the library — the library simply respects the verbosity control parameter it receives.
-
----
 
 ## CTA Streaming (CTA_STREAMING)
 
@@ -711,8 +691,6 @@ flowchart LR
     GP -->|"safe chunks"| CP
     CP -->|"text + cta events\n(no raw tool calls)"| OUT
 ```
-
----
 
 ## Client SDK (CLIENT_SDK)
 
@@ -840,8 +818,6 @@ sequenceDiagram
 ### JWT Auth
 
 Every request the client makes — chat, upload, feedback — includes `Authorization: Bearer <token>`. The token is provided at construction time or via a refresh callback. When a refresh callback is provided, the client calls it before each request to get a fresh token, supporting short-lived JWTs without requiring the application to manage token lifecycle.
-
----
 
 ## SSE Event Type Reference
 
@@ -1030,8 +1006,6 @@ Structured SSE event payloads require validation at both the emit boundary on th
 - URLs in citation and location events are validated again before rendering. The client never navigates to or embeds URLs that do not match expected patterns.
 - Text content in events is always treated as data and never interpolated as executable markup.
 
----
-
 ## Cross-References
 
 | Document | Relationship |
@@ -1046,11 +1020,7 @@ Structured SSE event payloads require validation at both the emit boundary on th
 | **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
 | **Demos** ([Demos](./demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
 
----
-
 ## Task Specifications
-
----
 
 ### Task SSE_STREAMING: SSE Streaming Layer
 
@@ -1115,8 +1085,6 @@ Build stream handler factory that turns internal agent stream output into a well
 - Verbosity `standard` → zero `trace-step` events in stream, identical to pre-trace behavior
 - Verbosity `full` with p0 guardrail → `trace-step` for `guardrail-input` appears, then `tripwire`, then stream closes
 
----
-
 ### Task CTA_STREAMING: CTA Streaming
 
 **What to do**:
@@ -1152,8 +1120,6 @@ Build the CTA tool and stream processor pair:
 - Response has no CTA tool call → no `cta` event appears in the stream
 - p0 guardrail fires before CTA tool call → `tripwire` event with no `cta` event
 - Empty catalog passed to CTA tool factory → tool is created but the LLM has no valid CTA options to suggest
-
----
 
 ### Task CLIENT_SDK: Client SDK
 
@@ -1207,9 +1173,6 @@ Build the client SDK module as a zero-dependency TypeScript package:
 - Feedback submission after stream → request includes trace identifier from the last `session-meta`
 - JWT refresh callback provided → callback runs before each request and fresh token is used
 - File upload → progress callback fires and a file reference is returned on completion
-
----
-
 
 ## Test Specifications
 

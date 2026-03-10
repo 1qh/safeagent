@@ -4,8 +4,6 @@
 >
 > **Tasks**: SCAFFOLD_FRONTEND (Frontend Scaffolding), REACT_HOOKS (React Hooks), WEB_COMPONENTS (Web Components), TRACE_UI (Trace Visualization), RN_COMPONENTS (React Native Components), FRONTEND_CLI (Component CLI), STORYBOOK_FRONTEND (Storybook)
 
----
-
 ## Architecture Overview
 
 The frontend SDK stack separates transport-aware business logic from rendering targets.

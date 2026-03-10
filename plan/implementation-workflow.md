@@ -2,8 +2,6 @@
 
 This document defines the execution workflow from task assignment to final completion evidence. It does not define task order; scheduling authority remains in [Execution Plan](./execution.md).
 
----
-
 ## Definition of Ready
 
 A task is ready to implement only when all checks below are true:
@@ -13,8 +11,6 @@ A task is ready to implement only when all checks below are true:
 - Task specification is identified and read in its mapped spec file.
 - Behavioral assertion ownership is identified in [Task Verification Index](./task-verification-index.md).
 - Relevant constraints are reviewed in [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md).
-
----
 
 ## Task Delivery Packet
 
@@ -30,8 +26,6 @@ Before implementation starts, prepare this packet:
 
 Packet identity fields are sourced from the [Execution Plan](./execution.md) per-task routing index. Do not create a separate task registry outside execution routing.
 
----
-
 ## Execution Loop
 
 1. Read task specification and acceptance criteria.
@@ -41,8 +35,6 @@ Packet identity fields are sourced from the [Execution Plan](./execution.md) per
 5. Verify acceptance criteria and QA scenarios.
 6. Verify behavioral assertions and quality gates.
 7. Record completion evidence for handoff or review.
-
----
 
 ## Verification Order
 
@@ -57,8 +49,6 @@ Use this fixed order for every task:
 
 Release and audit gates from [Quality Gates](./quality-gates.md) are tracked as project-level readiness impacts, not per-task completion prerequisites.
 
----
-
 ## Handoff Evidence Contract
 
 A task is handoff-ready only when evidence includes:
@@ -69,16 +59,12 @@ A task is handoff-ready only when evidence includes:
 - Behavioral assertion owner file and validated assertion groups
 - Any exceptions, deferred scope notes, or risk follow-ups
 
----
-
 ## Escalation and Mismatch Policy
 
 - If task spec and execution routing conflict, [Execution Plan](./execution.md) decides scheduling and dependency order.
 - If test ownership appears ambiguous, [Task Verification Index](./task-verification-index.md) is the tie-breaker.
 - If constraints conflict with implementation convenience, constraints win.
 - Any unresolved mismatch is documented and escalated before marking task complete.
-
----
 
 ## Related Documents
 

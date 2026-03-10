@@ -2,10 +2,6 @@
 
 > **This document is the complete research record.** Every spike finding, Metis review item, finalized discussion decision, and architectural choice that shaped the system is captured here. Other plan files reference this document for the "why" behind their design. Nothing in this document is speculative — every item was validated, reviewed, or explicitly decided.
 
----
-
----
-
 ## Technology Validation Overview
 
 Before any implementation task could begin, the SPIKE_CORE_STACK spike validated every critical technology assumption against the actual Bun runtime. The spike was the initial blocking gate that no subsequent task could proceed without. The following decision tree shows what was spiked, what passed, what failed, and what alternatives were chosen.
@@ -63,8 +59,6 @@ flowchart TB
 ### What the Decision Tree Means
 
 Every item in the "Failed" column was caught during the spike before any implementation task depended on it. The alternatives listed are what the system actually uses. No workarounds were discovered later — the spike was comprehensive enough to catch all compatibility issues up front.
-
----
 
 ## SPIKE_CORE_STACK Spike Findings — All 11 Confirmed Items
 
@@ -139,8 +133,6 @@ The alternative is LibreOffice headless running as a Docker Compose sidecar serv
 The project no longer uses framework-provided eval scorers. Evaluation scoring is implemented with custom scorer functions in the eval module and wired into both production sampling and offline evaluation flows.
 
 All eval-related code references application-defined scorer helpers only; there is no prebuilt scorer package dependency.
-
----
 
 ## Metis Review — All Critical Findings
 
@@ -256,8 +248,6 @@ The `openai` npm package is a hard transitive dependency of `@openai/agents-core
 
 The framework does NOT own: HTTP transport, SSE wire format, memory/persistence, file processing, or RAG. These remain safeagent-managed.
 
----
-
 ## Framework Architecture
 
 The system uses a three-layer runtime stack: `@openai/agents` for agent execution (runner loop, handoffs, guardrails, tracing), AI SDK for model abstraction (`@ai-sdk/google` via the `aisdk()` bridge), and Elysia for HTTP transport. The `createAgent` factory wraps the framework's `Agent` class with safeagent-specific defaults (memory, tools, guardrail pipeline, processor wiring).
@@ -319,8 +309,6 @@ The safeagent library imports AI SDK packages for model abstraction and embeddin
 The server project imports `elysia` for HTTP transport and uses direct AI SDK streaming with SSE generators. The server is thin: it defines prompts, guardrail rules, intent configuration, and MCP server configs, then delegates all logic to the library.
 
 The TUI app imports the library directly and consumes native AI SDK stream events without format conversion. The client SDK is an HTTP client that speaks the SSE protocol defined by the server.
-
----
 
 ## Dependency Map
 
@@ -410,8 +398,6 @@ graph LR
 **Removed dependencies**: `mammoth` (DOCX processing — replaced by LibreOffice CLI), `bunqueue` (job queue — replaced by Trigger.dev), `@girilloid/libreoffice-file-converter` (unavailable — replaced by direct CLI), `sharp` (image processing — not Bun-compatible, replaced by JIMP), `@aws-sdk/client-s3` (S3 client — replaced by Bun.S3Client where compatible).
 
 **Bun compatibility notes**: `better-sqlite3` is a transitive dependency of the external Promptfoo CLI tool and is never imported by our code. Promptfoo is an external dev tool that operators run separately.
-
----
 
 ## Finalized Discussion Decisions — 5 New Requirements
 
@@ -533,8 +519,6 @@ Full architecture details are in 12-File Intelligence.
 
 **TypeDoc for library API documentation**: The safeagent library generates searchable API documentation from TypeScript source using typedoc. Documentation is generated as a dev script and includes all public exports, type definitions, factory functions, and configuration interfaces. This complements IDE IntelliSense with a browsable reference that helps server developers discover available APIs without reading source code.
 
----
-
 ## Language detection library selection
 
 **Selected library**: `eld` (Efficient Language Detector) is the selected language detector for the language guard because it is MIT-licensed, pure JavaScript, synchronous, and Bun-safe.
@@ -578,8 +562,6 @@ flowchart TB
     REJECT --> F4[`tinyld` `languagedetect` `cld3-asm` FAIL maintenance or runtime fit]
 ```
 
----
-
 ## Hate speech detection library selection
 
 **Selected approach**: A hybrid detector combines `obscenity` for high-evasion English coverage, `@2toad/profanity` for multilingual coverage, and LDNOOBW lexicons from `naughty-words` as a supplement.
@@ -593,8 +575,6 @@ flowchart TB
 **Consumer configurability**: The guard supports `enabled` toggle control, `excludeWords` whitelisting for false-positive reduction, `additionalWords` extension for domain-specific terms, and language list selection to load only required dictionaries.
 
 **License requirement**: Any LDNOOBW-derived list requires CC-BY-4.0 attribution with Shutterstock credit in project notices.
-
----
 
 ## Geocoding provider selection
 
@@ -626,8 +606,6 @@ flowchart LR
     STORE_CACHE --> RESPONSE[Return coordinates response]
 ```
 
----
-
 ## Image search provider selection
 
 **Default provider**: No default image provider is built into the library because all practical image search services require API keys.
@@ -657,8 +635,6 @@ Reference URLs:
 - https://developers.google.com/maps/documentation/places/web-service/place-photos
 - https://www.pexels.com/api/
 - https://docs.searxng.org/dev/search_api.html
-
----
 
 ## Key Architecture Decisions
 
@@ -744,8 +720,6 @@ The library emits typed error codes. The server maps those codes to user-facing 
 
 The server's error message mapping is validated at startup. If a library update introduces error codes that the server's mapping doesn't cover, the startup check fails with a diagnostic listing the missing codes.
 
----
-
 ## Runtime Clarification
 
 ### Bun Only
@@ -758,8 +732,6 @@ All safeagent library code and server code runs on Bun. bun test is the test run
 - **MCP server processes**: Some MCP servers (e.g., `@modelcontextprotocol/server-filesystem`) use `bunx`. These are external processes spawned by configured commands — the safeagent library just starts the command and communicates over stdio or HTTP.
 
 The safeagent library and server have zero Node.js dependency. Creating agents, streaming, guardrails, MCP tool calling, memory, file processing — all Bun.
-
----
 
 ## Dependency Strategy
 
@@ -783,8 +755,4 @@ Two breaking changes in current dependency updates affect all code:
 
 Every implementation task installs dependencies with `bun add <package>` (no dependency specifier). If a newer dependency update breaks something, the fix is to update the code to match the new API, not to pin an older dependency build. The spike validated all dependencies at `latest` — any task that follows the patterns established by the spike will work with current dependency updates.
 
----
-
 *Captures all SPIKE_CORE_STACK spike findings (11 items), all Metis review findings (17 items), all discussion decisions (5 new requirements), all architecture decisions, runtime clarification, and dependency strategy.*
-
----

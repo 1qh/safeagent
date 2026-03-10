@@ -4,8 +4,6 @@
 >
 > **Tasks**: CI_PIPELINE (CI/CD Pipeline), RELEASE_PIPELINE (Release Automation and Deployment Workflow)
 
----
-
 ## Architecture Overview
 
 Release operations are split across both projects with clear responsibility boundaries.

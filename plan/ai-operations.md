@@ -2,7 +2,6 @@
 > **Scope**: AI operations for safeagent at 10M-user scale covering cost intelligence, prompt lifecycle governance, and agent evaluation with strict safety and rollback controls.
 >
 > **Internal Layers within AI_OPERATIONS**: COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, AIOPS_RUNTIME_GOVERNANCE
----
 ## Architecture Overview
 AI operations at 10M users requires an active control loop, not passive telemetry.
 This plan extends existing prompt retrieval, budget tracking, and deployment markers with the missing proactive layers.
@@ -969,7 +968,6 @@ Scalability and security are mandatory, not optional optimizations.
 - CLASSic deltas are required decision inputs for promotion, hold, rollback, and escalation governance states.
 
 ### Extension: Conversation Intelligence
-
 
 - Per-conversation quality score aggregates turn-level CLASSic dimension scores with recency weighting.
 - Topic extraction classifies conversation topics using intent classification infrastructure.

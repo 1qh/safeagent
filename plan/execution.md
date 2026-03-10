@@ -6,10 +6,6 @@
 >
 > **Scale**: 124 implementation tasks + 5 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch INTEGRATION_BATCH). Estimated ~69% faster than sequential execution.
 
----
-
----
-
 ## How to Use This File
 
 1. Locate your assigned task in the [Per-Task Routing Index](#per-task-routing-index).
@@ -20,16 +16,12 @@
 
 For role-based reading paths, use [Start Here](./start-here.md). For domain-by-domain execution paths, use [Domain Playbooks](./domain-playbooks.md).
 
----
-
 ## Execution Source of Truth Rules
 
 - Batch ordering and dependency sequencing are authoritative in this document.
 - Task routing ownership (`Spec File`, `Context Sections`) is authoritative in this document; `Test Spec File` is a routing pointer, while verification ownership authority is in [Task Verification Index](./task-verification-index.md).
 - If another document conflicts with scheduling or dependency order, follow this document and reconcile the mismatch.
 - Task implementation details remain in domain documents; scheduling and dependency truth remains here.
-
----
 
 ## Batch ID Legend
 
@@ -51,8 +43,6 @@ For role-based reading paths, use [Start Here](./start-here.md). For domain-by-d
 | `E2E_DEPLOY_BATCH` | End-to-end, deploy, publish, and operations infra |
 | `FRONTEND_DEMOS_BATCH` | Frontend demos and delivery readiness |
 | `FINAL_AUDIT_BATCH` | Final compliance and governance audits |
-
----
 
 ## Batch Timeline
 
@@ -157,8 +147,6 @@ timeline
     FINAL_AUDIT_MARKER : AUDIT_PLAN + AUDIT_CODE + AUDIT_QA + AUDIT_SCOPE + API_GOVERNANCE complete
 ```
 
----
-
 ## Critical Path Analysis
 
 ### Critical Path Chain
@@ -207,8 +195,6 @@ graph LR
 | Single-task bottleneck batches | 2 (Batch BLOCKING_SPIKE_BATCH, Batch RAG_VALIDATION_BATCH) |
 | Total batches | 16 (including FINAL) |
 
----
-
 ## Parallel Execution Batches
 
 ### Batch BLOCKING_SPIKE_BATCH — BLOCKING (1 task)
@@ -221,8 +207,6 @@ graph LR
 
 **Gate**: SPIKE_CORE_STACK must confirm that Bun can run the full core stack with all required features (agent creation, tool calling, streaming, processor hooks). If SPIKE_CORE_STACK fails, dependencies are revised and the entire plan is re-evaluated.
 
----
-
 ### Batch RAG_VALIDATION_BATCH — RAG Validation (1 task)
 
 > Validates the RAG dependency chain. Runs after SPIKE_CORE_STACK confirms the runtime.
@@ -233,8 +217,6 @@ graph LR
 
 **Gate**: SPIKE_RAG_DEPS must confirm that all document processing and RAG dependencies work under Bun. Blocks DOC_PIPELINE (documents), RAG_INFRA (RAG), and FILE_STORAGE (file storage).
 
----
-
 ### Batch SCAFFOLDING_BATCH — Scaffolding (3 parallel)
 
 > Sets up both repositories with build tooling, workspace config, and project structure.
@@ -244,8 +226,6 @@ graph LR
 | SCAFFOLD_LIB | safeagent repo setup (Bun workspace with core library, TUI app, and client SDK stubs) | `quick` | SPIKE_CORE_STACK |
 | SCAFFOLD_SERVER | Server repo setup (Elysia, project config, TypeScript config) | `quick` | SPIKE_CORE_STACK |
 | CODE_STANDARDS | Coding standards enforcement with lintmax max strictness | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
-
----
 
 ### Batch FOUNDATION_A_BATCH — Foundation A (9 parallel)
 
@@ -262,8 +242,6 @@ graph LR
 | DOCKER_COMPOSE | Docker Compose (pgvector + MinIO + SurrealDB + Valkey + Trigger.dev + LibreOffice) | `quick` | SCAFFOLD_SERVER |
 | STRUCT_LOGGING | Structured logging (LogTape + AsyncLocalStorage context) | `quick` | SCAFFOLD_LIB |
 | SCAFFOLD_FRONTEND | Frontend workspace setup (React hooks package, web components package, native components package stubs, Storybook env) | `quick` | SCAFFOLD_LIB |
-
----
 
 ### Batch FOUNDATION_B_BATCH — Foundation B (14 parallel)
 
@@ -288,8 +266,6 @@ graph LR
 
 > **NEW**: REWRITE_STRATEGIES (from the Conversation Pipeline document) delivers three independently importable rewrite strategy modules. Depends only on types — fits naturally alongside other CORE_TYPES-dependent tasks.
 
----
-
 ### Batch CONFIG_GUARDS_BATCH — Configuration + Guardrails + Extensibility (8 parallel)
 
 > Configuration system, input/output/external guardrails, FileRegistry, and extension point infrastructure.
@@ -307,8 +283,6 @@ graph LR
 
 > **NEW**: FILE_REGISTRY (from the Retrieval document) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from the Retrieval document) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch SELFTEST_MIDINTEGRATION_BATCH.
 
----
-
 ### Batch AGENT_PIPELINE_BATCH — Agent Factory + Pipeline Foundation (4 parallel)
 
 > AGENT_FACTORY remains critical. DOC_PIPELINE and FILE_STORAGE now run here after KEY_POOL and CONFIG_DEFAULTS are available.
@@ -321,8 +295,6 @@ graph LR
 | STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
 
 **Critical path note**: AGENT_FACTORY still combines type definitions, validation schemas, configuration, storage, and provider resolution into a single factory. Most integration work remains blocked on AGENT_FACTORY completion.
-
----
 
 ### Batch INTEGRATION_BATCH — Integration Layer (18 parallel)
 
@@ -351,8 +323,6 @@ graph LR
 
 > **NEW**: EMBED_ROUTER (Conversation Pipeline) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Conversation Pipeline) wraps RAGFlow's retrieval API. LOCATION_TOOL (Agents) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch SERVER_TUI_PIPELINE_BATCH because both require EVIDENCE_GATE (Batch SELFTEST_MIDINTEGRATION_BATCH).
 
----
-
 ### Batch SELFTEST_MIDINTEGRATION_BATCH — Self-test + Mid Integration (8 parallel)
 
 | Task | Description | Category | Depends On |
@@ -365,8 +335,6 @@ graph LR
 | NON_ACTIONABLE_DETECT | Non-actionable message detection (pleasantries, gibberish short-circuit) | `quick` | EMBED_ROUTER |
 | INPUT_VALIDATION | Input message length validation | `quick` | SSE_STREAMING |
 | THREAD_RESURRECTION | Thread resurrection detection and re-hydration (+ humanlikeness enhancements) | `quick` | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
-
----
 
 ### Batch SERVER_TUI_PIPELINE_BATCH — Server + TUI + Intent Pipeline (16 parallel)
 
@@ -393,8 +361,6 @@ graph LR
 
 > **NEW**: LLM_INTENT (Conversation Pipeline) implements the LLM authority that always validates the embedding router's guess and performs conditional query rewriting. SOURCE_ROUTER (Conversation Pipeline) implements parallel source execution with priority-weighted result merging.
 
----
-
 ### Batch EXTENDED_INTEGRATION_BATCH — Extended Integration (14 parallel)
 
 > TUI upload, cost tracking, TTL cleanup, cross-conversation RAG, speculative pre-fetch coordination, query rewrite tool, and orchestrator agent.
@@ -418,8 +384,6 @@ graph LR
 
 > **NEW**: PREFETCH_COORD (Conversation Pipeline) coordinates the speculative pre-fetch pattern — runs embedding router and LLM validator concurrently, starts sources speculatively, cancels on disagreement. REWRITE_TOOL (Conversation Pipeline) checks all 7 rewrite triggers (pronoun referent, short query, multi-intent, highly specific, jargon mismatch, ordinal reference, query replay) and applies per-source strategies with the entity-preservation guardrail.
 
----
-
 ### Batch SERVER_ROUTES_SUBAGENT_BATCH — Server Routes + Lifecycle + React Hooks (3 parallel)
 
 | Task | Description | Category | Depends On |
@@ -427,8 +391,6 @@ graph LR
 | SUBAGENT_FACTORY | Sub-Agent Factory (intent-scoped agent + handoff assembly with tool assignment) | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 | SERVER_ROUTES | Server HTTP routes + SSE endpoints + auth + health + graceful shutdown | `unspecified-high` | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING |
 | REACT_HOOKS | React hooks package (React Hooks Package — transport adapter, safe-agent hook, trace-steps hook, feedback hook, upload hook, server-connection hook, verbosity hook) | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
-
----
 
 ### Batch ENDPOINTS_BARREL_BATCH — Barrel Exports + Server Endpoints + Frontend Components (8 parallel)
 
@@ -444,8 +406,6 @@ graph LR
 | RN_COMPONENTS | React Native components (Native Components Package — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
 > **Note**: BARREL_EXPORTS depends on ALL library module tasks that are complete by ENDPOINTS_BARREL_BATCH (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, and RN_COMPONENTS). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
-
----
 
 ### Batch E2E_DEPLOY_BATCH — E2E + Deploy + Publish + Ops + Docs Infra (12 parallel)
 
@@ -464,8 +424,6 @@ graph LR
 | SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 | CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
 
----
-
 ### Batch FRONTEND_DEMOS_BATCH — Frontend Demos + Docs + Incident Ops (5 parallel)
 
 > Full-featured demo applications exercising the complete frontend SDK stack.
@@ -477,8 +435,6 @@ graph LR
 | DOCS_CONTENT | Documentation content authoring | `writing` | DOCS_SITE, ALL core module tasks |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | `writing` | MONITORING_INFRA |
 | DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | `unspecified-high` | CORE_TYPES, LANGFUSE_MODULE, E2E_TESTS, DOCS_SITE, EXTENSIBILITY_INFRA |
-
----
 
 ### Batch FINAL_AUDIT_BATCH — Audit (5 parallel)
 
@@ -492,8 +448,6 @@ graph LR
 | AUDIT_QA | Full QA run — agent-executed | `unspecified-high` + `playwright` | PKG_PUBLISH |
 | AUDIT_SCOPE | Scope fidelity check | `deep` | PKG_PUBLISH |
 | API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | `unspecified-high` | CORE_TYPES, RELEASE_PIPELINE, CODE_STANDARDS, EXTENSIBILITY_INFRA, DEVELOPER_EXPERIENCE |
-
----
 
 ## Dependency Graph
 
@@ -520,11 +474,6 @@ graph TB
 
     BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
 
-    style BATCH_SPIKE fill:#ff6b6b,color:white
-    style BATCH_RAG_SPIKE fill:#ff6b6b,color:white
-    style BATCH_AGENT_DOCS fill:#ff6b6b,color:white
-    style BATCH_ROUTES_SUBAGENT fill:#ff8787,color:white
-    style BATCH_FINAL_AUDIT fill:#ff6b6b,color:white
 ```
 
 ### Per-Task Dependency Graph
@@ -678,7 +627,6 @@ graph TB
     RATE_LIMITING["RATE_LIMITING Rate Limit"] --> SERVER_ROUTES
     JWT_AUTH["JWT_AUTH JWT"] --> SERVER_ROUTES
 
-
     SERVER_ROUTES:::crit --> BARREL_EXPORTS["BARREL_EXPORTS Barrel"]
     SERVER_ROUTES --> UPLOAD_ENDPOINT["UPLOAD_ENDPOINT Upload EP"]:::crit
     SERVER_ROUTES --> FEEDBACK_ENDPOINT["FEEDBACK_ENDPOINT Feedback EP"]
@@ -795,8 +743,6 @@ graph TB
 
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
 ```
-
----
 
 ## Batch Parallelism Visualization
 
@@ -987,8 +933,6 @@ graph TB
 > (new) = New task from expanded plan documents
 > (frontend) = New task from Frontend SDK and Demos documents
 
----
-
 ## Agent Dispatch Map
 
 ```mermaid
@@ -1088,8 +1032,6 @@ graph LR
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
 | **Total** | **129** | |
-
----
 
 ## Complete Task Registry (129 Tasks) and Full Dependency Matrix
 
@@ -1237,8 +1179,6 @@ BARREL_EXPORTS depends on every library module that exports public API surface:
 
 This is the complete list of all tasks that produce exports in the core library. BARREL_EXPORTS only handles the **top-level barrel** — see Subpath Barrel Export Convention below.
 
----
-
 ## Subpath Barrel Export Convention
 
 ### Rule
@@ -1277,8 +1217,6 @@ This is the complete list of all tasks that produce exports in the core library.
 ### Enforcement
 
 When a task adds a new public function, type, or class to a module directory, the task MUST also add the corresponding export to that module's subpath barrel. Failure to do so blocks BARREL_EXPORTS (which cannot auto-discover unexported symbols) and breaks downstream consumers.
-
----
 
 ## Batch Completion Rules
 
@@ -1341,8 +1279,6 @@ flowchart TB
 | SERVER_ROUTES (Server Routes) | BARREL_EXPORTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API blocked | All server endpoints and barrel exports delayed |
 | CORE_TYPES (Types) | 20+ downstream tasks blocked | Foundation failure — second largest blast radius |
 | Any Batch INTEGRATION_BATCH task | Specific downstream chain | Limited — other Batch INTEGRATION_BATCH tasks continue |
-
----
 
 ## New Task Registry (Expanded Plan Documents)
 
@@ -1441,7 +1377,6 @@ The following 6 tasks were added for developer workflow maturity, public API gov
 | MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, token-aware resolution | Foundation extension | CONFIG_GUARDS_BATCH | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS |
 
 *Covers all 124 implementation tasks + 5 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
-
 
 ## Per-Task Routing Index
 
@@ -1581,10 +1516,7 @@ Column guide: `Task` = UPPER_SNAKE task ID; `Batch` = execution batch; `Spec Fil
 | AUDIT_QA | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
 | AUDIT_SCOPE | FINAL_AUDIT_BATCH | testing.md | testing.md | testing.md |
 
----
-
 ## Test Specifications
-
 
 - Task dependency graph: all dependencies correctly specified with no circular dependencies.
 - Task ordering: batches contain only tasks whose dependencies are satisfied by prior batches.

@@ -2,8 +2,6 @@
 
 This is the primary entry point for implementation work. Use it to choose a reading path, find task ownership quickly, and avoid cross-file searching.
 
----
-
 ## First Hour Path
 
 1. Read [Agent Kernel](./agent-kernel.md).
@@ -14,8 +12,6 @@ This is the primary entry point for implementation work. Use it to choose a read
 6. Read [Task Verification Index](./task-verification-index.md) for behavioral test ownership.
 7. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
 8. Use [Operations](./operations.md) if your task touches runtime behavior.
-
----
 
 ## Role-Based Reading Paths
 
@@ -58,8 +54,6 @@ This is the primary entry point for implementation work. Use it to choose a read
 4. [Monitoring](./monitoring.md)
 5. [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 
----
-
 ## Source and Support Rules
 
 - Scheduling, dependencies, and task routing: [Execution Plan](./execution.md)
@@ -81,8 +75,6 @@ Supporting rollup views:
 - Adversarial stress coverage map: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
 - Project-level readiness decision capture: [Readiness Decision Record Template](./readiness-decision-record-template.md)
 
----
-
 ## Domain Reading Map
 
 - Core interaction and orchestration: [Conversation Pipeline](./conversation.md), [Agents & Orchestration](./agents.md), [Memory & Intelligence](./memory.md)
@@ -92,8 +84,6 @@ Supporting rollup views:
 - Governance and release: [Coding Standards](./coding-standards.md), [Developer Experience](./developer-experience.md), [Documentation](./documentation.md), [Release Pipeline](./release-pipeline.md), [API Governance](./api-governance.md)
 
 For domain-by-domain implementation routes, see [Domain Playbooks](./domain-playbooks.md).
-
----
 
 ## Preservation Note
 

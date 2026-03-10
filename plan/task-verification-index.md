@@ -4,16 +4,12 @@ This index maps every execution task to its behavioral test-assertion owner. It 
 
 Scheduling and dependency authority remains in [Execution Plan](./execution.md). This file defines verification ownership only.
 
----
-
 ## How to Use
 
 1. Find your task ID in this document.
 2. Open the listed test owner file.
 3. Validate behavioral assertions in that file after completing task acceptance criteria and QA scenarios.
 4. Complete required gates from [Quality Gates](./quality-gates.md).
-
----
 
 ## Verification Ownership by Test File
 
@@ -220,8 +216,6 @@ Scheduling and dependency authority remains in [Execution Plan](./execution.md).
 - `TUI_INPUT` — batch `FOUNDATION_B_BATCH`; task spec in `tui.md`
 - `TUI_SHELL` — batch `FOUNDATION_A_BATCH`; task spec in `tui.md`
 - `TUI_UPLOAD` — batch `EXTENDED_INTEGRATION_BATCH`; task spec in `tui.md`
-
----
 
 ## Coverage Check
 

@@ -4,10 +4,6 @@
 >
 > **Tasks**: TUI_SHELL (App Shell), TUI_CHAT (Chat Display), TUI_INPUT (Input Component), TUI_COMMANDS (Command System), TUI_AGENT (Agent Integration), TUI_UPLOAD (Upload Command)
 
----
-
----
-
 ## Overview
 
 The TUI is a first-class client for safeagent, not a demo and not a thin wrapper. It targets the same quality bar as the rest of the product: streaming markdown with syntax highlighting, real-time status indicators, guardrail event display, and file upload with progress feedback. Users who prefer the terminal get the full experience.
@@ -20,8 +16,6 @@ The client supports two execution paths with the same UX contract:
 - Remote SDK mode: uses the client SDK module with transport-aligned stream semantics.
 
 Both modes preserve identical chat behavior, command behavior, upload behavior, and guardrail behavior.
-
----
 
 ## OpenTUI Solid Architecture
 
@@ -54,8 +48,6 @@ graph TD
     UPLOAD_LAYER --> VIEW_LAYOUT
     STATUS_LAYER --> VIEW_LAYOUT
 ```
-
----
 
 ## Component Tree
 
@@ -91,8 +83,6 @@ graph TD
     CHAT_DISPLAY --> MESSAGE_BUBBLES
 ```
 
----
-
 ## Screen Layout and Panels
 
 The shell renders a full-screen layout with four persistent panels and a conditional overlay layer.
@@ -119,8 +109,6 @@ flowchart TD
     ROOT_FRAME -. conditional .-> OVERLAY_LAYER
 ```
 
----
-
 ## Keyboard Binding Matrix
 
 Keyboard handling is centralized, deterministic, and based on `onKeyDown`.
@@ -135,8 +123,6 @@ Keyboard handling is centralized, deterministic, and based on `onKeyDown`.
 | Down arrow | Input | Recall next input from history |
 | Tab | Input | Autocomplete slash command and cycle matches |
 | Escape | Global/Overlay | Dismiss overlays and banners |
-
----
 
 ## Command Routing
 
@@ -163,8 +149,6 @@ flowchart TD
     COMMAND_PARSE -->|yes| COMMAND_DISPATCH["Command Dispatcher"]
     COMMAND_DISPATCH --> HELP_COMMAND & MODEL_COMMAND & CLEAR_COMMAND & QUIT_COMMAND & UPLOAD_COMMAND & UNKNOWN_COMMAND
 ```
-
----
 
 ## Client SDK Integration (Client SDK module)
 
@@ -195,8 +179,6 @@ flowchart TD
     TUI_STATE --> CHAT_RENDER
     TUI_STATE --> STATUS_RENDER
 ```
-
----
 
 ## Agent Integration Flow
 
@@ -236,8 +218,6 @@ flowchart TD
     STREAM_EVENTS -.->|TripWire exception| TRIPWIRE_RENDER
     ACCUMULATE_TEXT --> CHAT_RERENDER["Chat Display re-renders\n(SolidJS fine-grained reactivity)"]
 ```
-
----
 
 ## File Upload Flow
 
@@ -283,8 +263,6 @@ flowchart TD
     PROGRESS_SIGNAL -->|status = failed| ERROR_DISPLAY
 ```
 
----
-
 ## Markdown Rendering and Syntax Highlighting
 
 Markdown rendering is stream-aware and continuously updates as text arrives. The parser and renderer are designed for incremental growth of the active assistant message.
@@ -317,8 +295,6 @@ flowchart TD
 
 Only the currently streaming message re-renders on each chunk, which avoids expensive full-list redraw behavior.
 
----
-
 ## Theme System
 
 The theme system uses semantic style tokens rather than hardcoded per-component colors. This keeps rendering consistent across header, chat, status, input, overlays, and markdown blocks.
@@ -333,8 +309,6 @@ Primary token groups:
 - Focus and selection emphasis.
 
 Theme changes do not reset state, interrupt streams, or clear overlays.
-
----
 
 ## App Shell (TUI_SHELL)
 
@@ -363,8 +337,6 @@ The shell registers one root `onKeyDown` handler. It intercepts global shortcuts
 ### 60fps Render Target
 
 OpenTUI's native core targets 60fps. The SolidJS reconciler batches signal updates within a frame and flushes them together. Rapid stream chunks do not cause visible tearing or flicker.
-
----
 
 ## Chat Display (TUI_CHAT)
 
@@ -399,8 +371,6 @@ Auto-scroll follows new content while the user stays at the bottom. If the user 
 
 Code blocks use OpenTUI Solid code rendering with language info from fenced block metadata. Syntax highlighting uses terminal palette semantics. Optional line numbers are controlled by keyboard binding.
 
----
-
 ## Input Component (TUI_INPUT)
 
 The Input Component is a textarea that accepts multiline input, handles submission, and forwards slash commands to the command router.
@@ -430,8 +400,6 @@ The component maintains local in-memory history of submitted input strings. It i
 
 On Enter, input is trimmed and checked for emptiness. Empty submissions are ignored. Non-empty values go through command routing first. Commands are handled by command handlers; plain input goes to agent integration. The textarea clears after submission.
 
----
-
 ## Command System (TUI_COMMANDS)
 
 The command system intercepts slash-prefixed input and routes to handlers. It is a pure parse function that returns command name and arguments or null when input is not a command.
@@ -456,8 +424,6 @@ When user types `/` plus partial command, Tab completes to matching command name
 
 If input starts with `/` and does not match any known command, inline system message is shown:
 `Unknown command: /foo. Type /help for a list of commands.`
-
----
 
 ## Agent Integration (TUI_AGENT)
 
@@ -503,8 +469,6 @@ This avoids blank failure states.
 
 If Ctrl+C is pressed during streaming, stream is cancelled, current assistant message is marked cancelled, input is re-enabled, and partial response remains in history.
 
----
-
 ## Upload Command (TUI_UPLOAD)
 
 Upload command provides terminal users with the same file context capability as other clients. It combines picker UI, async processing, and attachment state handling.
@@ -545,8 +509,6 @@ If `/clear` is invoked while files are pending, pending attachments are cleared 
 | Unsupported type | Greyed out in picker, error if forced via direct path argument |
 | Processing failed | Row shows `failed` with contextual error detail |
 
----
-
 ## TUI-Specific Considerations
 
 ### jsxImportSource Must Be @opentui/solid
@@ -577,8 +539,6 @@ Side effects such as stream lifecycle control and upload status tracking use rea
 
 OpenTUI handles terminal resize natively. Layout reflows automatically and chat scroll viewport updates accordingly.
 
----
-
 ## Cross-References
 
 | Document | Relationship |
@@ -587,11 +547,7 @@ OpenTUI handles terminal resize natively. Layout reflows automatically and chat 
 | **Transport** ([Streaming & Transport](./transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
 | **Server Implementation** ([Server Implementation](./server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
 
----
-
 ## Task Specifications
-
----
 
 ### Task TUI_SHELL: App Shell
 
@@ -620,8 +576,6 @@ SCAFFOLD_LIB
 - Verify no `onKeyPress` handlers exist in shell.
 - Verify preload config scope is limited to TUI runtime context.
 
----
-
 ### Task TUI_CHAT: Chat Display
 
 **What to do**:
@@ -647,8 +601,6 @@ TUI_SHELL
 - During long stream, scroll up and verify auto-scroll pause; return to bottom and verify resume.
 - Resize terminal mid-stream and verify reflow with uninterrupted streaming.
 - Trigger tripwire and verify fallback assistant message plus error banner.
-
----
 
 ### Task TUI_INPUT: Input Component
 
@@ -677,8 +629,6 @@ TUI_SHELL
 - Type partial command and verify Tab completion.
 - Submit empty input and verify no action.
 - Start stream and verify input disable/enable transitions.
-
----
 
 ### Task TUI_COMMANDS: Command System
 
@@ -709,8 +659,6 @@ TUI_SHELL
 - Type unknown command, verify inline error.
 - Type `/q`, press Tab, verify completion to `/quit`.
 
----
-
 ### Task TUI_AGENT: Agent Integration
 
 **What to do**:
@@ -738,8 +686,6 @@ TUI_SHELL, TUI_CHAT, TUI_INPUT
 - Start stream and press Ctrl+C; verify cancellation behavior and partial output retention.
 - Simulate transport error mid-stream and verify recoverable UI state.
 - Complete stream and verify non-zero token count update.
-
----
 
 ### Task TUI_UPLOAD: Upload Command
 
@@ -771,8 +717,6 @@ TUI_SHELL, TUI_COMMANDS, TUI_AGENT
 - Submit message after upload and verify references are included; verify readiness indicator clears.
 - Open picker and cancel with Escape; verify no files are attached.
 - Invoke upload with inline path argument and verify picker is skipped.
-
----
 
 ## Test Specifications
 

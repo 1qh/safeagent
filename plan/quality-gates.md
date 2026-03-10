@@ -2,8 +2,6 @@
 
 This document defines task-level completion gates and separate project-level readiness gates.
 
----
-
 ## Task-Level Gate Sequence
 
 1. Requirement and constraint compliance
@@ -13,16 +11,12 @@ This document defines task-level completion gates and separate project-level rea
 5. Cross-domain regression validation
 6. Task handoff evidence completeness
 
----
-
 ## Project-Level Readiness Gates
 
 These gates are not per-task prerequisites. They are project-level completion gates aligned with later execution batches.
 
 1. Release pipeline quality checks
 2. Final audit readiness
-
----
 
 ## Required Evidence per Task
 
@@ -31,8 +25,6 @@ These gates are not per-task prerequisites. They are project-level completion ga
 - Test assertions mapped and passing for the owning domain
 - No dependency-order violation against execution matrix
 - No safety or compliance rule regression
-
----
 
 ## Task-Level Gate Evidence Artifacts
 
@@ -45,8 +37,6 @@ These gates are not per-task prerequisites. They are project-level completion ga
 | Cross-domain regression validation | Cross-Domain Regression Note | Context files listed in [Execution Plan](./execution.md) routing index |
 | Task handoff evidence completeness | Completed handoff packet | [Handoff Packet Template](./handoff-packet-template.md) |
 
----
-
 ## Release Readiness Gates
 
 - Coding standards gate is satisfied
@@ -54,8 +44,6 @@ These gates are not per-task prerequisites. They are project-level completion ga
 - Release pipeline gate is satisfied
 - Security and compliance gate is satisfied
 - Monitoring and observability readiness is satisfied
-
----
 
 ## Audit Completion Gates
 
@@ -65,16 +53,12 @@ These gates are not per-task prerequisites. They are project-level completion ga
 - Scope-fidelity audit scope is complete
 - API governance audit scope is complete
 
----
-
 ## Project-Level Gate Evidence Artifacts
 
 | Project-Level Gate | Required Evidence Artifact | Authoritative Source |
 |---|---|---|
 | Release pipeline quality checks | Release Gate Decision Record | [Release Pipeline](./release-pipeline.md), [Quality Gates](./quality-gates.md), [Readiness Decision Record Template](./readiness-decision-record-template.md) |
 | Final audit readiness | Audit Closure Decision Record | [Testing](./testing.md), [Execution Plan](./execution.md), [Readiness Decision Record Template](./readiness-decision-record-template.md) |
-
----
 
 ## Source Documents
 

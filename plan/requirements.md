@@ -2,15 +2,9 @@
 
 This document is the **single source of truth** for all project boundaries, delivery requirements, conventions, and final verification procedures. Every implementation task must satisfy the constraints listed here. Nothing ships without meeting the Definition of Done.
 
----
-
----
-
 ## Core Objective
 
 Create a production-ready TypeScript library (`safeagent`) that encapsulates all AI agent logic — agent creation, guardrail composition, MCP management, SSE streaming, memory, file upload + document Q&A, and eval — with sensible defaults and full customizability. Then create a thin server project that demonstrates consumption of the library. The complete system is designed for 10 million users.
-
----
 
 ## Concrete Deliverables
 
@@ -28,8 +22,6 @@ Create a production-ready TypeScript library (`safeagent`) that encapsulates all
 | **Self-test infrastructure** | Promptfoo integration for evaluation with custom scorer configuration |
 | **Full TDD test suite** | All tests passing under the Bun test runner — unit tests require zero secrets, integration tests use conditional skip |
 | **Document Q&A pipeline** | File upload processing, per-page summarization, hybrid search, progressive retrieval, structured citations with S3 storage |
-
----
 
 ## Definition of Done
 
@@ -68,8 +60,6 @@ flowchart TD
     EVAL_DEMO -->|PASS| DONE([DONE])
     EVAL_DEMO -->|FAIL| FAIL
 ```
-
----
 
 ## Must Have — Complete Requirements
 
@@ -502,8 +492,6 @@ flowchart LR
     MUST_HAVE ---|"Strict boundary<br/>enforced by AUDIT_PLAN+AUDIT_SCOPE"| MUST_NOT
 ```
 
----
-
 ## Must NOT Have — Complete Exclusions
 
 Every item listed below is explicitly forbidden. Presence of any excluded item in the codebase is a verification failure.
@@ -578,8 +566,6 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | MN_EDEN_PRIMARY | Eden Treaty as primary client SDK | Eden Treaty is an optional alternative for TypeScript consumers who want server-inferred route types. The client SDK module is the primary SDK, while Eden Treaty SSE data remains an untyped key-value object |
 | MN_SHARED_JSX | Shared JSX between web and React Native | Hooks and business logic are shared via the React hooks module. JSX and styling stay split between the web components module and native components module, with no universal component abstraction |
 
----
-
 ## Runtime Clarification
 
 ### Bun Only
@@ -599,8 +585,6 @@ Every item listed below is explicitly forbidden. Presence of any excluded item i
 | **MCP server processes** | Varies | Some MCP servers use external command launchers. These are external processes spawned by configured commands — safeagent just starts them and communicates over stdio/HTTP |
 
 **Project documentation must state**: "Bun required. Promptfoo and MCP servers are external tools with their own runtime requirements."
-
----
 
 ## Conventions
 
@@ -641,8 +625,6 @@ Every QA scenario that calls a real LLM or external API must be in the integrati
 
 Task and requirement IDs keep uppercase snake case. Industry-standard abbreviations that include digits are allowed when they are canonical names, not ordinal numbering schemes. Examples: `E2E_TESTS` (end-to-end), `MH_S3_STORAGE` (Amazon S3), `JWT_AUTH` (JWT).
 
----
-
 ## Final Verification Pipeline (AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE)
 
 Four review agents run in **PARALLEL**. ALL must APPROVE. Rejection → fix → re-run.
@@ -680,8 +662,6 @@ flowchart TB
     GATE -->|NO| FIX
 ```
 
----
-
 ## Definition of Done Decision Tree
 
 Use this decision tree to determine if any individual task or the overall project meets the Definition of Done.
@@ -715,8 +695,6 @@ flowchart TD
     GATE_REVIEW_APPROVED -->|YES| DONE([Task Done])
 ```
 
----
-
 ## Summary of Verification Gates
 
 | Gate | When | What | Blocks |
@@ -730,8 +708,6 @@ flowchart TD
 | **AUDIT_QA: Full QA** | Final batch | Every scenario + 15 integration checks | Project sign-off |
 | **AUDIT_SCOPE: Scope Fidelity** | Final batch | 1:1 spec compliance, zero creep | Project sign-off |
 | **All AUDIT APPROVE** | Final gate | All four verdicts are APPROVE | Project complete |
-
----
 
 ## Test Specifications
 

@@ -4,8 +4,6 @@
 >
 > **Tasks**: DOCS_SITE (Fumadocs Site Infrastructure), DOCS_CONTENT (Documentation Content Authoring)
 
----
-
 ## Architecture Overview
 
 The documentation platform is a first-class product surface, not a side artifact.
@@ -374,8 +372,6 @@ Integration notes:
 - Search quality validated across conceptual and reference queries.
 - Dark mode and responsive behavior validated for production readability.
 - Security and scalability narratives validated as first-class documentation concerns.
-
----
 
 ## Test Specifications
 

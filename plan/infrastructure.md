@@ -1,7 +1,5 @@
 # Infrastructure
 > All infrastructure is containerized and declarative. The API server is stateless, and every piece of durable state lives in a purpose-built external service. Background jobs run in Trigger.dev, real-time counters live in Valkey, and every service exposes a health check. When Valkey is unavailable, the system degrades gracefully with in-memory fallbacks. When Trigger.dev is absent, jobs execute in-process. Nothing is mandatory except Postgres.
----
----
 ## Infrastructure Stack Overview
 The complete infrastructure stack spans three container-orchestration profiles. The core profile (five services) is the default startup set. The Langfuse profile (four services) and Trigger.dev profile (five services) are opt-in for observability and production-grade background jobs respectively.
 ```mermaid
@@ -61,7 +59,6 @@ graph TB
 - **Valkey unavailable**: degrade gracefully. Rate limiting falls back to per-instance in-memory behavior where each API instance tracks its own counters independently. Global rate enforcement is lost, but per-instance protection remains. Budget checks fail-open so users are never blocked due to infrastructure failure, because budget enforcement is soft limits and not a hard security boundary. This is an intentional availability trade-off: temporary over-admission during a Valkey outage is preferable to blocking all users. Valkey availability should be treated as operationally critical and monitored accordingly, because sustained Valkey downtime means rate limits and budgets are effectively per-instance only.
 - **Trigger.dev unavailable**: degrade gracefully. Background jobs execute in-process via the fallback queue adapter.
 **Relationship to must-have requirements**: [Requirements & Constraints](./requirements.md) lists capabilities like S3 storage, SurrealDB memory, and Valkey rate limiting as must-have deliverables. Must-have means the implementation must be shipped and tested. The degradation model above governs runtime behavior during transient outages, crash recovery, and rolling deployments. These are complementary rather than contradictory: code exists and works when infrastructure is present, while the system remains available when infrastructure is temporarily absent. A production deployment missing a must-have service indefinitely is an operational misconfiguration, not a supported configuration. The health endpoint reports `degraded` status and monitoring should alert on sustained degradation.
----
 ## Docker Compose Service Map
 Every service, its purpose, health check, and persistence volume are shown below. Services are organized by profile group.
 ```mermaid
@@ -126,7 +123,6 @@ Postgres requires a database initialization script mounted in the standard initi
 - Trigger webapp is remapped to **3040**.
 ### LibreOffice
 LibreOffice is modeled as a Docker Compose sidecar service, not installed into the API server image. The API server calls the sidecar over the internal Docker network on a dedicated service port for DOCX-to-PDF conversion. For local development without Docker, developers can still install LibreOffice on the host machine.
----
 ## Deployment Strategy
 Deployment follows profile-based topology evolution:
 - **Development baseline** runs core services only, with optional in-memory fallbacks if Valkey is unavailable and in-process background execution if Trigger.dev is absent.
@@ -135,7 +131,6 @@ Deployment follows profile-based topology evolution:
 - **Failure posture** keeps Postgres as the sole hard dependency and treats all other infrastructure as degradable with explicit health reporting.
 - **Operational guardrails** require alerting on prolonged degraded mode, especially Valkey unavailability that weakens global rate and budget enforcement.
 This strategy aligns with [System Architecture](./architecture.md), [Foundation](./foundation.md), [Server Implementation](./server.md), and [Observability](./observability.md).
----
 ## API Key Pool
 The key pool distributes Gemini API calls across N API keys using round-robin. A single key adds zero overhead. N keys provide N× throughput by spreading requests across independent rate limit quotas.
 ```mermaid
@@ -184,7 +179,6 @@ flowchart LR
 - **Per-key concurrency** — default is 5 concurrent requests per key. With 3 keys, the system supports 15 concurrent API calls. This is configurable through a per-key concurrency setting.
 - **Health checking** — each key tracks consecutive failures. After 3 failures, the key is marked unhealthy and skipped. A background probe re-tests unhealthy keys every 60 seconds. If all keys are unhealthy, the pool falls back to round-robin across all keys in degraded mode.
 - **Factory from env** — the key pool env helper reads the env var, returns undefined for missing or single-key scenarios, and returns a key pool for two or more keys.
----
 ## Valkey Cache
 Valkey provides sub-millisecond read and write for budget counters, rate limiting sorted sets, and general-purpose caching. The connection uses a Redis connection URL. When Valkey is unavailable, an in-memory fallback satisfies the same interface for development and testing.
 ```mermaid
@@ -239,7 +233,6 @@ flowchart LR
 The memory cache implements the identical `Cache` interface using a `Map`. TTL is checked on read. A periodic sweep every 60 seconds prevents unbounded growth in long-running development servers. The raw client accessor returns `null` in memory mode, and consumers that need raw Redis client library operations such as sorted sets or transactional units degrade to no-op or sequential fallback.
 ### Connection URL
 The `VALKEY_URL` environment variable must use a Redis connection URL scheme. Using `valkey://` causes a connection error.
----
 ## Cost Tracking and Budget Enforcement
 Budget enforcement follows an event-sourced design with two layers: a hot path through Valkey for real-time decisions and a cold path through Postgres for audit and reconciliation. Postgres reads and writes in this module are executed through Drizzle type-safe queries.
 ```mermaid
@@ -298,7 +291,6 @@ Budget enforcement uses a pessimistic reservation pattern on accumulating spend 
 If Valkey is unavailable during budget checks, the system returns `{ allowed: true }` and emits a warning log. Budget enforcement is a soft operational control, not a hard security boundary.
 ### Budget Admin API
 Beyond budget-check and token-recording operations, the module exposes admin capabilities: a budget-detail read operation pulls per-user limits and current spend from Postgres with Valkey cache and returns a budget record; a budget-update operation writes `user_budget_limits` and invalidates cache; and a budget-list operation returns paginated budget records with optional over-budget filtering.
----
 ## Trigger.dev Integration
 Trigger.dev handles all background job execution. In production, tasks run in isolated containers with retries and dashboard visibility. In development, a transparent in-process fallback executes the same handlers directly.
 ```mermaid
@@ -356,7 +348,6 @@ The queue adapter interface exposes immediate dispatch. The adapter is created o
 The in-process adapter tracks running tasks in an in-memory set of pending async jobs. Handler failures are caught and logged and never propagate to callers. A running-task count accessor exposes in-flight tasks for health monitoring. During graceful shutdown, the server waits for all tasks to settle before completing drain.
 ### Handler Idempotency
 The background enrichment handler uses an upsert operation keyed on `file_id + page_number`. Since `page_index` has exactly one row per physical page with nullable enrichment columns populated during processing, retries after partial failure update existing rows without creating duplicates.
----
 ## Rate Limiting
 The rate limiter factory produces per-route rate limiting using Valkey sorted sets and a sliding window algorithm. Each request adds a timestamped entry, expired entries are pruned on every check, and all operations execute in a single Lua script for atomicity at scale.
 ```mermaid
@@ -409,7 +400,6 @@ flowchart LR
 - **Per-user keying** — default extraction uses `userId` from auth context, and custom key extraction is supported for non-standard routes.
 - **No-op in development fallback** — when the cache raw client accessor is `null`, global rate limiting is disabled to avoid blocking local workflows without Valkey.
 - **Retry-After calculation** — derived from the oldest in-window entry using `ceil`, clamped to a minimum of one second.
----
 ## Structured Logging
 All logging uses LogTape via `@logtape/logtape`. The library uses a logger accessor with hierarchical categories, while the consuming server applies logger configuration at startup. Request context (`requestId`, `userId`, `threadId`, `agentId`, `traceId`) propagates through AsyncLocalStorage and enriches every log line automatically.
 ```mermaid
@@ -473,7 +463,6 @@ Hot-reload mode has known issues with native modules and debugger attachment. Th
 - Library development runs the test suite in watch mode.
 - Server development runs the entry point in watch mode with full restart.
 - Debug sessions run watch mode with debugger attachment and avoid hot reload.
----
 ## TTL Cleanup
 Expired files are cleaned up by a scheduled Trigger.dev task. The process finds files past expiration, removes associated storage and search indexes, releases storage quota, and marks metadata as deleted. Metadata lookup and status updates are performed through Drizzle-managed typed operations.
 ```mermaid
@@ -514,7 +503,6 @@ flowchart TB
 - Storage quota release is best effort, where undercount is preferable to permanent over-reservation under partial failure.
 ### Configurable TTL
 Each file type can have a different default TTL at upload time. The cleanup task remains policy-agnostic and only queries records where `expires_at < NOW()` and `status != 'deleted'`.
----
 ## Circuit Breaker
 The circuit breaker wraps asynchronous external calls (Gemini API, RAGFlow API, Langfuse, MCP servers) to prevent cascading failures. When a dependency fails repeatedly, the breaker opens and rejects calls immediately to allow recovery.
 ```mermaid
@@ -555,7 +543,6 @@ flowchart TB
 - **Registry pattern** — the circuit breaker registry factory provides named breakers with isolated state and health snapshot support.
 - **Non-swallowing behavior** — wrapped errors propagate and are not hidden.
 - **Injectable clock** — the current-time source can be injected for deterministic transition testing.
----
 ## Health Checks
 The system exposes an aggregated health endpoint that checks critical and non-critical services independently. Overall status is `ok` when all services are up, `degraded` when only non-critical services are down, and `down` when the critical dependency Postgres is down.
 ```mermaid
@@ -600,7 +587,6 @@ flowchart TB
 | Langfuse | No | Tracing disabled silently |
 | MCP Servers | No | Individual tools unavailable |
 The health endpoint returns HTTP 200 with `status: "ok"` when all services are reachable, HTTP 200 with `status: "degraded"` when one or more non-critical services are down, and HTTP 503 with `status: "down"` only when Postgres is down.
----
 ## Graceful Shutdown
 On termination signals, the server initiates an ordered shutdown sequence that drains in-flight work before closing connections.
 ```mermaid
@@ -630,7 +616,6 @@ sequenceDiagram
 4. **Close external connections** — Valkey, Postgres, and SurrealDB disconnect cleanly.
 5. **Exit** — process exits with code 0.
 This ordering avoids data loss by allowing counters to flush, usage events to persist, and enrichment jobs to complete or remain safely retryable.
----
 ## Database Migrations (Drizzle)
 Infrastructure-facing schema evolution is managed by Drizzle migrations with explicit operational boundaries:
 - **Core budget schema** includes append-only `usage_events` for audit and `user_budget_limits` for per-user overrides.
@@ -638,7 +623,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - **Initialization separation** keeps app database migrations distinct from infrastructure bootstrapping of auxiliary databases for Trigger.dev and Langfuse.
 - **Scale evolution** allows partition-oriented migration strategy for high-write tables once data volume justifies partitioning.
 - **Runtime behavior** remains migration-safe because request-time admission paths rely on Valkey counters and cached limits, while Postgres is the source of reconciliation truth.
----
 ## Task Specifications
 ### Task DOCKER_COMPOSE: Docker Compose Infrastructure
 **What to do**:
@@ -671,7 +655,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Valkey responds to ping and round-trip cache checks.
 - Trigger profile starts and webapp is reachable.
 - LibreOffice sidecar is reachable from API context.
----
 ### Task COST_TRACKING: Cost Tracking and Per-User Token Budgets
 **What to do**:
 - Create budget module with two-layer architecture: Valkey hot path for real-time decisions and Postgres cold path for audit.
@@ -709,7 +692,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Admin get returns expected custom limits and spend values.
 - Admin set takes effect immediately via cache invalidation.
 - Admin list with over-budget filter returns only over-limit users.
----
 ### Task KEY_POOL: API Key Pool
 **What to do**:
 - Build the key pool capability with a key pool factory and configuration object.
@@ -735,7 +717,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Provider and embedder counters are independent.
 - Env parsing with multiple keys yields expected size and concurrency.
 - Single-key env value bypasses pool creation.
----
 ### Task VALKEY_CACHE: Valkey Cache Module
 **What to do**:
 - Build the cache capability with a cache factory.
@@ -760,7 +741,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Valkey operation sequence round-trips values and counter progression.
 - In-memory fallback behavior mirrors Valkey semantics.
 - Budget key helpers emit correct date and month key patterns.
----
 ### Task TRIGGER_TASKS: Trigger.dev Task Definitions and QueueAdapter
 **What to do**:
 - Create trigger module with QueueAdapter implementations.
@@ -785,7 +765,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Dispatch integration emits correct authenticated request.
 - Adapter selection changes with env presence.
 - Enrichment handler performs expected retrieval, extraction, upsert, and status updates.
----
 ### Task RATE_LIMITING: Rate Limiting Middleware
 **What to do**:
 - Build rate limiting middleware with a rate limiter factory.
@@ -812,7 +791,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **QA Scenarios**:
 - With maxRequests set to 3, first three requests pass and fourth is rejected with Retry-After.
 - After advancing time beyond window, request is allowed and effective counter resets.
----
 ### Task STRUCT_LOGGING: Structured Logging
 **What to do**:
 - Create logger module using LogTape where library code uses category loggers and server configures sinks at startup.
@@ -836,7 +814,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **QA Scenarios**:
 - Async context persists across awaits and appears in emitted logs.
 - Sensitive fields are redacted in structured output.
----
 ### Task TTL_CLEANUP: TTL-Based Automatic Cleanup
 **What to do**:
 - Build cleanup capability with an expired file cleanup function.
@@ -860,7 +837,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **QA Scenarios**:
 - Expired file seed is fully cleaned with deleted status update.
 - Partial failure still allows subsequent files to be deleted and summary to reflect mixed outcomes.
----
 ### Task CIRCUIT_BREAKER: Circuit Breaker for External Calls
 **What to do**:
 - Build the circuit breaker capability with a circuit breaker factory.
@@ -886,7 +862,6 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 **QA Scenarios**:
 - With threshold 2, two failures open breaker and third call fast-rejects without function invocation.
 - After timeout elapses, successful probe closes breaker and normal calls resume.
----
 ## Capacity Planning
 ### Postgres at Scale
 A direct increased connection-pool posture is insufficient for a ten-million-user system with bursty traffic and background workers. PgBouncer or equivalent connection pooling is required in front of Postgres at scale. Multiplexing large numbers of application connections onto a smaller database pool eliminates per-instance pool sizing pressure.
@@ -899,7 +874,6 @@ Long-term memory remains bounded per user, generally hundreds to low thousands o
 Deployment topology details like replica counts, shard counts, and region placement are environment-specific. The application layer remains topology-agnostic by connecting to a single SurrealDB endpoint.
 ### S3 or MinIO Key Distribution
 Object keys use user-prefixed hierarchy for ownership cleanup. Concentrated upload traffic among few users can create hot prefixes, but storage-layer distribution mitigates much of this effect. If hotspotting appears at scale, prepend a short hash prefix derived from user identity to spread traffic across keyspace. This change remains isolated to key-generation utilities and does not require broader application changes.
----
 ## External References
 - Trigger.dev: [https://trigger.dev/docs](https://trigger.dev/docs)
 - Valkey: [https://valkey.io/docs](https://valkey.io/docs)
@@ -909,7 +883,6 @@ Object keys use user-prefixed hierarchy for ownership cleanup. Concentrated uplo
 - Circuit Breaker pattern: failure threshold plus cooldown window to stop repeated calls to unhealthy dependencies, followed by controlled probes before returning to closed state
 - Sliding window rate limiting: [https://redis.io/docs/latest/develop/data-types/sorted-sets/](https://redis.io/docs/latest/develop/data-types/sorted-sets/)
 - AsyncLocalStorage: [https://bun.sh/docs/runtime/web-apis](https://bun.sh/docs/runtime/web-apis)
----
 
 ## Test Specifications
 

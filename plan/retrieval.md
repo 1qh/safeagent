@@ -4,10 +4,6 @@
 >
 > **Core concern**: The system must find the right evidence, prove it is sufficient, and only then generate user-facing claims.
 
----
-
----
-
 ## Architecture Overview
 
 Retrieval and evidence form one continuous system. Retrieval finds candidate material from user documents. Evidence validation decides whether that material is strong enough to support claims. Generation is downstream and conditional: no sufficient evidence, no claim generation.
@@ -48,8 +44,6 @@ graph TB
 
 When enrichment is not complete, retrieval still works from summaries. When enrichment completes, the same query automatically benefits from richer fusion. The experience remains stable while retrieval depth improves over time.
 
----
-
 ## The Hallucination Problem
 
 File-grounded queries are the highest-risk surface for unsupported claims.
@@ -67,8 +61,6 @@ The reduction target is achieved through three coupled mechanisms:
 - Attribute-First generation
 
 These are control-plane guarantees, not optional style instructions.
-
----
 
 ## The page_index System
 
@@ -145,8 +137,6 @@ flowchart LR
 ```
 
 Summaries contribute semantic abstraction, including chart and table interpretation. Raw text contributes exact lexical fidelity for quoting and keyword retrieval. The combined approach captures both.
-
----
 
 ## Hybrid Search with RRF
 
@@ -258,8 +248,6 @@ Cross-arm agreement dominates single-arm dominance. This is the core retrieval b
 
 The fusion groups by `(file_id, page_number)` before score aggregation to keep one score per physical page.
 
----
-
 ## Graceful Degradation
 
 If raw enrichment has not completed, arms using raw fields return zero rows while summary-vector retrieval still returns valid candidates. No error path is exposed to the user.
@@ -293,8 +281,6 @@ flowchart TD
     MODE_NOTE["Both modes return valid results.\nNo error. Same user flow;\ndifferent retrieval depth."]
     ENRICHED_CONTEXT & SUMMARY_ONLY_CONTEXT --> MODE_NOTE
 ```
-
----
 
 ## Query Tool and Per-Document Retrieval
 
@@ -424,8 +410,6 @@ When the requested document cannot be resolved or accessed, behavior is deployme
 | `suggest` | Return similar candidates; agent offers alternatives. |
 | `clarify` | Return ambiguous candidates; agent asks user to choose. |
 
----
-
 ## Page Context Assembly
 
 For each matched page, retrieval builds a context bundle used by the gate and final answer generation.
@@ -472,8 +456,6 @@ flowchart TD
 ```
 
 S3 page fetches are parallelized so retrieval I/O stays small relative to generation latency. Multimodal file parts are preferred over base64 inline payloads.
-
----
 
 ## Structured Citations and Attribute-First Generation
 
@@ -544,8 +526,6 @@ flowchart TD
 
 Attribute-first is enforced by ordering: plan and validate citation structure first, then expand claims into prose anchored to those citations.
 
----
-
 ## Evidence Bundle Gate
 
 The Evidence Bundle Gate is the final checkpoint between retrieval and user-visible generation for file-related answers.
@@ -603,8 +583,6 @@ The minimum-distinct-passages setting, weights, thresholds, and gate-closed beha
 
 The system blocks prose generation when the gate is closed.
 
----
-
 ## Feedback-Driven Retrieval Optimization
 
 Feedback signals from grounded-answer outcomes are fed back into retrieval controls so quality improves over time instead of only being observed.
@@ -643,8 +621,6 @@ flowchart LR
     SEMANTIC_CACHE_CONTROL --> RETRIEVAL_RUNTIME
     OPERATOR_OVERRIDE["Operator Override\npin protected parameters"] --> PARAMETER_ADJUSTMENT
 ```
-
----
 
 ## FileRegistry
 
@@ -719,8 +695,6 @@ Named references perform fuzzy matching against filenames and labels:
 ### Ambiguity Handling
 
 When multiple files match, candidates are returned and clarification is requested; no arbitrary guess is made.
-
----
 
 ## Cross-Conversation RAG
 
@@ -809,8 +783,6 @@ flowchart TD
 
 Global scope never crosses user boundaries because `user_id` filtering is mandatory.
 
----
-
 ## Large TXT RAG
 
 Plain text files use a chunk pipeline instead of page retrieval.
@@ -858,8 +830,6 @@ Larger chunks preserve semantic continuity for multi-sentence concepts. Overlap 
 | Citation anchor | Page number | Chunk position metadata |
 | Visual evidence | Yes | No |
 | Retrieval model | Hybrid RRF | Vector similarity |
-
----
 
 ## File Edge Cases
 
@@ -1108,8 +1078,6 @@ flowchart TD
     EDGE_GATE -->|"fail"| EDGE_GATE_CLOSED
 ```
 
----
-
 ## Visual Grounding
 
 Visual grounding handles chart, table, image, and diagram questions with multimodal interpretation at query time.
@@ -1156,8 +1124,6 @@ flowchart TD
 - Low confidence is explicit in the final response.
 
 Standalone spreadsheet ingestion is excluded by unsupported media policy; table QA for supported documents is handled through page-image grounding.
-
----
 
 ## Anti-Hallucination Architecture
 
@@ -1214,8 +1180,6 @@ flowchart TD
 | Evidence gate only | ~8% |
 | Evidence gate + FileRegistry + Attribute-First | ~3% |
 
----
-
 ## Cross-References
 
 | Component | Relationship |
@@ -1224,8 +1188,6 @@ flowchart TD
 | **Conversation** ([Conversation Pipeline](./conversation.md)) | Orchestration registers the document search tool, applies context-aware file resolution, and invokes post-gate generation. |
 | **Documents** ([Document Processing](./documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
 | **Transport** ([Streaming & Transport](./transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
-
----
 
 ## Task Specifications
 
@@ -1263,8 +1225,6 @@ flowchart TD
 - Partial page-image fetch failures degrade gracefully without full request failure.
 - Schema validation failures propagate as typed errors.
 - Multi-file results preserve source attribution per citation.
-
----
 
 ### Task RAGFLOW_CLIENT: RAGFlow Retrieval Client Wrapper
 
@@ -1313,8 +1273,6 @@ flowchart TD
 - Separate transport concerns from result-shape normalization.
 - Preserve source transparency to support evidence and citation trust.
 
----
-
 ### Task CROSS_CONV_RAG: Cross-Conversation Retrieval Scope
 
 **What to do**: Extend retrieval to support thread and global scope. Add `scope` metadata, store global rows under sentinel thread value, include both thread and global rows in search filters, and apply configurable ranking preference to thread-local content. Include citation `scope`.
@@ -1344,8 +1302,6 @@ flowchart TD
 - Mixed-scope query returns citations with correct scope tags.
 - Multiplier set to 1.0 yields equal treatment across scopes.
 
----
-
 ### Task FILE_REGISTRY: Temporal, Ordinal, Named Resolution
 
 **What to do**: Implement FileRegistry resolution for temporal, ordinal, and fuzzy named references with per-user cross-session persistence. Use Postgres as source of truth and Valkey as cache.
@@ -1369,8 +1325,6 @@ flowchart TD
 - New session still resolves temporal reference using persistent metadata.
 - Deleted file reference returns deleted status handling.
 
----
-
 ### Task EVIDENCE_GATE: Sufficiency and Policy-Controlled Outcomes
 
 **What to do**: Implement deterministic sufficiency scoring with coverage, confidence, and completeness components. Enforce gate-open prerequisite for prose generation. Use per-topic intent configuration to control threshold and closed-gate behavior. Run attribute-first citation planning before generation.
@@ -1393,8 +1347,6 @@ flowchart TD
 - Strong evidence opens gate and triggers attribute-first flow.
 - Distinct topics with distinct thresholds evaluate independently.
 - Configuration updates apply at next startup boundary.
-
----
 
 ### Task RAG_FEEDBACK_LOOP: Automated Retrieval Quality Feedback Loop
 
@@ -1444,8 +1396,6 @@ flowchart TD
 - Keep adaptation logic transparent so operators can reason about changes.
 - Ensure optimization never bypasses evidence-gate safety boundaries.
 
----
-
 ### Task DOC_SEARCH: Unified Document Search Tool
 
 **What to do**: Build a document search tool as a stable interface for PDFs and TXT. PDFs use hybrid page retrieval; TXT uses chunk retrieval. Return structured evidence bundles for gating and post-gate response generation. Support configurable not-found behavior and parallel multi-document calls.
@@ -1466,8 +1416,6 @@ flowchart TD
 - Parallel comparison queries return two usable evidence bundles.
 - Multi-page retrieval preserves per-page citation metadata.
 - Image-only PDF with no text evidence closes gate and routes to visual grounding path.
-
----
 
 ### Task VISUAL_GROUNDING: Multimodal Visual Evidence
 
@@ -1491,16 +1439,11 @@ flowchart TD
 - Missing visual content yields explicit not-found outcome.
 - Low-confidence multimodal output triggers cautionary response.
 
----
-
 ## External References
 
 - AI SDK retrieval and structured output documentation.
 - Reciprocal Rank Fusion: Cormack, Clarke, and Buettcher.
 - Attribute-first citation planning evidence in recent retrieval-grounded generation research.
-
----
-
 
 ## Test Specifications
 

@@ -5,10 +5,6 @@
 > **Existing tasks**: AGENT_FACTORY (Agent Factory), PROVIDER_FALLBACK (Provider Fallback), AGENT_ROUTER (Agent Router)
 > **New components**: Orchestrator pattern using framework handoffs, sub-agent framework, live synthesis
 
----
-
----
-
 ## Architecture Overview
 
 The agent layer has three tiers: the **factory** (wraps `@openai/agents` framework agent class with safe defaults), the **orchestrator** (supervises multi-intent execution via the framework's handoff mechanism), and **sub-agents** (handle individual intents with scoped tools).
@@ -39,8 +35,6 @@ graph TB
     SUB_AGENT_REFUND & SUB_AGENT_PRODUCT & SUB_AGENT_MEMORY -->|results stream| LIVE_SYNTHESIS
     LIVE_SYNTHESIS -->|SSE| CLIENT_APP["Client"]
 ```
-
----
 
 ## Agent Factory (Agent Creation Factory)
 
@@ -133,8 +127,6 @@ sequenceDiagram
     STREAM_HANDLER->>USER: Unified SSE stream
 ```
 
----
-
 ## Computer Use and Browser Agent Patterns
 
 Computer use is an emerging agent type with distinct perception, safety, and governance requirements. Browser-first operation is now established in production-grade systems and should be treated as a first-class orchestration pattern rather than an ad hoc tool behavior.
@@ -177,9 +169,6 @@ flowchart LR
 Reference material:
 
 - Anthropic Computer Use documentation: https://docs.anthropic.com/en/docs/agents-and-tools/computer-use
-
----
-
 
 ## Orchestrator Agent Pattern
 
@@ -281,8 +270,6 @@ flowchart TB
 
 **Injection format**: Recalled context is injected as system context alongside thread short-term history and cross-thread messages (for young threads). The orchestrator receives all layers before reasoning begins.
 
----
-
 ## Context Assembly, Budgeting, and Response Calibration
 
 Before reasoning starts, the engine assembles full context in strict priority order:
@@ -378,8 +365,6 @@ For proactive clarification, when intent signals indicate genuine ambiguity (low
 
 For patience control, the orchestrator tracks consecutive clarification rounds per thread. After the configured threshold, the agent stops re-asking and returns a best-effort response with explicit assumptions. This guarantees progress and avoids infinite clarification loops.
 
----
-
 ## Live Synthesis Streaming
 
 When multiple sub-agents run in parallel, the orchestrator synthesizes responses in real time as each sub-agent completes:
@@ -419,8 +404,6 @@ Why this improves UX:
 - Time to first token is bounded by fastest sub-agent, not slowest.
 - User sees progress immediately.
 - Output remains natural because synthesis happens at orchestration level.
-
----
 
 ## Dependent Intent Handling
 
@@ -463,8 +446,6 @@ Constraint passing: After first stage completes, the orchestrator extracts a str
 | refinement | Context intent narrows scope | entities: scope qualifiers; metadata: additional filters |
 | context | Context-establishing intent provides background | entities: key mentions; metadata: grounding facts |
 
----
-
 ## Dynamic Fan-Out & Map-Reduce Orchestration
 
 For workloads where parallel width is unknown until runtime, the orchestrator uses dynamic fan-out and reduction. Instead of fixed handoff count, it computes `N` from incoming work (for example, many documents or records), dispatches one worker per item or shard, and reduces outputs into one coherent result.
@@ -496,8 +477,6 @@ Core orchestration behaviors:
 - Backpressure: when worker output exceeds reducer throughput, the orchestrator applies queueing or throttling to stabilize flow.
 
 Durability note: checkpoint-backed fan-out state and recovery behavior should align with durable execution guidance in [Durable Execution](./durable-execution.md), so incomplete worker sets can resume without reprocessing completed items.
-
----
 
 ## Tool Registry
 
@@ -569,8 +548,6 @@ flowchart LR
     STREAM_DELIVERY --> CLIENT_RENDERING
 ```
 
----
-
 ### Tool Assignment Flow
 
 ```mermaid
@@ -589,8 +566,6 @@ flowchart TB
 
     MAP_RAGFLOW & MAP_DOCUMENT_QA & MAP_GROUNDING_SEARCH & MAP_MEMORY_RECALL & MAP_DIRECT_ANSWER --> SCOPED_SUB_AGENT["Sub-Agent created with<br/>selected tools only"]
 ```
-
----
 
 ## MCP Client Protocol Integration
 
@@ -638,11 +613,6 @@ flowchart LR
 Reference:
 
 - MCP specification: https://modelcontextprotocol.io/specification
-
----
-
-
----
 
 ## Location Enrichment Tool (LOCATION_TOOL)
 
@@ -731,9 +701,6 @@ sequenceDiagram
 - Stream response that triggers location search -> tool-call/tool-result chunks hidden from SSE output, location events present
 - Configure custom geocoding provider -> tool uses custom provider instead of default
 
----
-
-
 ## Agent Router (Query Classification)
 
 For deployments with multiple specialized agents, the router dispatches each query to the right agent:
@@ -760,8 +727,6 @@ flowchart LR
 ```
 
 Router uses Gemini Flash Lite structured output generation with enum output mode for single-token classification latency. Results are cached per thread in Valkey so the same thread keeps consistent agent continuity.
-
----
 
 ## Scaling: Queue-Based Execution
 
@@ -797,8 +762,6 @@ Configurable per deployment:
 - Production (simple): single-intent in-process, multi-intent queued
 - Production (full): all requests through queue for uniform scaling and observability
 
----
-
 ## Provider Fallback
 
 Simple sequential fallback for model failures:
@@ -820,8 +783,6 @@ flowchart LR
 
 The fallback model wrapper wraps two providers. If primary fails, it tries fallback. No dynamic smart routing; only sequential try/catch for predictable behavior.
 
----
-
 ## Cross-References
 
 | Component | Interaction |
@@ -831,8 +792,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 | **Memory & Intelligence** ([Memory & Intelligence](./memory.md)) | Supplies thread short-term, user short-term, long-term recall, rolling summaries, and recall policies used during context assembly |
 | **Transport** ([Streaming & Transport](./transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
 | **Server** ([Server Implementation](./server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
-
----
 
 ## Task Specifications
 
@@ -863,8 +822,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Create agent with output schema -> typed JSON returned through structured output path
 - Two concurrent framework execution method calls with different thread IDs -> no state leakage
 
----
-
 ### Task PROVIDER_FALLBACK: Provider Fallback Helper
 
 **What to do**: Build the fallback model wrapper that wraps two providers with sequential try/catch.
@@ -884,8 +841,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Primary throws -> fallback called and returned
 - Both throw -> original primary error surfaces
 - Primary timeout -> fallback engaged within total timeout budget
-
----
 
 ### Task AGENT_ROUTER: Agent Router — Query Classification + Dispatch
 
@@ -908,10 +863,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Cached thread -> cached dispatch used and no classifier call
 - User requests reclassification -> cache invalidated and fresh classification executed
 - Two concurrent requests for same thread -> no duplicate classification work
-
----
-
----
 
 ### Task MCP_CLIENT: MCP Client Configuration + Multi-Server
 
@@ -938,7 +889,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Disconnect active MCP server during runtime -> health status changes and reconnection begins automatically
 - Override default MCP config from server project -> override values apply without breaking base defaults
 
-
 ### Task GEMINI_GROUNDING: Gemini Grounding Agent Mode
 
 **What to do**: Implement Gemini grounding mode using Google Search grounding for real-time web queries. Configure grounding metadata extraction and citation formatting.
@@ -961,8 +911,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Grounding metadata with multiple sources -> formatter outputs deterministic citation ordering
 - Grounding provider error during request -> typed error surfaced and stream closes cleanly
 - Streaming grounding response -> citations remain aligned with final answer content
-
----
 
 ### Task ORCHESTRATOR: Orchestrator Agent Framework
 
@@ -997,8 +945,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - One handoff timeout -> remaining results still delivered with partial-failure note
 - All handoffs timeout -> user-facing error response
 
----
-
 ### Task SUBAGENT_FACTORY: Sub-Agent Factory
 
 **What to do**: Build a sub-agent factory that creates intent-scoped framework agent class instances with proper tools from topic source-priority configuration. Each sub-agent is referenced by the orchestrator through the framework's handoff mechanism. The factory produces both a sub-agent instance and corresponding handoff configuration, including context scoping, routing logging, and optional conditional routing predicates.
@@ -1023,8 +969,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Topic with HyDE rewrite strategy -> tool configured with HyDE rewriter
 - Missing evidence threshold config -> defaults applied
 - Handoff context scoping removes irrelevant conversation turns
-
----
 
 ### Task DEPENDENT_INTENT: Dependent Intent Coordination
 
@@ -1052,8 +996,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Constraint prevents disliked item appearing in results -> exclusion works
 - One dependent stage fails -> remaining results still delivered with partial-failure note
 - Constraint context visible in sub-agent trace -> handoff-scoped context includes constraint
-
----
 
 ### Task RESPONSE_CALIBRATION: Response Energy Matching and Complexity Calibration
 
@@ -1101,8 +1043,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Treat calibration as soft guidance, not a hard output-length constraint.
 - Separate signal extraction from policy mapping for easier tuning.
 
----
-
 ### Task GENERATIVE_UI: Rich UI Component Emission with Safety Governance
 
 **Task Name**
@@ -1146,8 +1086,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Emit multiple valid components in one response, verify ordering and stream integrity.
 - Emit oversized payload, verify size control blocks delivery.
 
----
-
 ## External References
 
 - OpenAI Agents SDK documentation: https://openai.github.io/openai-agents-js/
@@ -1157,9 +1095,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - AI SDK structured output generation: https://sdk.vercel.ai/docs/ai-sdk-core/generating-structured-data
 - MCP specification: https://modelcontextprotocol.io/specification
 - Anthropic Computer Use documentation: https://docs.anthropic.com/en/docs/agents-and-tools/computer-use
-
----
-
 
 ## Test Specifications
 
@@ -1348,7 +1283,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Direct-answer source maps to no-tool synthesis path.
 - Sub-agent receives only selected scoped tools and no extra global leakage.
 
-
 **Agent router behavior and caching**:
 
 - Router classifies query to dispatch target for multi-agent deployments.
@@ -1379,9 +1313,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Production full mode routes all requests through queue for uniform scaling.
 - Queue mode preserves orchestration semantics and result synthesis behavior.
 
-
 **Location enrichment tool behavior**:
-
 
 - Location tool factory returns valid tool definition with location-search naming.
 - Tool input contract accepts place list with optional contextual text for disambiguation.
@@ -1400,7 +1332,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Place-image provider helper returns compatible image-search implementation.
 
 **MCP client resilience and configuration**:
-
 
 - Static allowlist controls which tools are exposed per agent.
 - Static blocklist controls which tools are excluded per agent.

@@ -3,8 +3,6 @@
 > Scope: Coding standards, linting, formatting, and type-checking enforcement for both safeagent library and server projects using lintmax at maximum strictness.
 > Tasks: CODE_STANDARDS (Coding Standards and Enforcement Infrastructure)
 
----
-
 ## Standards Charter
 
 This plan establishes one quality contract for both safeagent and server.

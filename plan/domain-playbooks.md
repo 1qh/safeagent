@@ -4,16 +4,12 @@ This document provides domain-by-domain implementation paths so teams can execut
 
 Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery-playbook.md), and scheduling authority remains in [Execution Plan](./execution.md).
 
----
-
 ## How to Use Playbooks
 
 1. Find your task in [Execution Plan](./execution.md).
 2. Use the matching domain playbook below.
 3. Follow the read order, then execute task specs, then complete verification.
 4. Do not bypass dependency prerequisites from the execution matrix.
-
----
 
 ## Foundation and Contracts
 
@@ -40,8 +36,6 @@ Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery
 - Required standards and governance constraints satisfied.
 - Cross-domain contracts remain stable.
 
----
-
 ## Conversation and Agent Intelligence
 
 ### Scope
@@ -63,8 +57,6 @@ Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery
 - Memory, context budget, and calibration behavior are verified.
 - Task-linked test assertions in domain test sections are satisfied.
 
----
-
 ## Retrieval, Documents, and Safety
 
 ### Scope
@@ -85,8 +77,6 @@ Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery
 - Evidence sufficiency and citation behavior verified.
 - Input and output safety paths verified.
 - Security and compliance controls remain intact.
-
----
 
 ## Transport, Server, and Surfaces
 
@@ -111,8 +101,6 @@ Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery
 - Streaming event behavior and suppression rules verified.
 - Thin-server boundaries preserved.
 - Surface clients remain compatible with shared contracts.
-
----
 
 ## Runtime, Scale, and Operations
 
@@ -139,8 +127,6 @@ Batch execution control is defined in [Batch Delivery Playbook](./batch-delivery
 - Runtime resilience and fallback behavior verified.
 - Observability and incident controls verified.
 - Cost, governance, and durability controls verified.
-
----
 
 ## Delivery, Docs, and Release
 

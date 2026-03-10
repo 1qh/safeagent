@@ -2,15 +2,11 @@
 
 This matrix is supplementary to [Testing](./testing.md) and domain test specifications. It does not define new test categories or override test policy.
 
----
-
 ## Purpose
 
 - Validate that behavior quality is stable across normal and adversarial prompts.
 - Detect regressions before release and before audit closure.
 - Tie every stress test group to clear ownership and response actions.
-
----
 
 ## Capability Evaluation Matrix
 
@@ -23,8 +19,6 @@ This matrix is supplementary to [Testing](./testing.md) and domain test specific
 | Transport and Server Surface | Streaming coherence, endpoint behavior, auth boundary consistency | Stream abuse prompts, event-flood behavior, unauthorized endpoint attempts | [Streaming & Transport](./transport.md), [Server Implementation](./server.md) |
 | Runtime and Reliability | Circuit-breaker behavior, retry patterns, incident detection fidelity | Degradation storms, cascading timeouts, noisy failure bursts | [Infrastructure](./infrastructure.md), [Monitoring](./monitoring.md), [Operations](./operations.md) |
 
----
-
 ## Adversarial Test Families
 
 - Prompt injection and policy override pressure
@@ -34,16 +28,12 @@ This matrix is supplementary to [Testing](./testing.md) and domain test specific
 - Streaming abuse and output-channel corruption pressure
 - Safety bypass through obfuscation and multilingual evasion
 
----
-
 ## Execution Cadence
 
 - Per task completion: run relevant normal evaluation checks.
 - Per batch closeout: run batch-relevant adversarial family checks.
 - Per release readiness cycle: run full matrix sweep.
 - Before final audits: run full matrix sweep with documented closure evidence.
-
----
 
 ## Failure Response Policy
 
@@ -52,8 +42,6 @@ This matrix is supplementary to [Testing](./testing.md) and domain test specific
 3. Apply remediation in owning domain.
 4. Re-run impacted matrix sections until stable.
 5. Record closure in handoff packet and readiness scoreboard.
-
----
 
 ## Related Documents
 

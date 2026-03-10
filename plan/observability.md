@@ -2,8 +2,6 @@
 > **Scope**: Langfuse integration via the `@openai/agents` framework tracing exporter interface and direct Langfuse SDK usage, complete trace lifecycle instrumentation, span taxonomy, custom observability spans for guardrails, retrieval, file processing, and memory operations, user feedback scoring, prompt management, production logging strategy, dashboard and alerting design, cost tracking metrics, and Promptfoo self-test infrastructure.
 >
 > **Tasks**: LANGFUSE_MODULE (Langfuse Observability Module), CUSTOM_SPANS (Custom Observability Spans), FEEDBACK_ENDPOINT (User Feedback Endpoint), PROMPT_MGMT (Langfuse Prompt Management), EVAL_CONFIG (Eval/Scoring Configuration), SELF_TEST (Self-Test Infrastructure)
----
----
 ## Architecture Overview
 Observability in safeagent flows from agent execution through the `@openai/agents` framework's tracing system into Langfuse. The framework provides a pluggable tracing exporter interface — safeagent implements an exporter that translates framework trace/span events into Langfuse API calls. The framework automatically creates spans for agent runs, LLM generations, tool calls, guardrail executions, and handoffs. Custom domain spans (guardrails, RAG stages, file processing) are added on top using the framework's custom span API. User feedback from client apps feeds back into Langfuse as scores linked to original traces, closing the quality loop.
 Eval operates on a separate axis. Custom evaluation scorers run in production for live monitoring (toxicity, hallucination, faithfulness). Promptfoo runs offline for regression testing — it is an external CLI tool, not a library import. Our code spawns it as a subprocess via subprocess spawning for fully automated, zero-human-intervention eval execution.
@@ -67,7 +65,6 @@ graph TB
     HTTP_PROVIDER -->|"execute agent run for request input"| AGENT
 ```
 The design separates concerns cleanly. Application instrumentation traces structural events (agent lifecycle, LLM calls, tool invocations). Custom spans add domain semantics (guardrail verdicts, search arm scores, page processing progress). Scoring links trace quality to user outcomes. Prompt management enables runtime instruction changes without redeployment.
----
 ## Langfuse Self-Hosted Stack
 Langfuse runs self-hosted to keep trace data on-premises. The stack requires six services, two of which share infrastructure with safeagent's existing Postgres and MinIO instances (separate databases and buckets) to reduce memory overhead by roughly 2 GB.
 ```mermaid
@@ -114,7 +111,6 @@ All six Langfuse services sit behind an optional Langfuse profile in the contain
 | `LANGFUSE_SECRET_KEY` | Server-side key for score writes + prompt reads | — |
 | `LANGFUSE_BASE_URL` | Langfuse API URL | — (required, self-hosted endpoint) |
 When `LANGFUSE_PUBLIC_KEY` is not set, the entire observability module returns no-ops — the exporter is null, and score helper methods silently do nothing. No consumer needs null checks.
----
 ## Trace Lifecycle and Span Taxonomy
 Every agent interaction produces a trace in Langfuse and moves through a full lifecycle: trace creation, parent span creation, child span enrichment, generation capture, score writes, flush, retention, and dashboard aggregation. Core instrumentation populates the top-level structure. Custom spans add domain-specific detail at each stage.
 ```mermaid
@@ -179,7 +175,6 @@ Trace-step SSE events (defined in [Streaming & Transport](./transport.md)) are a
 | **Scoring** | Guardrail, feedback, and scorer values are attached to trace or span level. | Boolean and numeric score entries linked to trace identifiers. |
 | **Export** | Exporter batches or flushes events to Langfuse based on runtime mode and sampling policy. | Persisted observations and score objects in Langfuse services. |
 | **Review** | Dashboards and alerts consume traces, scores, and derived metrics for operational decisions. | Quality, safety, latency, and cost signal views with alert routing. |
----
 ## Langfuse Observability Module
 The observability module is a thin factory that composes direct `langfuse` SDK initialization and custom redaction helpers into a single creation point. It returns two things: the tracing exporter for framework tracing, and a pre-wired scoring helper for writing scores to traces.
 ### Factory Design
@@ -236,7 +231,6 @@ Scoring helper factory wraps the exporter's trace-score write call into a cleane
 The span target parameter is optional. When omitted, the score attaches to the trace itself rather than a specific span. User feedback always omits span targeting because feedback applies to the entire interaction.
 ### No-Op Behavior
 When `LANGFUSE_PUBLIC_KEY` is absent, the factory returns fully functional no-ops for both return values. The exporter is null. The scoring helper's boolean and numeric methods are silent no-ops. This means every consumer — the agent runtime, feedback endpoint, custom spans — can destructure and call methods without any null checks or conditional logic.
----
 ## Custom Observability Spans
 Core instrumentation traces the structural skeleton (agent lifecycle, LLM calls, tool invocations). Custom spans fill in domain semantics: did the guardrail pass? Which search arms contributed? How long did page summarization take?
 ```mermaid
@@ -352,7 +346,6 @@ Wraps long-term memory operations:
 All spans pass through a two-layer PII redaction pipeline before export. The first stage uses Presidio for deterministic entity detection and masking. The second stage uses a structured-output LLM pass that classifies and normalizes residual sensitive fragments missed by deterministic detection. Redaction is enabled by default in observability factory and can be disabled only in tightly controlled debugging sessions.
 #### Graceful No-Op
 Every custom span checks whether the scoring-helper parameter was provided. When observability is not configured, the parameter is undefined and no span or score creation is attempted. Guardrail logic, RAG queries, and file processing all work identically with or without tracing.
----
 ## Custom Metrics and Cost Tracking
 Beyond traces and spans, observability tracks latency, quality, safety, retrieval, and spend metrics across requests, users, agents, and environments. Cost telemetry is emitted with token usage and model metadata so budget drift is visible before hard limits are reached.
 ```mermaid
@@ -372,7 +365,6 @@ graph TB
     LF_SCORE --> DASH_METRICS
 ```
 Metric families include latency, quality, safety, retrieval effectiveness, and spend. Cost attribution is maintained at request, conversation, user, agent, and environment levels to support budget enforcement and comparative efficiency analysis.
----
 ## PII Redaction Layer
 PII handling is an explicit pipeline between runtime instrumentation and export. The design minimizes leakage risk while preserving enough semantic fidelity for debugging and evaluation.
 ```mermaid
@@ -389,7 +381,6 @@ flowchart LR
 - Structured outputs enforce bounded redaction categories and predictable masking actions.
 - Redaction is default-on in production and confidence failures route events to quarantine.
 - Redaction counters and reason tags remain visible for audit and tuning workflows.
----
 ## Logging Strategy
 Logging complements tracing by capturing operational context, failures, and policy decisions in a format optimized for search, correlation, and incident response.
 ```mermaid
@@ -409,7 +400,6 @@ graph LR
 - Structured typed events with stable correlation fields are required.
 - Request and trace identifiers are attached to lifecycle, safety, retrieval, cost, and infrastructure logs.
 - Sensitive content is masked before emission, and noisy high-frequency events are sampled.
----
 ## User Feedback Endpoint
 Client applications send thumbs-up/down feedback linked to a specific agent trace. The feedback flows through a simple feedback endpoint into Langfuse as a score on the original trace.
 ```mermaid
@@ -449,7 +439,6 @@ The server records `{ traceId, userId }` when the SSE stream starts in a Postgre
 When Langfuse is not configured (`LANGFUSE_PUBLIC_KEY` absent), the endpoint still accepts requests. The no-op scoring helper silently drops the score. The response is `200 { ok: true, traced: false }` instead of `200 { ok: true }`. Client apps never need error handling for the no-Langfuse case.
 ### Why Not Store in Postgres
 Langfuse is the source of truth for scores. Storing feedback in Postgres would create a synchronization problem and duplicate data. Langfuse's score API already supports filtering, aggregation, and dashboard visualization. The feedback endpoint is a thin pass-through.
----
 ## Langfuse Prompt Management
 Langfuse doubles as a prompt management system. Agent instructions can be edited in the Langfuse dashboard and fetched at runtime — enabling prompt iteration without redeployment.
 ```mermaid
@@ -519,7 +508,6 @@ Prompt management factory returns a prompt manager with four methods:
 6. **Timeout**: Remote fetch calls use request-abort controls to bound network latency. Never blocks the critical path indefinitely.
 ### Server Integration
 The server creates a prompt manager during startup and passes compiled prompts into agent config composition. Agents receive their instructions as strings — they have no knowledge of whether the prompt came from Langfuse or a local fallback. This is an opt-in feature. If the server does not configure prompt management, agents use instructions defined in code.
----
 ## Eval/Scoring Configuration
 Evaluation has two modes: live production scoring via custom scorer functions, and offline regression testing via Promptfoo. The scorer configuration builder helper bridges these into safeagent's agent system.
 ### Custom evaluation scorers (live production)
@@ -540,7 +528,6 @@ Scorers are imported from application scorer modules. The scorer configuration b
 In production, `ratio` sampling is recommended to avoid adding latency to every request. Safety scorers (toxicity, bias) may use higher sampling rates than quality scorers.
 ### Scorer Results → Langfuse
 When the observability module is configured, scorer results flow automatically into Langfuse as numeric scores on the trace. This enables dashboard monitoring of quality metrics over time — toxicity trends, hallucination rates, answer relevancy distributions.
----
 ## Dashboard and Alerting
 Dashboards convert trace, score, log, and cost data into operational views for engineering, safety, and product teams. Alerts turn those views into actionable signals with clear ownership and escalation paths.
 ```mermaid
@@ -557,7 +544,6 @@ graph TB
     RULES --> ROUTER["On-call Router"] --> RESPONSE["Incident Response"]
 ```
 Core dashboard views cover reliability, quality, safety, and cost. Alert classes include availability, latency, quality drift, safety spikes, and spend velocity anomalies, each routed through explicit ownership and escalation policy.
----
 ## Self-Test Infrastructure
 Self-testing allows agents to validate themselves against a test suite. Promptfoo is the eval engine — an external CLI tool that must be installed in the environment (dev dependency or CI image). The safeagent library spawns Promptfoo as a subprocess via subprocess spawning for fully automated eval execution with zero human intervention.
 ```mermaid
@@ -599,7 +585,6 @@ Wraps a safeagent Agent as a Promptfoo custom provider:
 |-------|-------|
 | provider call method | Runs an agent evaluation request and returns the model output plus token usage totals |
 This provider is used in the direct in-process path (when Promptfoo runs in Bun) and as the agent-facing adapter in the HTTP bridge.
----
 ## Content Provenance & Attribution
 Tracing explains runtime behavior. Provenance explains causality and accountability: which inputs, context, instructions, and model configuration produced a specific output. This section defines the compliance-grade provenance layer required for transparency obligations, including California transparency requirements and EU AI Act accountability expectations. It extends observability with legally defensible reconstruction of output lineage.
 
@@ -669,7 +654,6 @@ Each provenance record links to relevant trace spans so investigators can traver
 
 Together they provide both fast incident diagnosis and defensible transparency reporting.
 
----
 ## Cross-References
 | Component | Interaction |
 |-----------|-------------|
@@ -681,7 +665,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 | **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Trace visualization components consume trace-step events correlated with Langfuse traces via shared traceId. Frontend feedback hooks submit scores to Langfuse through the feedback endpoint. |
 | **Demo Applications** ([Demo Applications](./demos.md)) | Both demos implement feedback submission (traceId-linked), verbosity toggle (triggers trace-step event emission), and trace timeline rendering — all flowing into Langfuse observability. |
 | **Circuit Breaker** (CIRCUIT_BREAKER) | Prompt manager wraps remote fetches with the circuit breaker to avoid repeated latency spikes during Langfuse outages. |
----
 ## Task Specifications
 ### Task LANGFUSE_MODULE: Langfuse Observability Module
 **What to do**: Build the tracing exporter that implements the `@openai/agents` framework's tracing exporter interface. The exporter translates framework trace and span objects into Langfuse API calls via the direct `langfuse` SDK. Register it with the framework tracing processor pipeline. Build observability factory that sets up the exporter, score helper, and PII redaction. Return an object containing both exporter and score helper. Implement scoring helper factory with boolean and numeric scoring methods, with optional span targeting for trace-level scores. Default to env vars. Enable the Presidio plus structured-output LLM redaction pipeline by default. Implement the full no-op path when `LANGFUSE_PUBLIC_KEY` is absent: disable tracing on the framework and return a score helper with silent no-op boolean and numeric methods. Dev mode uses realtime flushes, production uses batched flushes with configurable ratio sampling.
@@ -702,7 +685,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Pass explicit config overriding env vars → explicit values take precedence
 - Set redaction disabled in config → no PII redaction in trace payloads
 - Framework batch trace processor batches and flushes correctly under Bun runtime (force flush on shutdown)
----
 ### Task CUSTOM_SPANS: Custom Observability Spans
 **What to do**: Instrument six high-value tracing points with custom spans and scores. (1) Input guardrail span in input guardrail processor factory — boolean score `guardrail_input_pass`, plus `guardrail_blocked` or `guardrail_flagged` scores on p0/p1. (2) Streaming output guardrail span in output guardrail processor factory — boolean score `guardrail_output_pass`, plus `guardrail_tripwire` if abort is called. (3) RAG pipeline spans: parent `rag.pipeline` with children `rag.embed_query`, `rag.hybrid_search` (indexed mode with arm scores) or `rag.vector_search` (RAG mode), `rag.fetch_context`, `rag.answer`. (4) File processing spans: parent `file.process` with children for blocking stage (`file.split_pages`, `file.summarize`, `file.embed_summaries`), background stage (`file.enrich`), RAG mode (`file.chunk`, `file.embed_chunks`), and DOCX conversion (`file.convert_docx`). (5) Memory operation spans: parent `memory.operation` with children `memory.store_fact`, `memory.search`, `memory.graph_traverse`, `memory.expire_stale`. (6) Export guardrail flag callback factory — returns a callback that emits a `guardrail.flagged` Langfuse span with p1 details, decoupling guardrail code from observability code. All spans are no-op when observability is not configured.
 **Depends on**: LANGFUSE_MODULE (observability module), INPUT_GUARD (input guardrail), OUTPUT_GUARD (streaming guardrail), RAG_INFRA (RAG infrastructure)
@@ -721,9 +703,7 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Execute RAG query in indexed mode with mock observability → assert parent `rag.pipeline` span created → assert child spans `rag.embed_query`, `rag.hybrid_search`, `rag.fetch_context`, `rag.answer` all present with duration > 0
 - Create guardrail without scoring helper (undefined) → process input → assert no error, guardrail works normally, no span/score creation attempted
 - Execute file processing with mock observability → assert `file.process` parent span → assert `file.summarize` child span captures page count and token total
----
 > **FEEDBACK_ENDPOINT** — canonical task specification is in [Server Implementation](./server.md#task-feedback_endpoint-feedback-endpoint). The server route wires Langfuse score submission to the HTTP layer. See also LANGFUSE_MODULE for the scoreHelper dependency.
----
 ### Task PROMPT_MGMT: Langfuse Prompt Management Integration
 **What to do**: Build prompt management factory returning a prompt manager with startup preload, prompt fetch, manual refresh, and cache stats methods. Startup preload fetches configured prompt keys from the Langfuse API at startup and hydrates an in-memory cache with per-entry expiry. Prompt fetch serves cached prompts with variable interpolation (`{{var}}` tokens) and strict missing-variable checks. On cache miss or expiry, attempt refresh then fall back to local prompts from `fallbackPrompts` config. Wrap remote fetches with the CIRCUIT_BREAKER circuit breaker to avoid repeated latency spikes. Use request-abort controls to bound network calls. Never fail startup when Langfuse is unavailable and fallback prompts exist. Never expose Langfuse secret key in logs or error messages. Export via subpath barrel.
 **Depends on**: LANGFUSE_MODULE (Langfuse observability — env handling patterns, credential management)
@@ -740,7 +720,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Mock Langfuse API returns a system prompt revision → create manager with fallback → call startup preload then prompt fetch → assert returned prompt comes from remote template with interpolation applied
 - Mock fetch fails with timeout → create manager with fallback → call startup preload and prompt fetch → assert fallback prompt returned, warning logged without secrets
 - Set cache TTL to 100ms → run startup preload → wait 200ms → run prompt fetch → assert refresh attempted → if Langfuse still available, new value served; if unavailable, stale value served
----
 ### Task EVAL_CONFIG: Eval/Scoring Configuration Helpers
 **What to do**: Build scorer configuration builder — configures custom scorer functions for live production monitoring with sampling support. Re-export commonly used project scorer factories (answerRelevancy, toxicity, hallucination, faithfulness, promptAlignment). Build eval provider factory — wraps a safeagent Agent as a Promptfoo custom provider with a provider call method that runs the agent for eval input and returns output plus token usage. Build evaluation runner — starts an ephemeral HTTP server wrapping the agent, generates Promptfoo configuration with the HTTP provider URL, and spawns the Promptfoo CLI as a subprocess via subprocess spawning. Promptfoo is a CLI dev dependency — our code never imports the `promptfoo` package (no library dependency), but spawns it as a subprocess for fully automated execution.
 **Depends on**: AGENT_FACTORY (agent factory — agent instance for provider wrapping)
@@ -755,7 +734,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Call eval provider factory → assert returned object has the provider call method → invoke it → assert an agent evaluation run was invoked → assert response includes output and token usage
 - Call evaluation runner with mock config → assert HTTP server starts on random port → assert generated config includes correct provider URL
 - Start server from evaluation runner flow → send a request with `{ prompt: 'test' }` → assert response contains `{ output }` → wait for timeout → assert server stops and port is released
----
 ### Task SELF_TEST: Self-Test Infrastructure (Promptfoo External CLI)
 **What to do**: Build self-test runner — the self-testing loop for agents. Accepts a self-test configuration object with an agent instance, test cases, optional scorers, and optional timeout. Workflow: start ephemeral HTTP server wrapping the agent (using EVAL_CONFIG's HTTP server pattern), generate Promptfoo configuration with HTTP provider URL and test cases, spawn Promptfoo CLI via subprocess spawning, wait for subprocess exit, parse results from output file, shut down server, and return a structured self-test result object. Fully automated — zero human intervention. Promptfoo is a CLI dev dependency (not a library import).
 **Depends on**: EVAL_CONFIG (eval helpers — HTTP server pattern, eval provider factory, evaluation runner)
@@ -770,7 +748,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Call self-test runner without Promptfoo output file present → assert timeout path returns structured result without crash
 - Provide test case with assertion that should fail → assert result marks that test case as failed with `gradingResult.reason`
 - Multiple test cases → assert all are executed and results array has one entry per test case
----
 ## External References
 - Langfuse documentation: https://langfuse.com/docs
 - Langfuse self-hosted deployment: https://langfuse.com/docs/deployment/self-host
@@ -778,8 +755,6 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Langfuse custom scores: https://langfuse.com/docs/scores/custom
 - Promptfoo documentation: https://promptfoo.dev/docs
 - Promptfoo custom providers: https://promptfoo.dev/docs/providers/custom-api
----
-
 
 ## Test Specifications
 

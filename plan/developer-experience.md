@@ -4,8 +4,6 @@
 >
 > **Tasks**: DEVELOPER_ENTRY_EXPERIENCE, PROGRESSIVE_API_EXPERIENCE, ERROR_EXPERIENCE_GOVERNANCE, LOCAL_EXPERIENCE_ENABLEMENT, STUDIO_EXPERIENCE, TESTING_EXPERIENCE, TEMPLATE_EXPERIENCE, AI_ASSISTANT_EXPERIENCE, TYPESCRIPT_PERFORMANCE_GOVERNANCE, OBSERVABILITY_EXPERIENCE, TOOL_CREATION_EXPERIENCE
 
----
-
 ## Strategic Context
 - Developer Experience is a first-order adoption risk, not a documentation afterthought.
 - Onboarding quality directly determines community trust, paid adoption velocity, and long-term ecosystem depth.

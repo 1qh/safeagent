@@ -2,10 +2,6 @@
 
 > **safeagent** is a multi-tenant AI agent platform built for 10 million users. Every piece of state lives outside the API server. The server itself is stateless, horizontally scalable, and replaceable at any time without data loss.
 
----
-
----
-
 ## System Component Boundaries
 
 The system is organized into two independently managed codebases that are deployed together: one for reusable agent capabilities and one for HTTP serving.
@@ -36,8 +32,6 @@ graph LR
     REACT_HOOKS_PKG --> UI_WEB_PKG
     REACT_HOOKS_PKG --> UI_NATIVE_PKG
 ```
-
----
 
 ## Infrastructure Topology
 
@@ -105,8 +99,6 @@ graph TB
     LANGFUSE_WORKER --> LANGFUSE_REDIS
     LANGFUSE_WORKER --> OBJECT_STORAGE
 ```
-
----
 
 ## Storage Architecture
 
@@ -177,8 +169,6 @@ graph LR
 
 **Valkey** handles everything that needs sub-millisecond latency and atomic operations. Budget counters use `INCR` for lock-free increment. Rate limiting uses sorted sets with sliding windows. The embedding router caches topic embeddings so intent classification doesn't re-embed on every request. FileRegistry caches temporal and ordinal file references (e.g., "the file I uploaded yesterday") with Postgres as the authoritative source of truth. Location enrichment caches geocoding and optional image lookups so repeated place mentions do not re-hit external providers.
 
----
-
 ## Docker Compose Service Map
 
 Services are grouped into runtime profiles. The default profile starts the recommended local development stack. Only Postgres is strictly required to boot — all other services degrade gracefully when absent (see [Infrastructure](./infrastructure.md) for the degradation model). Optional profiles add observability and background job infrastructure.
@@ -238,8 +228,6 @@ All model, provider, and environment constants are defined in the single source 
 **Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [Infrastructure](./infrastructure.md) for the complete service list.
 
 **Langfuse profile** adds six services for full agent observability. Langfuse Web and Worker share the Postgres server (using a separate `langfuse` database) and the MinIO server (using a separate `langfuse-media` bucket). ClickHouse stores trace event data. A dedicated Redis instance (on port 6380 to avoid collision with Valkey on 6379) handles Langfuse's internal queue.
-
----
 
 ## Network Topology
 
@@ -309,8 +297,6 @@ graph TB
 | 8123 | ClickHouse | Internal | HTTP |
 | 6380 | Redis (Langfuse) | Internal | RESP |
 
----
-
 ## Data Flow: Chat Request
 
 A typical chat message travels through several layers before the agent responds. SSE keeps the connection open for streaming tokens.
@@ -356,8 +342,6 @@ sequenceDiagram
 ```
 
 The critical path (rate check → budget check → memory load → LLM stream) is kept as short as possible. Memory persistence and usage accounting happen after the stream completes so they don't add latency to the user-facing response.
-
----
 
 ## Data Flow: File Upload and Processing
 
@@ -428,8 +412,6 @@ sequenceDiagram
 
 The synchronous path (upload → S3 → metadata record) completes in under a second. The enrichment pipeline (conversion → splitting → embedding → indexing) runs in the background and can take seconds to minutes depending on file size. The client polls the file status endpoint when processing completes.
 
----
-
 ## Horizontal Scaling Model
 
 The API server is stateless. Every instance connects to the same external services. A standard round-robin load balancer distributes traffic without sticky sessions.
@@ -485,8 +467,6 @@ graph TB
 
 **Trigger.dev workers** scale independently of API servers. More workers means more parallel background jobs without affecting API latency.
 
----
-
 ## Connection Management
 
 All database clients share a single Postgres server with a hard limit of 200 connections. This budget must be divided carefully across all consumers.
@@ -532,8 +512,6 @@ The total per-instance connection count must stay low enough that `N instances �
 
 **MinIO** connections are stateless HTTP requests via the Bun S3-compatible client. No persistent connection pool needed — each request opens and closes independently.
 
----
-
 ## Storage Decision Table
 
 | Concern | Storage | Reason |
@@ -550,8 +528,6 @@ The total per-instance connection count must stay low enough that `N instances �
 | FileRegistry cache | Valkey (+ Postgres source of truth) | Fast temporal/ordinal file reference resolution |
 | Observability traces | Langfuse (ClickHouse + Postgres + Redis) | Full agent tracing with structured span data |
 
----
-
 ## External References
 
 - [OpenAI Agents SDK documentation](https://openai.github.io/openai-agents-js/)
@@ -564,8 +540,6 @@ The total per-instance connection count must stay low enough that `N instances �
 - [MinIO documentation](https://min.io/docs)
 - [Drizzle ORM documentation](https://orm.drizzle.team/docs)
 - [Bun documentation](https://bun.sh/docs)
-
----
 
 ## Test Specifications
 

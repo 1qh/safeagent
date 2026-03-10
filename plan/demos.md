@@ -4,8 +4,6 @@
 >
 > **Tasks**: DEMO_WEB (Next.js Demo), DEMO_MOBILE (Expo Demo)
 
----
-
 ## Architecture Overview
 
 The demo applications are intentionally thin shells around the safeagent frontend SDK.

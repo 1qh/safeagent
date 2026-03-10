@@ -2,16 +2,12 @@
 
 This playbook operationalizes batch execution for implementation teams. It does not replace scheduling truth; [Execution Plan](./execution.md) remains authoritative for ordering, dependencies, and routing.
 
----
-
 ## How to Use
 
 1. Open [Execution Plan](./execution.md) and identify the active batch.
 2. Confirm dependencies are complete for all tasks planned in the batch.
 3. Use this playbook for batch-level readiness, coordination rhythm, and closeout evidence.
 4. Use [Implementation Workflow](./implementation-workflow.md) and [Handoff Packet Template](./handoff-packet-template.md) for task-level delivery evidence.
-
----
 
 ## Batch Execution Rhythm
 
@@ -39,8 +35,6 @@ This playbook operationalizes batch execution for implementation teams. It does 
 - Record unresolved risks and deferred follow-ups.
 - Release next batch only when batch exit checks are complete.
 
----
-
 ## Batch Readiness Checklist
 
 - Previous batch completed and accepted.
@@ -49,8 +43,6 @@ This playbook operationalizes batch execution for implementation teams. It does 
 - Task-level handoff evidence structure agreed.
 - Constraints and quality gates reviewed for relevant task scopes.
 
----
-
 ## Batch Exit Checklist
 
 - All batch tasks meet acceptance criteria and QA scenarios.
@@ -58,8 +50,6 @@ This playbook operationalizes batch execution for implementation teams. It does 
 - Required quality gates are complete for batch scope.
 - Handoff packets complete for all finished tasks.
 - Dependency matrix has no unresolved blocker for next batch.
-
----
 
 ## Batch-by-Batch Delivery Guide
 
@@ -82,8 +72,6 @@ This playbook operationalizes batch execution for implementation teams. It does 
 | `FRONTEND_DEMOS_BATCH` | Demo delivery and incident/doc experience readiness | `E2E_DEPLOY_BATCH` complete | Demo and operational runbook readiness accepted |
 | `FINAL_AUDIT_BATCH` | Final audits and governance closure | `FRONTEND_DEMOS_BATCH` complete | Final audit evidence complete |
 
----
-
 ## Team Split Guidance
 
 - Foundation team: scaffolding, contracts, configuration baseline.
@@ -93,13 +81,9 @@ This playbook operationalizes batch execution for implementation teams. It does 
 
 Cross-team coordination is required for tasks with shared context files in routing index entries.
 
----
-
 ## Handoff Contract
 
 Every completed task in a batch should provide a completed packet from [Handoff Packet Template](./handoff-packet-template.md). Batch closeout requires all packets for the active batch.
-
----
 
 ## Related Documents
 

@@ -3,12 +3,9 @@
 >
 > This document unifies prior intent and query pipeline plans into one coherent flow. Humanlike signals are first-class behavior within normal pipeline stages.
 
----
----
 ## Why This Pipeline Matters
 The system serves multiple domains (support, product info, policy, and more). Without intent-aware routing, every query fans out everywhere, increasing latency and cost while reducing quality. This pipeline classifies intent with memory context, rewrites only when needed, routes sources by priority, merges evidence with weighting, and assembles grounded responses with recovery-aware conversation behavior.
 
----
 ## Unified Architecture Overview
 ```mermaid
 graph TB
@@ -41,7 +38,6 @@ graph TB
     AGREEMENT -->|No| CANCEL_REFETCH --> ORCHESTRATOR
 ```
 
----
 ## Phase 0: Input Validation and Early Language Gate
 Fast language detection runs first for clear allow/block paths. Ambiguous or mixed-language content proceeds to intent classification. Intended output language is validated in the same structured intent call (piggyback), avoiding extra model latency.
 ```mermaid
@@ -59,7 +55,6 @@ flowchart LR
     CHECK -->|FAIL| BLOCK[Block]
 ```
 
----
 ## Phase 1: Non-Actionable Detection
 Before embedding or LLM calls, a conservative pre-filter short-circuits only fully non-actionable turns.
 
@@ -87,7 +82,6 @@ flowchart TB
     GIBBERISH_CHECK -->|No| FULL_PIPELINE
 ```
 
----
 ## Phase 2: Context Assembly
 Intent routing consumes three-layer context:
 - Thread short-term (last turns + rolling summary).
@@ -141,7 +135,6 @@ flowchart TB
     ASSEMBLED_CONTEXT --> INTENT_STAGE
 ```
 
----
 ## Phase 3: Two-Stage Intent Classification with Integrated Signals
 Two-stage model, one coherent flow:
 - Fast embedding router provides semantic hint and confidence.
@@ -260,7 +253,6 @@ flowchart TB
     DEESCALATE --> ORCH
 ```
 
----
 ## Intent Configuration (Server-Defined)
 The server defines all intents and topics; library includes no built-in business intents.
 ```mermaid
@@ -307,7 +299,6 @@ graph TD
 - Per-query classification cost is one embedding call plus one structured LLM call.
 - Intent configuration update triggers full re-embedding.
 
----
 ## Embedding Router Cache Strategy
 ```mermaid
 flowchart TB
@@ -329,7 +320,6 @@ flowchart TB
 ```
 Performance is dominated by embedding latency; vector fetch and cosine scoring are minor.
 
----
 ## Fallback and Ambiguity Handling
 No-match fallback is fixed to clarification. Low-confidence ambiguous cases trigger proactive clarification rather than forced assumptions.
 ```mermaid
@@ -347,7 +337,6 @@ flowchart TB
     CHECK -->|Multiple intents| SPLIT
 ```
 
----
 ## Multi-Intent and Dependent Multi-Intent
 Classifier outputs detected intent count and decomposition for multi-intent turns.
 ```mermaid
@@ -401,11 +390,9 @@ LLM emits attribute-negation entries for property-level exclusion (for example, 
 ### Query Replay Detection
 LLM emits a query-replay structure with parameter substitutions for replay turns (for example, same search but different location). Detection uses thread short-term context to recover the referenced prior query.
 
----
 ## Language Validation Piggyback
 Intended output language, translation-intent signal, and translation target language are returned by intent classification. Post-intent policy checks supported output language and resolves translation edge cases correctly.
 
----
 ## Temporal Expression Resolution
 Temporal phrases are resolved in intent classification to concrete ranges using user timezone from request context; UTC is fallback.
 
@@ -443,7 +430,6 @@ flowchart TB
     SEMANTIC --> RESULT
 ```
 
----
 ## Phase 4: Unified Rewrite + Source Routing Flow
 Two-stage rewrite model as one flow:
 - LLM_INTENT: trigger detection and conversation-aware base rewrite.
@@ -491,7 +477,6 @@ flowchart TB
     COLLECT --> WEIGHT --> RANKED --> CITATIONS --> EVIDENCE
 ```
 
----
 ## Conditional Rewriting and the 7 Triggers
 Rewrite is conditional; no trigger means pass-through.
 ```mermaid
@@ -542,7 +527,6 @@ When replay is detected, rewriter retrieves originating query, applies parameter
 ### Critical Guardrail
 All original entities (names, codes, dates, identifiers) must appear verbatim in rewritten query. If not, rewrite is discarded.
 
----
 ## Source-Specific Rewrite Strategies
 ```mermaid
 flowchart LR
@@ -579,7 +563,6 @@ flowchart TB
     TOPIC_OVERRIDE -->|No override| LIB_DEFAULT --> APPLY
 ```
 
----
 ## Source Priority Execution
 ### Exclusion Constraints
 Dependent-intent constraints (entity exclusions) are applied in merge filtering.
@@ -656,7 +639,6 @@ Fan-out layer does not hide errors or auto-fallback. Source errors propagate to 
 
 Suspicious empties are logged and reported to orchestrator.
 
----
 ## Result Merging with Priority Weighting
 ```mermaid
 flowchart TB
@@ -678,7 +660,6 @@ flowchart TB
 ```
 Priority is a scaling factor, not an absolute gate.
 
----
 ## RAGFlow Integration
 RAGFlow is used as a read-only retrieval engine. The system does not write to it and does not use its generation endpoint.
 
@@ -774,7 +755,6 @@ flowchart TB
     REQUEST --> CHUNKS["chunks"] --> MAP["Map to citations"]
 ```
 
----
 ## Library vs Server Responsibilities
 | Responsibility | Library | Server |
 |----------------|---------|--------|
@@ -789,7 +769,6 @@ flowchart TB
 | Empty result defaults | Provides | Overrides per source/topic |
 | Typed pipeline interfaces | Provides | Implements domain behavior |
 
----
 ## Cross-References
 | Component | Interaction |
 |-----------|------------|
@@ -800,7 +779,6 @@ flowchart TB
 | Retrieval | [Retrieval & Evidence](./retrieval.md) |
 | Infrastructure | [Infrastructure](./infrastructure.md) |
 
----
 ## Task Specifications
 
 ### Task EMBED_ROUTER: Embedding Router
@@ -961,8 +939,6 @@ flowchart TB
 - All strategies preserve exact identifiers.
 - Empty query returns typed error.
 
----
-
 ### Task ATTRIBUTE_NEGATION: Attribute Negation Detection and Filtering
 
 **Task Name**
@@ -1009,8 +985,6 @@ flowchart TB
 - Apply negations before retrieval execution, not only during final synthesis.
 - Avoid over-broad negation expansion that can remove valid results.
 
----
-
 ### Task CLARIFICATION_MODEL: Clarification Patience and Ambiguity Policy
 
 **Task Name**
@@ -1056,8 +1030,6 @@ flowchart TB
 - Keep clarification prompts short to minimize user friction.
 - Prioritize progress guarantees over perfect disambiguation after patience is exhausted.
 - Store policy state in thread context so behavior is consistent across turns.
-
----
 
 ### Task CONVERSATION_INTELLIGENCE: Conversation Analytics and Trend Signals
 
@@ -1106,8 +1078,6 @@ flowchart TB
 - Favor stable metric definitions over frequent formula churn.
 - Version metric schemas carefully when introducing new dimensions.
 
----
-
 ### Task FRUSTRATION_SIGNAL: Frustration Detection and Adaptive Response Behavior
 
 **Task Name**
@@ -1153,8 +1123,6 @@ flowchart TB
 - Use trend-based scoring to avoid overreacting to single-turn noise.
 - Keep adaptation focused on tone and structure, not factual policy changes.
 - Make thresholds configurable for domain-specific calibration.
-
----
 
 ### Task NON_ACTIONABLE_DETECT: Non-Actionable Input Detection
 
@@ -1202,8 +1170,6 @@ flowchart TB
 - Separate subtype detection from response wording so behavior is reusable.
 - Log short-circuit reasons for ongoing threshold tuning.
 
----
-
 ### Task QUERY_REPLAY: Query Replay and Rephrase Detection
 
 **Task Name**
@@ -1250,14 +1216,11 @@ flowchart TB
 - Keep replay reconstruction transparent through structured metadata.
 - Limit origin search scope to recent relevant history for performance.
 
----
 ## External References
 - AI SDK structured generation documentation
 - AI SDK tools and agents documentation
 - OpenAI Agents handoff guidance
 - RAGFlow HTTP API reference
-
----
 
 ## Test Specifications
 

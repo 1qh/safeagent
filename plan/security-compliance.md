@@ -4,8 +4,6 @@
 >
 > **Tasks**: THREAT_GOVERNANCE (Unified Threat Governance), COMPLIANCE_ENABLEMENT (Regulatory Operations), INCIDENT_COMMAND (Security Incident Operations)
 
----
-
 ## Strategic Context
 - `safeagent` already includes strong technical controls across guardrails, authentication, observability, infrastructure, monitoring, and extension boundaries.
 - Enterprise adoption requires one governance layer that maps those controls to measurable risk ownership, audit evidence, and legal duties.

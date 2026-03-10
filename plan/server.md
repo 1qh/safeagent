@@ -2,8 +2,6 @@
 > **Scope**: The server is intentionally thin. It is mostly configuration: prompts, intent definitions, guardrail rules, and MCP server configuration. Core execution logic lives in the safeagent library. The server wires those pieces together and exposes them over HTTP with Elysia.
 >
 > **Tasks**: SCAFFOLD_SERVER (Scaffolding), SERVER_AGENT_CFG (Agent Config), SERVER_ROUTES (Routes), SERVER_MCP (MCP Definitions), SERVER_GUARDRAILS (Guardrail Rules), UPLOAD_ENDPOINT (Upload Endpoint), FEEDBACK_ENDPOINT (Feedback Endpoint), FILE_CRUD (File CRUD), JWT_AUTH (JWT Auth), ADMIN_API (Admin API)
----
----
 ## Thin Server Philosophy
 The server has one job: accept HTTP requests, authenticate them, and hand off to safeagent with the correct configuration. It does not implement agent reasoning, guardrail execution internals, streaming internals, memory internals, or RAG internals. Those concerns remain in the library. This keeps the server stateless and horizontally scalable behind load balancers.
 What the server owns:
@@ -24,7 +22,6 @@ Module ownership alignment:
 - health checking is produced by MCP_HEALTH
 - budget APIs are produced by COST_TRACKING
 - all are re-exported via BARREL_EXPORTS
----
 ## Server Startup Sequence
 Before accepting traffic, the server runs validation and dependency initialization. Startup fails fast when critical conditions are missing, rather than serving partial unsafe behavior. Connection pools are initialized with explicit limits so scale-out replicas can share database capacity predictably.
 ```mermaid
@@ -63,7 +60,6 @@ Key rules:
 - Error map completeness is startup-fatal and validated against all typed error codes.
 - MCP startup connection failures are non-fatal; tools become unavailable and health reflects status.
 - Valkey failures are non-fatal; cache becomes in-memory fallback, rate limiting may degrade, and budget enforcement fails open.
----
 ## Request Lifecycle
 All requests move through an ordered middleware chain before route handling. Ordering matters; CORS must run first so browser preflight does not require JWT authentication.
 ```mermaid
@@ -92,7 +88,6 @@ Ordering rationale:
 - Rate limit before budget so budget checks are not spent on already-rejected traffic.
 - Budget check late because it is the most expensive middleware check.
 - Middleware remains stateless per request so any healthy instance can serve any request without sticky sessions.
----
 ## Route Map
 ```mermaid
 graph LR
@@ -131,7 +126,6 @@ Production enforcement:
 - If production mode is enabled and JWT secret is missing, startup hard-fails.
 - This differs from graceful degradation rules used for non-security dependencies.
 - Authentication never fails open in production.
----
 ## JWT Auth
 Authentication middleware is created through auth middleware factory in the server auth module. It composes Elysia lifecycle hooks and can be registered app-wide or per route group.
 Token verification uses symmetric signing with HS256 and shared secret configuration. Verification includes signature and expiry, with optional issuer and audience constraints when configured.
@@ -170,7 +164,6 @@ Auth outcome table:
 | Expired token | 401 | token_expired |
 | Valid token with wrong role | 403 | insufficient_role |
 | Valid token with correct role | pass | none |
----
 ## Middleware Stack
 ### CORS
 CORS uses explicit allowed origin, method, and header controls. Origins are environment-driven from comma-separated configuration. Development may allow wildcard behavior; production should allow only known client origins.
@@ -197,7 +190,6 @@ Budget enforcement model:
 - After completion, reconcile estimate with actual usage by adjusting the same counters.
 - Daily counters expire at UTC day boundary.
 - Monthly counters expire at month boundary.
----
 ## Agent Configuration
 The server defines all agent configuration content, while safeagent supplies factories and runtime behavior.
 ### Agent Definitions
@@ -226,7 +218,6 @@ If image search provider is omitted, location events still include coordinates a
 Model constants are loaded from shared configuration surfaces, not hardcoded in server definitions.
 ### Processor Wiring
 Guardrail arrays are passed into agent factories and library internals wire pre and post processing pipelines. Server code does not manipulate processor internals directly.
----
 ## Guardrail Rules
 The server defines detection logic; the library provides interfaces and helper factories.
 ### Structure
@@ -256,7 +247,6 @@ Both language and hate-speech guardrails are opt-in and are only attached when c
 | p2 | pass through | pass through |
 | p1 | log and flag, pass through | log and flag, pass through |
 | p0 | emit tripwire and block | suppress chunk and inject fallback |
----
 ## MCP Definitions
 The server defines which MCP servers are available. The library manages connection lifecycle and tool registration.
 Each MCP configuration includes:
@@ -270,14 +260,12 @@ Runtime behavior:
 - MCP failures during calls are non-fatal to server process.
 - Tool errors are surfaced to agent runtime.
 - Retry behavior is owned by MCP server side, not by this server layer.
----
 ## Endpoints
 ### Memory Control Endpoints
 The server exposes two JWT-protected memory control endpoints as thin wrappers:
 - Memory inspect endpoint calls memoryInspect for authenticated user and returns structured memory views.
 - Memory delete endpoint calls memoryDelete with user-scoped query and returns candidate matches for confirmation before deletion execution.
 User identity is always derived from token context; clients cannot target other users.
----
 ### Chat Streaming Endpoint
 SSE endpoint accepts chat input and streams typed events.
 Request body fields:
@@ -308,7 +296,6 @@ Primary failure mapping:
 - Unknown agent id maps to not found.
 - Rate limit and budget rejections map to too many requests.
 - Mid-stream failure emits typed error event and closes stream.
----
 ### File Upload Endpoint
 Multipart upload endpoint enforces upload constraints and delegates processing.
 Request shape:
@@ -325,7 +312,6 @@ Flow:
 7. Background enrichment stage is enqueued after blocking stage.
 Validation failures map to typed errors for unsupported type, oversize payload, quota exceeded, and malformed multipart body.
 Success response is created status with file record payload.
----
 ### File List Endpoint
 Returns authenticated user files with pagination and optional status filter.
 Query fields:
@@ -333,30 +319,25 @@ Query fields:
 - cursor for pagination
 - limit with bounded maximum
 Delegates to listFiles and returns files plus next cursor.
----
 ### File Detail Endpoint
 Returns full metadata for one user-scoped file.
 Delegates to getFile with file id and authenticated user identity.
 Returns success for owned records and not found for missing or non-owned records.
----
 ### File Delete Endpoint
 Deletes file and associated derived artifacts through user-scoped delete operation.
 Delegates to deleteFile.
 Deletion semantics include object removal, soft delete marker on file record, index removal, and embedding cleanup.
 Returns no-content on success and not found for missing or non-owned records.
----
 ### File Status Endpoint
 Lightweight polling endpoint for processing progression.
 Delegates to getFileStatus.
 Response includes file id, status, optional progress fields while active, and optional error details when failed.
----
 ### Page Image Redirect Endpoint
 Returns redirect to signed object URL for extracted page images.
 Path fields include file id, page number using one-based indexing, and image index using zero-based indexing.
 Delegates to getPageImageUrl and responds with redirect.
 Signed URL time-to-live is seven days.
 Returns not found when target image does not exist.
----
 ### Feedback Endpoint
 Accepts user feedback score associated with a trace.
 Request fields:
@@ -367,12 +348,10 @@ Before submission, ownership is validated in persistent trace ownership mapping 
 Then submitFeedback is called and tracing score is recorded when tracing integration is configured.
 Success response returns ok true, with traced false when tracing backend is not configured.
 Returns not found when trace does not exist or is not owned by requesting user.
----
 ### Admin Budget Detail Endpoint
 Admin-only endpoint returning one user budget configuration and current spend.
 Delegates to getUserBudget.
 Returns not found when user does not exist.
----
 ### Admin Budget Update Endpoint
 Admin-only endpoint setting or updating user token limits.
 Request fields:
@@ -381,7 +360,6 @@ Request fields:
 - optional immediate reset flag for current counters
 Delegates to setUserBudget, updates persisted budget, and invalidates cached budget entry.
 Returns updated budget record.
----
 ### Admin Budget List Endpoint
 Admin-only endpoint listing budget records with pagination and optional over-budget filter.
 Query fields:
@@ -389,7 +367,6 @@ Query fields:
 - limit with bounded maximum
 - optional overBudget filter
 Delegates to listUserBudgets and returns records plus next cursor.
----
 ## Input Validation
 Validation is enforced at server boundaries so route handlers stay thin and downstream runtime remains protected.
 Chat validation:
@@ -409,7 +386,6 @@ Admin validation:
 - admin role is required.
 - request body and query schemas enforce allowed ranges and shape.
 OpenAPI and runtime validation use the same Zod v4 schemas so validation and documentation remain aligned.
----
 ## Error Message Mapping
 The library emits typed error codes only. The server maps those codes to user-facing messages.
 Startup validation imports all typed codes and verifies complete map coverage. Any missing mapping causes startup failure.
@@ -432,7 +408,6 @@ Representative coverage includes:
 | guardrail_critical | Conversation cannot continue safely. |
 | upload_malformed | Upload payload malformed. |
 | trace_not_found | Feedback trace not found. |
----
 ## Graceful Shutdown
 On termination signals, the server drains in-flight work and releases dependencies in controlled order.
 ```mermaid
@@ -465,7 +440,6 @@ After shutdown flag is set:
 - New requests receive service unavailable.
 - Retry-after header indicates drain window.
 - Load balancers should stop routing new traffic to instance.
----
 ## Health Endpoint
 Health, OpenAPI JSON, and OpenAPI UI endpoints are unauthenticated.
 Health response includes:
@@ -486,7 +460,6 @@ Probe behavior:
 HTTP status behavior:
 - 200 for ok and degraded
 - 503 for down
----
 ## Cross-References
 | Document | Relationship |
 |----------|-------------|
@@ -498,9 +471,7 @@ HTTP status behavior:
 | **Infrastructure** ([Infrastructure](./infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
 | **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes server SSE endpoints through the React hooks module; verbosity parameter drives frontend trace visualization. |
 | **Demos** ([Demos](./demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
----
 ## Task Specifications
----
 ### Task SCAFFOLD_SERVER: Server Scaffolding
 What to do:
 Set up the HTTP server project, wire safeagent dependency integration for development and CI modes, implement server entrypoint with lifecycle stack registration, start listening on default port behavior, expose basic liveness health endpoint, and include container build support.
@@ -518,7 +489,6 @@ QA scenarios:
 - Call unknown route and verify not found.
 - Build and run container and verify health externally.
 - Terminate process and verify clean non-hanging shutdown.
----
 ### Task SERVER_AGENT_CFG: Agent Configuration
 What to do:
 Define all server-exposed agents with prompts, model constants, guardrail arrays, MCP configuration, CTA catalog wiring, and optional location tool providers. Export registry for route resolution by agent id.
@@ -538,7 +508,6 @@ QA scenarios:
 - Verify guardrail arrays are populated.
 - Verify model config aligns with shared config definitions.
 - Verify CTA entries include required fields.
----
 ### Task SERVER_ROUTES: Routes
 What to do:
 Build all route handlers described in this document with thin handler design: validate request, delegate to library function, map response. Organize route groups with appropriate middleware and apply role authorization guard to admin routes.
@@ -567,7 +536,6 @@ QA scenarios:
 - Validate verbosity `standard` produces no `trace-step` events.
 - Validate verbosity `full` includes `trace-step` events interleaved with user-facing events.
 - Validate invalid verbosity value returns bad request.
----
 ### Task SERVER_MCP: MCP Definitions
 What to do:
 Define MCPServerConfig array for required MCP servers, including transport, connection details, and optional tool allowlists. Export array for agent configuration wiring.
@@ -584,7 +552,6 @@ QA scenarios:
 - Verify required fields per entry.
 - Start with MCP unavailable and confirm warning plus continued startup.
 - Verify health endpoint reports per-server MCP status.
----
 ### Task SERVER_GUARDRAILS: Guardrail Rules
 What to do:
 Define inputGuardrails and outputGuardrails arrays using guardrail factories and define ConceptRegistry vocabulary. Export all for agent configuration wiring.
@@ -604,7 +571,6 @@ QA scenarios:
 - Benign output chunk yields pass behavior.
 - Blocked output chunk yields p0 behavior.
 - Concept registry covers all referenced concept identifiers.
----
 ### Task UPLOAD_ENDPOINT: Upload Endpoint
 What to do:
 Implement upload route handler that parses multipart payload, extracts file and metadata, delegates to handleUpload, and maps validation errors through error message map.
@@ -626,7 +592,6 @@ QA scenarios:
 - Upload missing file field and verify validation error.
 - Upload malformed multipart and verify validation error.
 - Simulate quota exceed and verify quota response.
----
 ### Task FEEDBACK_ENDPOINT: Feedback Endpoint
 What to do:
 Implement feedback route handler with request validation, trace ownership verification, feedback submission delegation, and response mapping.
@@ -644,7 +609,6 @@ QA scenarios:
 - Submit invalid score and verify validation failure.
 - Submit unknown trace and verify not found.
 - Submit foreign-user trace and verify not found.
----
 ### Task FILE_CRUD: File CRUD
 What to do:
 Implement file list, detail, delete, status, and page image redirect handlers using library file APIs with strict user scoping.
@@ -666,7 +630,6 @@ QA scenarios:
 - Poll uploading file returns uploading status.
 - Request valid page image returns redirect.
 - Request non-existent page image returns not found.
----
 ### Task JWT_AUTH: JWT Auth
 What to do:
 Implement auth middleware factory and role authorization guard with JWT verification, user and role context resolution, and route group registration on protected routes.
@@ -688,7 +651,6 @@ QA scenarios:
 - Non-admin token on admin route returns insufficient_role.
 - Admin token reaches admin handler.
 - Downstream handler observes resolved userId and role.
----
 ### Task ADMIN_API: Admin API
 What to do:
 Implement admin budget detail, update, and list endpoints with role authorization guard enforcement and budget API delegation.
@@ -709,7 +671,6 @@ QA scenarios:
 - Call update with resetNow true and verify spend reset.
 - Call list with over-budget filter and verify filtered results.
 - Call list with pagination and verify cursor behavior.
----
 ## OpenAPI Documentation
 The server defines API contracts with OpenAPI integration and Zod v4 schemas for both validation and documentation generation.
 Design goals:

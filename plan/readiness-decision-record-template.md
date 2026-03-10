@@ -2,8 +2,6 @@
 
 Use this template for project-level release and audit readiness decisions. It records what was approved, why it was approved, and which authoritative gate evidence supports the decision.
 
----
-
 ## Decision Metadata
 
 - Decision ID:
@@ -13,15 +11,11 @@ Use this template for project-level release and audit readiness decisions. It re
 - Decision Owner:
 - Reviewers:
 
----
-
 ## Scope and Baseline
 
 - Covered task/batch scope:
 - Current readiness scoreboard snapshot reference:
 - Active risks at decision time:
-
----
 
 ## Authoritative Gate Inputs
 
@@ -30,16 +24,12 @@ Use this template for project-level release and audit readiness decisions. It re
 - Evidence artifacts reviewed:
 - Unresolved gate dependencies:
 
----
-
 ## Decision Outcome
 
 - Outcome: `APPROVED`, `CONDITIONALLY_APPROVED`, `REJECTED`
 - Outcome rationale:
 - Conditions (if conditional):
 - Required follow-up actions:
-
----
 
 ## Risk and Exception Log
 
@@ -48,16 +38,12 @@ Use this template for project-level release and audit readiness decisions. It re
 - Performance/cost risk notes:
 - Compliance/audit risk notes:
 
----
-
 ## Evidence References
 
 - Quality gate evidence references:
 - Test and verification evidence references:
 - Operational readiness evidence references:
 - Audit evidence references:
-
----
 
 ## Sign-Off
 

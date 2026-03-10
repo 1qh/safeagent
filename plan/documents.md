@@ -4,10 +4,6 @@
 >
 > **Why this document exists**: Document processing is the most operationally complex part of safeagent. A large PDF (up to the configured upload limit) touches six distinct systems before a user can query it. This document defines every step, every routing decision, every table column, and every failure mode so the implementation has no ambiguity.
 
----
-
----
-
 ## Upload Pipeline Overview
 
 The upload pipeline runs in two phases. The synchronous phase (client through S3 storage) completes in under a second and returns a `fileId` to the client. The processing phase runs on the server and may take seconds to minutes depending on file size and page count. All PostgreSQL operations in this flow use Drizzle's type-safe query builder; raw SQL query strings are not part of the design.
@@ -105,8 +101,6 @@ flowchart TD
 
 **Not supported**: `.doc` (legacy binary Word format). The magic bytes for `.doc` are distinct from `.docx`. If detected, the server returns a clear error asking the user to save as `.docx` first.
 
----
-
 ## Document Routing by Type and Size
 
 Every uploaded file gets assigned a `mode` immediately after validation. The mode determines how the file is processed and how it's used at query time.
@@ -155,8 +149,6 @@ flowchart TD
 
 The `direct` mode is intentionally simple. For small files, sending everything to the LLM is cheaper and more accurate than retrieval. The threshold of 6 pages for PDFs and 8K tokens for text is calibrated to stay within Gemini's context window while leaving room for the conversation history and system prompt.
 
----
-
 ## DOCX to PDF Conversion
 
 DOCX files must be converted to PDF before the PDF processing pipeline can run. The conversion uses LibreOffice headless, which runs as a separate Docker service.
@@ -193,8 +185,6 @@ LibreOffice headless is the most faithful DOCX renderer available outside of Mic
 The API server sends the DOCX file to the LibreOffice sidecar over the internal Docker network on its dedicated service port. The sidecar runs LibreOffice headless, converts the file to PDF, and returns the result. The 30-second timeout handles pathological documents without hanging the pipeline. For local development without Docker, developers can install LibreOffice on the host machine and the conversion module falls back to a direct subprocess call.
 
 **Temp file cleanup**: The temporary processing directory is cleaned after each conversion. LibreOffice writes intermediate output to the system temporary directory, which is ephemeral.
-
----
 
 ## Blocking Stage: Per-Page Summarization
 
@@ -290,8 +280,6 @@ For each page:
 
 After all pages complete, `file_uploads.status` is set to `'ready'`.
 
----
-
 ## Background Stage: Raw Text Enrichment
 
 The background stage runs after the file is already `ready`. It enriches the existing per-page `page_index` row by populating nullable `raw_text`, `raw_embedding`, and `raw_tsvector` columns for full-text and hybrid retrieval.
@@ -333,8 +321,6 @@ unpdf may extract more text than the embedding model can handle. The raw text is
 ### Dev Mode
 
 When `TRIGGER_DEV_API_URL` and `TRIGGER_DEV_API_KEY` are absent, the background stage runs in-process immediately after the blocking stage, without requiring a Trigger.dev deployment. This makes local development possible without the full Docker Compose stack. The adapter selection is handled by a queue adapter factory (see 15-Infrastructure).
-
----
 
 ## File Status State Machine
 
@@ -388,8 +374,6 @@ If the API process crashes or restarts while a file is in `summarizing` state, t
 
 This guarantees that no file remains permanently stranded in `summarizing` at 10M-user scale, even under rolling deployments or unexpected process termination. The recovery path uses the same queue adapter abstraction as the initial processing — Trigger.dev in production, in-process in development.
 
----
-
 ## Per-Page Streaming Architecture
 
 Each page flows through the blocking stage independently. Pages don't wait for each other. This is what makes very large PDFs process quickly in parallel rather than sequentially.
@@ -439,8 +423,6 @@ Pages that fail (Gemini error, network timeout) are retried up to 3 times with e
 ### Why Not Stream to the Client
 
 The blocking stage doesn't stream partial results to the client. The client polls the file status endpoint and sees `progress_current` increment. Streaming partial results would complicate the client significantly for minimal UX benefit — the user sees "Summarizing 15/50 pages" either way.
-
----
 
 ## Image Extraction Pipeline
 
@@ -517,8 +499,6 @@ Images that come from web search (Gemini's web grounding feature) are handled di
 
 Presigned URLs have a 7-day TTL. The page image redirect endpoint exists as a fallback for clients that don't have the presigned URL cached. It generates a fresh presigned URL and returns a redirect response. Clients that store the presigned URL from the `metadata` JSONB can skip the API call entirely.
 
----
-
 ## S3 Storage Layout
 
 All objects live in the `safeagent` bucket. The key structure encodes ownership (userId, threadId, fileId) so cleanup can target a specific thread without scanning the entire bucket.
@@ -564,8 +544,6 @@ Page numbers are 1-indexed. Image indices are 0-indexed (matching the image-desc
 The system uses an S3-compatible storage client for all S3 operations. This is a zero-dependency client built into the Bun runtime. The alternative (`@aws-sdk/client-s3`) adds approximately 15MB to the bundle. Since the server runs on Bun, the built-in client is always preferred.
 
 The S3-compatible storage client supports presigned URL generation, multipart upload, and all standard S3 operations. It works with any S3-compatible endpoint, including MinIO.
-
----
 
 ## page_index Table Design
 
@@ -615,8 +593,6 @@ At query time, the retrieval layer runs two searches in parallel:
 
 The results are merged with Reciprocal Rank Fusion. Semantic retrieval uses `summary_embedding`, while keyword retrieval uses `raw_tsvector` when available.
 
----
-
 ## File Metadata Tables
 
 ### file_uploads
@@ -657,8 +633,6 @@ Tracks per-user storage consumption.
 
 When a file is deleted, quota release uses a non-negative floor guard in the Drizzle-managed update expression. This prevents the `used_bytes` column from going negative due to race conditions or double-deletes while keeping mutation logic in typed query paths.
 
----
-
 ## Progress Tracking
 
 ```mermaid
@@ -696,8 +670,6 @@ The client polls the file status endpoint. The response includes:
 - A human-readable `message` field: `"Summarizing 15/50 pages"`
 
 Polling interval is left to the client. A 2-second interval is reasonable for most use cases. The endpoint is cheap: a single indexed Postgres read through Drizzle.
-
----
 
 ## Cleanup
 
@@ -745,8 +717,6 @@ The optional distributed lock prevents two concurrent cleanup calls for the same
 
 Files have an `expires_at` timestamp set at upload time. The Trigger.dev scheduled task runs daily, finds all expired files, and calls the file cleanup function for each. This handles the case where a user never explicitly deletes their files.
 
----
-
 ## Cross-References
 
 | Document | Relationship |
@@ -757,13 +727,9 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 | **Server Implementation** ([Server Implementation](./server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
 | **Infrastructure** ([Infrastructure](./infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
 
----
-
 ## Task Specifications
 
 > **SPIKE_RAG_DEPS** — canonical task specification is in [Foundation](./foundation.md). This document's pipeline tasks depend on its output.
-
----
 
 ### Task SPIKE_RAG_DEPS: RAG Dependency Validation Spike
 
@@ -811,8 +777,6 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - Keep dependency findings traceable to downstream task risk.
 - Capture both runtime compatibility and operational behavior, not only import success.
 
----
-
 ### Task DOC_PIPELINE: Document Processing Pipeline
 
 **What to do**: Build the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini structured output generation summarizes each page with a schema that includes summary text, image descriptions, and vector-chart detection. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when vector charts are detected and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.
@@ -836,8 +800,6 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - Gemini API error on page 50 retries 3 times, marks page as failed, continues with page 51
 - Progress endpoint shows accurate count during processing
 
----
-
 ### Task FILE_STORAGE: File Storage
 
 **What to do**: Build the S3 storage layer using an S3-compatible storage client. Build the key naming scheme for original files, per-page PDFs, and extracted images. Build presigned URL generation with 7-day TTL. Build the page image redirect endpoint that generates a fresh presigned URL and returns a redirect response. Build the thread cleanup capability that lists and batch-deletes all S3 objects under a thread prefix.
@@ -857,8 +819,6 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - Presigned URL is accessible without authentication
 - Run thread cleanup, verify all objects under the thread prefix are deleted
 - Run thread cleanup twice for the same thread, verify no error on second run (idempotent)
-
----
 
 ### Task UPLOAD_PIPELINE: Upload Pipeline
 
@@ -886,15 +846,9 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - Upload a TXT file with 5K tokens → mode set to `direct`
 - Upload a TXT file with 20K tokens → mode set to `rag`
 
----
-
 > **UPLOAD_ENDPOINT** — canonical task specification is in [Server Implementation](./server.md#task-upload_endpoint-upload-endpoint). The server route wires UPLOAD_PIPELINE to the HTTP layer.
 
----
-
 > **DOCKER_COMPOSE** — canonical task specification is in [Infrastructure](./infrastructure.md#task-docker_compose-docker-compose-infrastructure). That spec includes LibreOffice headless, MinIO bucket init, and all compose profiles.
-
----
 
 ## External References
 
@@ -903,8 +857,6 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - [JIMP documentation](https://jimp-dev.github.io/jimp)
 - [Drizzle ORM documentation](https://orm.drizzle.team/docs)
 - [Bun S3 documentation](https://bun.sh/docs/api/s3)
-
----
 
 ## Test Specifications
 

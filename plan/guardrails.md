@@ -4,10 +4,6 @@
 >
 > **Tasks**: INPUT_GUARD (Input Guardrails), OUTPUT_GUARD (Output Guardrails), GUARD_FACTORY (Guardrail Factories), LANG_GUARD (Language Guard), HATE_SPEECH_GUARD (Hate Speech Guard), GUARD_PIPELINE (Pipeline Orchestrator), ZERO_LEAK_GUARD (Zero-Leak Buffered Mode)
 
----
-
----
-
 ## Architecture Overview
 
 The guardrail system wraps every agent interaction with two enforcement layers: one that runs before the LLM sees the user's message, and one that runs on every chunk the LLM emits. Both layers share the same type system and the same guardrail function type, so detection logic is written once and deployed in either position.
@@ -72,8 +68,6 @@ flowchart TB
     PASS --> CLIENT
 ```
 
----
-
 ## Type System
 
 ### Core Types
@@ -97,7 +91,7 @@ Either `'development'` or `'production'`.
 ```mermaid
 flowchart TD
     VERDICT["GuardrailVerdict"]
-    
+
     VERDICT --> PRIORITY_BLOCK{"p0\nblock"}
     VERDICT --> PRIORITY_FLAG{"p1\nflag"}
     VERDICT --> PRIORITY_PASS{"p2\npass"}
@@ -110,9 +104,6 @@ flowchart TD
 
     PRIORITY_PASS --> PRIORITY_PASS_ACTION["Informational only\nconceptId = 'PASS'\nNo action taken"]
 
-    style PRIORITY_BLOCK fill:#ff4444,color:#fff
-    style PRIORITY_FLAG fill:#ff9900,color:#fff
-    style PRIORITY_PASS fill:#22aa44,color:#fff
 ```
 
 ### GuardMode Comparison
@@ -137,8 +128,6 @@ flowchart LR
 ```
 
 Development mode surfaces violations visibly so engineers can tune detection thresholds. Production mode hides all violation details from users and replaces blocked content with a server-defined fallback message.
-
----
 
 ## Input Guardrails (INPUT_GUARD)
 
@@ -233,8 +222,6 @@ flowchart TB
     TIER_COUNT -->|NONE_OR_ONE_NON_LLM| PASS
 ```
 
----
-
 ## Output Guardrails (OUTPUT_GUARD)
 
 Output guardrails run on the orchestrator's synthesis stream via the framework's output guardrail interface. They see every streaming chunk as it arrives from the LLM. In production they operate as a last-mile response security layer, preventing unsafe content leaks, feeding auditable `onFlag` events, and aligning with sensitive-data redaction in observability sinks.
@@ -313,8 +300,6 @@ stateDiagram-v2
 - System prompt leakage detection: Output guardrails check for leaked system-prompt content using fingerprint-based matching so paraphrased leakage is caught in addition to exact fragments.
 - Attention collapse detection: Output guardrails flag responses that over-index on a single retrieved chunk while ignoring the user query, since this pattern can indicate indirect injection success through retrieved content.
 
----
-
 ## Zero-Leak Buffered Mode (ZERO_LEAK_GUARD)
 
 Standard streaming output guardrails have a fundamental problem: by the time a violation is detected, some chunks may already have been sent to the client. In production, even a partial toxic response is unacceptable.
@@ -370,8 +355,6 @@ flowchart TB
 
 The buffer size (default 50 tokens) is configurable per pipeline. Larger buffers give guardrails more context before the first byte reaches the client, at the cost of higher initial latency. The buffer fill time is roughly `(buffer_tokens / tokens_per_second)` — at 50 tokens/s, a 50-token buffer adds ~1 second of initial latency.
 
----
-
 ## Guardrail Authoring Factories (GUARD_FACTORY)
 
 The library ships five factory functions. Servers use these to compose their detection logic. The five generic factories ship no built-in detection rules. Detection logic is either server-defined (via factories) or consumed from library-provided specialised guardrails (LANG_GUARD, HATE_SPEECH_GUARD) that wrap external detection libraries.
@@ -422,13 +405,13 @@ Combines multiple guardrail function type instances into one. The aggregation st
 flowchart TB
     subgraph COMPOSITE_GUARDRAIL["Composite guardrail factory with worst-wins aggregation"]
         INPUT_C["text input"]
-        
+
         subgraph INNER_GUARDRAILS["INNER_GUARDRAILS guardrails (parallel)"]
             INNER_REGEX_GUARDRAIL["Regex guardrail\n→ p2 PASS"]
             INNER_KEYWORD_GUARDRAIL["Keyword guardrail\n→ p1 flagged"]
             INNER_LLM_GUARDRAIL["LLM guardrail\n→ p2 PASS"]
         end
-        
+
         AGG_C["Worst-wins\np1 wins"]
         RESULT_C["Guardrail verdict\nseverity flagged at p1"]
     end
@@ -438,8 +421,6 @@ flowchart TB
 ```
 
 The composite factory is the primary composition tool. It always runs its constituent guardrails in parallel and aggregates their verdicts. Sequential layering (e.g., run regex first, then keyword matching, then an LLM classifier only if cheaper checks pass) is achieved inside a single custom guardrail function type implementation, not via the composite factory. A server might define a single content-policy guardrail function type implementation that internally runs staged checks. This layered approach keeps average latency low while maintaining thorough coverage.
-
----
 
 ## Language Guard (LANG_GUARD)
 
@@ -545,8 +526,6 @@ Dominance rule: trigger p0 only when unsupported language is dominant in the sli
 
 Language Guard runs only when the server explicitly enables LanguageGuardConfig. Without config, the pipeline behaves exactly as before.
 
----
-
 ## Hate Speech Guard (HATE_SPEECH_GUARD)
 
 Hate Speech Guard is an opt-in guardrail that blocks hate speech and profanity in both input and output. It is not active by default. The server must explicitly enable it.
@@ -606,8 +585,6 @@ flowchart TB
 
 Hate Speech Guard runs only when enabled is true in HateSpeechGuardConfig. Disabled mode always passes.
 
----
-
 ## Memory Deletion Guardrail
 
 When facts are deleted from SurrealDB via the memory deletion tool, the guardrail system ensures cached embeddings in Valkey that reference those facts are also purged. Without this, deleted facts could resurface through stale cache entries during the next recall query.
@@ -629,15 +606,13 @@ flowchart TB
     CACHE_PURGE["Purge matching\ncache entries"]
     AUDIT_LOG["Log purge\nfor audit trail"]
     CONFIRMATION["Confirmation\nto agent"]
-    
+
     MEMORY_DELETE --> SURREALDB_DELETE
     SURREALDB_DELETE --> VALKEY_QUERY
     VALKEY_QUERY --> CACHE_PURGE
     CACHE_PURGE --> AUDIT_LOG
     AUDIT_LOG --> CONFIRMATION
 ```
-
----
 
 ## Code Execution Sandboxing
 
@@ -708,8 +683,6 @@ flowchart TB
     RESULT_STREAM --> AUDIT_CAPTURE
 ```
 
----
-
 ## Multi-Guardrail Aggregation (Worst-Wins)
 
 When multiple guardrails run in parallel, their verdicts must be combined into a single decision. The worst-wins rule is simple and safe: the most severe verdict always wins.
@@ -739,8 +712,6 @@ flowchart TB
 
 The ordering of guardrails in the pipeline array matters only for tie-breaking when multiple p0s fire simultaneously. The server controls this ordering when constructing the pipeline config.
 
----
-
 ## Pipeline Orchestrator (GUARD_PIPELINE)
 
 The pipeline orchestrator wires all guardrails into the `@openai/agents` framework's guardrail system. It's the glue between the library's guardrail functions and the agent's framework guardrail arrays.
@@ -768,7 +739,7 @@ The pipeline-level setting overrides the agent-level setting. If neither is set,
 flowchart TB
     subgraph PIPELINE_ORCHESTRATOR["GuardrailPipelineOrchestrator"]
         CONFIG["GuardrailPipelineConfig"]
-        
+
         subgraph FRAMEWORK_INPUT_GUARDRAILS["Framework input guardrail interface array"]
             INPUT_EXECUTE_HOOK["execute(context, agent)"]
             INPUT_PARALLEL_RUN["Run input guardrails\nin parallel"]
@@ -776,7 +747,7 @@ flowchart TB
             INPUT_TRIPWIRE_RESULT["tripwireTriggered: true on p0"]
             INPUT_FLAG_RESULT["onFlag() on p1"]
         end
-        
+
         subgraph FRAMEWORK_OUTPUT_GUARDRAILS["Framework output guardrail interface array"]
             OUTPUT_EXECUTE_HOOK["execute(context, agent, output)"]
             OUTPUT_WINDOW_UPDATE["Update sliding window"]
@@ -838,8 +809,6 @@ sequenceDiagram
     end
 ```
 
----
-
 ## Integration with the Agent Architecture
 
 ### Where Guardrails Fit
@@ -860,12 +829,12 @@ flowchart TB
 
     subgraph ORCHESTRATOR_AGENT["Orchestrator Agent (Agents)"]
         ORCH_AGENT["Supervisor agent\nSpawns sub-agents"]
-        
+
         subgraph SUB_AGENTS["Sub-Agents (not individually guardrailed)"]
             SUB_AGENT_ONE["Sub-Agent 1"]
             SUB_AGENT_TWO["Sub-Agent 2"]
         end
-        
+
         SYNTH["Live Synthesis Stream"]
     end
 
@@ -900,8 +869,6 @@ Output guardrails hook into the same SSE stream that delivers tokens to the clie
 
 In development mode, the TripWire exception carries `conceptId`, `reason`, and fallback message fields (matching the tripwire event payload shape from the Streaming & Transport document). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
 
----
-
 ## Cross-References
 
 | Document | Relationship |
@@ -912,8 +879,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 | **Retrieval & Evidence** ([Retrieval & Evidence](./retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
 | **Streaming & Transport** ([Streaming & Transport](./transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
 | **Server** ([Server Implementation](./server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
-
----
 
 ## Task Specifications
 
@@ -1048,8 +1013,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Guardrail throws error → error propagated, stream terminates
 - 10 guardrails in parallel → all complete before aggregation
 
----
-
 ### Task OUTPUT_GUARD: Output Guardrails
 
 **What to do**: Build the output guardrail processor that maintains a sliding window buffer, runs all configured guardrail function type instances on each chunk's window text, and takes action based on severity and GuardMode.
@@ -1077,8 +1040,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Multi-token pattern spanning two chunks → sliding window catches it
 - ConceptRegistry missing conceptId → fallback to generic message, log warning
 
----
-
 ### Task GUARD_FACTORY: Guardrail Authoring Factories
 
 **What to do**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose execution hook evaluates input or output and returns a tripwire flag plus supplemental output details. The tripwire flag maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when the tripwire flag is true; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
@@ -1105,8 +1066,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - External factory with `failMode: 'closed'`: endpoint 500 → returns a true tripwire flag
 - Composite factory: inner guardrails return mixed verdicts → worst wins
 
----
-
 ### Task LANG_GUARD: Language Guard
 
 **What to do**: Implement the two-stage language detection guardrail using eld for fast detection and piggybacking on intent detection for edge cases. Includes output language scanner.
@@ -1131,8 +1090,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Mixed-language message with foreign place name in otherwise supported text is allowed
 - Very short text below minTextLength always passes
 - Output drift into unsupported language is caught and blocked
-
----
 
 ### Task GUARD_PIPELINE: Guardrail Pipeline Orchestrator
 
@@ -1159,8 +1116,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - onFlag called for p1 on output → Langfuse event logged
 - p0 on input → abort fires, output processor never invoked
 - ConceptRegistry lookup on p0 output → correct fallback message injected
-
----
 
 ### Task ZERO_LEAK_GUARD: Zero-Leak Buffered Mode
 
@@ -1189,8 +1144,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - p1 during buffer phase → onFlag called, buffering continues, chunk eventually delivered on flush
 - Concurrent streams with buffered mode → buffers are per-stream, no cross-contamination
 
----
-
 ## Design Decisions
 
 **Why unified guardrail function type for input and output?** A single interface means detection logic is portable. A PII detector written for input works on output without modification. It also simplifies testing — mock one guardrail function type implementation and use it in both positions.
@@ -1203,16 +1156,11 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 **Why does buffered mode add latency?** It's a deliberate trade-off. The buffer fill time is the price of the zero-leak guarantee. For high-stakes content (medical advice, legal information, financial guidance), that trade-off is worth it. For low-risk conversational content, standard streaming mode is the right choice.
 
----
-
 ## External References
 
 - @openai/agents Guardrails documentation: https://openai.github.io/openai-agents-js/guides/guardrails
 - @openai/agents SDK documentation: https://openai.github.io/openai-agents-js/
 - Langfuse event logging: https://langfuse.com/docs/sdk/typescript/guide
-
----
-
 
 ## Test Specifications
 

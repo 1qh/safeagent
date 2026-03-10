@@ -3,10 +3,6 @@
 This document unifies foundation concerns previously split between configuration and types, defining baseline contracts and runtime guarantees that every higher layer depends on.
 It is the single source of truth for type contracts, schema validation, environment flow, model constants, storage selection, MCP health, provider resolution, and memory safeguard typing.
 
----
-
----
-
 ## Foundation Scope
 The foundation layer is a strict dependency stack.
 Every module above it imports from these foundational pieces.
@@ -24,8 +20,6 @@ Foundation responsibilities:
 - Enforce typed database access boundaries: Drizzle for PostgreSQL and surqlize for SurrealDB, with no raw query-string paths.
 - Detect silent MCP server failures.
 - Resolve provider model configuration and fallback behavior.
-
----
 
 ## Architecture Overview
 ```mermaid
@@ -83,8 +77,6 @@ flowchart TB
     MCP_HEALTH --> GUARDRAIL_CONSUMER
 ```
 
----
-
 ## Dependency Chain
 
 ```mermaid
@@ -129,16 +121,6 @@ flowchart LR
     TASK_TYPES --> TASK_SCHEMAS
     TASK_SCHEMAS --> TASK_CONFIG
 
-    style SPIKE_CORE fill:#cc3333,color:#fff
-    style SPIKE_RAG fill:#cc6633,color:#fff
-    style SCAFFOLD_LIB fill:#3366cc,color:#fff
-    style SCAFFOLD_SERVER fill:#3366cc,color:#fff
-    style TASK_TYPES fill:#339966,color:#fff
-    style TASK_SCHEMAS fill:#339966,color:#fff
-    style TASK_CONFIG fill:#339966,color:#fff
-    style TASK_STORAGE fill:#339966,color:#fff
-    style TASK_MCP fill:#339966,color:#fff
-    style TASK_PROVIDER fill:#339966,color:#fff
 ```
 
 Execution constraints:
@@ -148,8 +130,6 @@ Execution constraints:
 - Library and server scaffolds run in parallel once spike gates pass.
 - Core types gate schemas.
 - Schemas gate config defaults.
-
----
 
 ## Model Configuration Constants
 
@@ -174,8 +154,6 @@ Policy notes:
 - Constants are not duplicated outside config source.
 - Multi-key values rotate through round-robin pool logic.
 
----
-
 ## Thinking Levels
 
 | Task | Level | Rationale |
@@ -188,8 +166,6 @@ Policy notes:
 | Intent validation | minimal | Fast classification |
 | Query rewriting | low | Context reasoning |
 | Evidence scoring | low | Sufficiency reasoning |
-
----
 
 ## Library and Server Responsibility Split
 
@@ -270,8 +246,6 @@ graph LR
     SRV_ERROR_MAP -->|validated against| LIB_ERRORS
 ```
 
----
-
 ## Configuration Flow
 
 ```mermaid
@@ -294,8 +268,6 @@ flowchart TD
     CFG_AGENT_FACTORY --> CFG_LLM["Primary provider\nthinkingLevel optional"]
     CFG_EMBED_ROUTER --> CFG_EMBEDDINGS["Embedding provider\nEMBEDDING_DIMS policy"]
 ```
-
----
 
 ## Environment Variable Flow
 
@@ -342,8 +314,6 @@ flowchart LR
     ENV_SERVER_RUNTIME --> CONS_SERVER
 ```
 
----
-
 ## Environment Variables Reference
 
 | Variable | Required | Default | Notes |
@@ -374,8 +344,6 @@ Auth hard-fail rule:
 
 - Production environment mode with missing JWT_SECRET must refuse startup.
 - This is a fail-closed security boundary, not a warning path.
-
----
 
 ## Core Type System
 
@@ -448,8 +416,6 @@ flowchart TB
     LOCATION_TOOL_CONFIG -.-> GEOCODE_PROVIDER; LOCATION_TOOL_CONFIG -.-> IMAGE_SEARCH_PROVIDER; IMAGE_SEARCH_PROVIDER -.-> IMAGE_RESULT; LOCATION_RESULT -.-> IMAGE_RESULT
 ```
 
----
-
 ## Domain Type Contracts
 
 Foundation contracts cover agent, guardrail, MCP, config, storage, memory, stream, SSE events (including trace-step events for pipeline visibility), upload, documents, RAG, files, eval, model, key-pool, cache, location, queue, budget, and memory-support types (temporal references, preference updates, memory control actions, interaction signals, and media facts).
@@ -460,8 +426,6 @@ File contracts include FileRecord lifecycle metadata.
 Eval contracts include SelfTestConfig and SelfTestResult.
 Fact records include factType with values preference, attribute, derived, behavioral, and sentiment.
 The error code system exports both a runtime-enumerable object and a compile-time union for startup message-map coverage validation.
-
----
 
 ## Memory and Extraction Safeguard Types
 
@@ -504,8 +468,6 @@ Memory context layers:
 
 Memory deep-dive is in [Memory & Intelligence](./memory.md).
 
----
-
 ## Zod Schemas
 
 Schema layer mirrors type layer and enforces runtime validity.
@@ -538,8 +500,6 @@ Validation helpers:
 - validateConfig safe-validates and returns structured result.
 - Schema defaults populate omitted fields where configured.
 - Schema inference aligns schema output with type contracts.
-
----
 
 ## Configuration System
 
@@ -581,8 +541,6 @@ Environment contract handling:
 - Typed environment object uses @t3-oss/env-core with Zod v4 schemas.
 - Library owns defaults and shared contracts.
 - Server owns deployment-required runtime checks.
-
----
 
 ## Multi-Tenant Configuration Hierarchy
 
@@ -653,8 +611,6 @@ flowchart LR
     REQUEST_OVERRIDES --> RESOLVED_CONFIG
 ```
 
----
-
 ## Storage Factory
 
 Storage factory chooses backend by explicit config or environment auto-detection.
@@ -699,8 +655,6 @@ Factory guarantees:
 - Auto-detection uses database URL presence.
 - Selection path is logged.
 - Storage implementations that target SurrealDB use surqlize typed APIs; raw query strings are excluded by design.
-
----
 
 ## MCP Health Check
 
@@ -756,8 +710,6 @@ Additional behavior:
 - Periodic health checks are supported.
 - Wrapper augments MCP client and avoids duplicate client creation.
 
----
-
 ## Provider Resolution
 
 Provider helper contracts:
@@ -777,8 +729,6 @@ Provider export policy:
 - Primary provider factory is re-exported.
 - Other provider factories are not re-exported by default.
 - Load-balancing and circuit-breaker concerns are separate modules.
-
----
 
 ## Structured Output Guarantees
 
@@ -835,8 +785,6 @@ flowchart TD
     TIER_THREE --> VALIDATED_OUTPUT
 ```
 
----
-
 ## Guardrail Safety Dependencies
 
 | Dependency | Purpose | License | Runtime fit |
@@ -847,8 +795,6 @@ flowchart TD
 | naughty words dictionaries | Supplemental multilingual coverage | Attribution-required | Supplemental language dictionaries |
 
 These dependencies are validated in spikes and consumed through guardrail factory configuration.
-
----
 
 ## Foundation Dependency Graph
 
@@ -906,8 +852,6 @@ graph TD
     NODE_MODERATION -.-> NODE_AGENT_FW
 ```
 
----
-
 ## Dependency Policy
 
 - Dependencies are installed at latest selection.
@@ -917,8 +861,6 @@ graph TD
 - AI SDK docs are canonical for model/provider/object/embed behavior.
 - Agent framework docs are canonical for orchestration, streaming, handoff, and guardrail patterns.
 - Runtime docs are canonical for runtime behavior.
-
----
 
 ## Core Stack Validation Spike
 
@@ -1008,8 +950,6 @@ Spike constraints and outcomes:
 - Critical failures block subsequent batches.
 - Non-critical failures revise affected task plans without blocking unrelated tasks.
 
----
-
 ## RAG and Multimodal Dependency Spike
 
 This spike validates document-processing and retrieval assumptions before core implementation.
@@ -1041,13 +981,9 @@ RAG spike constraints:
 - Do not use conflicting test database port.
 - Do not use unrelated wrapper abstraction for document search schema.
 
----
-
 ## Repository Foundation
 Library scaffold defines three package roles (core library, terminal testing client, external client SDK placeholder) with strict typing, quality gates, typed environment schema baseline, seed capabilities, and stable placeholder exports for parallel development.
 Server scaffold defines a linked runtime shell with health-check baseline and early environment contract boundaries for auth, jobs, cache, and provider integration.
-
----
 
 ## Subpath Barrel Export Convention
 Every multi-task module must maintain its own subpath barrel exports as part of each task deliverable.
@@ -1070,8 +1006,6 @@ Barrel updates are not deferred.
 | Location | LOCATION_TOOL |
 
 Any new public function, type, or class in a module group updates that module group barrel immediately. Top-level barrel assembly only aggregates subpath barrels.
-
----
 
 ## Task Specifications
 The foundation layer task specifications remain authoritative.
@@ -1536,8 +1470,6 @@ Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespac
 
 All database-oriented task acceptance in this foundation layer assumes type-safe data access only: Drizzle for PostgreSQL paths and surqlize for SurrealDB paths, with raw query strings treated as plan violations.
 
----
-
 ## Cross-References
 - Requirements and guardrails context: [Requirements & Constraints](./requirements.md)
 - System layout context: [System Architecture](./architecture.md)
@@ -1545,8 +1477,6 @@ All database-oriented task acceptance in this foundation layer assumes type-safe
 - Memory architecture consumers: [Memory & Intelligence](./memory.md)
 - SSE event protocol and trace-step events: [Streaming & Transport](./transport.md)
 - Frontend SDK consuming foundation types: [Frontend SDK](./frontend-sdk.md)
----
-
 
 ## Test Specifications
 

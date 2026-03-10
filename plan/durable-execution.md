@@ -4,8 +4,6 @@
 >
 > **Tasks**: DURABLE_EXECUTION_CORE (Checkpoint and Recovery Runtime), HITL_CONTROL_PLANE (Approval and Escalation), DURABLE_OPERATIONS (Lifecycle and Capacity Governance)
 
----
-
 ## Architecture Overview
 
 Durable execution ensures workflows can continue across worker crashes, pod restarts, and long human wait periods.

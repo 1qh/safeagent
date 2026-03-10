@@ -2,8 +2,6 @@
 
 This document gives operators and implementers a single operational reading path across observability, monitoring, infrastructure, security, and AI runtime operations.
 
----
-
 ## Operational Responsibility Map
 
 - Trace quality, spans, prompt telemetry, and feedback signals: [Observability](./observability.md)
@@ -11,8 +9,6 @@ This document gives operators and implementers a single operational reading path
 - Runtime capacity, cache, rate limit, budget controls, resilience patterns: [Infrastructure](./infrastructure.md)
 - Security governance, threat model, compliance operations: [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 - Runtime cost intelligence and model-operation controls: [AI Operations Plan](./ai-operations.md)
-
----
 
 ## Operational Lifecycle
 
@@ -23,8 +19,6 @@ This document gives operators and implementers a single operational reading path
 5. Verify system health and quality signals
 6. Record findings and feed back into prevention controls
 
----
-
 ## Deployment Readiness Checks
 
 - Required health checks are defined and reachable
@@ -32,8 +26,6 @@ This document gives operators and implementers a single operational reading path
 - Budget and rate-limit controls are configured
 - Security controls and audit trails are active
 - Incident procedures are accessible and rehearsable
-
----
 
 ## Cross-Plan Links
 

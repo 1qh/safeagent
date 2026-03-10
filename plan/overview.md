@@ -6,8 +6,6 @@
 >
 > **Runtime**: Bun-only TypeScript. All dependencies at latest — no pinning.
 
----
-
 ## Quick Start
 
 - Read [Start Here](./start-here.md) for role-based reading paths.
@@ -156,8 +154,6 @@ sequenceDiagram
     end
 ```
 
----
-
 Each document below is a self-contained reference for its domain. Documents are grouped by concern and each can be read independently. Per-module test specifications are co-located within each file.
 
 ### Preamble
@@ -216,8 +212,6 @@ Each document below is a self-contained reference for its domain. Documents are 
 - [Testing Strategy](./testing.md) — Test pyramid, coverage maps, CI pipeline, audit tasks, QA policy (per-module specs co-located with each file)
 - [Execution Plan](./execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
 
----
-
 ## Deliverables Summary
 
 ```mermaid
@@ -266,8 +260,6 @@ graph LR
 | **Server** | Thin API server — custom prompts, intent config, guardrail rules, MCP config, JWT auth |
 | **Docker Compose** | Full infrastructure — Postgres+pgvector, SurrealDB, MinIO, Valkey, Trigger.dev, Langfuse stack |
 
----
-
 ## Key Architectural Decisions
 
 | Decision | Choice | Rationale |
@@ -300,8 +292,6 @@ graph LR
 | Testing | Comprehensive: unit + integration + eval + load + adversarial + regression + chaos + property-based | Maximum risk coverage |
 | Observability | Langfuse comprehensive: quality + latency + business metrics | Full agent tracing, cost tracking, user analytics |
 
----
-
 ## Estimated Scale
 
 | Metric | Target |
@@ -314,5 +304,3 @@ graph LR
 | Storage per user | 100MB quota (configurable) |
 | Budget tracking | Sub-millisecond via Valkey atomic counters |
 | Horizontal scaling | Stateless API server + Trigger.dev workers |
-
----

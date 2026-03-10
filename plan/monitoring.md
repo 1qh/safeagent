@@ -4,8 +4,6 @@
 >
 > **Tasks**: MONITORING_INFRA (Monitoring Infrastructure and Dashboards), INCIDENT_PROCEDURES (Incident Response Procedures)
 
----
-
 ## Architecture Overview
 
 Monitoring is a dedicated runtime reliability layer focused on immediate detection, response, and service protection.
@@ -2244,8 +2242,6 @@ flowchart TB
   SERVICE_RECOVERY --> DR_REVIEW[POST-DR REVIEW AND IMPROVEMENT]
 ```
 
----
-
 ## Capacity Monitoring and Forecasting
 
 Capacity monitoring prevents reliability regressions as adoption grows from daily baseline to burst traffic windows.
@@ -2378,7 +2374,6 @@ Integration notes:
 - Keep dashboard ownership explicit to prevent stale operational surfaces.
 - Keep threshold policy adjustable as traffic patterns evolve.
 
-
 ### INCIDENT_PROCEDURES
 
 **Task Name**
@@ -2479,8 +2474,6 @@ Integration notes:
 - Graceful degradation monitoring is active with degraded-state quality-floor, fallback headroom, and recovery-stability controls.- Status page is live with component health, incident timeline, and maintenance notices.
 - Incident lifecycle and runbook templates are documented and tested.
 - On-call rotation and escalation chain are operational.
-
-
 
 ## Test Specifications
 

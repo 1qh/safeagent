@@ -2,8 +2,6 @@
 
 Use this template for every task completion handoff. It standardizes evidence so reviewers can accept or reject quickly.
 
----
-
 ## Task Identity
 
 - Task ID:
@@ -12,15 +10,11 @@ Use this template for every task completion handoff. It standardizes evidence so
 - Test Owner File:
 - Context Files:
 
----
-
 ## Scope Confirmation
 
 - In-scope task outcomes delivered:
 - Explicit out-of-scope items:
 - Dependency prerequisites satisfied:
-
----
 
 ## Acceptance Criteria Evidence
 
@@ -29,8 +23,6 @@ Use this template for every task completion handoff. It standardizes evidence so
 - Criterion 3:
 - Additional criteria:
 
----
-
 ## QA Scenario Evidence
 
 - Scenario 1:
@@ -38,15 +30,11 @@ Use this template for every task completion handoff. It standardizes evidence so
 - Scenario 3:
 - Additional scenarios:
 
----
-
 ## Behavioral Assertion Evidence
 
 - Assertion group(s) validated in test owner file:
 - Cross-file assertion dependencies validated:
 - Any assertion intentionally deferred (with rationale):
-
----
 
 ## Quality Gate Evidence
 
@@ -55,16 +43,12 @@ Use this template for every task completion handoff. It standardizes evidence so
 - Cross-domain checks completed:
 - Release/audit gate impact:
 
----
-
 ## Risk and Exception Record
 
 - Security risks observed:
 - Scalability risks observed:
 - Reliability risks observed:
 - Deferred items and follow-ups:
-
----
 
 ## Reviewer Decision Block
 

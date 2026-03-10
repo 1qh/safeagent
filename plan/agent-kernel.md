@@ -2,8 +2,6 @@
 
 Minimal, agent-first operating view. Read this first.
 
----
-
 ## Authority Map
 
 - Scheduling + deps + routing: [Execution Plan](./execution.md)
@@ -11,8 +9,6 @@ Minimal, agent-first operating view. Read this first.
 - Verification owner mapping: [Task Verification Index](./task-verification-index.md)
 - Gate order + required evidence: [Quality Gates](./quality-gates.md)
 - Constraints boundary: [Requirements & Constraints](./requirements.md), [Constraints](./constraints.md)
-
----
 
 ## Minimal Task Flow
 
@@ -25,8 +21,6 @@ Minimal, agent-first operating view. Read this first.
 7. Produce handoff evidence via [Handoff Packet Template](./handoff-packet-template.md).
 8. Confirm required task-level gates in [Quality Gates](./quality-gates.md).
 
----
-
 ## Hard Rules
 
 - Do not define or infer alternate scheduling order outside `execution.md`.
@@ -34,15 +28,11 @@ Minimal, agent-first operating view. Read this first.
 - Do not mark task complete without acceptance + QA + mapped test-owner checks.
 - Keep docs compact per [Compact Authoring Standard](./compact-authoring-standard.md).
 
----
-
 ## Read-Only Support Views
 
 - Readiness rollup: [Readiness Scoreboard](./readiness-scoreboard.md)
 - Stress coverage map: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
 - Drift checks: [Plan Drift Control](./plan-drift-control.md)
-
----
 
 ## Scope
 

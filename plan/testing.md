@@ -33,13 +33,6 @@ flowchart LR
     UNIT_LAYER --> INTEGRATION_LAYER --> END_TO_END_LAYER --> EVAL_LAYER
     EVAL_LAYER --> ADVERSARIAL_LAYER --> PROPERTY_LAYER --> CHAOS_LAYER
 
-    style UNIT_LAYER fill:#22aa44,color:#fff
-    style INTEGRATION_LAYER fill:#33bb55,color:#fff
-    style END_TO_END_LAYER fill:#4488cc,color:#fff
-    style EVAL_LAYER fill:#5599dd,color:#fff
-    style ADVERSARIAL_LAYER fill:#ff4444,color:#fff
-    style PROPERTY_LAYER fill:#8866cc,color:#fff
-    style CHAOS_LAYER fill:#ff9900,color:#fff
 ```
 
 ### Pillar 3 — Deterministic Core, Stochastic Edge
@@ -66,11 +59,6 @@ flowchart TD
 
     EVERY_COMMIT --> EVERY_PR --> NIGHTLY --> STAGING --> GAME_DAY
 
-    style EVERY_COMMIT fill:#22aa44,color:#fff
-    style EVERY_PR fill:#33bb55,color:#fff
-    style NIGHTLY fill:#4488cc,color:#fff
-    style STAGING fill:#ff9900,color:#fff
-    style GAME_DAY fill:#ff4444,color:#fff
 ```
 
 ### Pillar 6 — Contract as Boundary
@@ -127,19 +115,6 @@ graph TB
 
     FAST_TIER --> MEDIUM_TIER --> EXPENSIVE_TIER
 
-    style UNIT_TESTS fill:#22aa44,color:#fff
-    style PROPERTY_TESTS fill:#22aa44,color:#fff
-    style CONTRACT_TESTS fill:#22aa44,color:#fff
-    style SNAPSHOT_TESTS fill:#22aa44,color:#fff
-    style REGRESSION_TESTS fill:#22aa44,color:#fff
-    style INTEGRATION_TESTS fill:#4488cc,color:#fff
-    style E2E_TESTS fill:#4488cc,color:#fff
-    style EVAL_TESTS fill:#5599dd,color:#fff
-    style ADVERSARIAL_TESTS fill:#ff4444,color:#fff
-    style MUTATION_TESTS fill:#aa44aa,color:#fff
-    style STREAMING_TESTS fill:#4488cc,color:#fff
-    style LOAD_TESTS_LAYER fill:#ff9900,color:#fff
-    style CHAOS_TESTS fill:#ff9900,color:#fff
 ```
 
 ## Test Execution Flow
@@ -157,8 +132,6 @@ flowchart LR
 
     RUN_REQUEST --> SCOPE_FILTER --> TEST_DISCOVERY --> TEST_EXECUTION --> RESULT_REPORT --> EVIDENCE_CAPTURE
 
-    style RUN_REQUEST fill:#333,color:#fff
-    style RESULT_REPORT fill:#22aa44,color:#fff
 ```
 
 ## CI Pipeline
@@ -203,14 +176,6 @@ flowchart TD
     END_TO_END_CHECK_STAGE -->|Fail| ABORT_END_TO_END["Abort"]
     EVAL_CHECK_STAGE -->|Fail| ABORT_EVAL["Abort"]
 
-    style ABORT_UNIT fill:#ff4444,color:#fff
-    style ABORT_INTEGRATION fill:#ff4444,color:#fff
-    style ABORT_END_TO_END fill:#ff4444,color:#fff
-    style ABORT_EVAL fill:#ff4444,color:#fff
-    style UNIT_RUN fill:#22aa44,color:#fff
-    style INTEGRATION_RUN fill:#33bb55,color:#fff
-    style END_TO_END_RUN_STAGE fill:#4488cc,color:#fff
-    style EVAL_RUN_STAGE fill:#5599dd,color:#fff
 ```
 
 ## Test Suite Separation
@@ -251,9 +216,6 @@ flowchart TD
     UNIT_BOUNDARY -.->|"never crosses"| INTEGRATION_BOUNDARY
     INTEGRATION_BOUNDARY -.->|"never crosses"| END_TO_END_BOUNDARY
 
-    style UNIT_BOUNDARY fill:#e8f5e9,stroke:#2e7d32
-    style INTEGRATION_BOUNDARY fill:#fff3e0,stroke:#ef6c00
-    style END_TO_END_BOUNDARY fill:#e3f2fd,stroke:#1565c0
 ```
 
 ### Rules
@@ -302,9 +264,6 @@ flowchart TD
     MOCK_GUARD_PATTERN -.-> MOCK_CONFIGURE
     MOCK_MULTI_TURN_PATTERN -.-> MOCK_CONFIGURE
 
-    style MOCK_SETUP fill:#f3e5f5,stroke:#7b1fa2
-    style MOCK_USAGE fill:#e8f5e9,stroke:#2e7d32
-    style MOCK_PATTERNS fill:#fff8e1,stroke:#f57f17
 ```
 
 ### How Streaming Is Mocked
@@ -455,8 +414,6 @@ flowchart TD
         SERVER_IMAGE_FLOW["Image pipeline\nupload to query to citation image access"]
     end
 
-    style LIBRARY_END_TO_END fill:#e3f2fd,stroke:#1565c0
-    style SERVER_END_TO_END fill:#fce4ec,stroke:#c62828
 ```
 
 ### Long-Term Memory Round-Trip (Critical)
@@ -585,9 +542,6 @@ flowchart TD
     LOAD_GENERATOR --> STDOUT_SUMMARY --> EVIDENCE_OUTPUT
     LOAD_GENERATOR --> JSON_SUMMARY --> EVIDENCE_OUTPUT
 
-    style LOAD_GENERATOR fill:#ff9900,color:#fff
-    style SERVER_UNDER_TEST fill:#4488cc,color:#fff
-    style METRICS_CAPTURE fill:#22aa44,color:#fff
 ```
 
 ### Script Catalog
@@ -844,10 +798,6 @@ flowchart TD
     STEADY_STATE --> HYPOTHESIS --> INJECT --> OBSERVE --> VERIFY --> RESTORE
     RESTORE -.->|"next fault target"| HYPOTHESIS
 
-    style STEADY_STATE fill:#22aa44,color:#fff
-    style INJECT fill:#ff4444,color:#fff
-    style VERIFY fill:#4488cc,color:#fff
-    style RESTORE fill:#22aa44,color:#fff
 ```
 
 ### Fault Injection Matrix
@@ -979,9 +929,6 @@ flowchart LR
     LIB_PROVIDER_CONTRACT --> ERROR_COMPAT
     SERVER_CONSUMER_CONTRACT --> ERROR_COMPAT
 
-    style LIBRARY_SIDE fill:#e8f5e9,stroke:#2e7d32
-    style SERVER_SIDE fill:#e3f2fd,stroke:#1565c0
-    style CONTRACT_VERIFICATION fill:#fff3e0,stroke:#ef6c00
 ```
 
 ### Contract Areas
@@ -1027,10 +974,6 @@ flowchart TD
     IDENTIFY_PATHS --> GENERATE_MUTANTS --> EXECUTE_TESTS --> ANALYZE_SURVIVORS --> STRENGTHEN_TESTS
     STRENGTHEN_TESTS -.->|"iterate until zero survivors"| GENERATE_MUTANTS
 
-    style IDENTIFY_PATHS fill:#22aa44,color:#fff
-    style GENERATE_MUTANTS fill:#ff9900,color:#fff
-    style ANALYZE_SURVIVORS fill:#ff4444,color:#fff
-    style STRENGTHEN_TESTS fill:#4488cc,color:#fff
 ```
 
 ### Mutation Target Paths
@@ -1091,8 +1034,6 @@ flowchart TD
     QUALITY_SCORE --> GOLDEN_MANAGEMENT
     FORMAT_SNAP --> GOLDEN_MANAGEMENT
 
-    style SNAPSHOT_TYPES fill:#f3e5f5,stroke:#7b1fa2
-    style GOLDEN_MANAGEMENT fill:#e8f5e9,stroke:#2e7d32
 ```
 
 ### Structural Snapshots
@@ -1158,12 +1099,6 @@ flowchart TD
     FORMAT_TESTS --> MIDSTREAM_TESTS --> BACKPRESSURE_TESTS
     BACKPRESSURE_TESTS --> RECONNECT_TESTS --> PARTIAL_TESTS --> CONCURRENT_TESTS
 
-    style FORMAT_TESTS fill:#22aa44,color:#fff
-    style MIDSTREAM_TESTS fill:#ff4444,color:#fff
-    style BACKPRESSURE_TESTS fill:#ff9900,color:#fff
-    style RECONNECT_TESTS fill:#4488cc,color:#fff
-    style PARTIAL_TESTS fill:#aa44aa,color:#fff
-    style CONCURRENT_TESTS fill:#8866cc,color:#fff
 ```
 
 ### Format Compliance Tests

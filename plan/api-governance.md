@@ -453,8 +453,6 @@ flowchart TB
 - SurrealDB documentation: https://surrealdb.com/docs
 - surqlize package information: https://www.npmjs.com/package/surqlize
 
----
-
 ## Test Specifications
 
 > **Relationship to Task Specifications**: QA Scenarios prove task completion; Test Specifications prove behavioral correctness. Use both.

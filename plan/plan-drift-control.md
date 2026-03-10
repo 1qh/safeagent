@@ -2,8 +2,6 @@
 
 This document defines ongoing checks that keep the plan coherent as iterations continue.
 
----
-
 ## Drift Risks to Control
 
 - Task count drift between execution routing and verification ownership.
@@ -12,15 +10,11 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - Navigation drift caused by broken or stale cross-links.
 - Authority drift where scheduling truth appears outside [Execution Plan](./execution.md).
 
----
-
 ## Drift Check Cadence
 
 - Per change set: run local consistency checks before commit.
 - Per iteration wave: run full plan consistency and link integrity review.
 - Before release readiness: run final consistency review across reader-first docs and execution files.
-
----
 
 ## Mandatory Drift Checks
 
@@ -52,8 +46,6 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - Additive reader-first files are listed accurately in coverage metadata.
 - No documented core scope is removed without explicit migration notes.
 
----
-
 ## Drift Response Protocol
 
 1. Log the mismatch with exact file and section references.
@@ -61,8 +53,6 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 3. Apply minimal corrective edits to restore consistency.
 4. Re-run all drift checks impacted by the correction.
 5. Record resolution in commit message scope.
-
----
 
 ## Related Documents
 

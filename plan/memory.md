@@ -4,10 +4,6 @@
 >
 > **Tasks**: SHORT_TERM_MEM, USER_SHORTTERM_MEM, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, STRUCTURED_RESULT_MEM, MEMORY_CONTROL
 
----
-
----
-
 ## Architecture Overview
 
 Memory is intentionally split into three layers with non-overlapping responsibilities:
@@ -91,8 +87,6 @@ Layer boundaries are strict:
 - Thread short-term stores raw turns for one thread.
 - User short-term stores raw turns from other threads.
 - Long-term stores extracted and structured memory.
-
----
 
 ## Layer 1: Thread Short-Term Memory
 
@@ -198,8 +192,6 @@ flowchart LR
     REQUEST_CONTEXT --> THREAD_QUERY_SCOPE
 ```
 
----
-
 ## Layer 2: User Short-Term Memory
 
 ### Why this layer exists
@@ -272,8 +264,6 @@ flowchart TB
 ```
 
 By default, user short-term is fully active at thread start and fades by turn four.
-
----
 
 ## Mandatory Rolling Summaries
 
@@ -390,8 +380,6 @@ sequenceDiagram
     ORCHESTRATOR-->>USER: Response grounded in available memory
 ```
 
----
-
 ## Layer 3: Long-Term Memory Client
 
 ### Deployment mode
@@ -453,8 +441,6 @@ Long-term memory client provides typed SurrealDB operations only:
 - fact supersession operation
 
 Long-term scope is user-level and cross-thread by design.
-
----
 
 ## Layer 3: Graph Schema and Fact Lifecycle
 
@@ -690,8 +676,6 @@ flowchart TB
         STORE_ACTIVE_FACT --> ACTIVE_ONLY_FILTER --> STYLE_EMOTION_INJECTION
     end
 ```
-
----
 
 ## Fact Extraction Pipeline
 
@@ -987,8 +971,6 @@ flowchart TB
 - Short-term persistence still occurs for continuity.
 - This avoids memory pollution from incomplete or malformed outputs.
 
----
-
 ## Structured Result Memory
 
 ### Why separate storage is required
@@ -1056,8 +1038,6 @@ Structured result sets:
 | `sourceThreadId` | string | Original thread |
 | `createdAt` | timestamp | Creation time |
 | `expiresAt` | timestamp | Cleanup boundary |
-
----
 
 ## Memory Recall Tool
 
@@ -1234,8 +1214,6 @@ Superseded facts are excluded unless explicitly requested.
 
 Records returned by recall receive updated `lastAccessedAt` and refreshed `expiresAt`.
 
----
-
 ## User Memory Control
 
 Memory control is required for trust and user agency.
@@ -1312,8 +1290,6 @@ flowchart TB
 - Cache purge is required to prevent stale recall surfacing deleted content.
 - Deletion is atomic per record to avoid orphaned edges.
 
----
-
 ## Memory and Intent Detection
 
 Intent quality depends on memory-loaded context.
@@ -1384,8 +1360,6 @@ flowchart LR
 
 Fact extraction runs once after orchestrator final synthesis, not per sub-agent.
 
----
-
 ## Context Window Budget Management
 
 The engine enforces the configured context window budget with strict priority trimming.
@@ -1411,8 +1385,6 @@ flowchart TB
     ALLOCATE_RECALL --> ALLOCATE_CROSS_THREAD["Allocate cross-thread messages\nreduce then drop if needed"]
     ALLOCATE_CROSS_THREAD --> FINAL_CONTEXT["Final context under budget"]
 ```
-
----
 
 ## Tradeoffs and Design Decisions
 
@@ -1469,8 +1441,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - default decay is intentionally short
 - inactive states stop influencing tone but remain auditable
 
----
-
 ## Cross-References
 
 | Component | Interaction |
@@ -1479,8 +1449,6 @@ Emotional carry-forward can over-persist if decay is too long.
 | **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
 | **Agents & Orchestration** ([Agents & Orchestration](./agents.md)) | Defines tool invocation behavior, temporal expression resolution, and source-priority execution that consume memory context |
 | **Document Processing** ([Document Processing](./documents.md)) | Coexists with memory recall in source fan-out and citation-aware synthesis |
-
----
 
 ## Task Specifications
 
@@ -1524,8 +1492,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Summarization outage logs error and preserves prior summary.
 - Store outage returns typed error.
 
----
-
 ### Task USER_SHORTTERM_MEM: User Short-Term Memory (Cross-Thread)
 
 **What to do**: Implement cross-thread user short-term retrieval from the same conversation store, active only for young threads, injected as constrained ambiguity-resolution context.
@@ -1556,8 +1522,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Current thread exclusion prevents duplication.
 - Assistant messages excluded from cross-thread block.
 - Intent classifier receives cross-thread context when active.
-
----
 
 ### Task SURREALDB_CLIENT: SurrealDB Client
 
@@ -1599,8 +1563,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Expiry cleanup removes stale records only.
 - Connection drop recovers automatically.
 - Embedded test mode works without server.
-
----
 
 ### Task FACT_EXTRACTION: Enhanced Fact Extraction Pipeline
 
@@ -1651,8 +1613,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Emotional cue activates short-lived tone context.
 - Hypothetical and question forms are discarded.
 
----
-
 ### Task MEMORY_RECALL: Enhanced Memory Recall Tool
 
 **What to do**: Build the memory recall tool factory supporting semantic + graph retrieval over facts/interactions/media, temporal filtering, recency weighting, TTL refresh, and auto-trigger behavior on new threads.
@@ -1698,8 +1658,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Active emotional context appears while decay active.
 - Style preference appears in formatted guidance block.
 
----
-
 ### Task STRUCTURED_RESULT_MEM: Structured Result Memory
 
 **What to do**: Detect ordered result outputs, store result sets with TTL in Postgres, and provide ordinal resolution helpers across threads.
@@ -1729,8 +1687,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Expired set is no longer available.
 - Most recent of multiple sets is used.
 - Result from one thread resolves in another thread.
-
----
 
 ### Task MEMORY_CONTROL: User Memory Control Tools
 
@@ -1764,8 +1720,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Empty-memory user receives explicit empty-memory response.
 - Partial backend failure logs and reports failed subset.
 - Disabled feature flag unregisters control tools.
-
----
 
 ### Task CONTEXT_BUDGET: Context Budget Allocation and Enforcement
 
@@ -1814,8 +1768,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Preserve separation between estimation, truncation policy, and final assembly for easier testing.
 - Emit structured diagnostics to support tuning without exposing internal details to users.
 
----
-
 ### Task EXTRACTION_SAFEGUARDS: Fact Extraction Quality Safeguards
 
 **Task Name**
@@ -1862,8 +1814,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Run safeguards after extraction and before deduplication or supersession side effects.
 - Keep rejection reasons machine-readable for later quality analysis.
 - Favor precision over recall to prevent persistent contamination of memory.
-
----
 
 ### Task FACT_SUPERSESSION: Fact Lifecycle Supersession and Conflict Resolution
 
@@ -1912,8 +1862,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Keep contradiction rules narrow to avoid accidental replacement of orthogonal facts.
 - Validate recall filtering and inspection visibility independently.
 
----
-
 ### Task STYLE_PREFERENCES: User Style Preference Detection and Adaptation
 
 **Task Name**
@@ -1961,8 +1909,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Keep style guidance advisory to avoid hard failures in critical-response paths.
 - Separate style extraction confidence from factual memory confidence.
 
----
-
 ### Task SUMMARY_CAP: Conversation Summary Capping and Rotation Policy
 
 **Task Name**
@@ -2007,8 +1953,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Use strict priority rules in compaction to keep behavior predictable.
 - Optimize for continuity fidelity, not transcript-like completeness.
 - Keep cap enforcement independent from broader context truncation logic.
-
----
 
 ### Task THREAD_RESURRECTION: Thread Resurrection for Resumed Conversations
 
@@ -2057,8 +2001,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - Treat resurrected memory as supportive context, not absolute truth.
 - Reuse standard budget and trust-boundary controls for resurrected content.
 
----
-
 ## External References
 
 - AI SDK documentation: https://sdk.vercel.ai/docs
@@ -2067,8 +2009,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - SurrealDB vector functions: https://surrealdb.com/docs/surrealql/functions/database/vector
 - SurrealDB SDK for JavaScript: https://surrealdb.com/docs/sdk/javascript
 - surqlize ORM: https://github.com/surrealdb/surqlize
-
----
 
 ## Test Specifications
 
