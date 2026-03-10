@@ -2,16 +2,12 @@
 
 This matrix tracks preservation from `plan_v0` into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
 
----
-
 ## Preservation Status
 
 - Source files in `plan_v0`: 30
 - Preserved source files in `plan`: 30
 - Missing files: 0
 - Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`, `readiness-scoreboard.md`, `readiness-decision-record-template.md`, `eval-adversarial-matrix.md`, `compact-authoring-standard.md`, `agent-kernel.md`
-
----
 
 ## Source-to-Current Preservation Map
 
@@ -48,8 +44,6 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 | `testing.md` | `testing.md` | Preserved |
 | `execution.md` | `execution.md` | Preserved (additive workflow/source-of-truth sections) |
 
----
-
 ## Reader-First Layer
 
 Use this sequence to start implementation quickly:
@@ -72,8 +66,6 @@ Use this sequence to start implementation quickly:
 16. [Plan Drift Control](./plan-drift-control.md)
 17. [Compact Authoring Standard](./compact-authoring-standard.md)
 
----
-
 ## Verification Procedure
 
 - File parity check: all source filenames in `plan_v0` exist in `plan`.
@@ -82,11 +74,11 @@ Use this sequence to start implementation quickly:
 - Content loss check: no removed lines from source files unless explicitly documented.
 - Scheduling authority check: task ordering and dependency truth remain centralized in [Execution Plan](./execution.md).
 
----
-
 ## Documented Source Deltas
 
 - `execution.md`: count wording and gate-layer wording were corrected for consistency with the current 129-task model and task-level versus project-level gate separation.
 - `ai-operations.md`: top metadata label was clarified from task-style wording to internal-layer wording to avoid execution-task ambiguity.
 - 24 module docs: repeated Task/Test relationship boilerplate was shortened to a compact equivalent sentence.
 - 30 source docs: per-file `Table of Contents` blocks were removed under [Compact Authoring Standard](./compact-authoring-standard.md) to reduce token overhead without changing normative schemas.
+- 4 source docs: Mermaid `style ... fill:` directives were removed as non-semantic visual metadata.
+- 44 source docs: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.
