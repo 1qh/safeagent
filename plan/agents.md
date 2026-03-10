@@ -1099,7 +1099,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - CORE_TYPES, AGENT_FACTORY
 
 **Batch**
-- 8a
+- SERVER_TUI_PIPELINE_BATCH
 
 **Acceptance Criteria**
 - Input complexity signals map to a deterministic response-energy band.
@@ -1148,7 +1148,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS
 
 **Batch**
-- 9b
+- ENDPOINTS_BARREL_BATCH
 
 **Acceptance Criteria**
 - Only catalog-approved component categories are emitted.
@@ -1201,14 +1201,32 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Dependent intent handling: sequential processing with constraint passing.
 - Independent intent handling: parallel processing with result merging.
 
-**Agent behaviors**:
+**Auto-trigger memory recall behavior (ORCHESTRATOR + MEMORY_RECALL)**:
 
 - Auto-trigger memory recall on first message in new thread.
+
+**Context budgeting behavior (CONTEXT_BUDGET + ORCHESTRATOR)**:
+
 - Context budgeting: token allocation across layers with priority-based truncation.
+
+**Response calibration behavior (RESPONSE_CALIBRATION)**:
+
 - Response energy matching: input characteristics determine output calibration hint.
+
+**Clarification patience behavior (CLARIFICATION_MODEL)**:
+
 - Clarification patience model: after threshold turns synthesize best-effort answer.
+
+**Tool registration and scoping behavior (SUBAGENT_FACTORY + ORCHESTRATOR)**:
+
 - Tool registration: dynamic scoping per agent, namespace isolation, no duplicate instances.
+
+**Grounding mode behavior (GEMINI_GROUNDING)**:
+
 - Grounding mode: separate agent mode for web-grounded responses with grounding metadata.
+
+**Provider-agnostic factory behavior (AGENT_FACTORY)**:
+
 - Provider-agnostic configuration: no model-specific branching in core agent logic.
 
 **Agent factory — configuration, wiring, and mode guarantees**:
@@ -1266,7 +1284,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Handoff-scoped context excludes irrelevant conversation turns.
 - Sub-agent result collection includes partial completions when sibling sub-agents are still running.
 
-**Context assembly and budgeting in orchestration layer**:
+**Context assembly and budgeting in orchestration layer (ORCHESTRATOR + CONTEXT_BUDGET)**:
 
 - Context assembly order is system prompt, current message, tool definitions, thread turns, rolling summary, recalled facts, then user short-term context.
 - Token estimation uses character-count divided-by-four approximation.
@@ -1280,20 +1298,29 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Current user message is non-truncatable.
 - Tool definitions are non-truncatable.
 
-**Implicit references, energy calibration, resumption, and clarification policy**:
+**Implicit reference resolution behavior (ORCHESTRATOR)**:
 
 - Anaphoric phrases trigger implicit-reference candidate injection before reasoning.
 - Referent candidate set includes recent turns and recalled candidates.
 - Referent candidates outside active window trigger expanded recall from summary and longer-term layers.
 - Reference handling remains retrieval-first and does not force pre-resolution.
+
+**Response energy calibration behavior (RESPONSE_CALIBRATION)**:
+
 - Response-energy hint is computed from length, formality markers, and complexity.
 - Short casual inputs bias toward concise response style.
 - Detailed inputs bias toward fuller response style.
 - Safety and correctness needs can override brevity-biased calibration.
+
+**Thread resurrection and resumption behavior (THREAD_RESURRECTION)**:
+
 - Resurrection gap detection marks long-inactive threads for resumption handling.
 - Resurrection handling injects staleness notice with readable inactivity duration.
 - Resumption metadata includes time delta and last-topic summary.
 - Resurrection path still runs fresh intent analysis for current turn.
+
+**Clarification patience behavior (CLARIFICATION_MODEL)**:
+
 - Clarification policy asks one concise clarifying question for genuine ambiguity.
 - Clarification loop counter tracks consecutive clarification rounds by thread.
 - When clarification limit is reached, orchestrator returns best-effort response with explicit assumptions.
@@ -1329,7 +1356,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Constraint-aware filtering removes disliked entities from downstream result set.
 - Partial failures in dependent chains still return available successful outputs with partial-failure signaling.
 
-**Tool registry and assignment flow**:
+**Tool registry and assignment flow (ORCHESTRATOR + SUBAGENT_FACTORY)**:
 
 - Orchestrator tool set includes handoff controls, rewrite capability, and source-execution tools for direct single-intent path.
 - Sub-agent tool set includes source-specific retrieval tools, recall tools, rewrite capability, and evidence-scoring tool.
@@ -1366,7 +1393,7 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Primary timeout path can engage fallback within total timeout budget.
 - Sequential fallback order is deterministic and test-covered.
 
-**Queue-scaling orchestration modes**:
+**Queue-scaling orchestration modes (ORCHESTRATOR + TRIGGER_TASKS)**:
 
 - Development mode runs orchestrated execution in-process without queue overhead.
 - Production simple mode allows single-intent in-process and multi-intent queued execution.
@@ -1421,6 +1448,8 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Connection failure to one MCP server does not block tools from other servers.
 
 ### Extension: Computer Use and Browser Agent Patterns
+
+> **Deferred scope**: These assertions define the target contract for future computer use provider integration packages. No implementation task is scheduled in the current execution plan.
 
 - Provider-agnostic computer use interface supports screenshot capture, action execution, accessibility-tree reads, and viewport dimension management.
 - Screenshot-based perception mode captures rendered frames and works across any interface.

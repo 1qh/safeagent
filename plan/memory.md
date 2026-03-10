@@ -1810,7 +1810,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL
 
 **Batch**
-- 6
+- SERVER_TUI_PIPELINE_BATCH
 
 **Acceptance Criteria**
 - Context assembly always applies a consistent priority order.
@@ -1859,7 +1859,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - FACT_EXTRACTION
 
 **Batch**
-- 6
+- SERVER_TUI_PIPELINE_BATCH
 
 **Acceptance Criteria**
 - Self-attributed factual statements are accepted when confidence and certainty requirements are met.
@@ -1908,7 +1908,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - FACT_EXTRACTION, SURREALDB_CLIENT
 
 **Batch**
-- 6
+- SERVER_TUI_PIPELINE_BATCH
 
 **Acceptance Criteria**
 - Contradictory updates create a new active fact and supersede the prior fact.
@@ -1957,7 +1957,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - FACT_EXTRACTION, SURREALDB_CLIENT
 
 **Batch**
-- 6
+- SERVER_TUI_PIPELINE_BATCH
 
 **Acceptance Criteria**
 - Explicit style instructions are persisted as style-preference memory.
@@ -2005,7 +2005,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - SHORT_TERM_MEM
 
 **Batch**
-- 6
+- CONFIG_GUARDS_BATCH
 
 **Acceptance Criteria**
 - Rolling summary never exceeds configured maximum after compaction completes.
@@ -2053,7 +2053,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL
 
 **Batch**
-- 6
+- SELFTEST_MIDINTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Threads crossing the inactivity threshold are flagged as resurrection turns.
@@ -2094,6 +2094,8 @@ Emotional carry-forward can over-persist if decay is too long.
 > **Relationship to Task Specifications**: The QA Scenarios in each task spec above verify task completion through action-oriented acceptance checks. The test specifications below define comprehensive behavioral assertions for property-based and integration testing. Both are complementary — QA Scenarios confirm "the task is done," test specifications confirm "the system behaves correctly under all conditions."
 
 Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
+
+> **Cross-file test reference**: For orchestration-layer context assembly and budget enforcement assertions linked to CONTEXT_BUDGET, see [agents.md](./agents.md) under "Context assembly and budgeting in orchestration layer (ORCHESTRATOR + CONTEXT_BUDGET)".
 
 **Thread short-term memory**:
 

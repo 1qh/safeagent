@@ -908,30 +908,10 @@ flowchart TB
 - Slow embedding path remains correct.
 - LLM timeout degrades gracefully to embedding fallback.
 
-### Task RAGFLOW_CLIENT: RAGFlow Client + Tool
-**What to do**: Implement retrieval HTTP wrapper with request/response mapping to citations.
-
-**Depends on**: CORE_TYPES, CONFIG_DEFAULTS.
-
-**Acceptance Criteria**:
-- Raw fetch client with no SDK dependency.
-- Reads base URL, API key, global dataset IDs.
-- Supports per-call dataset override.
-- Uses bearer authentication.
-- Sends expected retrieval fields.
-- Parses chunks and maps to canonical citation shape plus metadata.
-- Fails fast on HTTP errors.
-- Exported as tool module.
-- Unit tests for success/error/malformed responses.
-- Integration test against real service when configured.
-
-**QA Scenarios**:
-- Valid request returns ranked citations.
-- Topic override replaces global datasets.
-- Authentication failure propagates typed error.
-- Empty chunks handled explicitly by caller path.
-- Malformed response returns typed error.
-- Missing base URL disables source gracefully.
+### RAGFLOW_CLIENT Routing Bridge
+> **Canonical task spec**: See [retrieval.md § Task RAGFLOW_CLIENT](./retrieval.md#task-ragflow_client-ragflow-retrieval-client-wrapper) for the authoritative objective, acceptance criteria, and QA scenarios.
+>
+> This section remains as a routing bridge because the Conversation Pipeline depends on the same retrieval client contract for source routing behavior.
 
 ### Task SOURCE_ROUTER: Source Priority Router
 **What to do**: Implement parallel source fan-out, weighted merge, and fail-fast propagation.
@@ -1030,7 +1010,7 @@ flowchart TB
 - LLM_INTENT, REWRITE_TOOL
 
 **Batch**
-- 8b
+- SELFTEST_MIDINTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Attribute negations are extracted into structured output fields.
@@ -1078,7 +1058,7 @@ flowchart TB
 - LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY
 
 **Batch**
-- 8b
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Low-confidence multi-plausible inputs trigger clarification behavior.
@@ -1127,7 +1107,7 @@ flowchart TB
 - AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER
 
 **Batch**
-- 10
+- E2E_DEPLOY_BATCH
 
 **Acceptance Criteria**
 - Topic extraction outputs ranked dominant topics per conversation.
@@ -1175,7 +1155,7 @@ flowchart TB
 - EMBED_ROUTER, LLM_INTENT
 
 **Batch**
-- 8b
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Frustration signals are detected from multi-turn conversation patterns.
@@ -1223,7 +1203,7 @@ flowchart TB
 - EMBED_ROUTER
 
 **Batch**
-- 8b
+- SELFTEST_MIDINTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Greetings and acknowledgments are classified as non-actionable when no request is present.
@@ -1271,7 +1251,7 @@ flowchart TB
 - LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM
 
 **Batch**
-- 8b
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Repeated or paraphrased queries can be linked to prior origin queries.

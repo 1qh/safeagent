@@ -971,9 +971,11 @@ Cross-section dependency notes:
 
 ## Task Specifications
 
-### SCAFFOLD_FRONTEND — Frontend Scaffolding
+### SCAFFOLD_FRONTEND Supplementary Frontend Context
 
-**Batch**: 2
+> **Canonical task spec**: See [foundation.md § Task SCAFFOLD_FRONTEND](./foundation.md#task-scaffold_frontend-frontend-sdk-workspace-scaffolding). This section provides supplementary frontend-specific context and QA scenarios.
+
+**Batch**: FOUNDATION_A_BATCH
 
 **What to do**
 - Establish frontend workspace boundaries for the React hooks, web components, and native components subpath modules within the safeagent library.
@@ -1006,9 +1008,9 @@ Cross-section dependency notes:
 - Validate dependency installation in a clean environment reproduces identical graph behavior.
 - Validate unresolved peer warnings are actionable and documented.
 
-### REACT_HOOKS — React Hooks
+### Task REACT_HOOKS: React Hooks
 
-**Batch**: 9a
+**Batch**: SERVER_ROUTES_SUBAGENT_BATCH
 
 **Task Name**
 - REACT_HOOKS
@@ -1059,9 +1061,9 @@ Cross-section dependency notes:
 - Treat trace payload handling as mode-gated to prevent accidental detail leakage in standard mode.
 - Keep hook return contracts stable and composable to reduce downstream migration churn.
 
-### WEB_COMPONENTS — Web Components
+### Task WEB_COMPONENTS: Web Components
 
-**Batch**: 9b
+**Batch**: ENDPOINTS_BARREL_BATCH
 
 **Task Name**
 - WEB_COMPONENTS
@@ -1108,9 +1110,9 @@ Cross-section dependency notes:
 - Keep component state ownership explicit so controlled and uncontrolled modes stay reliable.
 - Treat offline and error UI as first-class states, not edge-case overlays.
 
-### TRACE_UI — Trace Visualization
+### Task TRACE_UI: Trace Visualization
 
-**Batch**: 10
+**Batch**: E2E_DEPLOY_BATCH
 
 **Task Name**
 - TRACE_UI
@@ -1157,9 +1159,9 @@ Cross-section dependency notes:
 - Keep latency visualization interpretable under burst conditions by anchoring to clear thresholds.
 - Ensure trace-panel behaviors remain explicitly tied to verbosity mode transitions.
 
-### RN_COMPONENTS — React Native Components
+### Task RN_COMPONENTS: React Native Components
 
-**Batch**: 9b
+**Batch**: ENDPOINTS_BARREL_BATCH
 
 **Task Name**
 - RN_COMPONENTS
@@ -1206,9 +1208,9 @@ Cross-section dependency notes:
 - Isolate platform-specific adaptations inside component boundaries to protect shared hook logic.
 - Treat offline queue visibility and replay clarity as mandatory user trust features.
 
-### FRONTEND_CLI — Component CLI
+### Task FRONTEND_CLI: Component CLI
 
-**Batch**: 10
+**Batch**: E2E_DEPLOY_BATCH
 
 **Task Name**
 - FRONTEND_CLI
@@ -1253,9 +1255,9 @@ Cross-section dependency notes:
 - Fail fast on unsupported target conditions with actionable validation feedback.
 - Preserve consumer ownership by copying editable sources rather than opaque runtime bindings.
 
-### STORYBOOK_FRONTEND — Storybook
+### Task STORYBOOK_FRONTEND: Storybook
 
-**Batch**: 10
+**Batch**: E2E_DEPLOY_BATCH
 
 **Task Name**
 - STORYBOOK_FRONTEND
