@@ -8,6 +8,14 @@
 
 ---
 
+## Quick Start
+
+- Read [Start Here](./start-here.md) for role-based reading paths.
+- Read [Constraints](./constraints.md) before implementation decisions.
+- Use [Execution Plan](./execution.md) as the scheduling and dependency truth.
+- Use [Quality Gates](./quality-gates.md) for completion criteria.
+- Use [Operations](./operations.md) for runtime and incident-readiness context.
+
 ## High-Level System Architecture
 
 ```mermaid
