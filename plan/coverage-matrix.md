@@ -1,6 +1,6 @@
 # Coverage Matrix
 
-This matrix tracks one-to-one preservation from `plan_v0` into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
+This matrix tracks preservation from `plan_v0` into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
 
 ---
 
@@ -17,7 +17,7 @@ This matrix tracks one-to-one preservation from `plan_v0` into the current `plan
 
 | Source (`plan_v0`) | Preserved (`plan`) | Status |
 |---|---|---|
-| `overview.md` | `overview.md` | Preserved |
+| `overview.md` | `overview.md` | Preserved (additive Quick Start section) |
 | `requirements.md` | `requirements.md` | Preserved |
 | `research.md` | `research.md` | Preserved |
 | `architecture.md` | `architecture.md` | Preserved |
