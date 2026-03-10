@@ -47,6 +47,7 @@ This document consolidates non-negotiable constraints so builders can validate d
 - Keep cross-document references explicit so builders do not search blindly.
 - Keep task IDs semantic and consistent across execution, domain specs, and testing.
 - Apply compact-first writing policy from [Compact Authoring Standard](./compact-authoring-standard.md).
+- Keep [Agent Kernel](./agent-kernel.md) aligned with authoritative docs as the default agent read path.
 
 ---
 

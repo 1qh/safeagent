@@ -9,7 +9,7 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 - Source files in `plan_v0`: 30
 - Preserved source files in `plan`: 30
 - Missing files: 0
-- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`, `readiness-scoreboard.md`, `readiness-decision-record-template.md`, `eval-adversarial-matrix.md`, `compact-authoring-standard.md`
+- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`, `readiness-scoreboard.md`, `readiness-decision-record-template.md`, `eval-adversarial-matrix.md`, `compact-authoring-standard.md`, `agent-kernel.md`
 
 ---
 
@@ -70,6 +70,7 @@ Use this sequence to start implementation quickly:
 14. [Operations](./operations.md)
 15. [Plan Drift Control](./plan-drift-control.md)
 16. [Compact Authoring Standard](./compact-authoring-standard.md)
+17. [Agent Kernel](./agent-kernel.md)
 
 ---
 

@@ -6,15 +6,14 @@ This is the primary entry point for implementation work. Use it to choose a read
 
 ## First Hour Path
 
-1. Read [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md).
-2. Read [System Plan Overview](./overview.md) and [System Architecture](./architecture.md).
+1. Read [Agent Kernel](./agent-kernel.md).
+2. Read [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md).
 3. Read [Execution Plan](./execution.md) and locate your assigned task.
 4. Open the domain document listed in the execution routing index.
 5. Read [Implementation Workflow](./implementation-workflow.md).
 6. Read [Task Verification Index](./task-verification-index.md) for behavioral test ownership.
-7. Read [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level execution rhythm.
-8. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
-9. Use [Operations](./operations.md) if your task touches runtime behavior.
+7. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
+8. Use [Operations](./operations.md) if your task touches runtime behavior.
 
 ---
 

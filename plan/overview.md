@@ -13,6 +13,7 @@
 - Read [Start Here](./start-here.md) for role-based reading paths.
 - Read [Constraints](./constraints.md) before implementation decisions.
 - Use [Execution Plan](./execution.md) as the scheduling and dependency truth.
+- Use [Agent Kernel](./agent-kernel.md) as the minimal first-read execution guide for agents.
 - Use [Domain Playbooks](./domain-playbooks.md) for domain-by-domain implementation paths.
 - Use [Implementation Workflow](./implementation-workflow.md) for assignment-to-done execution order.
 - Use [Task Verification Index](./task-verification-index.md) for task-level behavioral verification ownership.
