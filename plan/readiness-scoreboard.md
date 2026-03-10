@@ -8,7 +8,7 @@ This scoreboard is a read-only rollup of readiness state derived from existing c
 
 1. Update status after each batch closeout.
 2. Keep scoring evidence linked to task packets and quality gates.
-3. Escalate any dimension below target threshold before advancing release readiness.
+3. Escalate any blocked or at-risk dimension based on authoritative gates and evidence before advancing release readiness.
 
 ---
 
@@ -27,16 +27,16 @@ This scoreboard is a read-only rollup of readiness state derived from existing c
 
 ## Score Dimensions
 
-| Dimension | Description | Target |
+| Dimension | Description | Authoritative Criteria Source |
 |---|---|---|
-| Task Delivery Completeness | Completed tasks with accepted handoff packets | 100% |
-| Task Verification Completeness | Tasks with validated behavioral assertions | 100% |
-| Safety Readiness | Guardrail and safety-path validation coverage | 100% critical paths |
-| Reliability Readiness | Resilience and incident readiness coverage | 100% critical paths |
-| Performance Readiness | Latency and throughput objectives met | All defined service targets met |
-| Cost Readiness | Cost controls and budget policy validated | Budget policy compliant |
-| Release Readiness | Release pipeline and deployment gates complete | All release gates complete |
-| Audit Readiness | Final audit tasks complete | All final audit tasks complete |
+| Task Delivery Completeness | Completed tasks with accepted handoff packets | [Implementation Workflow](./implementation-workflow.md), [Handoff Packet Template](./handoff-packet-template.md), [Quality Gates](./quality-gates.md) |
+| Task Verification Completeness | Tasks with validated behavioral assertions | [Task Verification Index](./task-verification-index.md), [Quality Gates](./quality-gates.md) |
+| Safety Readiness | Guardrail and safety-path validation coverage | [Guardrails & Safety](./guardrails.md), [Unified Security Strategy and Regulatory Compliance](./security-compliance.md), [Quality Gates](./quality-gates.md) |
+| Reliability Readiness | Resilience and incident readiness coverage | [Infrastructure](./infrastructure.md), [Monitoring](./monitoring.md), [Operations](./operations.md), [Quality Gates](./quality-gates.md) |
+| Performance Readiness | Latency and throughput objectives met | [AI Operations Plan](./ai-operations.md), [Infrastructure](./infrastructure.md), [Quality Gates](./quality-gates.md) |
+| Cost Readiness | Cost controls and budget policy validated | [AI Operations Plan](./ai-operations.md), [Infrastructure](./infrastructure.md), [Quality Gates](./quality-gates.md) |
+| Release Readiness | Release pipeline and deployment gates complete | [Release Pipeline](./release-pipeline.md), [Quality Gates](./quality-gates.md), [Readiness Decision Record Template](./readiness-decision-record-template.md) |
+| Audit Readiness | Final audit tasks complete | [Testing](./testing.md), [Execution Plan](./execution.md), [Quality Gates](./quality-gates.md), [Readiness Decision Record Template](./readiness-decision-record-template.md) |
 
 ---
 
