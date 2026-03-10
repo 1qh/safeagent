@@ -41,6 +41,8 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - Reader-first layer links resolve to existing files.
 - [Start Here](./start-here.md) and [Overview](./overview.md) remain consistent with current onboarding flow.
 - Scheduling/dependency order statements remain centralized in [Execution Plan](./execution.md).
+- [Readiness Scoreboard](./readiness-scoreboard.md) remains a rollup view and does not define readiness criteria.
+- [Eval and Adversarial Matrix](./eval-adversarial-matrix.md) remains supplementary and does not override [Testing](./testing.md).
 
 ### Preservation and Scope Consistency
 
@@ -66,3 +68,5 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - [Task Verification Index](./task-verification-index.md)
 - [Coverage Matrix](./coverage-matrix.md)
 - [Quality Gates](./quality-gates.md)
+- [Readiness Scoreboard](./readiness-scoreboard.md)
+- [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)

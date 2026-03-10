@@ -28,6 +28,8 @@ Before implementation starts, prepare this packet:
 - `Quality Gates`: required gates from [Quality Gates](./quality-gates.md)
 - `Risk Notes`: security, scalability, and reliability concerns for this task
 
+Packet identity fields are sourced from the [Execution Plan](./execution.md) per-task routing index. Do not create a separate task registry outside execution routing.
+
 ---
 
 ## Execution Loop

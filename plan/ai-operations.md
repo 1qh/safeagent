@@ -37,6 +37,7 @@
 - [Alert Thresholds for Cost Anomalies](#alert-thresholds-for-cost-anomalies)
 - [Eval Dataset Freshness and Maintenance](#eval-dataset-freshness-and-maintenance)
 - [Prompt Rollout Decision Framework](#prompt-rollout-decision-framework)
+- [Runtime Optimization Loop](#runtime-optimization-loop)
 - [Scalability and Security Guardrails](#scalability-and-security-guardrails)
   - [Runtime Baseline Constraints](#runtime-baseline-constraints)
 - [Cross-References](#cross-references)
@@ -791,6 +792,28 @@ Rollout decisions are gate-driven and auditable.
 - Hold.
 - Roll back.
 - Escalate to incident workflow.
+
+## Runtime Optimization Loop
+The runtime optimization loop is a continuous operations cycle that improves quality, latency, cost efficiency, and reliability without weakening safety controls.
+
+1. Observe runtime and evaluation signals.
+2. Diagnose dominant failure and cost drivers.
+3. Prioritize changes by impact and risk.
+4. Apply controlled adjustments in owning domains.
+5. Re-run capability and adversarial evaluations.
+6. Promote or roll back based on measured outcomes.
+
+### Optimization Tracks
+- Quality track: retrieval relevance, orchestration quality, and guardrail precision.
+- Latency track: fan-out behavior, retrieval path efficiency, and stream responsiveness.
+- Cost track: routing strategy efficiency, cache reuse, and low-value path control.
+- Reliability track: timeout handling, fallback behavior, and recovery performance.
+
+### Optimization Control Rules
+- Safety and compliance constraints remain non-bypassable.
+- Optimization changes require measurable before-and-after evidence.
+- Regressions trigger rollback and root-cause remediation before re-promotion.
+- Changes remain traceable through evaluation and rollout records.
 
 ## Scalability and Security Guardrails
 Scalability and security are mandatory, not optional optimizations.
