@@ -543,10 +543,16 @@ Accessibility:
 - Chart renderers include equivalent data table alternatives for assistive access.
 - Interactive renderers support full keyboard navigation and clear focus visibility.
 
-Storybook coverage:
-- Every built-in renderer has Storybook stories for full data variation coverage.
-- Story coverage includes empty states, error states, inline mode, and block mode.
-- Story review gates verify rendering consistency, accessibility semantics, and regression stability.
+Visual testing coverage:
+- Every built-in renderer has visual test scenarios for full data variation coverage.
+- Scenario coverage includes empty states, error states, inline mode, and block mode.
+- Review gates verify rendering consistency, accessibility semantics, and regression stability.
+
+Scalability:
+- Renderers MUST handle high-frequency component event bursts without blocking the main rendering thread.
+- Large data payloads (e.g., tables with thousands of rows) MUST use virtualized rendering to maintain frame rate.
+- Component registry lookups MUST be constant-time regardless of registry size.
+- Degraded rendering mode MUST activate when client resources are constrained, falling back to text-only presentation.
 
 Security:
 - Renderers MUST treat all payload data as untrusted input.

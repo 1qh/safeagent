@@ -617,7 +617,7 @@ Environment contract handling:
 
 ## Multi-Tenant Configuration Hierarchy
 
-The configuration hierarchy expands from three levels to five levels for high-scale multi-tenant operation while preserving the existing DeepPartial merge model.
+The configuration hierarchy expands from three levels to five levels for high-scale multi-tenant operation while preserving the existing deep-merge model defined earlier in this document.
 
 Resolution chain and precedence:
 
@@ -666,12 +666,7 @@ Config validation and runtime resolution:
 
 Merge order:
 
-- Merge applies left to right through the full chain.
-- Undefined values are skipped.
-- Null values override.
-- Arrays are replaced.
-- Function values override.
-- Objects recurse.
+- Merge applies left to right through the full five-level chain using the same deep-merge semantics already defined in the Configuration System section of this document.
 
 ```mermaid
 flowchart LR

@@ -397,13 +397,13 @@ Voice session state ties into conversation memory in File 05 and durable executi
 
 ## Generative UI Event Protocol
 
-- **Tenth event type**: `ui-component` joins the existing nine SSE event types as the channel for agent-generated dynamic UI.
-- **Event shape**: each `ui-component` event carries a component type discriminator from the server-registered catalog, component-specific data payload validated against a Zod v4 schema, display mode (`inline` or `block`), and a mandatory text fallback for clients that do not support that component type.
-- **Suppression pattern**: this follows the same model as CTA and location handling, where UI component tool-call and tool-result framework events are suppressed from the SSE stream and replaced by a clean `ui-component` event.
-- **Stream processor placement**: the UI component processor sits in the chain after location and before trace-step collection: Agent -> Guardrail -> CTA -> Location -> UI Component -> Trace-Step -> Output.
-- **Ordering guarantee**: `ui-component` events appear at their natural position in the response stream, interleaved with `text-delta` events so the agent's intended content flow is preserved.
-- **Security invariant**: `ui-component` payloads are data-only with no executable content and no raw markup; client renderers interpret payload data through registered component implementations.
-- **Graceful degradation**: clients that predate `ui-component` ignore unknown SSE event names per SSE behavior and still receive the text fallback through `text-delta` events.
+- **Tenth event type**: the SSE protocol adds a tenth named event for agent-generated dynamic UI, extending the existing nine-event protocol.
+- **Event shape**: each event carries a component category from the server-registered catalog, a data payload validated against a Zod v4 schema, a display mode (inline within text flow, or standalone block between text segments), and a mandatory text fallback for clients that do not support that category.
+- **Stream cleansing**: rich-content emissions follow the same cleansing model as CTA and location enrichment — internal framework events are replaced by a single clean named event on the external SSE channel.
+- **Ordering guarantee**: rich-content events appear at their natural position in the response stream, interleaved with text events, preserving the agent's intended content flow.
+- **Security invariant**: payloads are data-only with no executable content and no raw markup; client renderers interpret payload data through registered rendering implementations.
+- **Graceful degradation**: clients that predate this event type ignore unknown SSE event names per SSE specification behavior and still receive the text fallback through standard text events.
+- **Scalability**: per-response emission limits and payload size caps prevent unbounded component generation from degrading transport throughput under high concurrency.
 
 ---
 
@@ -986,18 +986,9 @@ classDiagram
     SSE_LOCATION_EVENT --> LOCATION_RESULT
 ```
 
-### SSEUIComponentEvent
+### SSE Rich Content Event
 
-```mermaid
-classDiagram
-    class SSE_UI_COMPONENT_EVENT {
-        type: "ui-component"
-        componentType: string
-        data: object
-        mode: "inline" | "block"
-        fallback: string
-    }
-```
+The rich content event delivers agent-generated dynamic UI payloads to clients. It carries a component category identifier, a schema-validated data payload, a display mode, and a mandatory text fallback. The category determines which client-side renderer handles the payload. Clients without a matching renderer display the text fallback.
 
 ### SSETripwireEvent
 

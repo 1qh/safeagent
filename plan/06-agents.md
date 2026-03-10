@@ -18,7 +18,7 @@
 - [Live Synthesis Streaming](#live-synthesis-streaming)
 - [Dependent Intent Handling](#dependent-intent-handling)
 - [Tool Registry](#tool-registry)
-- [Generative UI Component Tool](#generative-ui-component-tool)
+- [Generative UI Component Governance](#generative-ui-component-governance)
 - [MCP Client Protocol Integration](#mcp-client-protocol-integration)
 - [Location Enrichment Tool (LOCATION_TOOL)](#location-enrichment-tool-location_tool)
 - [Agent Router (Query Classification)](#agent-router-query-classification)
@@ -576,34 +576,34 @@ flowchart TB
     MAP_RAGFLOW & MAP_DOCUMENT_QA & MAP_GROUNDING_SEARCH & MAP_MEMORY_RECALL & MAP_DIRECT_ANSWER --> SCOPED_SUB_AGENT["Sub-Agent created with<br/>selected tools only"]
 ```
 
-### Generative UI Component Tool
+### Generative UI Component Governance
 
-The current event model supports text, CTA, citation, and location outputs, but it does not yet support dynamic component emission. To close that gap, the framework SHALL include a UI component tool pattern that lets agents emit structured component payloads while preserving clean stream semantics.
+The current event model supports text, CTA, citation, and location outputs, but does not yet support dynamic component emission. To close that gap, the framework SHALL support agent-generated rich UI payloads while preserving clean stream semantics and strict safety guarantees.
 
-Core requirements:
+Design constraints:
 
-- **UI component tool**: the framework SHALL provide a dedicated UI component tool that follows the same suppression pattern as CTA and location handling; tool-call chunks remain internal, and the stream emits clean ui-component events.
-- **Component type registry**: the server SHALL define a catalog of allowed component types such as chart, data-table, form, card, metric, image-gallery, map, and code-block, each with an explicit accepted data shape. Agents can emit only catalog-defined component types.
-- **Schema-validated payloads**: each component type SHALL define its contract with a Zod v4 schema. Emissions that fail validation are dropped and logged as warnings; invalid payloads are never surfaced to clients.
-- **Inline and block modes**: each emission SHALL declare presentation mode as inline or block so clients can place components inside text flow or between text segments.
-- **Multiple components per response**: a single agent response MAY emit multiple components, and each component is sent as its own ui-component event.
-- **Progressive rendering**: ui-component events SHALL emit as soon as each tool execution completes, interleaved with text-delta events so clients can build pages progressively.
-- **Fallback behavior**: every component payload SHALL include a text fallback representation. Clients that support the component render rich output; clients that do not support it render the fallback text.
-- **Security**: component payloads MUST be data-only and MUST NOT include executable content, including scripts, event handlers, or raw HTML.
-- **Tool placement**: the UI component tool sits in the processor chain after guardrails and before the transport boundary, aligned with transport behavior in file 11 and client rendering behavior in file 18.
+- **Dynamic component emission**: agents SHALL be able to emit structured rich-content payloads alongside text, following the same stream-cleansing pattern used for CTA and location enrichment.
+- **Server-controlled catalog**: the server SHALL define the set of allowed component categories (charts, data tables, forms, cards, metrics, image galleries, maps, formatted content blocks). Agents can only emit categories present in the catalog; unlisted categories are rejected.
+- **Contract validation**: each component category SHALL have its data contract defined in Zod v4. Emissions that fail validation are dropped with a warning log and never reach clients.
+- **Presentation modes**: each emission declares whether it appears inline within text flow or as a standalone block between text segments.
+- **Multiple emissions per response**: a single agent response MAY produce multiple rich-content payloads, each delivered as a separate event.
+- **Progressive delivery**: rich-content events are emitted as soon as ready, interleaved with text content, enabling clients to build pages progressively.
+- **Universal fallback**: every rich-content payload MUST include a plain-text fallback. Clients that support the category render rich output; others render the fallback.
+- **Data-only security**: payloads MUST contain only data — no executable content, no event handlers, no raw markup. Client-side rendering implementations interpret data through registered renderers.
+- **Scalability**: emission rate limits per response prevent unbounded component generation; payload size caps prevent oversized deliveries from degrading transport performance.
 
 ```mermaid
 flowchart LR
-    AGENT_OUTPUT[AGENT_RESPONSE]
-    UI_COMPONENT_TOOL[UI_COMPONENT_TOOL]
-    SCHEMA_VALIDATION[SCHEMA_VALIDATION]
-    SUPPRESSION_LAYER[SUPPRESSION_LAYER]
-    UI_COMPONENT_EVENT[UI_COMPONENT_SSE_EVENT]
+    AGENT_DECISION["Agent Decides\nRich Content Needed"]
+    CATALOG_CHECK["Catalog\nCategory Validation"]
+    CONTRACT_VALIDATION["Contract\nSchema Validation"]
+    STREAM_DELIVERY["Stream\nClean Event Delivery"]
+    CLIENT_RENDERING["Client\nRenderer Resolution"]
 
-    AGENT_OUTPUT --> UI_COMPONENT_TOOL
-    UI_COMPONENT_TOOL --> SCHEMA_VALIDATION
-    SCHEMA_VALIDATION --> SUPPRESSION_LAYER
-    SUPPRESSION_LAYER --> UI_COMPONENT_EVENT
+    AGENT_DECISION --> CATALOG_CHECK
+    CATALOG_CHECK --> CONTRACT_VALIDATION
+    CONTRACT_VALIDATION --> STREAM_DELIVERY
+    STREAM_DELIVERY --> CLIENT_RENDERING
 ```
 
 ---
