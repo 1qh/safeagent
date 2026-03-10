@@ -872,13 +872,13 @@ flowchart TB
         IG["Run before intent detection\nProtects against prompt injection"]
     end
 
-    subgraph INTENT_DETECTION["Intent Detection (05)"]
+    subgraph INTENT_DETECTION["Intent Detection (Conversation)"]
         ID["Classify intents\nRewrite queries"]
     end
 
     POST_INTENT_GATE["Post-intent language gate\nPost-Intent Gate enforcement"]
 
-    subgraph ORCHESTRATOR_AGENT["Orchestrator Agent (06)"]
+    subgraph ORCHESTRATOR_AGENT["Orchestrator Agent (Agents)"]
         ORCH_AGENT["Supervisor agent\nSpawns sub-agents"]
         
         subgraph SUB_AGENTS["Sub-Agents (not individually guardrailed)"]

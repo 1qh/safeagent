@@ -246,7 +246,7 @@ Interrupt handling must preserve state integrity:
 - Message ordering remains monotonic from the client perspective even when interruption occurs.
 - Queue transitions and run transitions are atomic at the session level to prevent split-brain run ownership.
 
-#### Durable Execution Tie-In (File 25)
+#### Durable Execution Tie-In
 
 The **ROLLBACK** policy depends on durable execution checkpoints defined in [Durable Execution](./durable-execution.md). Pre-run and step-level checkpoints make rollback deterministic by restoring a known-good session snapshot before replaying the replacement request.
 
@@ -392,7 +392,7 @@ End-to-end voice response latency target SHALL be measured from user silence det
 
 ### Session Persistence and Durability
 
-Voice session state ties into conversation memory in File 05 and durable execution guarantees in File 25 so interruptions, reconnects, and resumed turns preserve coherent context and execution state.
+Voice session state ties into conversation memory in the Conversation Pipeline document and durable execution guarantees in the Durable Execution document so interruptions, reconnects, and resumed turns preserve coherent context and execution state.
 
 ---
 

@@ -362,7 +362,7 @@ Integration alignment:
 - Quality signals are treated as production risk indicators.
 
 Cross-reference:
-- 21 — Release Pipeline for broader pipeline orchestration and admission gates.
+- the Release Pipeline document for broader pipeline orchestration and admission gates.
 
 ```mermaid
 flowchart TB
@@ -489,9 +489,9 @@ flowchart TB
 
 | Plan File | Connection |
 |---|---|
-| 04 — Foundation | TypeScript strictness baseline and runtime constraints alignment |
-| 16 — Testing | Test-focused rule relaxation scenarios and exception boundaries |
-| 21 — Release Pipeline | validation command quality gate and merge admission enforcement |
+| [Foundation](./foundation.md) | TypeScript strictness baseline and runtime constraints alignment |
+| [Testing Strategy](./testing.md) | Test-focused rule relaxation scenarios and exception boundaries |
+| [Release Pipeline](./release-pipeline.md) | validation command quality gate and merge admission enforcement |
 
 ## Task Specifications
 
@@ -559,8 +559,6 @@ flowchart LR
 - Editor integration scaffolded with format-on-save and type-aware feedback.
 - Project-specific exceptions documented, justified, and review-approved.
 - Zero warnings and zero errors on clean codebase checks.
-
-## Navigation
 
 ## Test Specifications
 

@@ -42,7 +42,6 @@
 - [Cross-References](#cross-references)
 - [Task Specifications](#task-specifications)
 - [Delivery Checklist](#delivery-checklist)
-- [Navigation](#navigation)
 
 ## Architecture Overview
 AI operations at 10M users requires an active control loop, not passive telemetry.
@@ -879,13 +878,11 @@ Scalability and security are mandatory, not optional optimizations.
 - Agent evaluation pipeline includes judge, rule, and statistical scorers.
 - Eval datasets, experiments, CLASSic, and CI gates are defined.
 - Operational concerns include warmup, dashboards, alerts, freshness, and rollout decisions.
-- Cross-reference table links to 05, 06, 12, 14, 15, 16, 21, and 22.
+- Cross-reference table links to Conversation Pipeline, Agents, Server, Observability, Infrastructure, Testing, Release Pipeline, and Monitoring.
 - Six Mermaid diagrams use UPPER_SNAKE semantic IDs.
 - Conversation intelligence analytics includes a dedicated Mermaid pipeline with UPPER_SNAKE conceptual IDs.
 - Security and scalability controls are explicit.
 - PostgreSQL policy remains Drizzle ORM only.
-
-## Navigation
 
 ## Test Specifications
 

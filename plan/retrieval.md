@@ -644,7 +644,7 @@ Feedback signals from grounded-answer outcomes are fed back into retrieval contr
 - All feedback-driven parameter changes MUST be reversible, with automatic rollback when post-adjustment quality metrics degrade during the configured evaluation window.
 - Feedback-driven adjustments MUST NOT trigger until a statistically meaningful sample is reached, using configurable minimum feedback counts per document and per topic.
 - Multi-document answers use proportional feedback attribution based on evidence contribution strength, rather than equal split attribution.
-- Every parameter adjustment MUST produce an audit trail with before and after values, triggering feedback sample details, and rollback eligibility window, aligned with the provenance controls defined in plan 14.
+- Every parameter adjustment MUST produce an audit trail with before and after values, triggering feedback sample details, and rollback eligibility window, aligned with the provenance controls defined in the Observability document.
 - Operators can pin retrieval parameters for selected topics or document sets to prevent unwanted drift during sensitive periods.
 
 ### Closed Feedback Loop
@@ -661,7 +661,7 @@ flowchart LR
     PARAMETER_ADJUSTMENT --> AUDIT_TRAIL["Audit Trail\nbefore and after plus rollback window"]
     PARAMETER_ADJUSTMENT --> SAFE_ROLLBACK["Safe Rollback\nrevert on quality regression"]
     SAFE_ROLLBACK --> RETRIEVAL_RUNTIME
-    QUALITY_SIGNALS --> SEMANTIC_CACHE_CONTROL["Semantic Cache Control\ninvalidate negatively rated entries\nplan 26 alignment"]
+    QUALITY_SIGNALS --> SEMANTIC_CACHE_CONTROL["Semantic Cache Control\ninvalidate negatively rated entries\nAI Operations alignment"]
     SEMANTIC_CACHE_CONTROL --> RETRIEVAL_RUNTIME
     OPERATOR_OVERRIDE["Operator Override\npin protected parameters"] --> PARAMETER_ADJUSTMENT
 ```

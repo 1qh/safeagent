@@ -135,7 +135,7 @@ flowchart TB
 - **Operational notes:** Tool invocation latency and failure rates are tracked in observability.
 - **Operational notes:** Tool backpressure behavior is measured under concurrent load.
 - **Operational notes:** Tool replacement supports phased rollout through scoped overrides.
-- **Reference:** File 06 for agent-level tool orchestration and MCP integration behavior.
+- **Reference:** See the Agents & Orchestration document for agent-level tool orchestration and MCP integration behavior.
 
 #### Deferred Tool Loading and On-Demand Discovery
 - **Scalability problem:** As MCP adoption expands, agents often connect to 10 or more MCP servers, and loading every tool definition at startup can consume roughly 50K to 130K tokens before useful work begins.
@@ -195,7 +195,7 @@ flowchart LR
 - **Operational notes:** Guardrail false positive and false negative trends are tracked.
 - **Operational notes:** Guardrail timeout behavior degrades to safe fallback outcomes.
 - **Operational notes:** Guardrail contracts include high-concurrency execution checks.
-- **Reference:** File 10 for deeper policy composition and safety governance.
+- **Reference:** See the Guardrails & Safety document for deeper policy composition and safety governance.
 
 ### 3. Memory Provider Extensions
 - **Role in system:** Memory provider extensions manage persistent and short-horizon memory operations.
@@ -224,7 +224,7 @@ flowchart LR
 - **Operational notes:** Cache coherence metrics are captured for troubleshooting.
 - **Operational notes:** Memory read and write latency percentiles are reported by scope.
 - **Operational notes:** Reconciliation paths handle delayed write visibility under load.
-- **Reference:** File 07 for memory data model and isolation rules.
+- **Reference:** See the Memory & Intelligence document for memory data model and isolation rules.
 
 ### 4. Storage Provider Extensions
 - **Role in system:** Storage provider extensions manage relational and object persistence.
@@ -253,7 +253,7 @@ flowchart LR
 - **Operational notes:** Storage saturation signals are integrated into observability.
 - **Operational notes:** Error class mapping supports graceful degradation logic.
 - **Operational notes:** Data layer extension changes require contract test completion.
-- **Reference:** File 04 and File 08 for foundational storage and document persistence coupling.
+- **Reference:** See the Foundation and Document Processing documents for foundational storage and document persistence coupling.
 
 ### 5. Retrieval Strategy Extensions
 - **Role in system:** Retrieval strategy extensions control search, ranking, and filtering behavior.
@@ -282,7 +282,7 @@ flowchart LR
 - **Operational notes:** Recall and precision quality metrics are tracked continuously.
 - **Operational notes:** Strategy latency and cost metrics are available by scope.
 - **Operational notes:** Large corpus behavior is validated under concurrent query pressure.
-- **Reference:** File 09 for retrieval baseline and evidence gate design.
+- **Reference:** See the Retrieval & Evidence document for retrieval baseline and evidence gate design.
 
 ### 6. Document Processor Extensions
 - **Role in system:** Document processor extensions convert diverse inputs into chunkable text and metadata.
@@ -314,7 +314,7 @@ flowchart LR
 - **Security considerations:** Access labels propagate from source document to all chunks.
 - **Operational notes:** Parsing quality benchmarks are part of contract validation.
 - **Operational notes:** Processor replacement can be rolled out by document type scope.
-- **Reference:** File 08 for ingestion orchestration and chunk governance.
+- **Reference:** See the Document Processing document for ingestion orchestration and chunk governance.
 
 ### 7. LLM Provider Extensions
 - **Role in system:** LLM provider extensions supply model completion and streaming capabilities.
@@ -346,7 +346,7 @@ flowchart LR
 - **Security considerations:** Provider fallback cannot skip mandatory safety checks.
 - **Operational notes:** Token usage, latency, and error metrics are tracked by provider.
 - **Operational notes:** Fallback activation rate is monitored for provider health trends.
-- **Reference:** File 06 for provider orchestration and agent runtime behavior.
+- **Reference:** See the Agents & Orchestration document for provider orchestration and agent runtime behavior.
 
 ### 8. Transport Extensions
 - **Role in system:** Transport extensions deliver events and responses to clients.
@@ -374,7 +374,7 @@ flowchart LR
 - **Security considerations:** Backpressure handling must avoid memory exhaustion conditions.
 - **Operational notes:** Stream health and disconnect metrics are observed by client type.
 - **Operational notes:** Event delivery lag is measured and reported.
-- **Reference:** File 11 for event model and adapter baseline definitions.
+- **Reference:** See the Streaming & Transport document for event model and adapter baseline definitions.
 
 ### 9. Observability Provider Extensions
 - **Role in system:** Observability extensions capture traces, scoring, and export workflows.
@@ -402,7 +402,7 @@ flowchart LR
 - **Security considerations:** Scoring outputs must remain attributable and reproducible.
 - **Operational notes:** Sampling strategies can be scoped by request criticality.
 - **Operational notes:** Cost controls are available for high-volume trace streams.
-- **Reference:** File 14 for observability requirements and evaluation governance.
+- **Reference:** See the Observability document for observability requirements and evaluation governance.
 
 ### 10. Authentication Extensions
 - **Role in system:** Authentication extensions verify identity and resolve access context.
@@ -430,7 +430,7 @@ flowchart LR
 - **Security considerations:** Token metadata handling must avoid sensitive claim leakage.
 - **Operational notes:** Auth failure rates and source trends are continuously monitored.
 - **Operational notes:** Context resolution latency is tracked due to critical-path impact.
-- **Reference:** File 12 for server-side auth boundary and middleware posture.
+- **Reference:** See the Server Implementation document for server-side auth boundary and middleware posture.
 
 ### 11. Frontend Component Extensions
 - **Role in system:** Frontend extensions enable UI customization without fragmenting core UX contracts.
@@ -458,7 +458,7 @@ flowchart LR
 - **Security considerations:** Accessibility compliance remains mandatory under customization.
 - **Operational notes:** Render performance and interaction latency are tracked by component type.
 - **Operational notes:** Registry health includes override conflict diagnostics.
-- **Reference:** File 18 for frontend SDK extension mechanics and consumer ownership model.
+- **Reference:** See the Frontend SDK document for frontend SDK extension mechanics and consumer ownership model.
 
 ### 12. Lifecycle Hook System
 - **Role in system:** Lifecycle hooks expose controlled interception and observation points.
@@ -718,18 +718,18 @@ flowchart LR
 ## Cross-References
 | Plan File | Connection |
 |---|---|
-| 04 - Foundation | Storage contracts and type system |
-| 06 - Agents | Tool registration, MCP integration, provider fallback |
-| 07 - Memory | Memory provider contracts |
-| 08 - Documents | Document processor contracts |
-| 09 - Retrieval | Retrieval strategy contracts |
-| 10 - Guardrails | Guardrail contracts and composition |
-| 11 - Transport | Transport adapter contracts |
-| 12 - Server | Auth middleware boundary and HTTP integration surface |
-| 14 - Observability | Observability provider contracts |
-| 15 - Infrastructure | Rate limiting, budget enforcement, circuit breaker, and capacity planning (non-extensible by design) |
-| 16 - Testing | Contract test methodology |
-| 18 - Frontend SDK | Component extension patterns |
+| [Foundation](./foundation.md) | Storage contracts and type system |
+| [Agents & Orchestration](./agents.md) | Tool registration, MCP integration, provider fallback |
+| [Memory & Intelligence](./memory.md) | Memory provider contracts |
+| [Document Processing](./documents.md) | Document processor contracts |
+| [Retrieval & Evidence](./retrieval.md) | Retrieval strategy contracts |
+| [Guardrails & Safety](./guardrails.md) | Guardrail contracts and composition |
+| [Streaming & Transport](./transport.md) | Transport adapter contracts |
+| [Server Implementation](./server.md) | Auth middleware boundary and HTTP integration surface |
+| [Observability](./observability.md) | Observability provider contracts |
+| [Infrastructure](./infrastructure.md) | Rate limiting, budget enforcement, circuit breaker, and capacity planning (non-extensible by design) |
+| [Testing Strategy](./testing.md) | Contract test methodology |
+| [Frontend SDK](./frontend-sdk.md) | Component extension patterns |
 
 ## Task Specifications
 
@@ -845,8 +845,6 @@ These boundaries are enforced through the registration validation system. Extens
 - Contract test suites are exportable for extension authors.
 - Built-in defaults pass all published contract tests.
 - Override hierarchy is enforced across global, agent, and request scopes.
-
-## Navigation
 
 ## Test Specifications
 

@@ -641,9 +641,6 @@ flowchart TB
 - Vitest: https://vitest.dev/
 - Ollama: https://ollama.com/
 
-## Navigation
----
-
 ## Test Specifications
 
 

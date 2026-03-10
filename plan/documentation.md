@@ -276,12 +276,12 @@ flowchart TD
 
 | Plan File | Relevant Scope | How It Connects To This Document |
 |---|---|---|
-| 01 — Requirements & Constraints | MH_OPENAPI_DOCS, MH_TYPEDOC | Defines mandatory outcomes for generated OpenAPI and TypeScript API documentation |
-| 02 — Research & Decisions | TypeDoc and OpenAPI generation findings | Establishes rationale for automated API reference generation and sync guarantees |
-| 12 — Server Implementation | OpenAPI documentation strategy in server scope | Defines the server-side OpenAPI production that powers endpoint reference generation |
-| 17 — Execution Plan | Task orchestration and dependency scheduling | Determines delivery order for infrastructure and content authoring tasks |
-| 18 — Frontend SDK | Consumer-facing APIs and UI behavior contracts | Supplies major reference and guide content for frontend integration |
-| 19 — Demo Applications | Practical usage scenarios and UX behavior | Supplies recipe and tutorial material tied to real integration examples |
+| [Requirements & Constraints](./requirements.md) | MH_OPENAPI_DOCS, MH_TYPEDOC | Defines mandatory outcomes for generated OpenAPI and TypeScript API documentation |
+| [Research & Decisions](./research.md) | TypeDoc and OpenAPI generation findings | Establishes rationale for automated API reference generation and sync guarantees |
+| [Server Implementation](./server.md) | OpenAPI documentation strategy in server scope | Defines the server-side OpenAPI production that powers endpoint reference generation |
+| [Execution Plan](./execution.md) | Task orchestration and dependency scheduling | Determines delivery order for infrastructure and content authoring tasks |
+| [Frontend SDK](./frontend-sdk.md) | Consumer-facing APIs and UI behavior contracts | Supplies major reference and guide content for frontend integration |
+| [Demo Applications](./demos.md) | Practical usage scenarios and UX behavior | Supplies recipe and tutorial material tied to real integration examples |
 
 Integration notes:
 - Documentation deliverables must trace directly to requirement IDs and task ownership.

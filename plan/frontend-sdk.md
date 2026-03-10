@@ -956,12 +956,12 @@ flowchart TD
 
 | Area | Linked Plan Section | Why It Matters for Frontend SDK |
 |---|---|---|
-| Requirements | 01 Requirements (`MH_REACT_HOOKS`, `MH_WEB_COMPONENTS`, `MH_RN_COMPONENTS`, `MH_TRACE_STEP_EVENTS`, `MH_TRACE_UI`, `MH_OFFLINE_QUEUE`, `MH_STORYBOOK`) | Defines expected frontend capabilities and acceptance outcomes. |
-| Foundation Contracts | 04 Foundation | Source of canonical SSE event contracts and schema definitions used by frontend layers. |
-| Transport | 11 Transport | Defines SSE protocol behavior, `trace-step` payload shape, and verbosity semantics consumed by hooks and components. |
-| Server Runtime | 12 Server | Defines chat streaming endpoint behavior and verbosity query interpretation used by transport integration. |
-| Observability | 14 Observability | Defines trace correlation behavior through shared `traceId` across frontend timeline and telemetry systems. |
-| Demos | 19 Demos | Defines integration targets that consume web and native component modules for end-to-end validation. |
+| Requirements | [Requirements](./requirements.md) (`MH_REACT_HOOKS`, `MH_WEB_COMPONENTS`, `MH_RN_COMPONENTS`, `MH_TRACE_STEP_EVENTS`, `MH_TRACE_UI`, `MH_OFFLINE_QUEUE`, `MH_STORYBOOK`) | Defines expected frontend capabilities and acceptance outcomes. |
+| Foundation Contracts | [Foundation](./foundation.md) | Source of canonical SSE event contracts and schema definitions used by frontend layers. |
+| Transport | [Transport](./transport.md) | Defines SSE protocol behavior, `trace-step` payload shape, and verbosity semantics consumed by hooks and components. |
+| Server Runtime | [Server](./server.md) | Defines chat streaming endpoint behavior and verbosity query interpretation used by transport integration. |
+| Observability | [Observability](./observability.md) | Defines trace correlation behavior through shared `traceId` across frontend timeline and telemetry systems. |
+| Demos | [Demos](./demos.md) | Defines integration targets that consume web and native component modules for end-to-end validation. |
 
 Cross-section dependency notes:
 - Frontend stream rendering behavior directly depends on transport event ordering guarantees.

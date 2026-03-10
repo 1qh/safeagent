@@ -25,7 +25,6 @@
 - [Mutation Testing](#mutation-testing)
 - [Snapshot and Golden-File Testing](#snapshot-and-golden-file-testing)
 - [Streaming-Specific Tests](#streaming-specific-tests)
-- [Per-Module Test Specifications](#per-module-test-specifications) *(co-located with each module file)*
 - [Development Seed Data](#development-seed-data)
 - [QA Policy](#qa-policy)
 - [Task Specifications](#task-specifications)
@@ -1595,9 +1594,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 **Output format**: `Tasks [N/N compliant] | Contamination [CLEAN/ISSUES] | Unaccounted [CLEAN/ISSUES] | VERDICT`.
 
-## Per-Module Test Specifications
-
-Per-module test specifications are co-located with each module's plan file under a **Test Specifications** section. This ensures test assertions are maintained alongside the features they verify. The Coverage Map below provides the cross-cutting view across all modules.
+Per-module test specifications are co-located within each module's plan file under `## Test Specifications`. This ensures test assertions are maintained alongside the features they verify. The Coverage Map below provides the cross-cutting view across all modules.
 
 ### Testing Strategy Self-Validation
 
@@ -1872,7 +1869,7 @@ The six new testing categories provide additional coverage layers beyond the ori
 
 ## Requirement-Level Coverage (MH_*, MN_*)
 
-Coverage is additionally mapped directly to requirement IDs in `01 — Requirements & Constraints`.
+Coverage is additionally mapped directly to requirement IDs in the Requirements & Constraints document.
 
 ### Must Have (MH_*) Coverage Groups
 
@@ -1929,7 +1926,7 @@ All verification is automated and agent-executed. The thirteen testing types for
 - Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
 - Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
 - Property policy: invariant validation through randomized input generation covering modules with deterministic invariants with at least one hundred iterations per property.
-- Per-module coverage: every plan document (01 through 29) has explicit test specifications mapping testable behaviors to test layers.
+- Per-module coverage: every plan document from Requirements through API Governance has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
 
@@ -1973,4 +1970,3 @@ Testing strategy aligns with and validates every plan document in the structure:
 - Pact contract testing: https://docs.pact.io/
 - fast-check property testing: https://fast-check.dev/
 - Toxiproxy fault injection: https://github.com/Shopify/toxiproxy#readme
-

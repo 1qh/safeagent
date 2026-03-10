@@ -38,7 +38,6 @@
 - [Scale Profile for 10M Users](#scale-profile-for-10m-users)
 - [Cross-References](#cross-references)
 - [Delivery Checklist](#delivery-checklist)
-- [Navigation](#navigation)
 
 ## Architecture Overview
 
@@ -587,9 +586,7 @@ flowchart TD
 - Escalation and review queue timeout policies are covered.
 - Operational concerns include lifecycle, size, concurrency, isolation, and observability.
 - Four Mermaid diagrams are included with semantic UPPER_SNAKE IDs.
-- Cross-reference table links plans 06, 11, 12, 14, 15, 16, and 24.
-
-## Navigation
+- Cross-reference table links Agents, Transport, Server, Observability, Infrastructure, Testing, and Extensibility.
 
 ## Test Specifications
 

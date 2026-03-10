@@ -607,7 +607,7 @@ The `page_index` table stores all retrieval artifacts for document pages. It's m
 | `metadata` | jsonb | `{ images: image descriptions, page object key }` |
 | `created_at` | timestamptz | Row creation time |
 
-> **Note**: The CROSS_CONV_RAG task (document 09) adds a non-nullable `scope` column (`TEXT`, values `'thread'` or `'global'`) to this table. The column is not listed above because it does not exist until CROSS_CONV_RAG is implemented. See document 09 for the full cross-conversation retrieval design.
+> **Note**: The CROSS_CONV_RAG task (the Retrieval & Evidence document) adds a non-nullable `scope` column (`TEXT`, values `'thread'` or `'global'`) to this table. The column is not listed above because it does not exist until CROSS_CONV_RAG is implemented. See the Retrieval & Evidence document for the full cross-conversation retrieval design.
 
 ### Indexes
 

@@ -2211,7 +2211,7 @@ This strategy applies to the Bun runtime deployment footprint for the single saf
 
 - Use automated failover for eligible database read-replica topologies to reduce detection-to-failover delay.
 - Maintain a manual primary database failover runbook for split-brain prevention and controlled leadership transfer.
-- Apply service degradation behavior during failover according to 15 — Infrastructure degradation model.
+- Apply service degradation behavior during failover according to the Infrastructure degradation model.
 - Define DNS and load balancer failover policy for regional traffic steering and dependency isolation.
 - Run scheduled failover drills to verify readiness, decision speed, and communication accuracy.
 
@@ -2225,7 +2225,7 @@ This strategy applies to the Bun runtime deployment footprint for the single saf
 ### Cross-Region Considerations
 
 - Choose active-passive or active-active regional posture based on service criticality, cost envelope, and operational readiness.
-- Enforce data residency constraints during replication as defined in 27 — Security and Compliance.
+- Enforce data residency constraints during replication as defined in the Security and Compliance document.
 - Monitor replication lag continuously and alert when lag threatens recovery-point objectives.
 - Define region failover decision criteria using blast radius, lag state, dependency health, and regulatory constraints.
 
@@ -2295,12 +2295,12 @@ flowchart TB
 
 | Plan File | Relevant Scope | How It Connects To This Document |
 |---|---|---|
-| 14 — Observability | Langfuse tracing, structured logging, Promptfoo eval, post-hoc diagnostics | Monitoring detects live incidents and SLA risk; observability explains root cause and validates mitigation outcomes |
-| 16 — Testing and QA | Functional testing, stress scenarios, resilience verification | Monitoring-owned chaos scenarios validate alert coverage and incident readiness, while broader system testing remains outside live monitoring governance |
-| 06 — Agents & Orchestration | Agent execution model, tool routing, handoff semantics, memory workflows | Monitoring tracks live agent loop depth, plan drift, handoff reliability, and tool success as production reliability signals |
-| 15 — Infrastructure | Service topology, degradation model, health checks, rate limiting, circuit breaker | Monitoring consumes infrastructure health and saturation signals, then routes actionable alerts and escalation workflows |
-| 12 — Server Implementation | Health endpoint semantics, dependency checks, middleware reliability behavior | Monitoring uses server health outputs as core availability signals and incident trigger inputs |
-| 21 — Release Pipeline | Deployment stages, canary and rollback, operational pipeline monitoring | Monitoring governs deployment safety, canary promotion confidence, and rollback decision thresholds |
+| [Observability](./observability.md) | Langfuse tracing, structured logging, Promptfoo eval, post-hoc diagnostics | Monitoring detects live incidents and SLA risk; observability explains root cause and validates mitigation outcomes |
+| [Testing](./testing.md) | Functional testing, stress scenarios, resilience verification | Monitoring-owned chaos scenarios validate alert coverage and incident readiness, while broader system testing remains outside live monitoring governance |
+| [Agents](./agents.md) | Agent execution model, tool routing, handoff semantics, memory workflows | Monitoring tracks live agent loop depth, plan drift, handoff reliability, and tool success as production reliability signals |
+| [Infrastructure](./infrastructure.md) | Service topology, degradation model, health checks, rate limiting, circuit breaker | Monitoring consumes infrastructure health and saturation signals, then routes actionable alerts and escalation workflows |
+| [Server](./server.md) | Health endpoint semantics, dependency checks, middleware reliability behavior | Monitoring uses server health outputs as core availability signals and incident trigger inputs |
+| [Release Pipeline](./release-pipeline.md) | Deployment stages, canary and rollback, operational pipeline monitoring | Monitoring governs deployment safety, canary promotion confidence, and rollback decision thresholds |
 
 Integration notes:
 - Monitoring coverage spans both safeagent and server operational surfaces.

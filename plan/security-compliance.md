@@ -36,7 +36,6 @@
 - [Data Residency and Geo-Compliance](#data-residency-and-geo-compliance)
 - [Cross-References](#cross-references)
 - [Delivery Checklist](#delivery-checklist)
-- [Navigation](#navigation)
 
 ## Strategic Context
 - `safeagent` already includes strong technical controls across guardrails, authentication, observability, infrastructure, monitoring, and extension boundaries.
@@ -74,7 +73,7 @@
 - Availability attacks can target model routes, queue depth, storage systems, and streaming delivery.
 - Credential theft can enable privilege abuse and lateral movement.
 - Cost amplification attacks can trigger budget exhaustion and service instability.
-- Baseline protective controls are in files 12 and 15.
+- Baseline protective controls are in the Server Implementation and Infrastructure documents.
 - Governance added here: resilience evidence requirements and risk acceptance criteria.
 
 ### Extension Layer
@@ -88,16 +87,16 @@
 
 | OWASP Category | Risk in safeagent | Existing Control Anchor | Governance Layer Added Here |
 |---|---|---|---|
-| LLM01 Prompt Injection | Instruction override and unsafe action steering | File 10, File 22 | Threat ownership and campaign-level escalation policy |
-| LLM02 Insecure Output Handling | Harmful output consumed by downstream experiences | File 10, File 14 | Release risk gate and rollback accountability |
-| LLM03 Training Data Poisoning | Corrupted grounding and memory artifacts | File 09, File 14 | Data provenance review cadence and contamination response |
-| LLM04 Model Denial of Service | Traffic abuse and resource exhaustion | File 15, File 22 | Saturation classification and resilience evidence requirements |
-| LLM05 Supply Chain Vulnerabilities | Dependency or extension compromise | File 24, File 15 | Supplier risk tiering and remediation SLA governance |
-| LLM06 Sensitive Information Disclosure | Personal data exposure in output or logs | File 14, File 10 | Breach workflow and regulator reporting controls |
-| LLM07 Insecure Plugin Design | Unsafe extension capability boundaries | File 24 | Mandatory security review and trust-level approvals |
-| LLM08 Excessive Agency | Unbounded tool actions | File 06, File 25 | Human oversight gate policy and high-impact approvals |
-| LLM09 Overreliance | Users misled by uncertain or low-confidence outputs | File 14, File 22 | Transparency and explainability quality obligations |
-| LLM10 Model Theft | Unauthorized extraction and abuse | File 12, File 15 | Access abuse thresholds and executive legal escalation |
+| LLM01 Prompt Injection | Instruction override and unsafe action steering | Guardrails & Safety, Monitoring & Alerting | Threat ownership and campaign-level escalation policy |
+| LLM02 Insecure Output Handling | Harmful output consumed by downstream experiences | Guardrails & Safety, Observability | Release risk gate and rollback accountability |
+| LLM03 Training Data Poisoning | Corrupted grounding and memory artifacts | Retrieval & Evidence, Observability | Data provenance review cadence and contamination response |
+| LLM04 Model Denial of Service | Traffic abuse and resource exhaustion | Infrastructure, Monitoring & Alerting | Saturation classification and resilience evidence requirements |
+| LLM05 Supply Chain Vulnerabilities | Dependency or extension compromise | Extensibility, Infrastructure | Supplier risk tiering and remediation SLA governance |
+| LLM06 Sensitive Information Disclosure | Personal data exposure in output or logs | Observability, Guardrails & Safety | Breach workflow and regulator reporting controls |
+| LLM07 Insecure Plugin Design | Unsafe extension capability boundaries | Extensibility | Mandatory security review and trust-level approvals |
+| LLM08 Excessive Agency | Unbounded tool actions | Agents & Orchestration, Durable Execution | Human oversight gate policy and high-impact approvals |
+| LLM09 Overreliance | Users misled by uncertain or low-confidence outputs | Observability, Monitoring & Alerting | Transparency and explainability quality obligations |
+| LLM10 Model Theft | Unauthorized extraction and abuse | Server Implementation, Infrastructure | Access abuse thresholds and executive legal escalation |
 
 ## Threat Classification Framework
 - Severity levels use `P0` through `P3` and apply to both vulnerabilities and active incidents.
@@ -510,9 +509,7 @@ flowchart LR
 - Data classification scheme defines sensitivity levels and control posture.
 - Bias and fairness governance includes monitoring, thresholds, and remediation flow.
 - Incident response includes `P0` to `P3` classification and required scenario playbooks.
-- Cross-reference mapping includes files 10, 12, 14, 15, 22, 24, and 25.
-
-## Navigation
+- Cross-reference mapping includes Guardrails & Safety, Server Implementation, Observability, Infrastructure, Monitoring & Alerting, Extensibility, and Durable Execution.
 
 ## Test Specifications
 

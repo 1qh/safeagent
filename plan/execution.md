@@ -6,7 +6,7 @@
 >
 > **Scale**: 119 implementation tasks + 4 final audit tasks = 123 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
-> **Scale Update (Documents 28, 29)**: 121 implementation tasks + 4 final audit tasks = 125 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
+> **Scale Update (Developer Experience and API Governance documents)**: 121 implementation tasks + 4 final audit tasks = 125 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
 >
 > **Scale Update (Gap Round 4)**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
 
@@ -23,8 +23,8 @@
 - [Complete Task Registry (123 Tasks) and Full Dependency Matrix](#complete-task-registry-123-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24-25-26-27)
-- [Execution Addendum (Documents 28, 29)](#execution-addendum-documents-28-29)
+- [New Task Registry (Expanded Plan Documents)](#new-task-registry-expanded-plan-documents)
+- [Execution Addendum (Developer Experience and API Governance)](#execution-addendum-developer-experience-and-api-governance)
 - [Execution Addendum (Gap Analysis Round 4)](#execution-addendum-gap-analysis-round-4)
 
 ---
@@ -260,7 +260,7 @@ graph LR
 | USER_SHORTTERM_MEM | User short-term memory (cross-thread) | `unspecified-high` | SHORT_TERM_MEM |
 | CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
 
-> **NEW**: REWRITE_STRATEGIES (from Document 05) delivers three independently importable rewrite strategy modules. Depends only on types — fits naturally alongside other CORE_TYPES-dependent tasks.
+> **NEW**: REWRITE_STRATEGIES (from the Conversation Pipeline document) delivers three independently importable rewrite strategy modules. Depends only on types — fits naturally alongside other CORE_TYPES-dependent tasks.
 
 ---
 
@@ -278,7 +278,7 @@ graph LR
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
 | **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | FOUNDATION, CORE_TYPES |
 
-> **NEW**: FILE_REGISTRY (from Document 09) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from Document 09) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch 7.
+> **NEW**: FILE_REGISTRY (from the Retrieval document) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from the Retrieval document) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch 7.
 
 ---
 
@@ -322,7 +322,7 @@ graph LR
 | MEMORY_CONTROL | User memory control tools (inspect/delete) | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
 | DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
 
-> **NEW**: EMBED_ROUTER (Document 05) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Document 05) wraps RAGFlow's retrieval API. LOCATION_TOOL (Document 06) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch 8a because both require EVIDENCE_GATE (Batch 7).
+> **NEW**: EMBED_ROUTER (Conversation Pipeline) implements the fast semantic classifier using Valkey-cached embeddings. RAGFLOW_CLIENT (Conversation Pipeline) wraps RAGFlow's retrieval API. LOCATION_TOOL (Agents) adds geocoding and image enrichment with streamed location events. DOC_SEARCH and VISUAL_GROUNDING are scheduled in Batch 8a because both require EVIDENCE_GATE (Batch 7).
 
 ---
 
@@ -364,7 +364,7 @@ graph LR
 | RESPONSE_CALIBRATION | Response length/energy matching signal computation | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
 | CONTEXT_BUDGET | Context window budget management with truncation (+ humanlikeness enhancements) | `unspecified-high` | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
 
-> **NEW**: LLM_INTENT (Document 05) implements the LLM authority that always validates the embedding router's guess and performs conditional query rewriting. SOURCE_ROUTER (Document 05) implements parallel source execution with priority-weighted result merging.
+> **NEW**: LLM_INTENT (Conversation Pipeline) implements the LLM authority that always validates the embedding router's guess and performs conditional query rewriting. SOURCE_ROUTER (Conversation Pipeline) implements parallel source execution with priority-weighted result merging.
 
 ---
 
@@ -388,7 +388,7 @@ graph LR
 | QUERY_REPLAY | Query replay detection and rewriting (+ humanlikeness enhancements) | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
 | AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
 
-> **NEW**: PREFETCH_COORD (Document 05) coordinates the speculative pre-fetch pattern — runs embedding router and LLM validator concurrently, starts sources speculatively, cancels on disagreement. REWRITE_TOOL (Document 05) checks all 7 rewrite triggers (pronoun referent, short query, multi-intent, highly specific, jargon mismatch, ordinal reference, query replay) and applies per-source strategies with the entity-preservation guardrail.
+> **NEW**: PREFETCH_COORD (Conversation Pipeline) coordinates the speculative pre-fetch pattern — runs embedding router and LLM validator concurrently, starts sources speculatively, cancels on disagreement. REWRITE_TOOL (Conversation Pipeline) checks all 7 rewrite triggers (pronoun referent, short query, multi-intent, highly specific, jargon mismatch, ordinal reference, query replay) and applies per-source strategies with the entity-preservation guardrail.
 
 ---
 
@@ -691,31 +691,31 @@ graph TB
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
 ```
 
-### New Task Dependency Chain (Documents 05, 06, 09)
+### New Task Dependency Chain (Conversation, Agents, Retrieval)
 
 ```mermaid
 graph TB
-    subgraph INTENT_PIPELINE["Intent Detection Pipeline (Document 05)"]
+    subgraph INTENT_PIPELINE["Intent Detection Pipeline (Conversation)"]
         EMBED_ROUTER["EMBED_ROUTER<br/>Embedding Router<br/>Batch 6"]:::new
         LLM_INTENT["LLM_INTENT<br/>LLM Intent Validator<br/>+ Query Rewriter<br/>Batch 8a"]:::new
         PREFETCH_COORD["PREFETCH_COORD<br/>Speculative Pre-Fetch<br/>Coordinator<br/>Batch 8b"]:::new
     end
 
-    subgraph QUERY_PIPELINE["Query Pipeline (Document 05)"]
+    subgraph QUERY_PIPELINE["Query Pipeline (Conversation)"]
         REWRITE_STRATEGIES["REWRITE_STRATEGIES<br/>Rewrite Strategy<br/>Modules<br/>Batch 3"]:::new
         RAGFLOW_CLIENT["RAGFLOW_CLIENT<br/>RAGFlow Client<br/>+ Tool<br/>Batch 6"]:::new
         SOURCE_ROUTER["SOURCE_ROUTER<br/>Source Priority<br/>Router<br/>Batch 8a"]:::new
         REWRITE_TOOL["REWRITE_TOOL<br/>Query Rewrite<br/>Tool<br/>Batch 8b"]:::new
     end
 
-    subgraph FILE_INTELLIGENCE["File Intelligence (Document 09)"]
+    subgraph FILE_INTELLIGENCE["File Intelligence (Retrieval)"]
         FILE_REGISTRY["FILE_REGISTRY<br/>FileRegistry<br/>Batch 4"]:::new
         EVIDENCE_GATE["EVIDENCE_GATE<br/>Evidence Bundle<br/>Gate<br/>Batch 7"]:::new
         DOC_SEARCH["DOC_SEARCH<br/>Per-Document<br/>Search Tool<br/>Batch 8a"]:::new
         VISUAL_GROUNDING["VISUAL_GROUNDING<br/>Visual Grounding<br/>Batch 8a"]:::new
     end
 
-    subgraph ORCHESTRATION["Orchestration (Document 06)"]
+    subgraph ORCHESTRATION["Orchestration (Agents)"]
         ORCHESTRATOR["ORCHESTRATOR<br/>Orchestrator Agent<br/>Framework<br/>Batch 8b"]:::new
         SUBAGENT_FACTORY["SUBAGENT_FACTORY<br/>Sub-Agent Factory<br/>Batch 9a"]:::new
     end
@@ -923,8 +923,8 @@ graph TB
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
 ```
 
-> (new) = New task from expanded requirements (Documents 05, 06, 07, 09, 10, 12, 20, 21, 22, 23, 24, 25, 26, 27)
-> (frontend) = New task from frontend SDK requirements (Documents 18, 19)
+> (new) = New task from expanded plan documents
+> (frontend) = New task from Frontend SDK and Demos documents
 
 ---
 
@@ -1030,7 +1030,7 @@ graph LR
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
 | **Total** | **123** | |
 
-### Category Totals (Updated for Documents 28, 29)
+### Category Totals (Updated for Developer Experience and API Governance)
 
 | Category | Count | Percentage |
 |----------|-------|------------|
@@ -1047,7 +1047,7 @@ graph LR
 
 ## Complete Task Registry (123 Tasks) and Full Dependency Matrix
 
-> **Registry Update (Documents 28, 29)**: Complete task count is now 125.
+> **Registry Update (Developer Experience and API Governance documents)**: Complete task count is now 125.
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -1296,39 +1296,39 @@ flowchart TB
 
 ---
 
-## New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)
+## New Task Registry (Expanded Plan Documents)
 
-> **Document Coverage Update**: Includes Documents 28 and 29 via the execution addendum tasks listed below.
+> **Document Coverage Update**: Includes the Developer Experience and API Governance documents via the execution addendum tasks listed below.
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| USER_SHORTTERM_MEM | User short-term memory (cross-thread) | Document 07 | 3 | `unspecified-high` | SHORT_TERM_MEM |
-| STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | Document 07 | 5 | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
-| MEMORY_CONTROL | User memory control tools (inspect/delete) | Document 07 | 6 | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
-| STYLE_PREFERENCES | Communication style meta-preference extraction and storage | Document 07 | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
-| FACT_SUPERSESSION | Fact contradiction detection and resolution in SurrealDB | Document 07 | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
-| DEPENDENT_INTENT | Dependent intent coordination in orchestrator | Documents 06, 10 | 8b | `deep` | ORCHESTRATOR, LLM_INTENT |
-| RESPONSE_CALIBRATION | Response length/energy matching signal computation | Document 06 | 8a | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
-| CLARIFICATION_MODEL | Proactive clarification + multi-turn patience model | Document 06 | 8b | `deep` | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY |
-| LANG_GUARD | Language Guard — two-stage language enforcement + output drift scanner | Document 10 | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
-| HATE_SPEECH_GUARD | Hate Speech Guard — hybrid obscenity + multilingual matching | Document 10 | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
-| LOCATION_TOOL | Location Enrichment Tool — geocoding, optional image enrichment, and streamed location events | Document 06 | 6 | `deep` | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE |
-| EMBED_ROUTER | Embedding Router — vector similarity classifier | Document 05 | 6 | `deep` | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY |
-| LLM_INTENT | LLM Intent Validator + Query Rewriter | Document 05 | 8a | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
-| FRUSTRATION_SIGNAL | Frustration escalation detection across turns | Document 05 | 8b | `deep` | EMBED_ROUTER, LLM_INTENT |
-| PREFETCH_COORD | Speculative Pre-Fetch Coordinator | Document 05 | 8b | `deep` | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
-| RAGFLOW_CLIENT | RAGFlow Client + Tool — raw fetch wrapper | Document 05 | 6 | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
-| SOURCE_ROUTER | Source Priority Router — parallel fan-out + weighted merge | Document 05 | 8a | `deep` | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS |
-| REWRITE_TOOL | Query Rewrite Tool — 7-trigger conditional rewriting | Document 05 | 8b | `unspecified-high` | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT |
-| REWRITE_STRATEGIES | Rewrite Strategy Modules — HyDE, EntityExtraction, DenseKeywords | Document 05 | 3 | `quick` | CORE_TYPES |
-| FILE_REGISTRY | FileRegistry — temporal, ordinal, named resolution | Document 09 | 4 | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
-| EVIDENCE_GATE | Evidence Bundle Gate — sufficiency scoring + thresholds | Document 09 | 7 | `deep` | EMBED_ROUTER, RAG_INFRA, CORE_TYPES |
-| DOC_SEARCH | Per-Document Search Tool — document search capability (evidence bundle) | Document 09 | 8a | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
-| VISUAL_GROUNDING | Visual Grounding — multimodal LLM for charts/tables/images | Document 09 | 8a | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
-| ORCHESTRATOR | Orchestrator Agent Framework — supervisor + parallel sub-agent synthesis | Document 06 | 8b | `deep` | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
-| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped agent + handoff assembly with tool assignment | Document 06 | 9a | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
+| USER_SHORTTERM_MEM | User short-term memory (cross-thread) | Memory | 3 | `unspecified-high` | SHORT_TERM_MEM |
+| STRUCTURED_RESULT_MEM | Structured result set storage and ordinal resolution | Memory | 5 | `deep` | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY |
+| MEMORY_CONTROL | User memory control tools (inspect/delete) | Memory | 6 | `deep` | SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY |
+| STYLE_PREFERENCES | Communication style meta-preference extraction and storage | Memory | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
+| FACT_SUPERSESSION | Fact contradiction detection and resolution in SurrealDB | Memory | 8a | `deep` | FACT_EXTRACTION, SURREALDB_CLIENT |
+| DEPENDENT_INTENT | Dependent intent coordination in orchestrator | Agents + Guardrails | 8b | `deep` | ORCHESTRATOR, LLM_INTENT |
+| RESPONSE_CALIBRATION | Response length/energy matching signal computation | Agents | 8a | `unspecified-high` | CORE_TYPES, AGENT_FACTORY |
+| CLARIFICATION_MODEL | Proactive clarification + multi-turn patience model | Agents | 8b | `deep` | LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY |
+| LANG_GUARD | Language Guard — two-stage language enforcement + output drift scanner | Guardrails | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
+| HATE_SPEECH_GUARD | Hate Speech Guard — hybrid obscenity + multilingual matching | Guardrails | 6 | `deep` | CORE_TYPES, GUARD_FACTORY |
+| LOCATION_TOOL | Location Enrichment Tool — geocoding, optional image enrichment, and streamed location events | Agents | 6 | `deep` | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE |
+| EMBED_ROUTER | Embedding Router — vector similarity classifier | Conversation Pipeline | 6 | `deep` | CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY |
+| LLM_INTENT | LLM Intent Validator + Query Rewriter | Conversation Pipeline | 8a | `deep` | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER |
+| FRUSTRATION_SIGNAL | Frustration escalation detection across turns | Conversation Pipeline | 8b | `deep` | EMBED_ROUTER, LLM_INTENT |
+| PREFETCH_COORD | Speculative Pre-Fetch Coordinator | Conversation Pipeline | 8b | `deep` | EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
+| RAGFLOW_CLIENT | RAGFlow Client + Tool — raw fetch wrapper | Conversation Pipeline | 6 | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
+| SOURCE_ROUTER | Source Priority Router — parallel fan-out + weighted merge | Conversation Pipeline | 8a | `deep` | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS |
+| REWRITE_TOOL | Query Rewrite Tool — 7-trigger conditional rewriting | Conversation Pipeline | 8b | `unspecified-high` | REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT |
+| REWRITE_STRATEGIES | Rewrite Strategy Modules — HyDE, EntityExtraction, DenseKeywords | Conversation Pipeline | 3 | `quick` | CORE_TYPES |
+| FILE_REGISTRY | FileRegistry — temporal, ordinal, named resolution | Retrieval | 4 | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
+| EVIDENCE_GATE | Evidence Bundle Gate — sufficiency scoring + thresholds | Retrieval | 7 | `deep` | EMBED_ROUTER, RAG_INFRA, CORE_TYPES |
+| DOC_SEARCH | Per-Document Search Tool — document search capability (evidence bundle) | Retrieval | 8a | `deep` | FILE_REGISTRY, EVIDENCE_GATE, RAG_INFRA |
+| VISUAL_GROUNDING | Visual Grounding — multimodal LLM for charts/tables/images | Retrieval | 8a | `deep` | FILE_STORAGE, CONFIG_DEFAULTS, FILE_REGISTRY, EVIDENCE_GATE |
+| ORCHESTRATOR | Orchestrator Agent Framework — supervisor + parallel sub-agent synthesis | Agents | 8b | `deep` | AGENT_FACTORY, EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER |
+| SUBAGENT_FACTORY | Sub-Agent Factory — intent-scoped agent + handoff assembly with tool assignment | Agents | 9a | `deep` | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER |
 
 ### Engine Gap Tasks
 
@@ -1336,14 +1336,14 @@ The following 8 tasks address engine-level edge cases for response quality (extr
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| EXTRACTION_SAFEGUARDS | Fact extraction safeguards (attribution, sarcasm, hypothetical, hallucination filters) | Document 07 | 8a | `deep` | FACT_EXTRACTION |
-| NON_ACTIONABLE_DETECT | Non-actionable message detection (pleasantries, gibberish short-circuit) | Document 05 | 7 | `quick` | EMBED_ROUTER |
-| ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | Document 05 | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
-| QUERY_REPLAY | Query replay detection and rewriting | Document 05 | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
-| THREAD_RESURRECTION | Thread resurrection detection and re-hydration | Document 07 | 7 | `quick` | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
-| CONTEXT_BUDGET | Context window budget management with truncation | Documents 06, 07 | 8a | `unspecified-high` | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
-| SUMMARY_CAP | Rolling summary size cap with compaction | Document 07 | 4 | `quick` | SHORT_TERM_MEM |
-| INPUT_VALIDATION | Input message length validation | Document 12 | 7 | `quick` | SSE_STREAMING |
+| EXTRACTION_SAFEGUARDS | Fact extraction safeguards (attribution, sarcasm, hypothetical, hallucination filters) | Memory | 8a | `deep` | FACT_EXTRACTION |
+| NON_ACTIONABLE_DETECT | Non-actionable message detection (pleasantries, gibberish short-circuit) | Conversation Pipeline | 7 | `quick` | EMBED_ROUTER |
+| ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | Conversation Pipeline | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
+| QUERY_REPLAY | Query replay detection and rewriting | Conversation Pipeline | 8b | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
+| THREAD_RESURRECTION | Thread resurrection detection and re-hydration | Memory | 7 | `quick` | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
+| CONTEXT_BUDGET | Context window budget management with truncation | Agents + Memory | 8a | `unspecified-high` | SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL |
+| SUMMARY_CAP | Rolling summary size cap with compaction | Memory | 4 | `quick` | SHORT_TERM_MEM |
+| INPUT_VALIDATION | Input message length validation | Server | 7 | `quick` | SSE_STREAMING |
 
 ### Frontend SDK Tasks
 
@@ -1351,15 +1351,15 @@ The following 9 tasks were added for the frontend SDK feature (React hooks, web 
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| SCAFFOLD_FRONTEND | Frontend workspace setup | Document 18 | 2 | `quick` | SCAFFOLD_LIB |
-| REACT_HOOKS | React hooks package (React Hooks Package) | Document 18 | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
-| WEB_COMPONENTS | Web UI components (Web Components Package) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
-| RN_COMPONENTS | React Native components (Native Components Package) | Document 18 | 9b | `unspecified-high` | REACT_HOOKS |
-| TRACE_UI | Trace visualization components | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |
-| FRONTEND_CLI | Component installation CLI | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
-| STORYBOOK_FRONTEND | Storybook documentation | Document 18 | 10 | `unspecified-high` | WEB_COMPONENTS |
-| DEMO_WEB | Next.js demo app | Document 19 | 11 | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
-| DEMO_MOBILE | Expo demo app | Document 19 | 11 | `deep` | RN_COMPONENTS, SERVER_ROUTES |
+| SCAFFOLD_FRONTEND | Frontend workspace setup | Frontend SDK | 2 | `quick` | SCAFFOLD_LIB |
+| REACT_HOOKS | React hooks package (React Hooks Package) | Frontend SDK | 9a | `unspecified-high` | CLIENT_SDK, SCAFFOLD_FRONTEND |
+| WEB_COMPONENTS | Web UI components (Web Components Package) | Frontend SDK | 9b | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (Native Components Package) | Frontend SDK | 9b | `unspecified-high` | REACT_HOOKS |
+| TRACE_UI | Trace visualization components | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS |
+| FRONTEND_CLI | Component installation CLI | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS, RN_COMPONENTS |
+| STORYBOOK_FRONTEND | Storybook documentation | Frontend SDK | 10 | `unspecified-high` | WEB_COMPONENTS |
+| DEMO_WEB | Next.js demo app | Demos | 11 | `deep` | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES |
+| DEMO_MOBILE | Expo demo app | Demos | 11 | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 
 ### Operations and Quality Tasks
 
@@ -1367,30 +1367,30 @@ The following 11 tasks were added for coding standards, CI quality gates, releas
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Document 23 | 1 | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
-| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Document 21 | 3 | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
-| RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Document 21 | 10 | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
-| DOCS_SITE | Documentation site infrastructure (Fumadocs) | Document 20 | 10 | `unspecified-high` | SCAFFOLD_LIB |
-| DOCS_CONTENT | Documentation content authoring | Document 20 | 11 | `writing` | DOCS_SITE, ALL core module tasks |
-| MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Document 22 | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
-| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Document 22 | 11 | `writing` | MONITORING_INFRA |
-| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Document 24 | 4 | `deep` | FOUNDATION, CORE_TYPES |
-| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Document 25 | 6 | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
-| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | Document 26 | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
-| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Document 27 | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
+| CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Coding Standards | 1 | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Release Pipeline | 3 | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
+| RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Release Pipeline | 10 | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
+| DOCS_SITE | Documentation site infrastructure (Fumadocs) | Documentation | 10 | `unspecified-high` | SCAFFOLD_LIB |
+| DOCS_CONTENT | Documentation content authoring | Documentation | 11 | `writing` | DOCS_SITE, ALL core module tasks |
+| MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Monitoring | 10 | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
+| INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Monitoring | 11 | `writing` | MONITORING_INFRA |
+| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Extensibility | 4 | `deep` | FOUNDATION, CORE_TYPES |
+| DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Durable Execution | 6 | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
+| AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | AI Operations | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
+| SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Security | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
-### Execution Addendum Tasks (Documents 28, 29)
+### Execution Addendum Tasks (Developer Experience and API Governance)
 
 The following 2 tasks were added for developer workflow maturity and public API governance. Each is integrated into late-stage execution where platform behavior is already stable.
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Document 28 | 11 | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
-| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | Document 29 | FINAL | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | 11 | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
 
 ---
 
-## Execution Addendum (Documents 28, 29)
+## Execution Addendum (Developer Experience and API Governance)
 
 ### Batch and Total Impact
 
@@ -1411,10 +1411,10 @@ The following 4 tasks were added for retrieval quality feedback, generative UI, 
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Document 09 extension | 8b | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
-| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Documents 06, 11, 18 extensions | 9 | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
-| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | Document 26 extension | 10 | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
-| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Document 04 extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
+| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Retrieval extension | 8b | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
+| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | 9 | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
+| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | 10 | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
 
 ### Batch and Total Impact
 
@@ -1429,9 +1429,9 @@ The following 4 tasks were added for retrieval quality feedback, generative UI, 
 
 ---
 
-*Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 11 operations and quality tasks (Documents 20, 21, 22, 23, 24, 25, 26, 27), all fully integrated into the batch structure and dependency matrix.*
+*Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Conversation Pipeline, Agents, Memory, Retrieval, Guardrails), 8 engine-gap tasks, 9 frontend SDK tasks (Frontend SDK, Demos), and 11 operations and quality tasks (Documentation, Release Pipeline, Monitoring, Coding Standards, Extensibility, Durable Execution, AI Operations, Security), all fully integrated into the batch structure and dependency matrix.*
 
-*Execution addendum update: 121 implementation tasks + 4 final audit tasks = 125 total across the same 16 execution batches, with Documents 28 and 29 integrated into Batch 11 and FINAL respectively.*
+*Execution addendum update: 121 implementation tasks + 4 final audit tasks = 125 total across the same 16 execution batches, with Developer Experience and API Governance integrated into Batch 11 and FINAL respectively.*
 
 *Execution addendum update (gap round 4): 125 implementation tasks + 4 final audit tasks = 129 total. RAG feedback loop (Batch 8b), generative UI (Batch 9), conversation intelligence (Batch 10), multi-tenant config (Batch 4) integrated into existing batches.*
 
