@@ -166,13 +166,13 @@ Core requirements:
   - Accessibility-tree perception uses structured page semantics and is preferred for web workflows due to substantially lower token cost (commonly around four times lower than screenshot-heavy flows).
 - **Reference providers**: Playwright MCP, Anthropic Computer Use, and OpenAI CUA should be provided as interchangeable plugin implementations behind the same abstraction.
 - **Plugin boundary**: computer use providers are optional provider integrations enabled outside the core runtime; the core `safeagent` package does not include any computer use provider by default.
-- **Mandatory sandboxing**: all computer use execution MUST run in isolated environments (virtual machine, container, or remote browser). Direct host-machine control is prohibited and must align with the sandbox isolation model in file 10.
+- **Mandatory sandboxing**: all computer use execution MUST run in isolated environments (virtual machine, container, or remote browser). Direct host-machine control is prohibited and must align with the sandbox isolation model in the Guardrails & Safety document.
 - **Action-surface governance**: the orchestrator MUST enforce a configurable allowlist of permitted actions, including read-only profiles that allow observation (screenshots and accessibility-tree reads) while blocking mutation actions.
-- **Viewport streaming**: browser viewport output may be streamed as a live visual feed for real-time observation, aligned with transport streaming behavior in file 11.
+- **Viewport streaming**: browser viewport output may be streamed as a live visual feed for real-time observation, aligned with transport streaming behavior in the Streaming & Transport document.
 - **Session state continuity**: browser sessions MUST preserve page state, cookies, and navigation history across multi-step agent execution.
-- **Cost accounting**: visual token usage MUST be tracked separately from text token usage because screenshot-based perception has materially higher cost; this must integrate with budget policy in files 12 and 15.
-- **Human oversight gates**: high-risk actions (such as submissions, purchases, and account changes) MUST require explicit human approval checkpoints, aligned with human-in-the-loop policy in file 25.
-- **Audit trail**: screenshots, actions, and page-state transitions MUST be logged for compliance, replay, and debugging, aligned with provenance requirements in file 14.
+- **Cost accounting**: visual token usage MUST be tracked separately from text token usage because screenshot-based perception has materially higher cost; this must integrate with budget policy in the Server Implementation and Infrastructure documents.
+- **Human oversight gates**: high-risk actions (such as submissions, purchases, and account changes) MUST require explicit human approval checkpoints, aligned with human-in-the-loop policy in the Durable Execution document.
+- **Audit trail**: screenshots, actions, and page-state transitions MUST be logged for compliance, replay, and debugging, aligned with provenance requirements in the Observability document.
 
 ```mermaid
 flowchart LR

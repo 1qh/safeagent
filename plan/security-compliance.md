@@ -59,7 +59,7 @@
 - Prompt injection can alter instruction hierarchy and force unsafe behavior.
 - Jailbreaking can bypass policy constraints under adversarial phrasing.
 - Indirect injection can arrive through retrieved context, uploaded content, and external tool outputs.
-- Baseline technical controls are defined in file 10 and monitored in file 22.
+- Baseline technical controls are defined in the Guardrails & Safety document and monitored in the Monitoring & Alerting document.
 - Governance added here: ownership, risk scoring, escalation thresholds, and reporting obligations.
 
 ### Data Layer
@@ -81,7 +81,7 @@
 - Malicious extensions can attempt capability escalation, data exfiltration, or policy bypass.
 - Isolation boundary failure can expose internal state across extension boundaries.
 - Third-party supply risks can introduce unsafe execution dependencies.
-- Baseline extension safeguards are in file 24.
+- Baseline extension safeguards are in the Extensibility document.
 - Governance added here: review gates, trust approval, quarantine, and post-incident controls.
 
 ## OWASP Top 10 for LLM Applications Mapping
@@ -479,7 +479,7 @@ flowchart LR
 - Data location attestation provides verifiable proof of storage geography through immutable evidence artifacts tied to policy decisions and retained for regulator and enterprise assurance.
 - Regional deployment configuration adapts trust boundaries, retention posture, and transfer permissions by jurisdictional profile so each operational region follows its legal and risk baseline.
 - Data sovereignty audit trail captures every residency classification, transfer decision, exception rationale, and approval chain to preserve end-to-end accountability.
-- Existing infrastructure controls in file 15 remain the mandatory enforcement anchor for network segmentation, resilience boundaries, and regional isolation posture used by this governance layer.
+- Existing infrastructure controls in the Infrastructure document remain the mandatory enforcement anchor for network segmentation, resilience boundaries, and regional isolation posture used by this governance layer.
 
 ## Cross-References
 | Plan File | Connection |

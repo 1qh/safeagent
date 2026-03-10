@@ -113,7 +113,7 @@ sequenceDiagram
     C->>S: Stream chat request (SSE)
     S->>S: JWT Auth + Rate Limit
 
-    Note over S,LLM: Conversation Pipeline (file 05)
+    Note over S,LLM: Conversation Pipeline
     S->>ER: Classify intent (last 10 msgs, ~30-50ms)
 
     par Speculative Pre-fetch
@@ -301,5 +301,3 @@ graph LR
 | Horizontal scaling | Stateless API server + Trigger.dev workers |
 
 ---
-
-*Next: [Requirements & Constraints](./requirements.md)*

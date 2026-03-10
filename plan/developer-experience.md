@@ -381,7 +381,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Compatibility with Langfuse is required.
 - Compatibility with Braintrust is required.
 - Compatibility with Jaeger is required.
-- This plan must extend observability direction defined in file 14.
+- This plan must extend observability direction defined in the Observability document.
 
 ### Observability Governance
 - Trace schema must capture step lifecycle, tool invocations, guardrail decisions, and error category metadata.
@@ -460,7 +460,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Error taxonomy includes at least fifteen named error types and required domain and category classifications.
 - Progressive API tiering includes zero-config happy path and expert disclosure boundaries.
 - Testing pyramid and deterministic tooling model are explicitly defined.
-- OpenTelemetry compatibility requirements and file 14 extension note are explicit.
+- OpenTelemetry compatibility requirements and Observability document extension note are explicit.
 
 ## Operational Rollout Governance
 

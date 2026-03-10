@@ -707,9 +707,9 @@ Reference provider plugins:
 
 ### MCP and Compliance Integration
 
-- Sandboxes MAY expose MCP servers so sandbox capabilities are available as agent tools, aligned with MCP client orchestration in file 06.
-- Every code execution MUST produce an audit trail containing execution request metadata, inputs, outputs, policy decisions, and resource usage, aligned with provenance requirements in file 14.
-- Sandbox compute costs MUST be attributed to the requesting agent, user, and tenant for budget governance alignment with files 12 and 15.
+- Sandboxes MAY expose MCP servers so sandbox capabilities are available as agent tools, aligned with MCP client orchestration in the Agents & Orchestration document.
+- Every code execution MUST produce an audit trail containing execution request metadata, inputs, outputs, policy decisions, and resource usage, aligned with provenance requirements in the Observability document.
+- Sandbox compute costs MUST be attributed to the requesting agent, user, and tenant for budget governance alignment with the Server Implementation and Infrastructure documents.
 
 ### Sandbox Execution Flow
 
@@ -906,19 +906,19 @@ flowchart TB
 
 **Sub-agents are not individually guardrailed.** The orchestrator's synthesis stream is the single enforcement point for output. This is intentional: sub-agent outputs are intermediate results that the orchestrator synthesizes before they reach the client. Guardrailing each sub-agent would add latency without additional safety benefit, since the orchestrator's output guardrails catch any violations in the final response.
 
-**The evidence gate (file 09) is a separate concern.** It evaluates whether retrieved evidence is sufficient to answer a question. It's not a safety guardrail and doesn't use the guardrail function type interface.
+**The evidence gate (Retrieval & Evidence document) is a separate concern.** It evaluates whether retrieved evidence is sufficient to answer a question. It's not a safety guardrail and doesn't use the guardrail function type interface.
 
-### Relationship to Server & Observability (file 12)
+### Relationship to Server & Observability (Server Implementation document)
 
 The `onFlag` callback is the bridge between the guardrail system and Langfuse. When a p1 verdict fires, `onFlag` receives the full verdict (severity, conceptId, the text that triggered it) and logs it as a Langfuse event on the current trace. This gives operators visibility into near-misses without exposing them to users.
 
 p0 violations in production mode are also logged via `onFlag` before the fallback is injected, so the full violation context is preserved in traces even though the user only sees the fallback message.
 
-### Relationship to Streaming (file 11)
+### Relationship to Streaming (Streaming & Transport document)
 
 Output guardrails hook into the same SSE stream that delivers tokens to the client. In production mode, the guardrail's fallback injection is itself a `text-delta` chunk — it looks identical to a normal LLM response from the client's perspective. The client never knows a violation occurred.
 
-In development mode, the TripWire exception carries `conceptId`, `reason`, and fallback message fields (matching the tripwire event payload shape from file 11). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
+In development mode, the TripWire exception carries `conceptId`, `reason`, and fallback message fields (matching the tripwire event payload shape from the Streaming & Transport document). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
 
 ---
 

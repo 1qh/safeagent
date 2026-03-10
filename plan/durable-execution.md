@@ -512,7 +512,7 @@ flowchart TD
 - Divergence reconciliation MUST emit immutable records for detection time, owning authority, and recovery decision.
 - Reviewer-service outage behavior MUST place affected actions into safe hold lanes with explicit timeout and escalation ownership.
 - Policy drift discovered during resume MUST require compatibility adjudication before side effects continue.
-- Incident ownership for detection, containment, and recovery sign-off MUST align with resilience governance defined in file 15.
+- Incident ownership for detection, containment, and recovery sign-off MUST align with resilience governance defined in the Infrastructure document.
 
 ## Observability
 

@@ -100,7 +100,7 @@
 - Pre-release channels require clear support expectations and rollback posture.
 - Pre-release channels must clearly identify instability risk.
 - Conventional commit policy drives automated release classification.
-- Commit semantics enforcement aligns with the release pipeline policy in file 21.
+- Commit semantics enforcement aligns with the release pipeline policy in the Release Pipeline document.
 - Commit metadata drift blocks release automation.
 - Breaking intent declarations in commit metadata are mandatory when applicable.
 - Release notes must map classified changes to migration impact levels.
@@ -236,7 +236,7 @@
 - Contract change notice must include compatibility testing expectations.
 - Contract changes require migration path documentation before release approval.
 - Contract changes require clear fallback behavior guidance when feasible.
-- Contract lifecycle policy aligns with the extensibility framework in file 24.
+- Contract lifecycle policy aligns with the extensibility framework in the Extensibility document.
 - Contract lifecycle policy includes proposal, deprecation, migration, and removal stages.
 - Extension-facing release notes must isolate contract-impacting changes.
 - Extension-facing guidance must separate required actions from optional optimizations.

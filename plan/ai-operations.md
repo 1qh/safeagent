@@ -108,7 +108,7 @@ flowchart TB
 At 10M users, unconstrained task cost can reach 0.30 USD.
 Cost intelligence combines semantic reuse, routing, and prompt cache strategy to reduce spend while preserving quality.
 Combined target: 47 percent sustained reduction from semantic cache plus routing, with additional 45 to 80 percent reduction where provider prompt cache hits are optimized.
-- Budget enforcement baselines and per-request spending limits are owned in file 12; infrastructure-level budget pools and quota allocation are owned in file 15; this plan adds proactive cost-reduction intelligence (semantic reuse, routing optimization, prompt cache strategy) and per-agent attribution contracts on top of those enforcement baselines.
+- Budget enforcement baselines and per-request spending limits are owned in the Server Implementation document; infrastructure-level budget pools and quota allocation are owned in the Infrastructure document; this plan adds proactive cost-reduction intelligence (semantic reuse, routing optimization, prompt cache strategy) and per-agent attribution contracts on top of those enforcement baselines.
 - Route to cheapest valid path first.
 - Reuse prior outputs when semantic equivalence is safe.
 - Enforce budget contracts during execution.
@@ -241,7 +241,7 @@ flowchart TB
 ## Prompt Caching Architecture
 Prompt caching strategy is designed to maximize provider-level cache hits.
 This extends existing prompt retrieval caching by optimizing prompt composition.
-- Prompt fetch and baseline retrieval caching are owned in file 14; this plan adds provider-cache-aware assembly policy and governance boundaries.
+- Prompt fetch and baseline retrieval caching are owned in the Observability document; this plan adds provider-cache-aware assembly policy and governance boundaries.
 - Stable policy and instruction prefix.
 - Dynamic user context in bounded tail.
 - Deterministic evidence ordering.
@@ -340,7 +340,7 @@ Output control policies reduce spend without degrading utility.
 ## Prompt Lifecycle Management (PromptOps)
 PromptOps governs behavior changes with release-grade controls.
 This extends existing prompt management with atomic bundles, experiments, shadow validation, canary controls, and immutable lineage.
-- Promotion gates and rollback mechanics are owned in file 21; this plan adds behavior-atomic bundle scope, shadow validation prior to promotion, prompt experiment lanes, and canary controls that integrate with those promotion gates.
+- Promotion gates and rollback mechanics are owned in the Release Pipeline document; this plan adds behavior-atomic bundle scope, shadow validation prior to promotion, prompt experiment lanes, and canary controls that integrate with those promotion gates.
 - Bundle dependent behavior artifacts together.
 - Gate promotions with eval and safety checks.
 - Validate in shadow before user impact.
@@ -610,8 +610,8 @@ Datasets are governed assets with provenance and freshness controls.
 
 ## Experiments and Regression Detection
 Experiments compare baseline and candidate lanes with per-item and aggregate deltas.
-- Promptfoo baseline experiment mechanics are owned in file 16; this plan adds governance for scale controls, lineage linkage, and release decision policy.
-- Regression detection and incident alert baseline are owned in file 22; this plan adds decision-state coupling for rollout holds and rollbacks.
+- Promptfoo baseline experiment mechanics are owned in the Testing Strategy document; this plan adds governance for scale controls, lineage linkage, and release decision policy.
+- Regression detection and incident alert baseline are owned in the Monitoring & Alerting document; this plan adds decision-state coupling for rollout holds and rollbacks.
 - Evaluate quality, safety, latency, and cost jointly.
 - Require confidence threshold for promotion.
 - Block on critical regressions.
@@ -650,7 +650,7 @@ Each scored on reasoning and action layers.
 Conversation intelligence bridges per-turn evaluation signals with conversation-level operational and business visibility.
 - Each conversation SHALL maintain a rolling quality aggregate derived from per-turn CLASSic dimension scores across Cost, Latency, Accuracy, Stability, and Security.
 - Conversation quality weighting SHALL prioritize recent turns while preserving full-thread signal contribution.
-- Topic extraction SHALL reuse the same classification infrastructure used for intent detection in file 05.
+- Topic extraction SHALL reuse the same classification infrastructure used for intent detection in the Conversation Pipeline document.
 - Topic labels SHALL be stored at conversation scope for trend analysis and operator visibility.
 - Engagement scoring SHALL combine turn count, regeneration rate, session duration, abandonment point when present, feedback ratio, and follow-up question rate.
 - Engagement interpretation SHALL treat high sustained engagement as value delivery and low engagement with early abandonment as failure risk.
@@ -663,11 +663,11 @@ Conversation intelligence bridges per-turn evaluation signals with conversation-
 - Cohort views SHALL support conversation-level A/B comparison across agent configurations.
 - Privacy-preserving aggregation SHALL operate on aggregated metrics and topic labels, not raw conversation content.
 - Individual conversation content SHALL never be exported to analytics pipelines.
-- PII filtering from file 14 SHALL apply before analytics ingestion.
+- PII filtering from the Observability document SHALL apply before analytics ingestion.
 - Conversation-level metrics SHALL be stored in PostgreSQL through Drizzle ORM with configurable retention windows.
 - Raw per-turn scores SHALL be retained for the analysis window, then rolled up into daily and weekly aggregates.
-- Conversation intelligence outputs SHALL feed a dedicated conversation health panel in the monitoring dashboard from file 22 alongside infrastructure and business panels.
-- Cross-reference: turn-level CLASSic scoring in this file, user feedback in file 14, business metric correlation in file 22, intent classification in file 05.
+- Conversation intelligence outputs SHALL feed a dedicated conversation health panel in the monitoring dashboard from the Monitoring & Alerting document alongside infrastructure and business panels.
+- Cross-reference: turn-level CLASSic scoring in this file, user feedback in the Observability document, business metric correlation in the Monitoring & Alerting document, intent classification in the Conversation Pipeline document.
 
 ```mermaid
 flowchart TB
@@ -679,7 +679,7 @@ flowchart TB
 
 ## CI Integration and Eval Gates
 Eval gates are mandatory release controls.
-- Deployment marker baseline is owned in file 22; this plan adds AI-behavior gate coupling and rollback linkage requirements.
+- Deployment marker baseline is owned in the Monitoring & Alerting document; this plan adds AI-behavior gate coupling and rollback linkage requirements.
 - Pre-merge focused eval packs.
 - Main broad regression suites.
 - Release critical scenario suites.
@@ -742,7 +742,7 @@ Dashboard should answer where cost is rising and why.
 
 ## Alert Thresholds for Cost Anomalies
 Alerts combine static and adaptive thresholds.
-- Anomaly monitoring baseline is owned in file 22; this plan adds AI-cost lane diagnostics and prompt-behavior decision linkage.
+- Anomaly monitoring baseline is owned in the Monitoring & Alerting document; this plan adds AI-cost lane diagnostics and prompt-behavior decision linkage.
 - Absolute spend spike alert.
 - Relative baseline deviation alert.
 - Segment-specific anomaly alert.

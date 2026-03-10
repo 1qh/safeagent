@@ -247,7 +247,7 @@ graph TB
 
 ### Core Constants
 
-All model, provider, and environment constants are defined in the single source of truth: [Foundation](./foundation.md). No constants are duplicated here — refer to file 04 for the authoritative table.
+All model, provider, and environment constants are defined in the single source of truth: [Foundation](./foundation.md). No constants are duplicated here — refer to the Foundation document for the authoritative table.
 
 **Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [Infrastructure](./infrastructure.md) for the complete service list.
 

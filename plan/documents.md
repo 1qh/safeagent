@@ -624,7 +624,7 @@ The original page PDF bytes are stored in S3, not in this table. Storing page by
 
 ### Partitioning at Scale
 
-At 10M users, `page_index` is the highest-growth table (each document produces one row per page). Range partitioning by `user_id` hash keeps individual partition indexes (HNSW, GIN, B-tree) manageable and distributes write I/O. All queries include `user_id` in their WHERE clause, enabling automatic partition pruning. See file 01 (Horizontal Scaling Model) and file 15 (Capacity Planning) for the broader partitioning strategy.
+At 10M users, `page_index` is the highest-growth table (each document produces one row per page). Range partitioning by `user_id` hash keeps individual partition indexes (HNSW, GIN, B-tree) manageable and distributes write I/O. All queries include `user_id` in their WHERE clause, enabling automatic partition pruning. See the Requirements & Constraints document and the Infrastructure document for the broader partitioning strategy.
 
 ### Hybrid Retrieval
 
