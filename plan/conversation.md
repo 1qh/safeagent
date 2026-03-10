@@ -769,16 +769,6 @@ flowchart TB
 | Empty result defaults | Provides | Overrides per source/topic |
 | Typed pipeline interfaces | Provides | Implements domain behavior |
 
-## Cross-References
-| Component | Interaction |
-|-----------|------------|
-| Requirements | [Requirements & Constraints](./requirements.md) |
-| Architecture | [System Architecture](./architecture.md) |
-| Agents & Orchestration | [Agents & Orchestration](./agents.md) |
-| Memory | [Memory & Intelligence](./memory.md) |
-| Retrieval | [Retrieval & Evidence](./retrieval.md) |
-| Infrastructure | [Infrastructure](./infrastructure.md) |
-
 ## Task Specifications
 
 ### Task EMBED_ROUTER: Embedding Router
@@ -941,8 +931,6 @@ flowchart TB
 
 ### Task ATTRIBUTE_NEGATION: Attribute Negation Detection and Filtering
 
-**Task Name**
-- ATTRIBUTE_NEGATION
 
 **Objective**
 - Detect property-level negations in user requests and propagate them through retrieval and synthesis. Ensure excluded attributes are consistently respected without misclassifying entity-level rejection.
@@ -987,8 +975,6 @@ flowchart TB
 
 ### Task CLARIFICATION_MODEL: Clarification Patience and Ambiguity Policy
 
-**Task Name**
-- CLARIFICATION_MODEL
 
 **Objective**
 - Implement a bounded clarification strategy that resolves genuine ambiguity while preventing loops. Balance user effort and forward progress by switching to best-effort assumptions after patience limits.
@@ -1033,8 +1019,6 @@ flowchart TB
 
 ### Task CONVERSATION_INTELLIGENCE: Conversation Analytics and Trend Signals
 
-**Task Name**
-- CONVERSATION_INTELLIGENCE
 
 **Objective**
 - Aggregate conversation-level analytics that describe topical focus, sentiment movement, and engagement quality over time. Provide measurable signals for quality monitoring and iterative system tuning.
@@ -1080,8 +1064,6 @@ flowchart TB
 
 ### Task FRUSTRATION_SIGNAL: Frustration Detection and Adaptive Response Behavior
 
-**Task Name**
-- FRUSTRATION_SIGNAL
 
 **Objective**
 - Detect user frustration signals and escalation trends across turns to guide de-escalation behavior. Improve conversational recovery by adapting tone and guidance without changing core factual output.
@@ -1126,8 +1108,6 @@ flowchart TB
 
 ### Task NON_ACTIONABLE_DETECT: Non-Actionable Input Detection
 
-**Task Name**
-- NON_ACTIONABLE_DETECT
 
 **Objective**
 - Short-circuit clearly non-actionable turns so expensive intent and retrieval stages are skipped when no actionable request exists. Preserve precision by avoiding false positives on brief but valid requests.
@@ -1172,8 +1152,6 @@ flowchart TB
 
 ### Task QUERY_REPLAY: Query Replay and Rephrase Detection
 
-**Task Name**
-- QUERY_REPLAY
 
 **Objective**
 - Detect when users repeat or rephrase prior queries and reconstruct replay intent with parameter substitutions. Improve continuity by reusing prior query structure instead of reinterpreting from scratch.

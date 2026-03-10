@@ -449,28 +449,10 @@ flowchart LR
 - Keep timeline scroll behavior stable during rapid updates.
 - Allow collapsed or expanded views when event count is large.
 
-## Cross-References
-
-| Plan File | Relevant Scope | How It Connects To This Document |
-|---|---|---|
-| [Requirements](./requirements.md) | MH_DEMO_WEB, MH_DEMO_MOBILE, MH_SERVER_SWITCH, MH_VERBOSITY_TOGGLE | Defines high-level product outcomes that both demos must satisfy |
-| [Transport](./transport.md) | SSE protocol consumed by demos, trace-step events, verbosity levels | Provides wire contract consumed by useSafeAgent and useTraceSteps |
-| [Server](./server.md) | Chat streaming endpoint with verbosity parameter | Defines server behavior needed for standard and full modes |
-| [Frontend SDK](./frontend-sdk.md) | Component packages consumed by demos | Defines UI primitives and hooks used by both app shells |
-| [Observability](./observability.md) | Feedback to Langfuse score correlation via traceId | Defines analytics linkage required for thumbs up and thumbs down actions |
-
-Integration notes:
-- Demo behavior must not drift from transport contracts.
-- Trace rendering must match event semantics from transport stream.
-- Feedback events must include traceId continuity from session-meta.
-- Server switching rules must preserve data boundaries across deployments.
-
 ## Task Specifications
 
 ### DEMO_WEB
 
-**Task Name**
-- DEMO_WEB
 
 **Objective**
 - Build the Next.js demo application as a complete web reference for safeagent chat integration.
@@ -521,8 +503,6 @@ Integration notes:
 
 ### DEMO_MOBILE
 
-**Task Name**
-- DEMO_MOBILE
 
 **Objective**
 - Build the Expo demo application as a complete mobile reference for safeagent chat integration.

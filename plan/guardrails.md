@@ -869,23 +869,10 @@ Output guardrails hook into the same SSE stream that delivers tokens to the clie
 
 In development mode, the TripWire exception carries `conceptId`, `reason`, and fallback message fields (matching the tripwire event payload shape from the Streaming & Transport document). The TUI and development clients catch and render with a visual indicator (error banner + fallback message).
 
-## Cross-References
-
-| Document | Relationship |
-|----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines non-negotiable safety constraints, policy boundaries, and quality targets that this guardrail architecture must enforce. |
-| **Conversation** ([Conversation Pipeline](./conversation.md)) | Provides the conversation lifecycle and intent-stage outputs that LANG_GUARD Post-Intent Gate uses for intended output language enforcement. |
-| **Agents** ([Agents & Orchestration](./agents.md)) | Wires guardrail processors into agent creation and orchestrator synthesis so safety checks run before and during responses. |
-| **Retrieval & Evidence** ([Retrieval & Evidence](./retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
-| **Streaming & Transport** ([Streaming & Transport](./transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
-| **Server** ([Server Implementation](./server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
-
 ## Task Specifications
 
 ### Task INPUT_VALIDATION: Input Validation Pipeline
 
-**Task Name**
-- INPUT_VALIDATION
 
 **Objective**
 - Build a focused input validation stage that rejects malformed, oversized, or suspicious user content before deeper guardrail and orchestration processing.
@@ -929,8 +916,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task HATE_SPEECH_GUARD: Hate Speech and Toxicity Guardrail Processor
 
-**Task Name**
-- HATE_SPEECH_GUARD
 
 **Objective**
 - Implement a robust hate speech and toxicity guardrail processor that blocks abusive content across supported languages.

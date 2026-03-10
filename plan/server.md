@@ -460,17 +460,6 @@ Probe behavior:
 HTTP status behavior:
 - 200 for ok and degraded
 - 503 for down
-## Cross-References
-| Document | Relationship |
-|----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines user and operational constraints this server enforces through route security, runtime behavior, and failure semantics. |
-| **Foundation** ([Foundation](./foundation.md)) | Supplies shared runtime contracts, environment assumptions, and configuration baselines consumed by startup and middleware. |
-| **Agents** ([Agents & Orchestration](./agents.md)) | Defines agent factories and orchestration capabilities that the server configures and exposes through HTTP and SSE routes. |
-| **Guardrails** ([Guardrails & Safety](./guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
-| **Streaming & Transport** ([Streaming & Transport](./transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
-| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
-| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes server SSE endpoints through the React hooks module; verbosity parameter drives frontend trace visualization. |
-| **Demos** ([Demos](./demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
 ## Task Specifications
 ### Task SCAFFOLD_SERVER: Server Scaffolding
 What to do:

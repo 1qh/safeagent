@@ -331,8 +331,6 @@
 
 ### Task API_GOVERNANCE: Public API Stability and Migration Governance
 
-**Task Name**
-- API_GOVERNANCE
 
 **Objective**
 - Establish enforceable governance for public API stability, deprecation lifecycle, and consumer migration safety.

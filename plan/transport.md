@@ -1006,20 +1006,6 @@ Structured SSE event payloads require validation at both the emit boundary on th
 - URLs in citation and location events are validated again before rendering. The client never navigates to or embeds URLs that do not match expected patterns.
 - Text content in events is always treated as data and never interpolated as executable markup.
 
-## Cross-References
-
-| Document | Relationship |
-|----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
-| **Foundation** ([Foundation](./foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
-| **Agents** ([Agents & Orchestration](./agents.md)) | Defines orchestrator and processor-chain behavior that produces the framework stream event sequence consumed by this SSE transport layer. |
-| **Agents** ([Agents & Orchestration](./agents.md)) | Defines location tool orchestration and generative UI component governance whose events flow through this transport layer. |
-| **Guardrails & Safety** ([Guardrails & Safety](./guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
-| **Server Implementation** ([Server Implementation](./server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
-| **Observability** ([Observability](./observability.md)) | Trace-step events share the trace identifier with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
-| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
-| **Demos** ([Demos](./demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
-
 ## Task Specifications
 
 ### Task SSE_STREAMING: SSE Streaming Layer

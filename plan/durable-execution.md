@@ -523,24 +523,10 @@ flowchart TD
 - Lifecycle cleanup remains bounded during sustained growth.
 - Observability remains actionable via structured aggregation.
 
-## Cross-References
-
-| Plan Area | Connection |
-|---|---|
-| [Agents and Orchestration](./agents.md) | Durable checkpointing wraps orchestration loops and tool action flow. |
-| [Transport](./transport.md) | Detached run lifecycle aligns with streaming and connection boundaries. |
-| [Server](./server.md) | Request acceptance, auth boundary, and run identity handoff anchor detached execution. |
-| [Observability](./observability.md) | Checkpoint, approval, latency, and escalation metrics align with tracing and governance. |
-| [Infrastructure](./infrastructure.md) | Circuit breakers, resource controls, and resilience posture support durable runtime safety. |
-| [Testing](./testing.md) | Fault injection, replay determinism, and async approval tests validate reliability claims. |
-| [Extensibility and Plugin Architecture Plan](./extensibility.md) | Pluggable checkpoint backend contracts align with extension governance model. |
-
 ## Task Specifications
 
 ### Task DURABLE_EXECUTION: Durable Workflow Runtime and HITL Gates
 
-**Task Name**
-- DURABLE_EXECUTION
 
 **Objective**
 - Build durable execution infrastructure that preserves workflow continuity across crashes, restarts, and long human-approval waits.

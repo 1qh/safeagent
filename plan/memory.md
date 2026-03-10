@@ -1441,15 +1441,6 @@ Emotional carry-forward can over-persist if decay is too long.
 - default decay is intentionally short
 - inactive states stop influencing tone but remain auditable
 
-## Cross-References
-
-| Component | Interaction |
-|-----------|------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines trust, controllability, and persistence constraints memory must satisfy |
-| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
-| **Agents & Orchestration** ([Agents & Orchestration](./agents.md)) | Defines tool invocation behavior, temporal expression resolution, and source-priority execution that consume memory context |
-| **Document Processing** ([Document Processing](./documents.md)) | Coexists with memory recall in source fan-out and citation-aware synthesis |
-
 ## Task Specifications
 
 ### Task SHORT_TERM_MEM: Thread Short-Term Memory + Mandatory Rolling Summaries
@@ -1723,8 +1714,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task CONTEXT_BUDGET: Context Budget Allocation and Enforcement
 
-**Task Name**
-- CONTEXT_BUDGET
 
 **Objective**
 - Define and enforce deterministic token budgeting across context layers so essential instructions and user input are always preserved. Ensure overflow handling is predictable, observable, and safe for long or memory-heavy conversations.
@@ -1770,8 +1759,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task EXTRACTION_SAFEGUARDS: Fact Extraction Quality Safeguards
 
-**Task Name**
-- EXTRACTION_SAFEGUARDS
 
 **Objective**
 - Improve long-term memory quality by filtering low-trust and ambiguous extraction candidates before persistence. Reduce false memories by enforcing attribution, certainty, and contextual-polarity safeguards consistently.
@@ -1817,8 +1804,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task FACT_SUPERSESSION: Fact Lifecycle Supersession and Conflict Resolution
 
-**Task Name**
-- FACT_SUPERSESSION
 
 **Objective**
 - Manage fact lifecycle changes without destructive overwrites by preserving lineage between prior and replacement facts. Resolve contradictions in the same attribute dimension while retaining explainable audit history.
@@ -1864,8 +1849,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task STYLE_PREFERENCES: User Style Preference Detection and Adaptation
 
-**Task Name**
-- STYLE_PREFERENCES
 
 **Objective**
 - Detect stable communication preferences from user language and persist them as style memory. Use those preferences to calibrate future responses while preserving safety and correctness overrides.
@@ -1911,8 +1894,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task SUMMARY_CAP: Conversation Summary Capping and Rotation Policy
 
-**Task Name**
-- SUMMARY_CAP
 
 **Objective**
 - Keep rolling summaries bounded in size so long-lived threads remain context-efficient. Preserve high-value continuity details while rotating out low-value historical detail under token pressure.
@@ -1956,8 +1937,6 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task THREAD_RESURRECTION: Thread Resurrection for Resumed Conversations
 
-**Task Name**
-- THREAD_RESURRECTION
 
 **Objective**
 - Detect long-inactive thread returns and restore enough context for natural continuation. Rehydrate memory with staleness awareness so responses remain coherent without over-trusting stale state.

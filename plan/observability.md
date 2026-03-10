@@ -654,17 +654,6 @@ Each provenance record links to relevant trace spans so investigators can traver
 
 Together they provide both fast incident diagnosis and defensible transparency reporting.
 
-## Cross-References
-| Component | Interaction |
-|-----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines reliability, safety, privacy, and quality targets that observability validates continuously. |
-| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Trace and span taxonomy maps directly to pipeline stages and classification outcomes. |
-| **Agents** ([Agents & Orchestration](./agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
-| **Server** ([Server Implementation](./server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
-| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
-| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Trace visualization components consume trace-step events correlated with Langfuse traces via shared traceId. Frontend feedback hooks submit scores to Langfuse through the feedback endpoint. |
-| **Demo Applications** ([Demo Applications](./demos.md)) | Both demos implement feedback submission (traceId-linked), verbosity toggle (triggers trace-step event emission), and trace timeline rendering — all flowing into Langfuse observability. |
-| **Circuit Breaker** (CIRCUIT_BREAKER) | Prompt manager wraps remote fetches with the circuit breaker to avoid repeated latency spikes during Langfuse outages. |
 ## Task Specifications
 ### Task LANGFUSE_MODULE: Langfuse Observability Module
 **What to do**: Build the tracing exporter that implements the `@openai/agents` framework's tracing exporter interface. The exporter translates framework trace and span objects into Langfuse API calls via the direct `langfuse` SDK. Register it with the framework tracing processor pipeline. Build observability factory that sets up the exporter, score helper, and PII redaction. Return an object containing both exporter and score helper. Implement scoring helper factory with boolean and numeric scoring methods, with optional span targeting for trace-level scores. Default to env vars. Enable the Presidio plus structured-output LLM redaction pipeline by default. Implement the full no-op path when `LANGFUSE_PUBLIC_KEY` is absent: disable tracing on the framework and return a score helper with silent no-op boolean and numeric methods. Dev mode uses realtime flushes, production uses batched flushes with configurable ratio sampling.

@@ -447,24 +447,10 @@ flowchart LR
 - Data sovereignty audit trail captures every residency classification, transfer decision, exception rationale, and approval chain to preserve end-to-end accountability.
 - Existing infrastructure controls in the Infrastructure document remain the mandatory enforcement anchor for network segmentation, resilience boundaries, and regional isolation posture used by this governance layer.
 
-## Cross-References
-| Plan File | Connection |
-|---|---|
-| [Guardrails & Safety](./guardrails.md) | Prompt injection and policy enforcement controls governed here through risk ownership and compliance mapping. |
-| [Server Implementation](./server.md) | Authentication and principal boundaries used as mandatory governance anchors. |
-| [Observability](./observability.md) | PII redaction and trace controls extended here into regulator-facing record-keeping and explainability. |
-| [Infrastructure](./infrastructure.md) | Rate limiting and resilience controls mapped here to audit and legal accountability. |
-| [Monitoring & Alerting](./monitoring.md) | Security signal detection and monitoring alert thresholds. |
-| [Monitoring, Alerting, and Incident Response](./monitoring.md) | Breach workflow, escalation governance, and disaster recovery procedures. |
-| [Extensibility and Plugin Architecture Plan](./extensibility.md) | Extension control baseline connected here to approval gates and compromise response. |
-| [Durable Execution and HITL Oversight](./durable-execution.md) | Human oversight controls linked here to Article 14 obligations and high-impact action governance. |
-
 ## Task Specifications
 
 ### Task SECURITY_COMPLIANCE: Security and Compliance Operations Baseline
 
-**Task Name**
-- SECURITY_COMPLIANCE
 
 **Objective**
 - Implement a unified security and compliance operating layer that ties technical controls to auditable governance outcomes.
@@ -513,8 +499,6 @@ flowchart LR
 
 ### Task MULTI_TENANT_CONFIG: Multi-Tenant Isolation and Configuration Hierarchy
 
-**Task Name**
-- MULTI_TENANT_CONFIG
 
 **Objective**
 - Implement tenant-aware configuration resolution that supports controlled overrides without violating isolation boundaries.

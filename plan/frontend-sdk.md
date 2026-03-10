@@ -932,23 +932,6 @@ flowchart TD
     CONTRAST_TESTS --> RELEASE_GATE
 ```
 
-## Cross-References
-
-| Area | Linked Plan Section | Why It Matters for Frontend SDK |
-|---|---|---|
-| Requirements | [Requirements](./requirements.md) (`MH_REACT_HOOKS`, `MH_WEB_COMPONENTS`, `MH_RN_COMPONENTS`, `MH_TRACE_STEP_EVENTS`, `MH_TRACE_UI`, `MH_OFFLINE_QUEUE`, `MH_STORYBOOK`) | Defines expected frontend capabilities and acceptance outcomes. |
-| Foundation Contracts | [Foundation](./foundation.md) | Source of canonical SSE event contracts and schema definitions used by frontend layers. |
-| Transport | [Transport](./transport.md) | Defines SSE protocol behavior, `trace-step` payload shape, and verbosity semantics consumed by hooks and components. |
-| Server Runtime | [Server](./server.md) | Defines chat streaming endpoint behavior and verbosity query interpretation used by transport integration. |
-| Observability | [Observability](./observability.md) | Defines trace correlation behavior through shared `traceId` across frontend timeline and telemetry systems. |
-| Demos | [Demos](./demos.md) | Defines integration targets that consume web and native component modules for end-to-end validation. |
-
-Cross-section dependency notes:
-- Frontend stream rendering behavior directly depends on transport event ordering guarantees.
-- Trace visualization depends on observability identifiers for cross-tool correlation.
-- Multi-server UI state depends on server endpoint policy and auth handling conventions.
-- Storybook mock fidelity depends on foundation-level event contract updates.
-
 ## Task Specifications
 
 ### SCAFFOLD_FRONTEND Supplementary Frontend Context
@@ -992,8 +975,6 @@ Cross-section dependency notes:
 
 **Batch**: SERVER_ROUTES_SUBAGENT_BATCH
 
-**Task Name**
-- REACT_HOOKS
 
 **Objective**
 - Build a React-hooks integration layer that gives product teams a stable, transport-safe way to drive agent interactions from UI state.
@@ -1045,8 +1026,6 @@ Cross-section dependency notes:
 
 **Batch**: ENDPOINTS_BARREL_BATCH
 
-**Task Name**
-- WEB_COMPONENTS
 
 **Objective**
 - Deliver a framework-ready web component layer that composes shared agent hooks into accessible, customizable UI surfaces.
@@ -1094,8 +1073,6 @@ Cross-section dependency notes:
 
 **Batch**: E2E_DEPLOY_BATCH
 
-**Task Name**
-- TRACE_UI
 
 **Objective**
 - Build a high-signal trace visualization surface that turns low-level step events into debuggable execution timelines.
@@ -1143,8 +1120,6 @@ Cross-section dependency notes:
 
 **Batch**: ENDPOINTS_BARREL_BATCH
 
-**Task Name**
-- RN_COMPONENTS
 
 **Objective**
 - Provide mobile-native agent UI components that preserve cross-platform behavioral parity with web surfaces.
@@ -1192,8 +1167,6 @@ Cross-section dependency notes:
 
 **Batch**: E2E_DEPLOY_BATCH
 
-**Task Name**
-- FRONTEND_CLI
 
 **Objective**
 - Build a deterministic installer workflow that lets teams adopt and customize frontend SDK components safely.
@@ -1239,8 +1212,6 @@ Cross-section dependency notes:
 
 **Batch**: E2E_DEPLOY_BATCH
 
-**Task Name**
-- STORYBOOK_FRONTEND
 
 **Objective**
 - Establish Storybook as the canonical component documentation and review surface for frontend SDK web primitives.

@@ -717,24 +717,12 @@ The optional distributed lock prevents two concurrent cleanup calls for the same
 
 Files have an `expires_at` timestamp set at upload time. The Trigger.dev scheduled task runs daily, finds all expired files, and calls the file cleanup function for each. This handles the case where a user never explicitly deletes their files.
 
-## Cross-References
-
-| Document | Relationship |
-|----------|-------------|
-| **System Architecture** ([System Architecture](./architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
-| **Foundation** ([Foundation](./foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
-| **RAG & Retrieval** ([Retrieval & Evidence](./retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
-| **Server Implementation** ([Server Implementation](./server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
-| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
-
 ## Task Specifications
 
 > **SPIKE_RAG_DEPS** — canonical task specification is in [Foundation](./foundation.md). This document's pipeline tasks depend on its output.
 
 ### Task SPIKE_RAG_DEPS: RAG Dependency Validation Spike
 
-**Task Name**
-- SPIKE_RAG_DEPS
 
 **Objective**
 - Validate the full RAG dependency chain before document and retrieval implementation begins.

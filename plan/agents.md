@@ -783,16 +783,6 @@ flowchart LR
 
 The fallback model wrapper wraps two providers. If primary fails, it tries fallback. No dynamic smart routing; only sequential try/catch for predictable behavior.
 
-## Cross-References
-
-| Component | Interaction |
-|-----------|------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines quality, safety, and behavior constraints for all orchestrated agent runs |
-| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Provides intent signals, rewritten queries, ambiguity markers, and dependency hints used by orchestrator and router |
-| **Memory & Intelligence** ([Memory & Intelligence](./memory.md)) | Supplies thread short-term, user short-term, long-term recall, rolling summaries, and recall policies used during context assembly |
-| **Transport** ([Streaming & Transport](./transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
-| **Server** ([Server Implementation](./server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
-
 ## Task Specifications
 
 ### Task AGENT_FACTORY: Agent Creation Factory + Framework Adapter
@@ -999,8 +989,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task RESPONSE_CALIBRATION: Response Energy Matching and Complexity Calibration
 
-**Task Name**
-- RESPONSE_CALIBRATION
 
 **Objective**
 - Calibrate response energy and depth to match user input complexity, tone, and effort level. Improve conversational fit while preserving correctness, safety, and task completion quality.
@@ -1045,8 +1033,6 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task GENERATIVE_UI: Rich UI Component Emission with Safety Governance
 
-**Task Name**
-- GENERATIVE_UI
 
 **Objective**
 - Enable agents to emit rich, structured UI payloads alongside text while enforcing strict safety and compatibility constraints. Support progressive client rendering without exposing executable or unsafe content.

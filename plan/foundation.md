@@ -1026,8 +1026,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task SPIKE_CORE_STACK: Core Runtime and Integration Validation Spike
 
-**Task Name**
-- SPIKE_CORE_STACK
 
 **Objective**
 - Validate that the core runtime stack works end to end before any implementation batches proceed.
@@ -1072,8 +1070,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task SCAFFOLD_LIB: Library Workspace Scaffolding
 
-**Task Name**
-- SCAFFOLD_LIB
 
 **Objective**
 - Establish the baseline library workspace so all core packages share consistent tooling, typing, and quality gates.
@@ -1116,8 +1112,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task SCAFFOLD_FRONTEND: Frontend SDK Workspace Scaffolding
 
-**Task Name**
-- SCAFFOLD_FRONTEND
 
 **Objective**
 - Create the frontend SDK workspace foundation for hooks and component packages.
@@ -1159,8 +1153,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task CORE_TYPES: Canonical Domain Contracts
 
-**Task Name**
-- CORE_TYPES
 
 **Objective**
 - Define the canonical TypeScript contracts used across all modules.
@@ -1203,8 +1195,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task STORAGE_WRAPPER: Typed Storage Abstraction Layer
 
-**Task Name**
-- STORAGE_WRAPPER
 
 **Objective**
 - Provide a storage abstraction that supports PostgreSQL and SurrealDB through typed access layers.
@@ -1247,8 +1237,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task MCP_HEALTH: MCP Health and Silent Failure Detection
 
-**Task Name**
-- MCP_HEALTH
 
 **Objective**
 - Detect and report MCP server availability mismatches before they cause hidden tool failures.
@@ -1292,8 +1280,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task PROVIDER_HELPERS: Provider Resolution and Fallback Utilities
 
-**Task Name**
-- PROVIDER_HELPERS
 
 **Objective**
 - Deliver reusable provider abstraction helpers for model resolution and fallback behavior.
@@ -1335,8 +1321,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task ZOD_SCHEMAS: Shared Zod v4 Validation Schemas
 
-**Task Name**
-- ZOD_SCHEMAS
 
 **Objective**
 - Mirror core contracts with runtime validation schemas using Zod v4.
@@ -1378,8 +1362,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task CONFIG_DEFAULTS: Configuration Defaults and Resolution
 
-**Task Name**
-- CONFIG_DEFAULTS
 
 **Objective**
 - Deliver the configuration resolution system that merges defaults, applies overrides, and validates final runtime configuration.
@@ -1424,8 +1406,6 @@ The foundation layer task specifications remain authoritative.
 
 ### Task BARREL_EXPORTS: Top-Level Public Surface Aggregation
 
-**Task Name**
-- BARREL_EXPORTS
 
 **Objective**
 - Assemble the top-level public export surface from module barrels once dependent modules are complete.
@@ -1469,14 +1449,6 @@ The foundation layer task specifications remain authoritative.
 Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespaced tool detection, grounding and session metadata delivery, storage fallback and explicit selection, model fallback behavior, schema defaults and error messaging, hybrid retrieval ranking with thread isolation, object storage round-trip, and workspace baseline integrity.
 
 All database-oriented task acceptance in this foundation layer assumes type-safe data access only: Drizzle for PostgreSQL paths and surqlize for SurrealDB paths, with raw query strings treated as plan violations.
-
-## Cross-References
-- Requirements and guardrails context: [Requirements & Constraints](./requirements.md)
-- System layout context: [System Architecture](./architecture.md)
-- Conversation pipeline consumers: [Conversation Pipeline](./conversation.md)
-- Memory architecture consumers: [Memory & Intelligence](./memory.md)
-- SSE event protocol and trace-step events: [Streaming & Transport](./transport.md)
-- Frontend SDK consuming foundation types: [Frontend SDK](./frontend-sdk.md)
 
 ## Test Specifications
 

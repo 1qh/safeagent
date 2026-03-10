@@ -690,23 +690,6 @@ flowchart LR
     FIX_INCOMPATIBILITIES --> RUN_CONTRACT_TESTS
 ```
 
-## Cross-References
-| Plan File | Connection |
-|---|---|
-| [Foundation](./foundation.md) | Storage contracts and type system |
-| [Agents & Orchestration](./agents.md) | Tool registration, provider fallback |
-| [Agents & Orchestration](./agents.md) | MCP integration, computer use, location tool, generative UI |
-| [Memory & Intelligence](./memory.md) | Memory provider contracts |
-| [Document Processing](./documents.md) | Document processor contracts |
-| [Retrieval & Evidence](./retrieval.md) | Retrieval strategy contracts |
-| [Guardrails & Safety](./guardrails.md) | Guardrail contracts and composition |
-| [Streaming & Transport](./transport.md) | Transport adapter contracts |
-| [Server Implementation](./server.md) | Auth middleware boundary and HTTP integration surface |
-| [Observability](./observability.md) | Observability provider contracts |
-| [Infrastructure](./infrastructure.md) | Rate limiting, budget enforcement, circuit breaker, and capacity planning (non-extensible by design) |
-| [Testing Strategy](./testing.md) | Contract test methodology |
-| [Frontend SDK](./frontend-sdk.md) | Component extension patterns |
-
 ## Task Specifications
 
 ### EXTENSIBILITY_INFRA

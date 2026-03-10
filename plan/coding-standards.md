@@ -460,14 +460,6 @@ flowchart TB
   INCIDENT_REDUCTION --> TRUST_POSTURE
 ```
 
-## Cross-References
-
-| Plan File | Connection |
-|---|---|
-| [Foundation](./foundation.md) | TypeScript strictness baseline and runtime constraints alignment |
-| [Testing Strategy](./testing.md) | Test-focused rule relaxation scenarios and exception boundaries |
-| [Release Pipeline](./release-pipeline.md) | validation command quality gate and merge admission enforcement |
-
 ## Task Specifications
 
 ### CODE_STANDARDS

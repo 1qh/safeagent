@@ -799,24 +799,10 @@ Scalability and security are mandatory, not optional optimizations.
 ### Runtime Baseline Constraints
 - Runtime package management SHALL remain Bun-only with a single npm package: safeagent.
 
-## Cross-References
-| Plan File | Relevant Scope | Connection |
-|---|---|---|
-| [Conversation Pipeline](./conversation.md) | Intent and context pipeline | Provides normalized context and intent signals used by semantic cache and dynamic routing. |
-| [Agents & Orchestration](./agents.md) | Agent execution and tool orchestration | Provides runtime hooks for budget contracts, per-agent attribution, and routing reason tags. |
-| [Server Implementation](./server.md) | Request lifecycle and auth boundaries | Provides identity scope required for safe cache reuse and per-user cost attribution. |
-| [Observability](./observability.md) | Tracing and prompt baseline | Extended here with PromptOps lineage governance and scorer-layer decision controls. |
-| [Infrastructure](./infrastructure.md) | Budget and infra baseline | Extended here with semantic cache policy and gateway cost-optimization patterns. |
-| [Testing](./testing.md) | Eval and regression baseline | Extended here with composable scorer families, dataset freshness governance, and CI threshold policy. |
-| [Release Pipeline](./release-pipeline.md) | Promotion and rollback flow | Extended here with atomic behavior bundles, shadow mode, and prompt experiment lanes. |
-| [Monitoring](./monitoring.md) | Alerts and marker correlation | Extended here with cost-intelligence anomaly thresholds and rollout decision-state operations. |
-
 ## Task Specifications
 
 ### AI_OPERATIONS
 
-**Task Name**
-- AI_OPERATIONS
 
 **Objective**
 - Deliver an operational control layer that optimizes model cost, governs behavior rollouts, and blocks quality regressions before user impact.

@@ -539,14 +539,6 @@ Side effects such as stream lifecycle control and upload status tracking use rea
 
 OpenTUI handles terminal resize natively. Layout reflows automatically and chat scroll viewport updates accordingly.
 
-## Cross-References
-
-| Document | Relationship |
-|----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines baseline behavior and client parity targets that this TUI must satisfy. |
-| **Transport** ([Streaming & Transport](./transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
-| **Server Implementation** ([Server Implementation](./server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
-
 ## Task Specifications
 
 ### Task TUI_SHELL: App Shell

@@ -249,27 +249,10 @@ Scalability and security requirements are integrated into every release lane.
 - Supply-chain risk controls cover dependency provenance, integrity, and policy conformance.
 - Deployment promotion remains health-gated, observable, and reversible by design.
 
-## Cross-References
-
-| Plan File | Relevant Scope | How It Connects To This Document |
-|---|---|---|
-| [Foundation](./foundation.md) | Runtime contracts, typed data boundaries, policy baseline | Establishes Bun-only and ORM-only constraints enforced in quality gates |
-| [Infrastructure](./infrastructure.md) | Container topology, health checks, deployment posture | Provides container services and health model used by CI and rollout validation |
-| [Testing](./testing.md) | Thirteen test types, suite separation, CI behavior | Defines test tiers mapped into staged pipeline gates |
-| [Execution](./execution.md) | Batch sequencing, dependencies, delivery order | Places CI and release work on the project critical path and batch plan |
-
-Integration notes:
-- CI stages map directly to the testing stratification model.
-- Deployment gates inherit infrastructure health semantics and degradation policy.
-- Release automation aligns with execution dependencies so downstream work lands on stable quality gates.
-- Security controls are shared across repository boundaries to prevent policy drift.
-
 ## Task Specifications
 
 ### CI_PIPELINE
 
-**Task Name**
-- CI_PIPELINE
 
 **Objective**
 - Establish a complete Bun-native CI/CD baseline with multi-stage quality gates across pull request, main merge, and release triggers.
@@ -310,8 +293,6 @@ Integration notes:
 
 ### RELEASE_PIPELINE
 
-**Task Name**
-- RELEASE_PIPELINE
 
 **Objective**
 - Implement automated release publication and deployment promotion with staged safety checks, canary control, and instant rollback readiness.

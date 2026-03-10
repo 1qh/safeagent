@@ -1180,15 +1180,6 @@ flowchart TD
 | Evidence gate only | ~8% |
 | Evidence gate + FileRegistry + Attribute-First | ~3% |
 
-## Cross-References
-
-| Component | Relationship |
-|-----------|-------------|
-| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
-| **Conversation** ([Conversation Pipeline](./conversation.md)) | Orchestration registers the document search tool, applies context-aware file resolution, and invokes post-gate generation. |
-| **Documents** ([Document Processing](./documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
-| **Transport** ([Streaming & Transport](./transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
-
 ## Task Specifications
 
 ### Task RAG_INFRA: Retrieval and Evidence Infrastructure
@@ -1228,8 +1219,6 @@ flowchart TD
 
 ### Task RAGFLOW_CLIENT: RAGFlow Retrieval Client Wrapper
 
-**Task Name**
-- RAGFLOW_CLIENT
 
 **Objective**
 - Build a robust client wrapper for retrieval operations against RAGFlow.
@@ -1350,8 +1339,6 @@ flowchart TD
 
 ### Task RAG_FEEDBACK_LOOP: Automated Retrieval Quality Feedback Loop
 
-**Task Name**
-- RAG_FEEDBACK_LOOP
 
 **Objective**
 - Implement a closed-loop optimization system that uses retrieval feedback signals to improve ranking quality over time.

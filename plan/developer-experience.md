@@ -408,8 +408,6 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 
 ### Task DEVELOPER_EXPERIENCE: Developer Platform and Onboarding Operations
 
-**Task Name**
-- DEVELOPER_EXPERIENCE
 
 **Objective**
 - Build a cohesive developer-experience platform that shortens time-to-first-success while preserving production-grade guardrails.

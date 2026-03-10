@@ -1502,8 +1502,6 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 > This is a consolidation wrapper for final-audit evidence. It is not a separate routed execution task in [Execution Plan](./execution.md), and it is not counted in the 129-task total.
 
-**Task Name**
-- FINAL
 
 **Objective**
 - Execute final audit consolidation so release readiness is validated across code quality, test quality, build integrity, and documentation integrity.

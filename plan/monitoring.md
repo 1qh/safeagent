@@ -2258,33 +2258,10 @@ Forecasting dimensions:
 - Dependency-specific bottleneck projections for Postgres, Valkey, object storage, and background execution.
 - Reliability impact modeling for slow-burn saturation and sudden event-driven spikes.
 
-## Cross-References
-
-| Plan File | Relevant Scope | How It Connects To This Document |
-|---|---|---|
-| [Observability](./observability.md) | Langfuse tracing, structured logging, Promptfoo eval, post-hoc diagnostics | Monitoring detects live incidents and SLA risk; observability explains root cause and validates mitigation outcomes |
-| [Testing](./testing.md) | Functional testing, stress scenarios, resilience verification | Monitoring-owned chaos scenarios validate alert coverage and incident readiness, while broader system testing remains outside live monitoring governance |
-| [Agents](./agents.md) | Agent execution model, tool routing, handoff semantics, memory workflows | Monitoring tracks live agent loop depth, plan drift, handoff reliability, and tool success as production reliability signals |
-| [Infrastructure](./infrastructure.md) | Service topology, degradation model, health checks, rate limiting, circuit breaker | Monitoring consumes infrastructure health and saturation signals, then routes actionable alerts and escalation workflows |
-| [Server](./server.md) | Health endpoint semantics, dependency checks, middleware reliability behavior | Monitoring uses server health outputs as core availability signals and incident trigger inputs |
-| [Release Pipeline](./release-pipeline.md) | Deployment stages, canary and rollback, operational pipeline monitoring | Monitoring governs deployment safety, canary promotion confidence, and rollback decision thresholds |
-
-Integration notes:
-- Monitoring coverage spans both safeagent and server operational surfaces.
-- Alert thresholds must align with release gates and rollback controls.
-- Incident workflows must consume health signals and observability diagnostics together.
-- Status communication must reflect both user impact and mitigation progress.
-- Monitoring owns live production quality and security objective enforcement, while observability owns deep trace diagnostics and post-hoc analysis.
-- Data access layer reliability signals from Drizzle ORM for PostgreSQL and surqlize for SurrealDB are first-class inputs for AI monitoring objectives.
-- Chaos engineering in this document is strictly for monitoring-validation coverage and alert-contract assurance, not general system test design.
-- AIOps in this document is strictly for live incident intelligence, not offline experimentation analytics.
-
 ## Task Specifications
 
 ### MONITORING_INFRA
 
-**Task Name**
-- MONITORING_INFRA
 
 **Objective**
 - Establish production-grade monitoring infrastructure, dashboards, health aggregation, and alert routing for real-time reliability management.
@@ -2376,8 +2353,6 @@ Integration notes:
 
 ### INCIDENT_PROCEDURES
 
-**Task Name**
-- INCIDENT_PROCEDURES
 
 **Objective**
 - Define incident response lifecycle, escalation policy, on-call rotation, and scenario runbooks to minimize recovery time and user impact.
