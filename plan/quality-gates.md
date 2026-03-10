@@ -62,6 +62,8 @@ These gates are not per-task prerequisites. They are project-level completion ga
 - Task completion evidence model: [Implementation Workflow](./implementation-workflow.md)
 - Batch-level execution sequencing support: [Batch Delivery Playbook](./batch-delivery-playbook.md)
 - Task handoff evidence contract: [Handoff Packet Template](./handoff-packet-template.md)
+- Readiness rollup visibility: [Readiness Scoreboard](./readiness-scoreboard.md)
+- Capability stress validation matrix: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
 - CI and release controls: [Release Pipeline](./release-pipeline.md)
 - Security and compliance controls: [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 - Execution dependency gates: [Execution Plan](./execution.md)

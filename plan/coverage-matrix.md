@@ -9,7 +9,7 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 - Source files in `plan_v0`: 30
 - Preserved source files in `plan`: 30
 - Missing files: 0
-- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`
+- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`, `readiness-scoreboard.md`, `eval-adversarial-matrix.md`
 
 ---
 
@@ -64,8 +64,10 @@ Use this sequence to start implementation quickly:
 8. Domain task specification document
 9. [Handoff Packet Template](./handoff-packet-template.md)
 10. [Quality Gates](./quality-gates.md)
-11. [Operations](./operations.md)
-12. [Plan Drift Control](./plan-drift-control.md)
+11. [Readiness Scoreboard](./readiness-scoreboard.md)
+12. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+13. [Operations](./operations.md)
+14. [Plan Drift Control](./plan-drift-control.md)
 
 ---
 

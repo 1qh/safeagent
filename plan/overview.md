@@ -17,6 +17,8 @@
 - Use [Implementation Workflow](./implementation-workflow.md) for assignment-to-done execution order.
 - Use [Task Verification Index](./task-verification-index.md) for task-level behavioral verification ownership.
 - Use [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level execution control.
+- Use [Readiness Scoreboard](./readiness-scoreboard.md) for cross-dimension readiness visibility.
+- Use [Eval and Adversarial Matrix](./eval-adversarial-matrix.md) for capability stress validation coverage.
 - Use [Quality Gates](./quality-gates.md) for completion criteria.
 - Use [Operations](./operations.md) for runtime and incident-readiness context.
 

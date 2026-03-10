@@ -36,6 +36,7 @@ This is the primary entry point for implementation work. Use it to choose a read
 4. [Domain Playbooks](./domain-playbooks.md) for domain execution planning.
 5. [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level control.
 6. [Plan Drift Control](./plan-drift-control.md) for consistency checks.
+7. [AI Operations Plan](./ai-operations.md) for runtime optimization strategy.
 
 ### QA and Release
 
@@ -44,7 +45,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 3. [Release Pipeline](./release-pipeline.md)
 4. [Task Verification Index](./task-verification-index.md)
 5. [Handoff Packet Template](./handoff-packet-template.md)
-6. [Coverage Matrix](./coverage-matrix.md)
+6. [Readiness Scoreboard](./readiness-scoreboard.md)
+7. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+8. [Coverage Matrix](./coverage-matrix.md)
 
 ### Operations and Security
 
@@ -65,6 +68,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 - Task completion sequencing and evidence model: [Implementation Workflow](./implementation-workflow.md)
 - Task-level behavioral ownership mapping: [Task Verification Index](./task-verification-index.md)
 - Batch-level execution rhythm: [Batch Delivery Playbook](./batch-delivery-playbook.md)
+- Readiness scoring and release posture: [Readiness Scoreboard](./readiness-scoreboard.md)
+- Adversarial and capability stress testing: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+- Runtime improvement cycle: [AI Operations Plan](./ai-operations.md)
 - Ongoing consistency control: [Plan Drift Control](./plan-drift-control.md)
 - Operational readiness and incidents: [Operations](./operations.md)
 - Architectural rationale and validated decisions: [Research & Decisions](./research.md)

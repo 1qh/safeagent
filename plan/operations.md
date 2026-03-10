@@ -40,3 +40,5 @@ This document gives operators and implementers a single operational reading path
 - Execution and dependency timing: [Execution Plan](./execution.md)
 - Server runtime integration boundaries: [Server Implementation](./server.md)
 - Verification and release gates: [Quality Gates](./quality-gates.md)
+- Runtime optimization governance: [AI Operations Plan](./ai-operations.md)
+- Readiness visibility and escalation posture: [Readiness Scoreboard](./readiness-scoreboard.md)
