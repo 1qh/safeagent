@@ -73,10 +73,10 @@ graph TB
     TRACE_COLLECT --> HANDLER
     HANDLER --> VERBOSITY_FILTER
     ERR_CATCH -.->|"catches TripWire"| EVT_TRIP
-    VERBOSITY_FILTER --> EVT_META & EVT_TEXT & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR
+    VERBOSITY_FILTER --> EVT_META & EVT_TEXT & EVT_CTA & EVT_CIT & EVT_LOC & EVT_UI & EVT_TRIP & EVT_DONE & EVT_ERR
     VERBOSITY_FILTER -->|"full only"| EVT_TRACE
     KEEPALIVE -.-> EVT_META
-    EVT_META & EVT_TEXT & EVT_TRACE & EVT_CTA & EVT_CIT & EVT_LOC & EVT_TRIP & EVT_DONE & EVT_ERR --> PARSER
+    EVT_META & EVT_TEXT & EVT_TRACE & EVT_CTA & EVT_CIT & EVT_LOC & EVT_UI & EVT_TRIP & EVT_DONE & EVT_ERR --> PARSER
     PARSER --> TYPED --> QUEUE
     QUEUE --> RECONNECT
 ```
@@ -989,6 +989,17 @@ classDiagram
 
 ### SSE UI Component Event
 
+```mermaid
+classDiagram
+    class SSE_UI_COMPONENT_EVENT {
+        type: ui-component
+        componentType: Component category from server catalog
+        data: Schema-validated payload
+        mode: Inline within text or standalone block
+        fallback: Plain text alternative
+    }
+```
+
 The `ui-component` event delivers agent-generated dynamic UI payloads to clients. It carries a component category identifier, a schema-validated data payload, a display mode, and a mandatory text fallback. The category determines which client-side renderer handles the payload. Clients without a matching renderer display the text fallback from the paired text-delta emission.
 
 ### SSETripwireEvent
@@ -1077,6 +1088,7 @@ Build stream handler factory that turns internal agent stream output into a well
   - Raw model stream event (text delta) → `text-delta` SSE event
   - Run-item stream event with CTA-suggestion tool call → `cta` SSE event (tool chunks suppressed)
   - Run-item stream event with location-search tool call → `location` SSE event (tool chunks suppressed)
+  - Run-item stream event with UI component tool call → `ui-component` SSE event (tool chunks suppressed, paired text-delta fallback emitted)
   - Citation metadata from tool results → `citation` SSE event
   - Pipeline milestones (from trace-step collector) → `trace-step` SSE events (only when verbosity is `full`)
   - Agent-updated stream event → logged for tracing (handoff routing)
