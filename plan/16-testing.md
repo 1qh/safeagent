@@ -5320,6 +5320,10 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Concurrency limits prevent spawning beyond the configured maximum worker count.
 - Progress tracking reports accurate completion percentage throughout execution.
 - Backpressure throttles workers when reducer capacity is overwhelmed.
+- Worker timeout enforcement terminates individual workers that exceed configured duration.
+- Worker state cleanup releases all resources after completion or failure.
+- Result ordering matches the original input order regardless of worker completion order.
+- Fan-out with zero qualifying inputs completes immediately with an empty result set.
 
 ### Module: Concurrent Request Policy (11-extension)
 
@@ -5330,6 +5334,9 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - In-flight cancellation drains the current step cleanly.
 - Client receives the correct notification for each policy outcome.
 - State consistency is maintained across all policy transitions.
+- Rapid successive requests under each policy produce correct outcomes without race conditions.
+- Cleanup after INTERRUPT cancellation releases all resources from the cancelled run.
+- Queue depth limits prevent unbounded ENQUEUE accumulation under burst traffic.
 
 ### Module: Deferred Tool Loading (24-extension)
 
@@ -5341,6 +5348,104 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Session cache prevents repeated loading of the same tool.
 - MCP server connections remain deferred until a tool from that server is needed.
 - Graceful fallback behavior applies when tool search finds no matches.
+
+### Module: Structured Output Guarantees (04-extension)
+
+- Provider-enforced tier (Tier 1) produces fully schema-compliant output when constrained decoding is available.
+- Zod v4 schema is passed into provider structured output mode for Tier 1 providers.
+- Validated retry tier (Tier 2) validates output with Zod v4 and automatically retries on validation failure.
+- Validation error context is included in retry prompts for Tier 2 providers.
+- Plugin-extended tier (Tier 3) allows self-hosted engines to register constrained decoding plugins.
+- Framework detects available provider capability at runtime without consumer configuration.
+- Framework automatically selects the strongest guarantee tier based on detected capabilities.
+- Zod v4 schemas are automatically translated to provider-native structured output definitions.
+- Validated retry mode uses configurable maximum retry count with exponential backoff.
+- Framework returns raw provider output plus structured error payload when retries are exhausted with no silent failure.
+- Schema translation produces correct output for OpenAI JSON Schema form and Anthropic tool-definition form.
+- Invalid schema definitions are rejected at agent creation time with descriptive errors.
+
+### Module: MCP Client Protocol Integration (06-extension)
+
+- Every agent type accepts MCP server connections as a peer parameter alongside local tools.
+- All three transport modes (stdio, SSE, streamable HTTP) connect and exchange messages successfully.
+- Transport mode is auto-detected from connection configuration without consumer hints.
+- Tool definitions from MCP servers merge into the agent tool registry identically to local tools.
+- Allowlist controls per MCP server expose only approved tools to the agent.
+- Denylist controls per MCP server block specific tools from appearing in the agent registry.
+- Tool-definition caches refresh when MCP servers signal capability changes.
+- MCP connections are established on demand at first use and not at agent creation time.
+- Pooled connection management includes health checks, reconnect on failure, and graceful shutdown.
+- MCP connections inherit the agent trust boundary so untrusted servers run inside sandbox constraints.
+- Agents attach to multiple MCP servers simultaneously with tools from all servers available.
+- Tool-name conflicts across servers are resolved by server priority order.
+- Duplicate client creation is prevented when the same MCP server is referenced by multiple agents.
+- Connection failure to one MCP server does not block tools from other servers.
+
+### Module: Computer Use and Browser Agent Patterns (06-extension)
+
+- Provider-agnostic computer use interface supports screenshot capture, action execution, accessibility-tree reads, and viewport dimension management.
+- Screenshot-based perception mode captures rendered frames and works across any interface.
+- Accessibility-tree perception mode uses structured page semantics and is preferred for web workflows.
+- Accessibility-tree perception consumes substantially fewer tokens than screenshot-heavy flows.
+- Perception mode is selectable per run.
+- Playwright MCP, Anthropic Computer Use, and OpenAI CUA are interchangeable plugin implementations.
+- Core safeagent package does not include any computer use provider by default.
+- All computer use execution runs in isolated environments and not on the host machine.
+- Orchestrator enforces configurable allowlist of permitted actions.
+- Read-only profiles allow observation while blocking mutation actions.
+- Browser sessions preserve page state, cookies, and navigation history across multi-step execution.
+- Visual token usage is tracked separately from text token usage in budget accounting.
+- High-risk actions require explicit human approval checkpoints when configured.
+- Screenshots, actions, and page-state transitions are logged for compliance and replay.
+
+### Module: Code Execution Sandboxing (10-extension)
+
+- All model-generated code execution runs in an isolated sandbox environment.
+- Direct execution on application servers is disallowed by default.
+- Isolation controls cover process, filesystem, memory, and network boundaries.
+- Provider-agnostic sandbox capability layer supports code execution, file upload and download, lifecycle management, and deterministic cleanup.
+- Sandbox prevents secret leakage from host or control-plane environments.
+- Resource exhaustion controls prevent runaway compute and disk growth.
+- Escape-resistant boundaries reduce container and VM breakout risk.
+- Outbound and inbound network access is restricted to an explicit allowlist.
+- Resource limits are configurable per sandbox instance for CPU, memory, disk, and network quotas.
+- Maximum execution duration is enforced with hard termination at timeout.
+- File transfer flows enforce size limits, content validation, and policy checks before acceptance.
+- Ephemeral lifecycle creates per execution and destroys after completion by default.
+- Persistent lifecycle is available only for approved multi-step workflows requiring state continuity.
+- Framework emits prominent runtime warning if code execution is requested without a configured sandbox provider.
+- Insecure execution path requires explicit opt-out acknowledgment before execution continues.
+- Warning and acknowledgment events are captured in audit telemetry.
+- Every code execution produces an audit trail containing request metadata, inputs, outputs, policy decisions, and resource usage.
+- Sandbox compute costs are attributed to the requesting agent, user, and tenant for budget governance.
+- Sandboxes may expose MCP servers so sandbox capabilities are available as agent tools.
+
+### Module: Real-Time Voice and Audio Transport (11-extension)
+
+- Provider-agnostic voice interface defines four required capabilities: speech-to-text listen, text-to-speech speak, bidirectional streaming connect, and structured event emission.
+- Speech-to-text produces incremental transcript output.
+- Text-to-speech provides low-latency audio playback streaming.
+- Bidirectional streaming enables continuous real-time exchange.
+- Two architecture modes are selectable per voice session: cascaded pipeline and speech-to-speech.
+- Cascaded pipeline routes through STT then LLM then TTS with safety gating between stages.
+- Speech-to-speech mode provides lowest latency with reduced control points.
+- Primary media transport uses WebRTC for real-time duplex audio.
+- Session signaling uses WebSocket for connection negotiation and state updates.
+- HTTP chunked transfer serves as fallback when real-time channels are unavailable.
+- All media and signaling channels use encrypted transport.
+- Voice session establishment requires authenticated session authorization and rejects unauthenticated callers before media exchange.
+- Per-tenant concurrent session limits are enforced.
+- Per-session duration caps are enforced.
+- Rate limiting on session creation prevents resource exhaustion attacks.
+- Voice activity detection uses configurable sensitivity tuning for noisy and quiet environments.
+- Silence threshold duration is configurable for turn-finalization timing.
+- Interruption handling allows user barge-in with immediate generation cancellation or pause.
+- Voice sessions emit structured transport events for transcript updates, speaker audio, interruptions, and connection state.
+- Tool execution during active voice sessions does not break audio continuity.
+- Transcript updates and speaker streaming remain synchronized as a single live session timeline.
+- Configurable admission limits on concurrent voice sessions per tenant prevent resource exhaustion.
+- Backpressure controls throttle new session creation when infrastructure approaches capacity.
+- Degraded-mode behavior activates under sustained load with cascaded fallback and graceful session shedding.
 
 ### Module: RAG Feedback Loop (09-extension)
 
@@ -5375,6 +5480,10 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Clients that predate the ui-component event type ignore it gracefully per SSE specification.
 - Schema validation rejects malformed component data before emission.
 - ui-component events appear at their natural stream position interleaved with text-delta events.
+- Client reconnection after mid-stream disconnect resumes without duplicate ui-component events.
+- Partial payload delivery during stream interruption does not produce corrupted component state on the client.
+- Per-response emission limits prevent unbounded component generation.
+- Payload size caps reject oversized component data before emission.
 
 ### Module: Generative UI Renderer (18-extension)
 
@@ -5512,6 +5621,23 @@ Every Must Have feature area maps to one or more testing layers.
 | Consent lifecycle governance | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Bias monitoring and disparate impact detection | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
 | Security audit cadence and dependency scanning | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Content provenance and audit trail | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Disaster recovery and backup | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| Agent identity and data residency | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
+| Dynamic fan-out orchestration | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| Concurrent request policy | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Deferred tool loading | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Structured output guarantees | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| MCP client protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Computer use and browser agents | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Code execution sandboxing | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| Real-time voice transport | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
+| RAG feedback loop | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Generative UI tool | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Generative UI SSE protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Generative UI renderer | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Conversation intelligence | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Multi-tenant config hierarchy | ✓ | ✓ | ✓ |  |  |  | ✓ |
 
 ## Extended Coverage Map
 
@@ -5588,6 +5714,23 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Frontend type safety |  | ✓ |  | ✓ |  |  |
 | OpenAPI documentation |  | ✓ |  | ✓ |  |  |
 | Accessibility |  |  |  |  |  |  |
+| Content provenance |  |  | ✓ |  |  |  |
+| Disaster recovery | ✓ |  |  |  |  |  |
+| Agent identity and data residency |  | ✓ | ✓ |  |  |  |
+| Dynamic fan-out |  |  |  |  |  | ✓ |
+| Concurrent request policy |  |  |  |  |  | ✓ |
+| Deferred tool loading | ✓ |  |  |  |  |  |
+| Structured output guarantees |  | ✓ |  |  |  | ✓ |
+| MCP client protocol | ✓ | ✓ |  |  |  |  |
+| Computer use and browser agents |  |  |  | ✓ |  |  |
+| Code execution sandboxing | ✓ |  | ✓ |  |  | ✓ |
+| Real-time voice transport | ✓ |  |  |  | ✓ | ✓ |
+| RAG feedback loop |  |  |  |  |  | ✓ |
+| Generative UI tool |  | ✓ |  |  | ✓ |  |
+| Generative UI SSE protocol |  | ✓ |  |  | ✓ |  |
+| Generative UI renderer |  |  |  | ✓ |  |  |
+| Conversation intelligence |  |  |  |  |  | ✓ |
+| Multi-tenant config hierarchy |  | ✓ |  |  |  | ✓ |
 
 ## Requirement-Level Coverage (MH_*, MN_*)
 
