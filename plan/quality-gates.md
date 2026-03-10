@@ -87,6 +87,7 @@ These gates are not per-task prerequisites. They are project-level completion ga
 - Readiness rollup visibility: [Readiness Scoreboard](./readiness-scoreboard.md)
 - Project-level readiness decision records: [Readiness Decision Record Template](./readiness-decision-record-template.md)
 - Capability stress validation matrix: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+- Compact writing policy for gate documentation updates: [Compact Authoring Standard](./compact-authoring-standard.md)
 - CI and release controls: [Release Pipeline](./release-pipeline.md)
 - Security and compliance controls: [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 - Execution dependency gates: [Execution Plan](./execution.md)

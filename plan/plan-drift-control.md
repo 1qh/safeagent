@@ -44,6 +44,7 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - [Readiness Scoreboard](./readiness-scoreboard.md) remains a rollup view and does not define readiness criteria.
 - [Eval and Adversarial Matrix](./eval-adversarial-matrix.md) remains supplementary and does not override [Testing](./testing.md).
 - [Readiness Decision Record Template](./readiness-decision-record-template.md) is used for project-level release and audit decisions only.
+- [Compact Authoring Standard](./compact-authoring-standard.md) rules are enforced for all plan edits.
 
 ### Preservation and Scope Consistency
 
@@ -72,3 +73,4 @@ This document defines ongoing checks that keep the plan coherent as iterations c
 - [Readiness Scoreboard](./readiness-scoreboard.md)
 - [Readiness Decision Record Template](./readiness-decision-record-template.md)
 - [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+- [Compact Authoring Standard](./compact-authoring-standard.md)
