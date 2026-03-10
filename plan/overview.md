@@ -22,6 +22,7 @@
 - Use [Eval and Adversarial Matrix](./eval-adversarial-matrix.md) for capability stress validation coverage.
 - Use [Quality Gates](./quality-gates.md) for completion criteria.
 - Use [Operations](./operations.md) for runtime and incident-readiness context.
+- Use [Compact Authoring Standard](./compact-authoring-standard.md) for concise, agent-efficient plan updates.
 
 ## High-Level System Architecture
 

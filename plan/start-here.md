@@ -37,6 +37,7 @@ This is the primary entry point for implementation work. Use it to choose a read
 5. [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level control.
 6. [Plan Drift Control](./plan-drift-control.md) for consistency checks.
 7. [AI Operations Plan](./ai-operations.md) for runtime optimization strategy.
+8. [Compact Authoring Standard](./compact-authoring-standard.md) for token-efficient doc updates.
 
 ### QA and Release
 
@@ -71,6 +72,7 @@ This is the primary entry point for implementation work. Use it to choose a read
 - Batch-level execution rhythm: [Batch Delivery Playbook](./batch-delivery-playbook.md)
 - Runtime improvement cycle: [AI Operations Plan](./ai-operations.md)
 - Ongoing consistency control: [Plan Drift Control](./plan-drift-control.md)
+- Compact writing policy for all plan edits: [Compact Authoring Standard](./compact-authoring-standard.md)
 - Operational readiness and incidents: [Operations](./operations.md)
 - Architectural rationale and validated decisions: [Research & Decisions](./research.md)
 
