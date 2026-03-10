@@ -5286,6 +5286,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Provider switching requires only a single configuration decision point change.
 - Offline behavior degrades gracefully and reports precise missing capabilities.
 - Local provider behavior is parity-tested against cloud-backed providers for core flows.
+- Local data workflows use surqlize for SurrealDB interactions and Drizzle for PostgreSQL interactions with no raw query access.
 
 **Interactive development studio behavior**:
 
@@ -5310,7 +5311,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Template and starter ecosystem behavior**:
 
-- Template gallery scaffolds all six required templates (basic, tool-enabled, multi-agent, RAG, HITL, local-model-first) successfully.
+- Template gallery provides all six required template creation flows (basic, tool-enabled, multi-agent, RAG, HITL, local-model-first) successfully.
 - Every template produces visible output on first run and includes adaptation notes for real deployment.
 - Every template aligns with Bun-only and single-package constraints.
 - Template lifecycle states (active, maintenance, archived) are enforced by governance.
@@ -5365,6 +5366,9 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - Export aggregation governance detects duplicate surfaces before release acceptance.
 - Top-level exports are curated for mainstream usage and avoid broad passthrough behavior.
 - Category-level exports are organized by domain and avoid exposing implementation detail.
+- Consumer guidance is Bun-only with no alternate runtime assumptions.
+- Package scope remains the single npm package `safeagent` with no scoped package families.
+- Data access guidance promotes surqlize for SurrealDB and Drizzle for PostgreSQL with raw-query ergonomics excluded from the public API posture.
 
 **Stability tier governance behavior**:
 
@@ -5407,7 +5411,7 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 **Migration guide framework behavior**:
 
-- Migration codemods transform prior API usage into current API usage correctly.
+- Automated migration tooling updates prior consumer usage patterns correctly and preserves documented behavior.
 - Every migration guide follows standardized structure including impact summary, prerequisites, risk profile, and validation checklist.
 - Conceptual before-and-after comparisons focus on behavior and outcomes without source-level snippets.
 - Migration tooling includes dry-run insight for impact visibility and deterministic output expectations.
@@ -5457,7 +5461,12 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 
 - Emergency API changes follow fast-track governance with incident-level approval and audit logging.
 - Exception requests require business and technical rationale with explicit risk acceptance.
-- Post-exception stabilization plans are required with follow-up compatibility verification.
+- Security-critical triggers escalate immediately with required sign-offs from designated governance owners.
+- Time-bounded approvals expire if not acted upon within configured windows and re-enter the queue.
+- Post-exception stabilization plans are required with follow-up compatibility verification and closure evidence.
+- Escalation update cadence ensures stakeholders receive progress at defined intervals until resolution.
+- Audit retention preserves the complete exception lifecycle for compliance and trend analysis.
+- Closure requires compliance-restoration checks confirming governance posture is fully restored.
 - Governance exceptions are reviewed in retrospective cadence to prevent pattern normalization.
 
 ### Module: Content Provenance (14-extension)
@@ -5823,7 +5832,7 @@ Every Must Have feature area maps to one or more testing layers.
 | Generative UI renderer | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Conversation intelligence | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Multi-tenant config hierarchy | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Project onboarding and scaffolding | ✓ |  | ✓ |  |  |  | ✓ |
+| Project onboarding and creation flow | ✓ |  | ✓ |  |  |  | ✓ |
 | Progressive API tiers | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Error taxonomy and diagnostics | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Local development environment | ✓ | ✓ | ✓ |  |  |  | ✓ |
@@ -5838,10 +5847,12 @@ Every Must Have feature area maps to one or more testing layers.
 | Stability tier enforcement | ✓ | ✓ |  |  |  |  | ✓ |
 | Deprecation lifecycle | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Breaking change protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Migration guide and codemods | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Migration guide and automated migration tooling | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Consumer upgrade and canary testing | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Extension contract stability | ✓ | ✓ | ✓ |  |  |  | ✓ |
 | Type contract governance | ✓ | ✓ |  |  |  |  | ✓ |
+| Semantic release policy | ✓ | ✓ | ✓ |  |  |  | ✓ |
+| Exception and escalation handling | ✓ | ✓ |  |  |  |  | ✓ |
 | Governance operating cadence |  |  |  |  |  |  | ✓ |
 
 ## Extended Coverage Map
@@ -5936,7 +5947,7 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Generative UI renderer |  |  |  | ✓ |  |  |
 | Conversation intelligence |  |  |  |  |  | ✓ |
 | Multi-tenant config hierarchy |  | ✓ |  |  |  | ✓ |
-| Project onboarding and scaffolding |  |  |  | ✓ |  |  |
+| Project onboarding and creation flow |  |  |  | ✓ |  |  |
 | Progressive API tiers |  | ✓ |  | ✓ |  | ✓ |
 | Error taxonomy and diagnostics |  |  | ✓ | ✓ |  | ✓ |
 | Local development environment | ✓ |  |  |  |  |  |
@@ -5951,10 +5962,12 @@ The six new testing categories provide additional coverage layers beyond the ori
 | Stability tier enforcement |  | ✓ |  | ✓ |  |  |
 | Deprecation lifecycle |  |  | ✓ |  |  |  |
 | Breaking change protocol |  | ✓ |  |  |  |  |
-| Migration guide and codemods |  |  |  |  |  | ✓ |
+| Migration guide and automated migration tooling |  |  |  |  |  | ✓ |
 | Consumer upgrade and canary testing |  | ✓ |  |  |  |  |
 | Extension contract stability |  | ✓ |  |  |  |  |
 | Type contract governance |  | ✓ |  | ✓ |  | ✓ |
+| Semantic release policy |  | ✓ |  |  |  |  |
+| Exception and escalation handling |  |  | ✓ |  |  |  |
 | Governance operating cadence |  |  |  |  |  |  |
 
 ## Requirement-Level Coverage (MH_*, MN_*)
