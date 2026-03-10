@@ -4,30 +4,6 @@
 > This document unifies prior intent and query pipeline plans into one coherent flow. Humanlike signals are first-class behavior within normal pipeline stages.
 
 ---
-## Table of Contents
-- [Why This Pipeline Matters](#why-this-pipeline-matters)
-- [Unified Architecture Overview](#unified-architecture-overview)
-- [Phase 0: Input Validation and Early Language Gate](#phase-0-input-validation-and-early-language-gate)
-- [Phase 1: Non-Actionable Detection](#phase-1-non-actionable-detection)
-- [Phase 2: Context Assembly](#phase-2-context-assembly)
-- [Phase 3: Two-Stage Intent Classification with Integrated Signals](#phase-3-two-stage-intent-classification-with-integrated-signals)
-- [Intent Configuration (Server-Defined)](#intent-configuration-server-defined)
-- [Embedding Router Cache Strategy](#embedding-router-cache-strategy)
-- [Fallback and Ambiguity Handling](#fallback-and-ambiguity-handling)
-- [Multi-Intent and Dependent Multi-Intent](#multi-intent-and-dependent-multi-intent)
-- [Language Validation Piggyback](#language-validation-piggyback)
-- [Temporal Expression Resolution](#temporal-expression-resolution)
-- [Phase 4: Unified Rewrite + Source Routing Flow](#phase-4-unified-rewrite--source-routing-flow)
-- [Conditional Rewriting and the 7 Triggers](#conditional-rewriting-and-the-7-triggers)
-- [Source-Specific Rewrite Strategies](#source-specific-rewrite-strategies)
-- [Source Priority Execution](#source-priority-execution)
-- [Result Merging with Priority Weighting](#result-merging-with-priority-weighting)
-- [RAGFlow Integration](#ragflow-integration)
-- [Library vs Server Responsibilities](#library-vs-server-responsibilities)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
-
 ---
 ## Why This Pipeline Matters
 The system serves multiple domains (support, product info, policy, and more). Without intent-aware routing, every query fans out everywhere, increasing latency and cost while reducing quality. This pipeline classifies intent with memory context, rewrites only when needed, routes sources by priority, merges evidence with weighting, and assembles grounded responses with recovery-aware conversation behavior.

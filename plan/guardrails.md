@@ -6,26 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Type System](#type-system)
-- [Input Guardrails (INPUT_GUARD)](#input-guardrails-input_guard)
-- [Output Guardrails (OUTPUT_GUARD)](#output-guardrails-output_guard)
-- [Zero-Leak Buffered Mode (ZERO_LEAK_GUARD)](#zero-leak-buffered-mode-zero_leak_guard)
-- [Guardrail Authoring Factories (GUARD_FACTORY)](#guardrail-authoring-factories-guard_factory)
-- [Language Guard (LANG_GUARD)](#language-guard-lang_guard)
-- [Hate Speech Guard (HATE_SPEECH_GUARD)](#hate-speech-guard-hate_speech_guard)
-- [Memory Deletion Guardrail](#memory-deletion-guardrail)
-- [Code Execution Sandboxing](#code-execution-sandboxing)
-- [Multi-Guardrail Aggregation (Worst-Wins)](#multi-guardrail-aggregation-worst-wins)
-- [Pipeline Orchestrator (GUARD_PIPELINE)](#pipeline-orchestrator-guard_pipeline)
-- [Integration with the Agent Architecture](#integration-with-the-agent-architecture)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Design Decisions](#design-decisions)
-- [External References](#external-references)
-
 ---
 
 ## Architecture Overview

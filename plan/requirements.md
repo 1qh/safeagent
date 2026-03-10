@@ -4,19 +4,6 @@ This document is the **single source of truth** for all project boundaries, deli
 
 ---
 
-## Table of Contents
-
-- [Core Objective](#core-objective)
-- [Concrete Deliverables](#concrete-deliverables)
-- [Definition of Done](#definition-of-done)
-- [Must Have — Complete Requirements](#must-have--complete-requirements)
-- [Must NOT Have — Complete Exclusions](#must-not-have--complete-exclusions)
-- [Runtime Clarification](#runtime-clarification)
-- [Conventions](#conventions)
-- [Final Verification Pipeline](#final-verification-pipeline-audit_plan-audit_code-audit_qa-audit_scope)
-- [Definition of Done Decision Tree](#definition-of-done-decision-tree)
-- [Summary of Verification Gates](#summary-of-verification-gates)
-
 ---
 
 ## Core Objective

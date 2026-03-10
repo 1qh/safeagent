@@ -3,24 +3,6 @@
 >
 > **Tasks**: LANGFUSE_MODULE (Langfuse Observability Module), CUSTOM_SPANS (Custom Observability Spans), FEEDBACK_ENDPOINT (User Feedback Endpoint), PROMPT_MGMT (Langfuse Prompt Management), EVAL_CONFIG (Eval/Scoring Configuration), SELF_TEST (Self-Test Infrastructure)
 ---
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Langfuse Self-Hosted Stack](#langfuse-self-hosted-stack)
-- [Trace Lifecycle and Span Taxonomy](#trace-lifecycle-and-span-taxonomy)
-- [Langfuse Observability Module](#langfuse-observability-module)
-- [Custom Observability Spans](#custom-observability-spans)
-- [Custom Metrics and Cost Tracking](#custom-metrics-and-cost-tracking)
-- [PII Redaction Layer](#pii-redaction-layer)
-- [Logging Strategy](#logging-strategy)
-- [User Feedback Endpoint](#user-feedback-endpoint)
-- [Langfuse Prompt Management](#langfuse-prompt-management)
-- [Content Provenance & Attribution](#content-provenance--attribution)
-- [Eval/Scoring Configuration](#evalscoring-configuration)
-- [Dashboard and Alerting](#dashboard-and-alerting)
-- [Self-Test Infrastructure](#self-test-infrastructure)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
 ---
 ## Architecture Overview
 Observability in safeagent flows from agent execution through the `@openai/agents` framework's tracing system into Langfuse. The framework provides a pluggable tracing exporter interface — safeagent implements an exporter that translates framework trace/span events into Langfuse API calls. The framework automatically creates spans for agent runs, LLM generations, tool calls, guardrail executions, and handoffs. Custom domain spans (guardrails, RAG stages, file processing) are added on top using the framework's custom span API. User feedback from client apps feeds back into Langfuse as scores linked to original traces, closing the quality loop.

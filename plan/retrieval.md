@@ -6,28 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [The Hallucination Problem](#the-hallucination-problem)
-- [The page_index System](#the-page_index-system)
-- [Hybrid Search with RRF](#hybrid-search-with-rrf)
-- [Graceful Degradation](#graceful-degradation)
-- [Query Tool and Per-Document Retrieval](#query-tool-and-per-document-retrieval)
-- [Page Context Assembly](#page-context-assembly)
-- [Structured Citations and Attribute-First Generation](#structured-citations-and-attribute-first-generation)
-- [Evidence Bundle Gate](#evidence-bundle-gate)
-- [Feedback-Driven Retrieval Optimization](#feedback-driven-retrieval-optimization)
-- [FileRegistry](#fileregistry)
-- [Cross-Conversation RAG](#cross-conversation-rag)
-- [Large TXT RAG](#large-txt-rag)
-- [File Edge Cases](#file-edge-cases)
-- [Visual Grounding](#visual-grounding)
-- [Anti-Hallucination Architecture](#anti-hallucination-architecture)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
-
 ---
 
 ## Architecture Overview

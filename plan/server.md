@@ -3,25 +3,6 @@
 >
 > **Tasks**: SCAFFOLD_SERVER (Scaffolding), SERVER_AGENT_CFG (Agent Config), SERVER_ROUTES (Routes), SERVER_MCP (MCP Definitions), SERVER_GUARDRAILS (Guardrail Rules), UPLOAD_ENDPOINT (Upload Endpoint), FEEDBACK_ENDPOINT (Feedback Endpoint), FILE_CRUD (File CRUD), JWT_AUTH (JWT Auth), ADMIN_API (Admin API)
 ---
-## Table of Contents
-- [Thin Server Philosophy](#thin-server-philosophy)
-- [Server Startup Sequence](#server-startup-sequence)
-- [Request Lifecycle](#request-lifecycle)
-- [Route Map](#route-map)
-- [JWT Auth](#jwt-auth)
-- [Middleware Stack](#middleware-stack)
-- [Agent Configuration](#agent-configuration)
-- [Location Tool Configuration](#location-tool-configuration)
-- [Guardrail Rules](#guardrail-rules)
-- [MCP Definitions](#mcp-definitions)
-- [Endpoints](#endpoints)
-- [Input Validation](#input-validation)
-- [Error Message Mapping](#error-message-mapping)
-- [Graceful Shutdown](#graceful-shutdown)
-- [Health Endpoint](#health-endpoint)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [OpenAPI Documentation](#openapi-documentation)
 ---
 ## Thin Server Philosophy
 The server has one job: accept HTTP requests, authenticate them, and hand off to safeagent with the correct configuration. It does not implement agent reasoning, guardrail execution internals, streaming internals, memory internals, or RAG internals. Those concerns remain in the library. This keeps the server stateless and horizontally scalable behind load balancers.

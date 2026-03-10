@@ -6,23 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [SSE Streaming Layer (SSE_STREAMING)](#sse-streaming-layer-sse_streaming)
-- [Stream Format Boundary](#stream-format-boundary)
-- [Session Metadata Delivery](#session-metadata-delivery)
-- [Trace-Step Events](#trace-step-events)
-- [Verbosity Levels](#verbosity-levels)
-- [Concurrent Invocation Policy (Double-Texting)](#concurrent-invocation-policy-double-texting)
-- [Real-Time Voice and Audio Transport](#real-time-voice-and-audio-transport)
-- [Generative UI Event Protocol](#generative-ui-event-protocol)
-- [CTA Streaming (CTA_STREAMING)](#cta-streaming-cta_streaming)
-- [Client SDK (CLIENT_SDK)](#client-sdk-client_sdk)
-- [SSE Event Type Reference](#sse-event-type-reference)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-
 ---
 
 ## Architecture Overview

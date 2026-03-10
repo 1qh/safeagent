@@ -4,37 +4,6 @@
 >
 > **Tasks**: E2E_TESTS, PKG_PUBLISH, SMOKE_TESTS, LOAD_TESTS, AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE.
 
-## Table of Contents
-
-- [Testing Philosophy](#testing-philosophy)
-- [Testing Pyramid](#testing-pyramid)
-- [Test Execution Flow](#test-execution-flow)
-- [CI Pipeline](#ci-pipeline)
-- [Test Suite Separation](#test-suite-separation)
-- [Mock Model Pattern](#mock-model-pattern)
-- [Unit Tests](#unit-tests)
-- [Integration Tests](#integration-tests)
-- [End-to-End Tests (E2E_TESTS)](#end-to-end-tests-e2e_tests)
-- [Eval Tests](#eval-tests)
-- [Load Tests (LOAD_TESTS)](#load-tests-load_tests)
-- [Adversarial Tests](#adversarial-tests)
-- [Regression Tests](#regression-tests)
-- [Property-Based Tests](#property-based-tests)
-- [Chaos and Failure Testing](#chaos-and-failure-testing)
-- [Contract Testing](#contract-testing)
-- [Mutation Testing](#mutation-testing)
-- [Snapshot and Golden-File Testing](#snapshot-and-golden-file-testing)
-- [Streaming-Specific Tests](#streaming-specific-tests)
-- [Development Seed Data](#development-seed-data)
-- [QA Policy](#qa-policy)
-- [Task Specifications](#task-specifications)
-- [Coverage Map](#coverage-map)
-- [Extended Coverage Map](#extended-coverage-map)
-- [Requirement-Level Coverage (MH_*, MN_*)](#requirement-level-coverage-mh_-mn_)
-- [Verification Strategy Summary](#verification-strategy-summary)
-- [Cross-Plan References](#cross-plan-references)
-- [External References](#external-references)
-
 ## Testing Philosophy
 
 > **Core Principle**: We sacrifice speed of development to ensure nothing breaks when we move forward. Every logic path, every feature boundary, and every failure mode has comprehensive automated verification before code is considered complete.

@@ -3,31 +3,6 @@
 > Scope: Extensibility architecture, plugin model, provider contracts, lifecycle hooks, and extension point governance for the safeagent library.
 > Tasks: EXTENSIBILITY_INFRA (Extension Point Infrastructure and Provider Contracts)
 
-## Table of Contents
-- Extensibility Philosophy
-- Tool Extensions
-- Deferred Tool Loading and On-Demand Discovery
-- Guardrail Extensions
-- Memory Provider Extensions
-- Storage Provider Extensions
-- Retrieval Strategy Extensions
-- Document Processor Extensions
-- LLM Provider Extensions
-- Transport Extensions
-- Observability Provider Extensions
-- Authentication Extensions
-- Frontend Component Extensions
-- Lifecycle Hook System
-- Extension Registration and Validation Model
-- Composition Patterns
-- Security Model for Extensions
-- Performance Considerations
-- Testing Contract for Extension Authors
-- Cross-References
-- Task Specifications
-- Delivery Checklist
-- Navigation
-
 ## Extensibility Philosophy
 - The core product posture is batteries included but replaceable.
 - Every major subsystem ships with a production-ready default.

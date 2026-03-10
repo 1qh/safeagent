@@ -4,28 +4,6 @@
 
 ---
 
-## Table of Contents
-
-- [Technology Validation Overview](#technology-validation-overview)
-- [SPIKE_CORE_STACK Spike Findings — All 11 Confirmed Items](#spikecorestack-spike-findings-all-11-confirmed-items)
-- [Metis Review — All Critical Findings](#metis-review-all-critical-findings)
-- [Framework Architecture](#framework-architecture)
-- [Dependency Map](#dependency-map)
-- [Finalized Discussion Decisions — 5 New Requirements](#finalized-discussion-decisions-5-new-requirements)
-- [RAGFlow retrieval integration](#ragflow-retrieval-integration)
-- [Two-stage intent detection](#two-stage-intent-detection)
-- [Parallel source priority execution](#parallel-source-priority-execution)
-- [Conditional query rewriting](#conditional-query-rewriting)
-- [File intelligence safeguards](#file-intelligence-safeguards)
-- [DX tooling standards](#dx-tooling-standards)
-- [Language detection library selection](#language-detection-library-selection)
-- [Hate speech detection library selection](#hate-speech-detection-library-selection)
-- [Geocoding provider selection](#geocoding-provider-selection)
-- [Image search provider selection](#image-search-provider-selection)
-- [Key Architecture Decisions](#key-architecture-decisions)
-- [Runtime Clarification](#runtime-clarification)
-- [Dependency Strategy](#dependency-strategy)
-
 ---
 
 ## Technology Validation Overview
@@ -810,5 +788,3 @@ Every implementation task installs dependencies with `bun add <package>` (no dep
 *Captures all SPIKE_CORE_STACK spike findings (11 items), all Metis review findings (17 items), all discussion decisions (5 new requirements), all architecture decisions, runtime clarification, and dependency strategy.*
 
 ---
-
-

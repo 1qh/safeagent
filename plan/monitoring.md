@@ -6,38 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Monitoring Boundary vs Observability](#monitoring-boundary-vs-observability)
-- [Health Check Strategy](#health-check-strategy)
-- [Metrics Collection](#metrics-collection)
-- [LLM Quality Monitoring](#llm-quality-monitoring)
-- [Agentic Workflow Monitoring](#agentic-workflow-monitoring)
-- [RAG Pipeline Monitoring](#rag-pipeline-monitoring)
-- [Security Monitoring](#security-monitoring)
-- [Synthetic Monitoring](#synthetic-monitoring)
-- [Token Cost Anomaly Detection](#token-cost-anomaly-detection)
-- [Prompt Deployment Correlation](#prompt-deployment-correlation)
-- [Business Metric Correlation](#business-metric-correlation)
-- [Chaos Engineering for AI Systems](#chaos-engineering-for-ai-systems)
-- [AIOps and ML-Based Anomaly Detection](#aiops-and-ml-based-anomaly-detection)
-- [Model Provider Health Monitoring](#model-provider-health-monitoring)
-- [Meta-Monitoring (Monitoring the Monitoring)](#meta-monitoring-monitoring-the-monitoring)
-- [Prompt A/B Testing Observability](#prompt-ab-testing-observability)
-- [Graceful Degradation Monitoring](#graceful-degradation-monitoring)
-- [Alert Rules and Escalation](#alert-rules-and-escalation)
-- [SLA Definitions](#sla-definitions)
-- [Dashboards](#dashboards)
-- [Status Page](#status-page)
-- [Incident Response Procedures](#incident-response-procedures)
-- [Runbook Templates](#runbook-templates)
-- [On-Call Rotation](#on-call-rotation)
-- [Disaster Recovery and Backup Strategy](#disaster-recovery-and-backup-strategy)
-- [Capacity Monitoring and Forecasting](#capacity-monitoring-and-forecasting)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Test Specifications](#test-specifications)
-
 ## Architecture Overview
 
 Monitoring is a dedicated runtime reliability layer focused on immediate detection, response, and service protection.

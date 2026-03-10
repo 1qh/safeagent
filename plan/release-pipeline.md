@@ -6,24 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [PR Workflow](#pr-workflow)
-- [Pre-Commit Quality Gates](#pre-commit-quality-gates)
-- [CI Pipeline Stages](#ci-pipeline-stages)
-- [Test Container Strategy](#test-container-strategy)
-- [Release Process — Library (safeagent)](#release-process--library-safeagent)
-- [Release Process — Server](#release-process--server)
-- [Deployment Environments](#deployment-environments)
-- [Canary and Rollback](#canary-and-rollback)
-- [Dependency Management](#dependency-management)
-- [Secrets Management](#secrets-management)
-- [Monitoring the Pipeline](#monitoring-the-pipeline)
-- [Scalability and Security Guardrails](#scalability-and-security-guardrails)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Delivery Checklist](#delivery-checklist)
-
 ## Architecture Overview
 
 Release operations are split across both projects with clear responsibility boundaries.

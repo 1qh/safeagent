@@ -6,16 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Shared Demo Capabilities](#shared-demo-capabilities)
-- [Next.js Web Demo (DEMO_WEB)](#nextjs-web-demo-demo_web)
-- [Expo Mobile Demo (DEMO_MOBILE)](#expo-mobile-demo-demo_mobile)
-- [Server Switching](#server-switching)
-- [Verbosity Toggle](#verbosity-toggle)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-
 ## Architecture Overview
 
 The demo applications are intentionally thin shells around the safeagent frontend SDK.

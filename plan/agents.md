@@ -7,27 +7,6 @@
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Agent Factory (Agent Creation Factory)](#agent-factory-agent-creation-factory)
-- [Computer Use and Browser Agent Patterns](#computer-use-and-browser-agent-patterns)
-- [Orchestrator Agent Pattern](#orchestrator-agent-pattern)
-- [Context Assembly, Budgeting, and Response Calibration](#context-assembly-budgeting-and-response-calibration)
-- [Live Synthesis Streaming](#live-synthesis-streaming)
-- [Dependent Intent Handling](#dependent-intent-handling)
-- [Dynamic Fan-Out & Map-Reduce Orchestration](#dynamic-fan-out--map-reduce-orchestration)
-- [Tool Registry](#tool-registry)
-- [MCP Client Protocol Integration](#mcp-client-protocol-integration)
-- [Location Enrichment Tool (LOCATION_TOOL)](#location-enrichment-tool-location_tool)
-- [Agent Router (Query Classification)](#agent-router-query-classification)
-- [Scaling: Queue-Based Execution](#scaling-queue-based-execution)
-- [Provider Fallback](#provider-fallback)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
-- [Test Specifications](#test-specifications)
-
 ---
 
 ## Architecture Overview

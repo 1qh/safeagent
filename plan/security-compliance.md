@@ -6,37 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Strategic Context](#strategic-context)
-- [Unified Threat Model](#unified-threat-model)
-- [Attack Surface Inventory](#attack-surface-inventory)
-- [OWASP Top 10 for LLM Applications Mapping](#owasp-top-10-for-llm-applications-mapping)
-- [Threat Classification Framework](#threat-classification-framework)
-- [Defense-in-Depth Composition](#defense-in-depth-composition)
-- [Security Audit and Assessment](#security-audit-and-assessment)
-- [Regulatory Compliance](#regulatory-compliance)
-- [EU AI Act Mapping](#eu-ai-act-mapping)
-- [GDPR Mapping](#gdpr-mapping)
-- [Articles 12–22 — Data Subject Rights Governance](#articles-1222--data-subject-rights-governance)
-- [Article 15 — Right of Access](#article-15--right-of-access)
-- [Article 16 — Right to Rectification](#article-16--right-to-rectification)
-- [Article 17 — Right to Erasure](#article-17--right-to-erasure)
-- [Article 18 — Right to Restriction of Processing](#article-18--right-to-restriction-of-processing)
-- [Article 20 — Right to Data Portability](#article-20--right-to-data-portability)
-- [Article 21 — Right to Object](#article-21--right-to-object)
-- [Article 22 — Safeguards for Solely Automated Decision-Making](#article-22--safeguards-for-solely-automated-decision-making)
-- [Decision Audit Trail and Explainability](#decision-audit-trail-and-explainability)
-- [DSAR Workflow](#dsar-workflow)
-- [Breach Notification Procedure](#breach-notification-procedure)
-- [Consent Management](#consent-management)
-- [Data Classification Scheme](#data-classification-scheme)
-- [Bias and Fairness Governance](#bias-and-fairness-governance)
-- [Incident Response Program](#incident-response-program)
-- [Agent Identity and Delegated Authorization](#agent-identity-and-delegated-authorization)
-- [Data Residency and Geo-Compliance](#data-residency-and-geo-compliance)
-- [Cross-References](#cross-references)
-- [Delivery Checklist](#delivery-checklist)
-
 ## Strategic Context
 - `safeagent` already includes strong technical controls across guardrails, authentication, observability, infrastructure, monitoring, and extension boundaries.
 - Enterprise adoption requires one governance layer that maps those controls to measurable risk ownership, audit evidence, and legal duties.

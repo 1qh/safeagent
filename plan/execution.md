@@ -8,23 +8,6 @@
 
 ---
 
-## Table of Contents
-
-- [How to Use This File](#how-to-use-this-file)
-- [Execution Source of Truth Rules](#execution-source-of-truth-rules)
-- [Batch ID Legend](#batch-id-legend)
-- [Batch Timeline](#batch-timeline)
-- [Critical Path Analysis](#critical-path-analysis)
-- [Parallel Execution Batches](#parallel-execution-batches)
-- [Dependency Graph](#dependency-graph)
-- [Batch Parallelism Visualization](#batch-parallelism-visualization)
-- [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (129 Tasks) and Full Dependency Matrix](#complete-task-registry-129-tasks-and-full-dependency-matrix)
-- [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
-- [Batch Completion Rules](#batch-completion-rules)
-- [New Task Registry (Expanded Plan Documents)](#new-task-registry-expanded-plan-documents)
-- [Per-Task Routing Index](#per-task-routing-index)
-
 ---
 
 ## How to Use This File

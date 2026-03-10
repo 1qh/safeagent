@@ -6,25 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Upload Pipeline Overview](#upload-pipeline-overview)
-- [Document Routing by Type and Size](#document-routing-by-type-and-size)
-- [DOCX to PDF Conversion](#docx-to-pdf-conversion)
-- [Blocking Stage: Per-Page Summarization](#blocking-stage-per-page-summarization)
-- [Background Stage: Raw Text Enrichment](#background-stage-raw-text-enrichment)
-- [File Status State Machine](#file-status-state-machine)
-- [Per-Page Streaming Architecture](#per-page-streaming-architecture)
-- [Image Extraction Pipeline](#image-extraction-pipeline)
-- [S3 Storage Layout](#s3-storage-layout)
-- [page_index Table Design](#page_index-table-design)
-- [File Metadata Tables](#file-metadata-tables)
-- [Progress Tracking](#progress-tracking)
-- [Cleanup](#cleanup)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
-
 ---
 
 ## Upload Pipeline Overview

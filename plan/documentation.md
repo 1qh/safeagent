@@ -6,20 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Documentation Information Architecture](#documentation-information-architecture)
-- [TypeScript API Reference Pipeline](#typescript-api-reference-pipeline)
-- [OpenAPI Server Reference Pipeline](#openapi-server-reference-pipeline)
-- [Search and Discoverability](#search-and-discoverability)
-- [Content Authoring Experience](#content-authoring-experience)
-- [Theming and Design Language](#theming-and-design-language)
-- [Deployment and Delivery Model](#deployment-and-delivery-model)
-- [Security, Governance, and Scalability](#security-governance-and-scalability)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Delivery Checklist](#delivery-checklist)
-
 ## Architecture Overview
 
 The documentation platform is a first-class product surface, not a side artifact.

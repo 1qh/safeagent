@@ -5,37 +5,6 @@ It is the single source of truth for type contracts, schema validation, environm
 
 ---
 
-## Table of Contents
-
-- [Foundation Scope](#foundation-scope)
-- [Architecture Overview](#architecture-overview)
-- [Dependency Chain](#dependency-chain)
-- [Model Configuration Constants](#model-configuration-constants)
-- [Thinking Levels](#thinking-levels)
-- [Library and Server Responsibility Split](#library-and-server-responsibility-split)
-- [Configuration Flow](#configuration-flow)
-- [Environment Variable Flow](#environment-variable-flow)
-- [Environment Variables Reference](#environment-variables-reference)
-- [Core Type System](#core-type-system)
-- [Domain Type Contracts](#domain-type-contracts)
-- [Memory and Extraction Safeguard Types](#memory-and-extraction-safeguard-types)
-- [Zod Schemas](#zod-schemas)
-- [Configuration System](#configuration-system)
-- [Multi-Tenant Configuration Hierarchy](#multi-tenant-configuration-hierarchy)
-- [Storage Factory](#storage-factory)
-- [MCP Health Check](#mcp-health-check)
-- [Provider Resolution](#provider-resolution)
-- [Structured Output Guarantees](#structured-output-guarantees)
-- [Guardrail Safety Dependencies](#guardrail-safety-dependencies)
-- [Foundation Dependency Graph](#foundation-dependency-graph)
-- [Dependency Policy](#dependency-policy)
-- [Core Stack Validation Spike](#core-stack-validation-spike)
-- [RAG and Multimodal Dependency Spike](#rag-and-multimodal-dependency-spike)
-- [Repository Foundation](#repository-foundation)
-- [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
-- [Task Specifications](#task-specifications)
-- [Cross-References](#cross-references)
-
 ---
 
 ## Foundation Scope

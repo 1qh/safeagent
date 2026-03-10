@@ -5,29 +5,6 @@
 
 ---
 
-## Table of Contents
-- [Standards Charter](#standards-charter)
-- [Philosophy and Enforcement Model](#philosophy-and-enforcement-model)
-- [Tool Stack Overview](#tool-stack-overview)
-- [Biome Coverage and Policy](#biome-coverage-and-policy)
-- [oxlint Coverage and Policy](#oxlint-coverage-and-policy)
-- [ESLint Coverage and Policy](#eslint-coverage-and-policy)
-- [Prettier Coverage and Policy](#prettier-coverage-and-policy)
-- [sort-package-json Coverage and Policy](#sort-package-json-coverage-and-policy)
-- [Flowmark Coverage and Policy](#flowmark-coverage-and-policy)
-- [Unified Six-Tool Pipeline](#unified-six-tool-pipeline)
-- [TypeScript Strictness](#typescript-strictness)
-- [Formatting Conventions](#formatting-conventions)
-- [Naming Conventions](#naming-conventions)
-- [CI/CD Integration](#cicd-integration)
-- [Development Workflow](#development-workflow)
-- [Rule Exception Governance](#rule-exception-governance)
-- [Security Integration](#security-integration)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Delivery Checklist](#delivery-checklist)
-- [Navigation](#navigation)
-
 ## Standards Charter
 
 This plan establishes one quality contract for both safeagent and server.

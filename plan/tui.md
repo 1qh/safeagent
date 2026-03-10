@@ -6,29 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Overview](#overview)
-- [OpenTUI Solid Architecture](#opentui-solid-architecture)
-- [Component Tree](#component-tree)
-- [Screen Layout and Panels](#screen-layout-and-panels)
-- [Keyboard Binding Matrix](#keyboard-binding-matrix)
-- [Command Routing](#command-routing)
-- [Client SDK Integration (Client SDK module)](#client-sdk-integration-client-sdk-module)
-- [Agent Integration Flow](#agent-integration-flow)
-- [File Upload Flow](#file-upload-flow)
-- [Markdown Rendering and Syntax Highlighting](#markdown-rendering-and-syntax-highlighting)
-- [Theme System](#theme-system)
-- [App Shell (TUI_SHELL)](#app-shell-tui_shell)
-- [Chat Display (TUI_CHAT)](#chat-display-tui_chat)
-- [Input Component (TUI_INPUT)](#input-component-tui_input)
-- [Command System (TUI_COMMANDS)](#command-system-tui_commands)
-- [Agent Integration (TUI_AGENT)](#agent-integration-tui_agent)
-- [Upload Command (TUI_UPLOAD)](#upload-command-tui_upload)
-- [TUI-Specific Considerations](#tui-specific-considerations)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-
 ---
 
 ## Overview

@@ -6,39 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Design Principles](#design-principles)
-- [Durable Execution Boundary](#durable-execution-boundary)
-- [Checkpoint Backend Architecture](#checkpoint-backend-architecture)
-- [Workflow State Persistence](#workflow-state-persistence)
-- [Checkpoint and Recovery Flow](#checkpoint-and-recovery-flow)
-- [Crash Recovery and Pod Restart Survival](#crash-recovery-and-pod-restart-survival)
-- [Multi-Day Gap Resumption](#multi-day-gap-resumption)
-- [Time-Travel Replay and History Forking](#time-travel-replay-and-history-forking)
-- [Background Run Execution](#background-run-execution)
-- [Deterministic Backbone Pattern](#deterministic-backbone-pattern)
-- [Workflow Lifecycle State Machine](#workflow-lifecycle-state-machine)
-- [Human-in-the-Loop Operating Model](#human-in-the-loop-operating-model)
-- [HITL as Async State Machine](#hitl-as-async-state-machine)
-- [Approval Gates](#approval-gates)
-- [Human-on-the-Loop Monitoring Mode](#human-on-the-loop-monitoring-mode)
-- [Human-in-the-Loop Pause Mode](#human-in-the-loop-pause-mode)
-- [Configurable Automation Ratio](#configurable-automation-ratio)
-- [Escalation Mechanisms](#escalation-mechanisms)
-- [Review Queue](#review-queue)
-- [Operational Concerns](#operational-concerns)
-- [Checkpoint Storage Lifecycle](#checkpoint-storage-lifecycle)
-- [Checkpoint Size Management](#checkpoint-size-management)
-- [Concurrent Workflow Limits](#concurrent-workflow-limits)
-- [Failure Isolation](#failure-isolation)
-- [Failure-Mode Ownership and Divergence Recovery](#failure-mode-ownership-and-divergence-recovery)
-- [Observability](#observability)
-- [Security and Governance](#security-and-governance)
-- [Scale Profile for 10M Users](#scale-profile-for-10m-users)
-- [Cross-References](#cross-references)
-- [Delivery Checklist](#delivery-checklist)
-
 ## Architecture Overview
 
 Durable execution ensures workflows can continue across worker crashes, pod restarts, and long human wait periods.

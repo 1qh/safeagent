@@ -157,8 +157,6 @@ sequenceDiagram
 
 ---
 
-## Table of Contents
-
 Each document below is a self-contained reference for its domain. Documents are grouped by concern and each can be read independently. Per-module test specifications are co-located within each file.
 
 ### Preamble

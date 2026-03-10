@@ -6,24 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Subpath Module Dependency Chain](#subpath-module-dependency-chain)
-- [Type Safety Flow](#type-safety-flow)
-- [React Hooks (React hooks module)](#react-hooks-react-hooks-module)
-- [Web Components (Web components module)](#web-components-web-components-module)
-- [ai-elements Adoption](#ai-elements-adoption)
-- [Custom Components](#custom-components)
-- [Generative UI Component Rendering](#generative-ui-component-rendering)
-- [Trace Visualization (TRACE_UI)](#trace-visualization-trace_ui)
-- [React Native Components (Native components module)](#react-native-components-native-components-module)
-- [Component Installation CLI](#component-installation-cli)
-- [Storybook Documentation](#storybook-documentation)
-- [Styling Strategy](#styling-strategy)
-- [Accessibility](#accessibility)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-
 ## Architecture Overview
 
 The frontend SDK stack separates transport-aware business logic from rendering targets.

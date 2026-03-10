@@ -1,24 +1,6 @@
 # Infrastructure
 > All infrastructure is containerized and declarative. The API server is stateless, and every piece of durable state lives in a purpose-built external service. Background jobs run in Trigger.dev, real-time counters live in Valkey, and every service exposes a health check. When Valkey is unavailable, the system degrades gracefully with in-memory fallbacks. When Trigger.dev is absent, jobs execute in-process. Nothing is mandatory except Postgres.
 ---
-## Table of Contents
-- [Infrastructure Stack Overview](#infrastructure-stack-overview)
-- [Docker Compose Service Map](#docker-compose-service-map)
-- [Deployment Strategy](#deployment-strategy)
-- [API Key Pool](#api-key-pool)
-- [Valkey Cache](#valkey-cache)
-- [Cost Tracking and Budget Enforcement](#cost-tracking-and-budget-enforcement)
-- [Trigger.dev Integration](#triggerdev-integration)
-- [Rate Limiting](#rate-limiting)
-- [Structured Logging](#structured-logging)
-- [TTL Cleanup](#ttl-cleanup)
-- [Circuit Breaker](#circuit-breaker)
-- [Health Checks](#health-checks)
-- [Graceful Shutdown](#graceful-shutdown)
-- [Database Migrations (Drizzle)](#database-migrations-drizzle)
-- [Task Specifications](#task-specifications)
-- [Capacity Planning](#capacity-planning)
-- [External References](#external-references)
 ---
 ## Infrastructure Stack Overview
 The complete infrastructure stack spans three container-orchestration profiles. The core profile (five services) is the default startup set. The Langfuse profile (four services) and Trigger.dev profile (five services) are opt-in for observability and production-grade background jobs respectively.

@@ -4,20 +4,6 @@
 
 ---
 
-## Table of Contents
-
-- [System Component Boundaries](#system-component-boundaries)
-- [Infrastructure Topology](#infrastructure-topology)
-- [Storage Architecture](#storage-architecture)
-- [Docker Compose Service Map](#docker-compose-service-map)
-- [Network Topology](#network-topology)
-- [Data Flow: Chat Request](#data-flow-chat-request)
-- [Data Flow: File Upload and Processing](#data-flow-file-upload-and-processing)
-- [Horizontal Scaling Model](#horizontal-scaling-model)
-- [Connection Management](#connection-management)
-- [Storage Decision Table](#storage-decision-table)
-- [External References](#external-references)
-
 ---
 
 ## System Component Boundaries

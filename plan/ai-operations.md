@@ -3,47 +3,6 @@
 >
 > **Internal Layers within AI_OPERATIONS**: COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, AIOPS_RUNTIME_GOVERNANCE
 ---
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Operating Principles](#operating-principles)
-- [Cost Intelligence Layer](#cost-intelligence-layer)
-- [Semantic Caching](#semantic-caching)
-  - [Scale Design at 10M Users](#scale-design-at-10m-users)
-- [Dynamic Model Routing](#dynamic-model-routing)
-- [Prompt Caching Architecture](#prompt-caching-architecture)
-- [Per-Agent Cost Attribution and Budget Contracts](#per-agent-cost-attribution-and-budget-contracts)
-- [LLM Gateway Patterns](#llm-gateway-patterns)
-- [Token Economics Awareness](#token-economics-awareness)
-- [Prompt Lifecycle Management (PromptOps)](#prompt-lifecycle-management-promptops)
-- [Atomic Bundle Rollout](#atomic-bundle-rollout)
-- [Prompt A/B Testing](#prompt-ab-testing)
-- [Shadow Mode](#shadow-mode)
-- [Canary for AI Behavior](#canary-for-ai-behavior)
-- [Prompt Environment Promotion](#prompt-environment-promotion)
-- [Prompt Lineage](#prompt-lineage)
-- [Prompt Playground](#prompt-playground)
-- [Agent Evaluation Framework](#agent-evaluation-framework)
-- [LLM-as-Judge Scorers](#llm-as-judge-scorers)
-- [Rule-Based Scorers](#rule-based-scorers)
-- [Statistical Scorers](#statistical-scorers)
-- [Eval Datasets](#eval-datasets)
-- [Experiments and Regression Detection](#experiments-and-regression-detection)
-- [CLASSic Framework](#classic-framework)
-- [Conversation Intelligence Analytics](#conversation-intelligence-analytics)
-- [CI Integration and Eval Gates](#ci-integration-and-eval-gates)
-- [Operational Concerns](#operational-concerns)
-- [Cache Warming Strategy](#cache-warming-strategy)
-- [Cost Dashboard Design](#cost-dashboard-design)
-- [Alert Thresholds for Cost Anomalies](#alert-thresholds-for-cost-anomalies)
-- [Eval Dataset Freshness and Maintenance](#eval-dataset-freshness-and-maintenance)
-- [Prompt Rollout Decision Framework](#prompt-rollout-decision-framework)
-- [Runtime Optimization Loop](#runtime-optimization-loop)
-- [Scalability and Security Guardrails](#scalability-and-security-guardrails)
-  - [Runtime Baseline Constraints](#runtime-baseline-constraints)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [Delivery Checklist](#delivery-checklist)
-
 ## Architecture Overview
 AI operations at 10M users requires an active control loop, not passive telemetry.
 This plan extends existing prompt retrieval, budget tracking, and deployment markers with the missing proactive layers.

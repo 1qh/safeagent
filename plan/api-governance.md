@@ -1,22 +1,5 @@
 # API Governance & Consumer Migration
 
-## Table of Contents
-- [Public API Surface Definition](#public-api-surface-definition)
-- [Stability Tiers](#stability-tiers)
-- [Semantic Release Policy](#semantic-release-policy)
-- [Deprecation Policy](#deprecation-policy)
-- [Breaking Change Protocol](#breaking-change-protocol)
-- [Migration Guide Framework](#migration-guide-framework)
-- [Consumer Upgrade Testing](#consumer-upgrade-testing)
-- [Extension Contract Stability](#extension-contract-stability)
-- [Type Contract Governance](#type-contract-governance)
-- [Governance Operating Cadence](#governance-operating-cadence)
-- [Exception and Escalation Handling](#exception-and-escalation-handling)
-- [Cross-Reference Table](#cross-reference-table)
-- [Delivery Checklist](#delivery-checklist)
-- [Mermaid Diagrams](#mermaid-diagrams)
-- [Official References](#official-references)
-
 ## Public API Surface Definition
 - The public API is the complete set of documented exports from the single `safeagent` package.
 - The package contract is explicit, intentional, and review-gated.

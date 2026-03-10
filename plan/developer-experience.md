@@ -6,24 +6,6 @@
 
 ---
 
-## Table of Contents
-- [Strategic Context](#strategic-context)
-- [Project Onboarding](#project-onboarding)
-- [Progressive API Design](#progressive-api-design)
-- [Error Taxonomy and Diagnostics](#error-taxonomy-and-diagnostics)
-- [Local Development Environment](#local-development-environment)
-- [Interactive Development Studio](#interactive-development-studio)
-- [Testing Utilities](#testing-utilities)
-- [Template and Starter Ecosystem](#template-and-starter-ecosystem)
-- [AI Coding Agent Integration](#ai-coding-agent-integration)
-- [TypeScript Performance Budget](#typescript-performance-budget)
-- [OpenTelemetry and Observability Integration](#opentelemetry-and-observability-integration)
-- [Tool Development Workflow](#tool-development-workflow)
-- [Delivery Checklist](#delivery-checklist)
-- [Mermaid Diagrams](#mermaid-diagrams)
-- [Reference URLs](#reference-urls)
-- [Navigation](#navigation)
-
 ## Strategic Context
 - Developer Experience is a first-order adoption risk, not a documentation afterthought.
 - Onboarding quality directly determines community trust, paid adoption velocity, and long-term ecosystem depth.

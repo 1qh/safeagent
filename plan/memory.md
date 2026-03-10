@@ -6,25 +6,6 @@
 
 ---
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Layer 1: Thread Short-Term Memory](#layer-1-thread-short-term-memory)
-- [Layer 2: User Short-Term Memory](#layer-2-user-short-term-memory)
-- [Mandatory Rolling Summaries](#mandatory-rolling-summaries)
-- [Layer 3: Long-Term Memory Client](#layer-3-long-term-memory-client)
-- [Layer 3: Graph Schema and Fact Lifecycle](#layer-3-graph-schema-and-fact-lifecycle)
-- [Fact Extraction Pipeline](#fact-extraction-pipeline)
-- [Structured Result Memory](#structured-result-memory)
-- [Memory Recall Tool](#memory-recall-tool)
-- [User Memory Control](#user-memory-control)
-- [Memory and Intent Detection](#memory-and-intent-detection)
-- [Context Window Budget Management](#context-window-budget-management)
-- [Tradeoffs and Design Decisions](#tradeoffs-and-design-decisions)
-- [Cross-References](#cross-references)
-- [Task Specifications](#task-specifications)
-- [External References](#external-references)
-
 ---
 
 ## Architecture Overview
