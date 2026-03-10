@@ -10,6 +10,9 @@
 
 ## Table of Contents
 
+- [How to Use This File](#how-to-use-this-file)
+- [Execution Source of Truth Rules](#execution-source-of-truth-rules)
+- [Batch ID Legend](#batch-id-legend)
 - [Batch Timeline](#batch-timeline)
 - [Critical Path Analysis](#critical-path-analysis)
 - [Parallel Execution Batches](#parallel-execution-batches)
@@ -21,6 +24,50 @@
 - [Batch Completion Rules](#batch-completion-rules)
 - [New Task Registry (Expanded Plan Documents)](#new-task-registry-expanded-plan-documents)
 - [Per-Task Routing Index](#per-task-routing-index)
+
+---
+
+## How to Use This File
+
+1. Locate your assigned task in the [Per-Task Routing Index](#per-task-routing-index).
+2. Read the mapped task specification document listed in `Spec File`.
+3. Read all documents listed in `Context Sections` before implementation.
+4. Use the dependency matrix to confirm prerequisite completion.
+5. Use the mapped `Test Spec File` plus [Quality Gates](./quality-gates.md) to verify completion.
+
+For role-based reading paths, use [Start Here](./start-here.md). For domain-by-domain execution paths, use [Domain Playbooks](./domain-playbooks.md).
+
+---
+
+## Execution Source of Truth Rules
+
+- Batch ordering and dependency sequencing are authoritative in this document.
+- Task routing ownership (`Spec File`, `Context Sections`, `Test Spec File`) is authoritative in this document.
+- If another document conflicts with scheduling or dependency order, follow this document and reconcile the mismatch.
+- Task implementation details remain in domain documents; scheduling and dependency truth remains here.
+
+---
+
+## Batch ID Legend
+
+| Batch ID | Meaning |
+|---|---|
+| `BLOCKING_SPIKE_BATCH` | Mandatory technology baseline validation gate |
+| `RAG_VALIDATION_BATCH` | Retrieval dependency validation gate |
+| `SCAFFOLDING_BATCH` | Repository and baseline scaffolding |
+| `FOUNDATION_A_BATCH` | Core foundation layer A |
+| `FOUNDATION_B_BATCH` | Core foundation layer B |
+| `CONFIG_GUARDS_BATCH` | Configuration, guardrails, extensibility, tenant controls |
+| `AGENT_PIPELINE_BATCH` | Agent and pipeline foundation |
+| `INTEGRATION_BATCH` | Core integration layer |
+| `SELFTEST_MIDINTEGRATION_BATCH` | Self-test and mid-integration hardening |
+| `SERVER_TUI_PIPELINE_BATCH` | Server, TUI, and intent/search integration |
+| `EXTENDED_INTEGRATION_BATCH` | Extended orchestration and integration capabilities |
+| `SERVER_ROUTES_SUBAGENT_BATCH` | Server route and sub-agent assembly layer |
+| `ENDPOINTS_BARREL_BATCH` | Endpoint surface and barrel export layer |
+| `E2E_DEPLOY_BATCH` | End-to-end, deploy, publish, and operations infra |
+| `FRONTEND_DEMOS_BATCH` | Frontend demos and delivery readiness |
+| `FINAL_AUDIT_BATCH` | Final compliance and governance audits |
 
 ---
 
