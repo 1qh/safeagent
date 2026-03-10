@@ -54,23 +54,23 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 
 Use this sequence to start implementation quickly:
 
-1. [Start Here](./start-here.md)
-2. [Constraints](./constraints.md)
-3. [Execution Plan](./execution.md)
-4. [Implementation Workflow](./implementation-workflow.md)
-5. [Task Verification Index](./task-verification-index.md)
-6. [Domain Playbooks](./domain-playbooks.md)
-7. [Batch Delivery Playbook](./batch-delivery-playbook.md)
-8. Domain task specification document
-9. [Handoff Packet Template](./handoff-packet-template.md)
-10. [Quality Gates](./quality-gates.md)
-11. [Readiness Scoreboard](./readiness-scoreboard.md)
-12. [Readiness Decision Record Template](./readiness-decision-record-template.md)
-13. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
-14. [Operations](./operations.md)
-15. [Plan Drift Control](./plan-drift-control.md)
-16. [Compact Authoring Standard](./compact-authoring-standard.md)
-17. [Agent Kernel](./agent-kernel.md)
+1. [Agent Kernel](./agent-kernel.md)
+2. [Start Here](./start-here.md)
+3. [Constraints](./constraints.md)
+4. [Execution Plan](./execution.md)
+5. [Implementation Workflow](./implementation-workflow.md)
+6. [Task Verification Index](./task-verification-index.md)
+7. [Domain Playbooks](./domain-playbooks.md)
+8. [Batch Delivery Playbook](./batch-delivery-playbook.md)
+9. Domain task specification document
+10. [Handoff Packet Template](./handoff-packet-template.md)
+11. [Quality Gates](./quality-gates.md)
+12. [Readiness Scoreboard](./readiness-scoreboard.md)
+13. [Readiness Decision Record Template](./readiness-decision-record-template.md)
+14. [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
+15. [Operations](./operations.md)
+16. [Plan Drift Control](./plan-drift-control.md)
+17. [Compact Authoring Standard](./compact-authoring-standard.md)
 
 ---
 

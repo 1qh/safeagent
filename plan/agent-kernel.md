@@ -18,10 +18,12 @@ Minimal, agent-first operating view. Read this first.
 
 1. Get `Task ID` in [Execution Plan](./execution.md) routing index.
 2. Read routed `Spec File` + `Context Sections`.
-3. Complete `Acceptance Criteria` + `QA Scenarios`.
-4. Validate mapped behavioral assertions from [Task Verification Index](./task-verification-index.md).
-5. Produce handoff evidence via [Handoff Packet Template](./handoff-packet-template.md).
-6. Check required gates in [Quality Gates](./quality-gates.md).
+3. Validate requirement + constraint compliance from [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md).
+4. Complete `Acceptance Criteria` + `QA Scenarios`.
+5. Validate mapped behavioral assertions from [Task Verification Index](./task-verification-index.md).
+6. Validate cross-domain regression using routed `Context Sections`.
+7. Produce handoff evidence via [Handoff Packet Template](./handoff-packet-template.md).
+8. Confirm required task-level gates in [Quality Gates](./quality-gates.md).
 
 ---
 
