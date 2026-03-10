@@ -1,4 +1,4 @@
-# 21 — Release Pipeline
+# Release Pipeline
 
 > **Scope**: End-to-end CI/CD pipeline, deployment workflow, and release process across both projects, including PR governance, staged quality gates, containerized test orchestration, release automation, canary rollout control, rollback safety, dependency governance, secrets handling, and operational pipeline monitoring at 10M-user scale.
 >
@@ -381,4 +381,63 @@ Integration notes:
 - Secrets handling validated for encrypted storage, scope isolation, and rotation readiness.
 - Pipeline monitoring baseline active for duration trends, flaky detection, and failure notifications.
 
-*Previous: [20 — Documentation Site](./20-documentation.md)*
+## Test Specifications
+
+
+**PR workflow and branch protection**:
+
+- Main branch requires passing status checks before merge.
+- Main branch requires at least one approving review before merge.
+- Force push to main is blocked by branch protection rules.
+- Draft PRs do not trigger expensive CI stages.
+
+**CI pipeline stage behavior**:
+
+- Fast feedback stage completes in under two minutes for lint, type check, and unit tests.
+- Comprehensive stage runs integration, property-based, contract, and snapshot tests with ephemeral test containers.
+- Expensive stage runs only on main branch merges and includes E2E, eval, load, and adversarial tests.
+- Release gate stage re-runs the full suite plus build verification and publish dry-run.
+- Stage failure blocks promotion to subsequent stages.
+
+**Test container orchestration**:
+
+- Ephemeral containers for Postgres, SurrealDB, Valkey, and MinIO start before test execution.
+- Container health checks pass before any test begins.
+- Parallel test execution uses isolated database schemas to prevent cross-test contamination.
+- Containers are cleaned up after test completion regardless of pass or failure.
+
+**Library release automation**:
+
+- Conventional commit messages drive semantic release decisions.
+- Changelog generates automatically from commit history.
+- Package publishes to the public npm registry on release trigger.
+- Documentation site rebuild triggers automatically after successful release.
+- Post-release smoke test validates the published package from the registry.
+
+**Server deployment and rollback**:
+
+- Docker image builds and pushes to the container registry on release.
+- Health check validation passes before deployment promotion to production.
+- Rolling deployment maintains zero downtime during release.
+- Rollback restores the previous image instantly without manual intervention.
+- Rollback preserves database state and does not execute destructive migrations.
+
+**Canary deployment behavior**:
+
+- Canary routes a configurable percentage of traffic to the new release.
+- Error rate spike above threshold triggers automated rollback from canary.
+- Health check failure during canary triggers automated rollback.
+- Manual promotion from canary to full rollout requires explicit approval.
+
+**Dependency and secrets governance**:
+
+- Automated dependency update PRs surface available upgrades.
+- Security vulnerability scanning blocks PRs with known critical vulnerabilities.
+- CI secrets are stored in encrypted secret storage and never appear in logs.
+- Staging and production use separate secret scopes.
+
+**Pipeline observability**:
+
+- Pipeline duration tracking detects regression in CI execution time.
+- Flaky test detection quarantines unreliable tests from blocking the pipeline.
+- Pipeline failure notifications reach the team within seconds of failure.

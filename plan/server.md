@@ -1,4 +1,4 @@
-# 12 — Server Implementation
+# Server Implementation
 > **Scope**: The server is intentionally thin. It is mostly configuration: prompts, intent definitions, guardrail rules, and MCP server configuration. Core execution logic lives in the safeagent library. The server wires those pieces together and exposes them over HTTP with Elysia.
 >
 > **Tasks**: SCAFFOLD_SERVER (Scaffolding), SERVER_AGENT_CFG (Agent Config), SERVER_ROUTES (Routes), SERVER_MCP (MCP Definitions), SERVER_GUARDRAILS (Guardrail Rules), UPLOAD_ENDPOINT (Upload Endpoint), FEEDBACK_ENDPOINT (Feedback Endpoint), FILE_CRUD (File CRUD), JWT_AUTH (JWT Auth), ADMIN_API (Admin API)
@@ -304,7 +304,7 @@ Request body fields:
 - optional thread identifier
 - optional list of file identifiers for contextual grounding
 Query parameters:
-- optional verbosity level (`standard` or `full`, default `standard`). When `full`, trace-step events are emitted alongside user-facing events for real-time pipeline visibility. The server should enforce that `full` verbosity requires developer-level permissions (see [11 — Streaming & Transport](./11-transport.md) for verbosity security considerations)
+- optional verbosity level (`standard` or `full`, default `standard`). When `full`, trace-step events are emitted alongside user-facing events for real-time pipeline visibility. The server should enforce that `full` verbosity requires developer-level permissions (see [Streaming & Transport](./transport.md) for verbosity security considerations)
 Flow:
 1. Middleware chain executes in standard order.
 2. Handler resolves target agent from registry by requested agent id.
@@ -316,7 +316,7 @@ Flow:
 SSE event families:
 - session-meta carrying trace and thread metadata
 - text-delta for incremental text
-- trace-step for pipeline visibility (only when verbosity is `full`) — see [11 — Streaming & Transport](./11-transport.md)
+- trace-step for pipeline visibility (only when verbosity is `full`) — see [Streaming & Transport](./transport.md)
 - cta for call-to-action events
 - citation for source references
 - location for location enrichment data and optional images
@@ -509,14 +509,14 @@ HTTP status behavior:
 ## Cross-References
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines user and operational constraints this server enforces through route security, runtime behavior, and failure semantics. |
-| **Foundation** ([04 — Foundation](./04-foundation.md)) | Supplies shared runtime contracts, environment assumptions, and configuration baselines consumed by startup and middleware. |
-| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines agent factories and orchestration capabilities that the server configures and exposes through HTTP and SSE routes. |
-| **Guardrails** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
-| **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
-| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
-| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes server SSE endpoints through the React hooks module; verbosity parameter drives frontend trace visualization. |
-| **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines user and operational constraints this server enforces through route security, runtime behavior, and failure semantics. |
+| **Foundation** ([Foundation](./foundation.md)) | Supplies shared runtime contracts, environment assumptions, and configuration baselines consumed by startup and middleware. |
+| **Agents** ([Agents & Orchestration](./agents.md)) | Defines agent factories and orchestration capabilities that the server configures and exposes through HTTP and SSE routes. |
+| **Guardrails** ([Guardrails & Safety](./guardrails.md)) | Defines guardrail semantics and safety modes that server-owned guardrail arrays plug into. |
+| **Streaming & Transport** ([Streaming & Transport](./transport.md)) | Defines stream transport event contracts and protocol behavior implemented by server streaming endpoints. |
+| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Defines dependency services and degradation model used by startup validation, health reporting, budget enforcement, and shutdown behavior. |
+| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes server SSE endpoints through the React hooks module; verbosity parameter drives frontend trace visualization. |
+| **Demos** ([Demos](./demos.md)) | Demo applications that consume this server's chat streaming and file upload endpoints. |
 ---
 ## Task Specifications
 ---
@@ -747,4 +747,189 @@ Development workflow:
 - Use watch-mode restart workflow for development.
 - Use debugger with restart flow rather than hot-reload behavior that can destabilize native-module environments.
 - Production runs entrypoint without watch behavior.
-*Previous: [11 — Streaming & Transport](./11-transport.md) | Next: [13 — TUI App](./13-tui.md)*
+
+## Test Specifications
+
+**Middleware chain**:
+
+- Ordering enforced: CORS before RequestID before LogContext before JWT before RateLimit before Budget before Handler.
+- CORS runs first for preflight success without authentication.
+- Request ID generated or forwarded from client header.
+- JWT verification: signature, expiry, optional issuer and audience.
+- Rate limiting per user and endpoint group with sliding window.
+- Budget check reads counters from cache before agent execution.
+
+**JWT authentication edge cases**:
+
+- Missing authorization header returns 401 missing_token.
+- Malformed bearer format returns 401 invalid_token.
+- Invalid signature returns 401 invalid_token.
+- Expired token returns 401 token_expired.
+- Valid token with wrong role returns 403 insufficient_role.
+- Missing JWT_SECRET in production refuses startup.
+- Missing JWT_SECRET in development enables dev-bypass with warning.
+
+**Startup validation**:
+
+- Postgres connectivity validated before accepting traffic.
+- Error map completeness validated against all typed error codes.
+- Missing required environment values cause startup failure.
+- Optional service unavailability logs warning with degraded mode.
+
+**Route handlers**:
+
+- Chat streaming: SSE response, agent resolution, verbosity control, usage accounting after stream.
+- File upload: multipart handling, validation, per-thread or global scope handling, blocking preparation, background enrichment enqueue.
+- File management: list, detail, delete, status, page image redirect with signed URLs.
+- Feedback: trace ownership validation, binary score, rate limiting.
+- Admin budget: detail, update with optional reset, list with over-budget filter.
+- Health: unauthenticated, parallel probes, five-second timeout, ok/degraded/down status, uptime, build metadata, and per-service connectivity details.
+
+**Error handling**:
+
+- Every typed error code mapped to user-facing message.
+- Missing error code mapping causes startup failure.
+- Mid-stream errors emit typed error event and close stream.
+
+**Verbosity authorization**:
+
+- Full-detail verbosity is restricted to developer-authorized users.
+
+**Graceful shutdown**:
+
+- Stop accepting new connections on termination signal.
+- Active streams receive shutdown signal before dependency closure.
+- Active streams signaled to drain with thirty-second timeout.
+- Tracing backend flushed with ten-second timeout.
+- Database and cache connections closed.
+- New requests during shutdown receive 503 with Retry-After header.
+
+**Thin-server boundary enforcement**:
+
+- Server tests verify configuration ownership while core execution behavior stays delegated to shared library.
+- Server route handlers remain stateless request adapters with no embedded orchestration logic.
+- Library boundary checks prevent server-local duplication of memory, retrieval, or guardrail internals.
+- Statelessness is validated under multi-instance routing without sticky-session assumptions.
+
+**Startup-failure and degradation matrix**:
+
+- Postgres dependency failure is startup-fatal and blocks listener startup.
+- Missing token-secret in production is startup-fatal and blocks listener startup.
+- Missing token-secret in non-production enables explicit development bypass with warning.
+- Missing language-model credentials degrades language-model-dependent endpoints to unavailable responses.
+- Surreal datastore, object storage, cache, background jobs, and tracing failures degrade gracefully with warnings.
+- Typed error-message map coverage is validated at startup and missing entries are fatal.
+- MCP connection failures are non-fatal with tool unavailability surfaced in health state.
+- Cache-layer failures are non-fatal with documented fallback behavior for cache, rate limit, and budget paths.
+
+**Request lifecycle and middleware detail**:
+
+- Middleware order is fully enforced and audited for every protected route.
+- Request identifier is forwarded when present or generated when absent, then propagated into logs.
+- Structured logging context carries request, user, agent, and trace identifiers through async call graph.
+- Rate limit uses sliding-window counters keyed by user and endpoint group.
+- Sliding-window storage uses sorted-set semantics with deterministic retry-after calculation.
+- Budget middleware performs reservation before model execution and reconciliation after completion.
+- Over-budget reservation path performs immediate rollback before rejection.
+- Daily counter expiry aligns with UTC day boundary.
+- Monthly counter expiry aligns with month boundary.
+
+**Agent configuration contracts**:
+
+- Agent registry entries include stable identifier, instructions, model constants, tools, guardrails, memory, and behavior toggles.
+- Model selection values are loaded from shared configuration constants rather than hardcoded literals.
+- Guardrail arrays are wired from server policy module into each agent definition.
+- Factory responsibilities and server-supplied configuration responsibilities remain strictly separated.
+- Unknown agent identifiers resolve to typed not-found behavior.
+
+**Location tool server configuration**:
+
+- Location configuration includes optional geocoder, optional image provider, and image-count limit.
+- Default geocoder behavior works with Nominatim-compatible path when no paid provider is configured.
+- Image provider wiring is server-supplied and opt-in.
+- Location events emit empty image arrays when image provider is not configured.
+- Location tooling remains inactive unless explicitly wired into agent toolset.
+
+**Guardrail policy wiring**:
+
+- Server owns input and output guardrail arrays and concept registry content.
+- Concept registry includes required unsupported-language and hate-speech concept mappings.
+- Guardrail verdict severity mapping follows pass, flag, and block behaviors exactly.
+- Policy composition tests cover topic-boundary and harmful-content rule sets.
+
+**MCP definition and runtime behavior**:
+
+- MCP definitions declare availability, stable identifiers, transport mode, and connection details.
+- MCP lifecycle initialization runs at startup with non-fatal failure handling.
+- Optional allowlists restrict exposed tools per MCP definition.
+- MCP call failures surface to runtime as tool-level errors without crashing server process.
+- Retry responsibility remains on MCP provider side, not server route layer.
+
+**Chat streaming endpoint coverage**:
+
+- Request schema validates message, optional thread identity, optional file references, and verbosity parameter.
+- Full verbosity access is rejected for non-developer callers.
+- Handler resolves agent, delegates stream to transport layer, and passes verbosity through.
+- Stream completion updates usage accounting and budget reconciliation.
+- Typed error mapping applies to stream-time error emissions.
+
+**Upload endpoint coverage**:
+
+- Multipart schema validation handles malformed payload rejection with typed errors.
+- Upload constraints enforce type allowlist, size limits, and quota limits before persistence.
+- Upload scope defaults to thread and supports explicit global scope.
+- Success response returns uploading state while blocking and background stages proceed.
+- Upload processing ownership stays in library pipeline with thin server delegation.
+
+**File-management endpoint coverage**:
+
+- List endpoint enforces pagination, optional status filter, and user scoping.
+- Detail endpoint returns metadata for owned records and typed not-found for missing or non-owned records.
+- Delete endpoint executes full deletion semantics and returns no-content on success.
+- Status endpoint returns status plus progress and failure details when relevant.
+- Page-image redirect endpoint enforces one-based page and zero-based image indexing with seven-day signed URL behavior.
+
+**Feedback and admin endpoint coverage**:
+
+- Feedback endpoint enforces ownership check of trace identifier before submission.
+- Feedback score validation allows only binary values.
+- Tracing-disabled deployments return success with traced-false indicator.
+- Admin budget endpoints enforce admin role for detail, update, and list.
+- Admin update supports optional immediate counter reset flag.
+- Admin list supports pagination and optional over-budget filter behavior.
+
+**Boundary input-validation guarantees**:
+
+- Chat message length cap enforces default thirty-two-thousand-character maximum.
+- Payload schema sanitization removes malformed or unsafe nested structures.
+- Multipart requests enforce structure validity and file presence requirements.
+- Upload validation enforces allowed types, file-size limits, and quota constraints.
+- Feedback validation enforces binary score and owned-trace requirements.
+- Admin validation enforces role and request-shape constraints.
+
+**Typed error-map enforcement**:
+
+- Library emits typed codes only and server maps each code to user-facing message.
+- Startup completeness check fails when any typed code lacks mapping.
+- Mapping supports both static strings and metadata-aware dynamic message builders.
+- Stream and non-stream routes both use the same mapped message source.
+
+**Graceful shutdown sequencing**:
+
+- Shutdown flips stop-accepting state before dependency teardown.
+- New requests after shutdown flag receive service-unavailable response.
+- Active streams are given up to thirty seconds to drain before forced close.
+- Tracing flush is attempted with ten-second timeout budget.
+- Database pools close quickly after stream-drain stage.
+- Retry-after guidance supports load balancer traffic drain coordination.
+
+**Health endpoint behavior**:
+
+- Health endpoint is unauthenticated and available without token.
+- Response includes overall status, uptime, build metadata, service checks, and MCP health map.
+- Core service probes run in parallel with per-probe five-second timeout.
+- Overall response latency remains bounded by five seconds.
+- Overall status is ok when critical datastore is healthy and optional checks pass.
+- Overall status is degraded when critical datastore is healthy and at least one non-critical check fails.
+- Overall status is down when critical datastore is unreachable.
+- HTTP status returns two-hundred for ok or degraded and five-hundred-three for down.

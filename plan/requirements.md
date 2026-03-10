@@ -1,4 +1,4 @@
-# 01 — Requirements & Constraints
+# Requirements & Constraints
 
 This document is the **single source of truth** for all project boundaries, delivery requirements, conventions, and final verification procedures. Every implementation task must satisfy the constraints listed here. Nothing ships without meeting the Definition of Done.
 
@@ -126,7 +126,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_LONG_TERM_MEMORY | Long-term memory (SurrealDB) | Graph + vector storage, LLM fact extraction, agent recall tool |
 | MH_MEMORY_RECALL_TOOL | Memory recall tool factory | Agent-initiated long-term memory search |
 | MH_USERID_SCOPING | `userId` scoping on all memory operations | Server passes direct `userId` parameters — every operation scoped |
-| MH_NO_WRITES_WITHOUT_USER | Must not write memory, doc chunks, or file metadata without userId | Conversation and document operations require both threadId AND userId. Per-file operations (CRUD, cleanup) require fileId AND userId. Long-term memory operations require userId only (cross-thread by design — see [07 — Memory & Intelligence](./07-memory.md) Two-Tier Responsibilities). |
+| MH_NO_WRITES_WITHOUT_USER | Must not write memory, doc chunks, or file metadata without userId | Conversation and document operations require both threadId AND userId. Per-file operations (CRUD, cleanup) require fileId AND userId. Long-term memory operations require userId only (cross-thread by design — see [Memory & Intelligence](./memory.md) Two-Tier Responsibilities). |
 
 ### Auth & Transport
 
@@ -250,13 +250,13 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_REACT_HOOKS | React hooks module for AI SDK integration | The React hooks module implements the AI SDK ChatTransport interface so `useChat` works with the safeagent SSE protocol. It exports typed hooks for chat, feedback, file upload, and thread management. It depends on the client SDK module for SSE transport |
 | MH_WEB_COMPONENTS | Web UI components module | The web components module includes shadcn and Vercel ai-elements based components for conversation, messages, input, attachments, tool calls, reasoning, sources, and model selector. Every component is customizable via className and children slots. Installation follows shadcn-style copy-into-project workflow |
 | MH_RN_COMPONENTS | Native UI components module | The native components module provides an equivalent React Native component set using NativeWind. It shares hooks and business logic with the web layer through the React hooks module while keeping separate JSX and styling. Expo is required for the `expo/fetch` polyfill |
-| MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [11 — Streaming & Transport](./11-transport.md) |
+| MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [Streaming & Transport](./transport.md) |
 | MH_VERBOSITY_FILTER | Verbosity-level event filtering | Chat streaming endpoint accepts verbosity level (`standard` or `full`). `standard` emits user-facing events only. `full` adds trace-step events for developer debugging. Server controls via query parameter |
-| MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [18 — Frontend SDK](./18-frontend-sdk.md) |
+| MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [Frontend SDK](./frontend-sdk.md) |
 | MH_VERBOSITY_TOGGLE | Verbosity mode toggle component | UI toggle for switching between standard (user-friendly) and full (developer) verbosity modes. When toggled, subsequent requests use the selected verbosity level |
 | MH_SERVER_SWITCH | Multi-server switching in demos | Demo apps support dynamically switching between multiple safeagent server instances (like model switching in ChatGPT/Claude). Connection, auth, and thread state reset on switch |
-| MH_DEMO_WEB | Next.js demo application | Full-featured chat app demonstrating all web components, server switching, verbosity toggle, file upload, tool calls, reasoning display, trace visualization. See [19 — Demos](./19-demos.md) |
-| MH_DEMO_MOBILE | Expo demo application | Mobile chat app with offline-first behavior, all RN components, server switching, verbosity toggle. See [19 — Demos](./19-demos.md) |
+| MH_DEMO_WEB | Next.js demo application | Full-featured chat app demonstrating all web components, server switching, verbosity toggle, file upload, tool calls, reasoning display, trace visualization. See [Demos](./demos.md) |
+| MH_DEMO_MOBILE | Expo demo application | Mobile chat app with offline-first behavior, all RN components, server switching, verbosity toggle. See [Demos](./demos.md) |
 | MH_FRONTEND_TYPE_SAFETY | End-to-end type safety | SSE event types are defined once in the safeagent library and flow through client SDK → React hooks → UI components, with type chaining across subpath modules and zero type casting or manual schema duplication |
 | MH_COMPONENT_CLI | CLI for component installation | shadcn-style CLI that copies components into consumer projects. Individual component installation, not monolithic import. Follows the same pattern as ai-elements installation |
 | MH_STORYBOOK | Component documentation via Storybook | Interactive component documentation with usage examples for both web and RN component modules |
@@ -287,7 +287,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 
 ### Complete Must-Have → Task Ownership Mapping
 
-Every must-have requirement maps to one or more implementation tasks in the [17 — Execution Plan](./17-execution.md). This table is the definitive traceability matrix — no must-have is unowned.
+Every must-have requirement maps to one or more implementation tasks in the [Execution Plan](./execution.md). This table is the definitive traceability matrix — no must-have is unowned.
 
 #### Agent Core
 
@@ -481,7 +481,7 @@ Every must-have requirement maps to one or more implementation tasks in the [17 
 | MH_OFFLINE_MOBILE | CLIENT_SDK (offline queue), RN_COMPONENTS (offline indicators) |
 | MH_AI_ELEMENTS | WEB_COMPONENTS (adoption of ai-elements as component foundation) |
 
-Production-scale infrastructure (PgBouncer deployment, table partitioning, multi-region topology) is documented as operational guidance in [15 — Infrastructure § Capacity Planning](./15-infrastructure.md#capacity-planning). These are deployment-time provisioning decisions, not code implementation tasks — the application code is topology-agnostic by design.
+Production-scale infrastructure (PgBouncer deployment, table partitioning, multi-region topology) is documented as operational guidance in [Infrastructure § Capacity Planning](./infrastructure.md#capacity-planning). These are deployment-time provisioning decisions, not code implementation tasks — the application code is topology-agnostic by design.
 
 ```mermaid
 flowchart LR
@@ -746,4 +746,119 @@ flowchart TD
 
 ---
 
-*Previous: [safeagent — System Plan Overview](./overview.md) | Next: [02 — Research & Decisions](./02-research.md)*
+## Test Specifications
+
+### Requirements and Constraints
+
+All MH_* constraints are verified through their implementing module tests. All MN_* constraints are verified through audit scans and negative tests.
+
+**Verification approach**:
+
+- Every MH_* identifier has at least one test proving the behavior exists and functions correctly.
+- Every MN_* identifier has at least one negative test proving the excluded behavior is absent.
+- Definition of Done verification gates are exercised through task acceptance criteria in end-to-end suites.
+- Requirement traceability: each test description references the MH or MN identifiers it covers.
+- Constraint cross-referencing: tests for compound constraints (such as injection detection requiring ensemble, not single layer) verify the combined behavior.
+
+### Cross-Cutting Constraints
+
+This section verifies cross-cutting behavioral constraints that must hold consistently across memory, transport, auth, admin, feedback, upload, and audit surfaces.
+
+**User-scoping invariants**:
+
+- Every memory extract operation requires explicit user identity scoping.
+- Every memory store operation requires explicit user identity scoping.
+- Every memory recall operation requires explicit user identity scoping.
+- Every memory delete operation requires explicit user identity scoping.
+- Every memory inspect operation requires explicit user identity scoping.
+- Cross-user memory access attempts are denied deterministically.
+- Cross-user memory access attempts never return partial data from other users.
+
+**No-write-without-user constraints**:
+
+- Conversation writes require both thread identity and user identity.
+- Conversation updates without both identities are rejected.
+- Document writes require both thread identity and user identity.
+- Document metadata updates without both identities are rejected.
+- File CRUD requires both file identity and user identity.
+- File delete operations reject requests missing user identity.
+- Long-term memory writes require user identity and reject missing user identity.
+
+**JWT authentication behavior**:
+
+- Production startup hard-fails when auth secret is absent.
+- Development startup without auth secret enables explicit bypass mode.
+- Development bypass startup logs clear warning about security posture.
+- User identity extraction uses JWT subject claim.
+- Header-based user-identity override attempts are rejected.
+- Invalid token signatures return authentication failure.
+- Expired tokens return authentication failure.
+
+**Boundary input validation**:
+
+- Chat payload validation fails closed on malformed request bodies.
+- Upload payload validation fails closed on malformed multipart metadata.
+- Admin payload validation fails closed on malformed update fields.
+- Feedback payload validation fails closed on malformed score values.
+- Boundary validation failures return typed error payloads.
+
+**Role authorization and access control**:
+
+- Privileged routes require role checks after authentication success.
+- Failed authorization returns forbidden status.
+- Authorization denials include request identity in audit logs.
+- Authorization denials do not leak privileged resource details.
+
+**CORS enforcement**:
+
+- CORS origin allowlist is loaded from environment-driven configuration.
+- Authenticated routes in production reject wildcard origin policy.
+- Disallowed origins fail preflight checks for authenticated routes.
+- Allowed origins pass preflight checks with expected headers.
+
+**Audit logging requirements**:
+
+- Authentication failures are audit-logged with traceable metadata.
+- Authorization denials are audit-logged with traceable metadata.
+- Guardrail enforcement actions are audit-logged with traceable metadata.
+- Budget denials are audit-logged with traceable metadata.
+- Rate-limit denials are audit-logged with traceable metadata.
+- Deletion operations are audit-logged with traceable metadata.
+
+**Secret-management constraints**:
+
+- Secrets are never hardcoded in runtime configuration outputs.
+- Secret values are never emitted in clear text logs.
+- Secret values are redacted in tracing sinks before export.
+- Error surfaces redact secret-bearing values before propagation.
+
+**Typed environment access**:
+
+- Typed environment module validates required keys at startup.
+- Typed environment module exposes validated values for runtime use.
+- Direct global environment reads are blocked by convention checks.
+- Missing required typed env fields fail startup deterministically.
+
+**Typed error and result-boundary behavior**:
+
+- Boundary operations return typed result patterns for success and failure.
+- Boundary operations avoid thrown exceptions across module interfaces.
+- Typed error codes map to deterministic user-facing messages.
+- Unmapped typed error codes fail startup completeness checks.
+
+**Data-access policy constraints**:
+
+- Postgres operations use type-safe ORM query construction paths.
+- SurrealDB operations use typed surqlize query paths.
+- Raw query string usage is rejected by policy validation checks.
+
+**Quality and governance constraints**:
+
+- Pre-commit hooks run formatting on staged files.
+- Pre-commit hooks run linting on staged files.
+- Pre-commit hooks run type checking on staged files.
+- OpenAPI output remains synchronized with route definitions.
+- Seed-data workflows are idempotent and avoid duplicate records.
+- Seed-data workflows produce deterministic state across reruns.
+- API docs generation produces package documentation artifacts.
+- API docs publication flow includes generated docs with package output.

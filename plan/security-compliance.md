@@ -1,4 +1,4 @@
-# 27 — Unified Security Strategy and Regulatory Compliance
+# Unified Security Strategy and Regulatory Compliance
 
 > **Scope**: Governance architecture for security, auditability, and regulatory compliance for `safeagent` at 10M-user scale.
 >
@@ -484,13 +484,13 @@ flowchart LR
 ## Cross-References
 | Plan File | Connection |
 |---|---|
-| [10 — Guardrails & Safety](./10-guardrails.md) | Prompt injection and policy enforcement controls governed here through risk ownership and compliance mapping. |
-| [12 — Server Implementation](./12-server.md) | Authentication and principal boundaries used as mandatory governance anchors. |
-| [14 — Observability](./14-observability.md) | PII redaction and trace controls extended here into regulator-facing record-keeping and explainability. |
-| [15 — Infrastructure](./15-infrastructure.md) | Rate limiting and resilience controls mapped here to audit and legal accountability. |
-| [22 — Monitoring, Alerting, and Incident Response](./22-monitoring.md) | Security signal detection integrated here with breach workflow and escalation governance. |
-| [24 — Extensibility and Plugin Architecture Plan](./24-extensibility.md) | Extension control baseline connected here to approval gates and compromise response. |
-| [25 — Durable Execution and HITL Oversight](./25-durable-execution.md) | Human oversight controls linked here to Article 14 obligations and high-impact action governance. |
+| [Guardrails & Safety](./guardrails.md) | Prompt injection and policy enforcement controls governed here through risk ownership and compliance mapping. |
+| [Server Implementation](./server.md) | Authentication and principal boundaries used as mandatory governance anchors. |
+| [Observability](./observability.md) | PII redaction and trace controls extended here into regulator-facing record-keeping and explainability. |
+| [Infrastructure](./infrastructure.md) | Rate limiting and resilience controls mapped here to audit and legal accountability. |
+| [Monitoring, Alerting, and Incident Response](./monitoring.md) | Security signal detection integrated here with breach workflow and escalation governance. |
+| [Extensibility and Plugin Architecture Plan](./extensibility.md) | Extension control baseline connected here to approval gates and compromise response. |
+| [Durable Execution and HITL Oversight](./durable-execution.md) | Human oversight controls linked here to Article 14 obligations and high-impact action governance. |
 
 ## Delivery Checklist
 - Unified threat model defined across LLM, data, infrastructure, and extension layers.
@@ -514,4 +514,51 @@ flowchart LR
 
 ## Navigation
 
-*Previous: [26 — AI Operations](./26-ai-operations.md) | Next: [28 — Developer Experience & Onboarding](./28-developer-experience.md)*
+## Test Specifications
+
+**Threat governance and OWASP coverage behavior**:
+
+- Threat model governance covers LLM, data, infrastructure, and extension attack surfaces with explicit ownership and update cadence.
+- Threat classification combines severity, blast radius, and likelihood to drive response priority and mitigation depth.
+- Defense-in-depth composition remains resilient when a single layer fails and preserves containment through layered controls.
+- OWASP LLM Top 10 mapping remains complete with governance actions tied to each category.
+
+**Decision traceability and explainability behavior**:
+
+- Decision audit trails are immutable, tamper-evident, and exportable for regulator and enterprise due-diligence workflows.
+- Audit chain continuity links input context, retrieval context, reasoning summary, tool actions, oversight events, and final output.
+- Per-decision explainability provides clear trace narratives from request intent through outcome justification.
+- Explainability quality checks detect contradictions between recorded decisions and user-visible outcomes.
+
+**Regulatory workflow behavior**:
+
+- DSAR workflow enforces identity verification, scoped data collection, structured export, and completion evidence logging.
+- DSAR timeline governance enforces response deadlines and escalates delay risk before breach of obligations.
+- Breach workflow performs detection, triage, and classification, then enforces 72-hour regulator-notification governance from confirmation.
+- Breach response communications and remediation tracking remain synchronized with incident command records.
+
+**Consent and fairness governance behavior**:
+
+- Consent records capture scope, purpose, and timestamp with immutable history and immediate withdrawal propagation.
+- Consent history is queryable for runtime governance and included in subject-access exports.
+- Bias monitoring tracks output distribution and harmful-disparity signals across cohorts over time.
+- Disparate-impact detection routes threshold breaches into owned remediation workflows with sustained parity verification.
+
+**Security operations behavior**:
+
+- Security incident response enforces P0 through P3 classification with severity-aligned command structures and communication duties.
+- Incident playbooks execute predictable containment, investigation, and recovery sequences for major attack classes.
+- Security audit compliance enforces required cadence, scope, and evidence output across monthly to annual reviews.
+- Dependency scanning and vulnerability remediation governance maintain ownership, SLA tracking, and closure evidence.
+
+### Extension: Agent Identity and Data Residency
+
+- Agent NHI credentials are distinct from user credentials.
+- OAuth token exchange produces correctly scoped delegated tokens.
+- Token vault encrypts credentials at rest and rotates them on schedule.
+- Chained delegation audit trail captures the complete delegation chain.
+- Least-privilege enforcement denies over-scoped agent requests.
+- Region-locked storage rejects writes to non-designated regions.
+- GDPR transfer-basis validation blocks transfers without legal basis.
+- Data location attestation produces verifiable proof of storage location.
+- Cross-border transfer controls enforce configured policies.

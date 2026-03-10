@@ -143,63 +143,63 @@ sequenceDiagram
 
 ## Table of Contents
 
-Each document below is a self-contained reference for its domain. Files are numbered for reading order but each can be read independently.
+Each document below is a self-contained reference for its domain. Documents are grouped by concern and each can be read independently. Per-module test specifications are co-located within each file.
 
-### Requirements & Research
+### Preamble
 
-- [01 — Requirements & Constraints](./01-requirements.md) — All must-have and must-not-have requirements, task ownership traceability, definition of done
-- [02 — Research & Decisions](./02-research.md) — Spike findings, Metis review, architectural decisions (EXEMPT from review rules)
+- [Requirements & Constraints](./requirements.md) — All must-have and must-not-have requirements, task ownership traceability, definition of done
+- [Research & Decisions](./research.md) — Spike findings, Metis review, architectural decisions (EXEMPT from review rules)
+- [System Architecture](./architecture.md) — Component boundaries, infrastructure topology, data flows, scaling, connection management
 
-### System Design
+### Governance (read before building)
 
-- [03 — System Architecture](./03-architecture.md) — Component boundaries, infrastructure topology, data flows, scaling, connection management
-- [04 — Foundation](./04-foundation.md) — Core types, Zod schemas, configuration system, environment variables, storage factory
+- [Coding Standards](./coding-standards.md) — lintmax maximum strictness, Biome + oxlint + ESLint + Prettier, TypeScript strict mode, zero-warnings policy
+- [API Governance & Consumer Migration](./api-governance.md) — Public API surface definition, stability tiers, semantic release policy, deprecation policy, breaking change protocol, migration guides, consumer upgrade testing, type contract governance
+- [Developer Experience & Onboarding](./developer-experience.md) — Project creation flow, progressive API design, error taxonomy, local dev studio, testing utilities, template ecosystem, AI coding agent integration, TypeScript performance budget
+
+### Foundation
+
+- [Foundation](./foundation.md) — Core types, Zod schemas, configuration system, environment variables, storage factory
+- [Extensibility](./extensibility.md) — 12 typed extension point contracts, lifecycle hooks, registration validation, composition patterns, security model, contract testing for extension authors
 
 ### Core Engine
 
-- [05 — Conversation Pipeline](./05-conversation.md) — Input validation → intent detection → query rewriting → source routing → response assembly
-- [06 — Agents & Orchestration](./06-agents.md) — Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors
-- [07 — Memory & Intelligence](./07-memory.md) — Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle
-- [08 — Document Processing](./08-documents.md) — Upload pipeline, multimodal-first processing, per-page summarization, file status management
-- [09 — Retrieval & Evidence](./09-retrieval.md) — Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding
+- [Conversation Pipeline](./conversation.md) — Input validation → intent detection → query rewriting → source routing → response assembly
+- [Agents & Orchestration](./agents.md) — Agent factory, orchestrator pattern, tool registry, provider management, agent behaviors
+- [Memory & Intelligence](./memory.md) — Three-layer memory, fact extraction, recall, emotional context, style adaptation, fact lifecycle
+- [Document Processing](./documents.md) — Upload pipeline, multimodal-first processing, per-page summarization, file status management
+- [Retrieval & Evidence](./retrieval.md) — Hybrid search with RRF, evidence bundle gate, file intelligence, visual grounding
 
 ### Safety & Transport
 
-- [10 — Guardrails & Safety](./10-guardrails.md) — Input/output guardrails, factories, zero-leak buffered mode, language and content safety
-- [11 — Streaming & Transport](./11-transport.md) — SSE streaming layer, CTA streaming, client SDK, event protocol
+- [Guardrails & Safety](./guardrails.md) — Input/output guardrails, factories, zero-leak buffered mode, language and content safety
+- [Streaming & Transport](./transport.md) — SSE streaming layer, CTA streaming, client SDK, event protocol
 
 ### Server & Interface
 
-- [12 — Server Implementation](./12-server.md) — Thin Elysia server, JWT auth, routes, middleware, startup sequence, error mapping
-- [13 — TUI App](./13-tui.md) — OpenTUI Solid terminal interface, component tree, command system, agent integration
+- [Server Implementation](./server.md) — Thin Elysia server, JWT auth, routes, middleware, startup sequence, error mapping
+- [TUI App](./tui.md) — OpenTUI Solid terminal interface, component tree, command system, agent integration
 
-### Operations & Quality
+### Operations
 
-- [14 — Observability](./14-observability.md) — Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering
-- [15 — Infrastructure](./15-infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
-- [16 — Testing](./16-testing.md) — Test pyramid, coverage map, CI pipeline, audit tasks, QA policy
-- [22 — Monitoring & Alerting](./22-monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
-- [23 — Coding Standards](./23-coding-standards.md) — lintmax maximum strictness, Biome + oxlint + ESLint + Prettier, TypeScript strict mode, zero-warnings policy
-- [24 — Extensibility](./24-extensibility.md) — 12 typed extension point contracts, lifecycle hooks, registration validation, composition patterns, security model, contract testing for extension authors
-- [25 — Durable Execution & HITL](./25-durable-execution.md) — Checkpoint backends, crash recovery, time-travel replay, background runs, human-in-the-loop approval gates, async suspension, escalation queues, configurable automation ratio
-- [26 — AI Operations](./26-ai-operations.md) — Semantic caching, dynamic model routing, prompt A/B testing, atomic bundle rollout, shadow mode, LLM-as-judge evaluation, CLASSic framework, per-agent cost attribution
-- [27 — Security & Compliance](./27-security-compliance.md) — Unified threat model, OWASP LLM Top 10 mapping, EU AI Act compliance, GDPR article mapping, DSAR workflow, breach notification, bias monitoring, decision audit trails, agent identity, data residency
-- [28 — Developer Experience & Onboarding](./28-developer-experience.md) — Project scaffolding, progressive API design, error taxonomy, local dev studio, testing utilities, template ecosystem, AI coding agent integration, TypeScript performance budget
-- [29 — API Governance & Consumer Migration](./29-api-governance.md) — Public API surface definition, stability tiers, semantic release policy, deprecation policy, breaking change protocol, migration guides, consumer upgrade testing, type contract governance
+- [Observability](./observability.md) — Langfuse tracing, custom spans, Promptfoo automated eval, structured logging, PII filtering
+- [Monitoring & Alerting](./monitoring.md) — Real-time health, alerting, SLAs, incident response, dashboards, status page, runbooks
+- [Infrastructure](./infrastructure.md) — Docker Compose, budget enforcement, rate limiting, circuit breaker, health checks, capacity planning
+- [Durable Execution & HITL](./durable-execution.md) — Checkpoint backends, crash recovery, time-travel replay, background runs, human-in-the-loop approval gates, async suspension, escalation queues, configurable automation ratio
+- [AI Operations](./ai-operations.md) — Semantic caching, dynamic model routing, prompt A/B testing, atomic bundle rollout, shadow mode, LLM-as-judge evaluation, CLASSic framework, per-agent cost attribution
+- [Security & Compliance](./security-compliance.md) — Unified threat model, OWASP LLM Top 10 mapping, EU AI Act compliance, GDPR article mapping, DSAR workflow, breach notification, bias monitoring, decision audit trails, agent identity, data residency
 
 ### Frontend
 
-- [18 — Frontend SDK](./18-frontend-sdk.md) — React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety
-- [19 — Demo Applications](./19-demos.md) — Next.js web demo, Expo mobile demo, server switching, verbosity toggle
+- [Frontend SDK](./frontend-sdk.md) — React hooks, web components, React Native components, trace UI, CLI, Storybook, type safety
+- [Demo Applications](./demos.md) — Next.js web demo, Expo mobile demo, server switching, verbosity toggle
 
-### Documentation
+### Delivery
 
-- [20 — Documentation Site](./20-documentation.md) — Fumadocs platform, TypeScript API reference, OpenAPI server reference, guides, search, theming
-
-### Execution
-
-- [17 — Execution Plan](./17-execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
-- [21 — Release Pipeline](./21-release-pipeline.md) — CI/CD pipeline, PR governance, staged quality gates, release automation, canary deployment, rollback
+- [Documentation Site](./documentation.md) — Fumadocs platform, TypeScript API reference, OpenAPI server reference, guides, search, theming
+- [Release Pipeline](./release-pipeline.md) — CI/CD pipeline, PR governance, staged quality gates, release automation, canary deployment, rollback
+- [Testing Strategy](./testing.md) — Test pyramid, coverage maps, CI pipeline, audit tasks, QA policy (per-module specs co-located with each file)
+- [Execution Plan](./execution.md) — Parallel batches, dependency graph, task registry, agent dispatch, critical path
 
 ---
 
@@ -291,8 +291,8 @@ graph LR
 
 | Metric | Target |
 |--------|--------|
-| Total users | 10,000,000 (capacity-planned at 1% DAU = 100K daily active, with burst headroom to 10% — see [03 — System Architecture](./03-architecture.md) and [15 — Infrastructure](./15-infrastructure.md) capacity planning sections) |
-| Request latency (p50) | < 200ms to first token (standard streaming mode). Buffered guardrail mode intentionally delays TTFT by the buffer fill window — this is a deliberate safety trade-off, not a performance failure (see [10 — Guardrails & Safety](./10-guardrails.md)) |
+| Total users | 10,000,000 (capacity-planned at 1% DAU = 100K daily active, with burst headroom to 10% — see [System Architecture](./architecture.md) and [Infrastructure](./infrastructure.md) capacity planning sections) |
+| Request latency (p50) | < 200ms to first token (standard streaming mode). Buffered guardrail mode intentionally delays TTFT by the buffer fill window — this is a deliberate safety trade-off, not a performance failure (see [Guardrails & Safety](./guardrails.md)) |
 | Intent classification | < 50ms (embedding), < 100ms (LLM validation) |
 | Source queries | Parallel, < 500ms total |
 | Document upload (50 pages) | ~10s (single key), ~2s (10-key pool) |
@@ -302,4 +302,4 @@ graph LR
 
 ---
 
-*Next: [01 — Requirements & Constraints](./01-requirements.md)*
+*Next: [Requirements & Constraints](./requirements.md)*

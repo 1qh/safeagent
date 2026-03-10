@@ -1,4 +1,4 @@
-# 19 — Demo Applications
+# Demo Applications
 
 > **Scope**: Next.js web demo and Expo mobile demo — full-featured chat applications that exercise all safeagent frontend capabilities including server switching, verbosity toggle, trace visualization, file upload, and offline-first mobile behavior.
 >
@@ -591,4 +591,151 @@ Integration notes:
 - Feedback traceId correlation validated against observability flow.
 - Offline queue reliability validated under reconnect stress.
 
-*Previous: [18 — Frontend SDK](./18-frontend-sdk.md)*
+## Test Specifications
+
+
+**Next.js demo**:
+
+- All web components render and function correctly.
+- Server switching between multiple safeagent instances.
+- Verbosity toggle switches between standard and full modes.
+- File upload through the complete pipeline.
+
+**Expo demo**:
+
+- Offline-first behavior: queue messages, persist locally, sync on reconnect.
+- All React Native components render correctly.
+- Server switching functions correctly.
+
+**Eden Treaty integration**:
+
+- Type-safe API calls through Elysia Eden Treaty client.
+
+**Web demo end-to-end behavior**:
+
+- Chat streaming completes end-to-end with smooth incremental chunk rendering.
+- Full-mode trace timeline renders incoming trace-step events during active runs.
+- Server switching resets active conversation and connection state immediately.
+- Verbosity toggle shows trace panel in full mode and hides in standard mode.
+- File upload shows accurate progress through completion state.
+- Feedback submission includes trace identifier from session-meta payload.
+- Theme toggle between light and dark maintains readability and contrast.
+- Responsive layout collapses sidebar on mobile-sized viewport widths.
+
+**Web demo interaction resilience**:
+
+- Switching server during active stream aborts prior stream and shows clean reset state.
+- Failed server switch keeps prior configured server entry for retry.
+- Trace panel remains decoupled from markdown render stability under high event rate.
+- Retry affordance after recoverable error preserves thread context.
+- Pending attachment state resets correctly when server context changes.
+
+**Mobile demo end-to-end behavior**:
+
+- Streaming chat works on iOS simulator with expected chunk progression.
+- Streaming chat works on Android simulator with expected chunk progression.
+- Offline queue persists unsent messages while disconnected.
+- Reconnect drains queued messages in FIFO order automatically.
+- Server switching from settings resets active conversation state.
+- Verbosity toggle reveals trace surface in mobile UI flow.
+- File picker upload path shows progress and completion states.
+- Polyfill initialization succeeds without startup crash.
+- Cached conversations remain readable while offline.
+
+**Mobile offline and recovery semantics**:
+
+- Offline indicator persists while disconnected and clears after reconnect completion.
+- Queue metadata remains visible during reconnect and drain stages.
+- App restart while offline preserves cached threads and messages.
+- Reconnect after app restart resumes queued-message replay deterministically.
+- Switching server while offline keeps queue scoped to selected server context.
+
+**Cross-demo parity checks**:
+
+- Server-switch semantics match across web and mobile demos.
+- Verbosity-mode semantics match across web and mobile demos.
+- Feedback trace-link semantics match across web and mobile demos.
+- Upload completion semantics match across web and mobile demos.
+- Conversation reset semantics prevent cross-server context bleed in both demos.
+
+**Thread management end-to-end behavior**:
+
+- Creating a new thread starts a fresh empty conversation state.
+- Switching between existing threads loads the correct message history for the selected thread.
+- Thread history displays messages in persisted chronological order.
+- Per-thread message ordering remains preserved across app restarts.
+- Thread list reflects all threads for the active server context only.
+
+**Server configuration persistence behavior**:
+
+- Web demo persists the server list in localStorage across page reloads.
+- Mobile demo persists the server list in AsyncStorage across app restarts.
+- Active server identity is restored on app launch when the stored entry remains valid.
+- Invalid stored server entry on app launch falls back to a disconnected state.
+- Server entry includes name, URL, and auth token as required fields.
+- Optional agentId field overrides default server routing when present.
+- When agentId is absent, routing uses the server default agent.
+
+**Connection lifecycle state behavior**:
+
+- Initial app state is disconnected before any server is selected.
+- Selecting a server transitions state from disconnected to connecting.
+- Successful handshake transitions state from connecting to connected.
+- Failed handshake transitions state from connecting back to disconnected.
+- Selecting a different server while connected transitions through switching to disconnected before reconnecting.
+- Explicit disconnect from connected returns state to disconnected.
+- Active stream abort occurs during switching before connection teardown.
+
+**Verbosity toggle edge-case behavior**:
+
+- Mid-conversation verbosity toggle affects only requests made after toggle activation.
+- Completed responses do not retroactively gain trace data when full mode is enabled.
+- Trace timeline renders events in arrival order regardless of network chunking variation.
+- Trace timeline scroll remains stable during rapid trace-step event arrival.
+- Trace timeline supports collapsed and expanded views when event count is large.
+- Trace step entries display a semantic phase label and relative timestamp.
+
+**UX guardrail behavior**:
+
+- Active server identity is always visible near the switch control in both demos.
+- Switching server while streaming shows a clear interruption indicator before reset.
+- Thread history from one server is never merged into another server context.
+- Server entries can be edited or removed only through explicit user actions, never as a side effect.
+- Feedback controls appear on eligible assistant messages only after completion, not during streaming.
+
+**Platform-specific mobile behavior**:
+
+- Polyfill initialization for structuredClone and TextEncoderStream succeeds without startup crash.
+- Keyboard avoiding behavior keeps input visible during active text entry on devices with software keyboards.
+- Safe area insets are respected on devices with sensor housing and gesture bars.
+- Haptic feedback fires on high-value interactions including send, server switch, and feedback submission.
+
+**Non-functional baseline behavior**:
+
+- Web demo maintains smooth scrolling behavior during active stream rendering.
+- Web demo avoids panel reflow jitter while trace events stream in full mode.
+- Web demo renders graceful empty states for no threads and disconnected servers.
+- Mobile demo maintains stable frame rate on long conversation lists.
+- Mobile demo keeps memory pressure stable when rendering large message histories.
+- Mobile demo touch targets meet accessibility size requirements.
+- Settings operations in mobile demo are reversible without unintended side effects.
+
+**Shared conversation capability behavior**:
+
+- Streaming assistant text renders incrementally during active response.
+- Tool call display surfaces tool invocation details within message flow.
+- Reasoning and chain-of-thought surfaces render where available from model output.
+- CTA rendering displays call-to-action elements from CTA events.
+- Citation display and inline citation linking render structured citations.
+- Location rendering displays context cards with coordinate data.
+- Suggestion chip actions are interactive and trigger follow-up prompts.
+- Markdown rendering in chat messages produces formatted output for emphasis, links, lists, and code blocks.
+- Message timestamp rendering displays time metadata for each message in the conversation.
+- Typing indicator renders during active assistant response and clears on completion.
+- Upload initiation is accessible from the prompt input area before message submission.
+- Thumbs up and thumbs down buttons are visible on eligible assistant messages and trigger feedback submission.
+- Feedback flow carries Langfuse-correlated trace identifiers deterministically across both demos.
+- Mobile tab-based navigation structure surfaces conversations and settings as primary navigation targets.
+- Offline indicator displays both connectivity state and pending message count.
+- Verbosity toggle label communicates the current mode distinction between standard and full.
+- Web demo time-to-interactive remains low despite rich component surface.

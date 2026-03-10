@@ -1,4 +1,4 @@
-# 17 — Execution Plan
+# Execution Plan
 
 > **Scope**: Parallel execution batches, dependency matrix, agent dispatch, critical path analysis, subpath barrel convention, batch completion rules.
 >
@@ -1437,4 +1437,56 @@ The following 4 tasks were added for retrieval quality feedback, generative UI, 
 
 ---
 
-*Previous: [16 — Testing](./16-testing.md) | Next: [18 — Frontend SDK](./18-frontend-sdk.md)*
+## Test Specifications
+
+
+- Task dependency graph: all dependencies correctly specified with no circular dependencies.
+- Task ordering: batches contain only tasks whose dependencies are satisfied by prior batches.
+- Acceptance criteria: each task has verifiable criteria that can be mechanically checked.
+
+**Graph integrity checks**:
+
+- Dependency graph traversal confirms every declared task node is reachable from batch ordering roots.
+- Circular dependency detection flags any cycle in direct or transitive dependency paths.
+- Self-dependency edges are rejected as invalid graph definitions.
+- Unknown dependency identifiers fail validation against task registry.
+- Duplicate dependency edges are normalized without altering dependency semantics.
+
+**Batch scheduling correctness**:
+
+- Every task appears in exactly one batch assignment.
+- Batch index ordering is monotonic with dependency depth.
+- A task is scheduled only when all dependencies are in strictly earlier batches.
+- No task is placed in a batch with unmet dependency from same or later batch.
+- Parallel tasks in one batch remain dependency-independent within that batch.
+- Critical-path tasks preserve required sequential ordering across batches.
+
+**Acceptance-criteria mechanical verifiability**:
+
+- Each task includes explicit acceptance criteria entries.
+- Acceptance criteria statements are testable as pass/fail outcomes, not vague intent.
+- Acceptance criteria can map to one or more concrete QA scenarios.
+- Tasks lacking measurable acceptance criteria are rejected by plan validation.
+- Criteria phrasing avoids ambiguous qualifiers that prevent mechanical verification.
+
+**Registry and mapping consistency**:
+
+- Complete task registry count matches declared total task count.
+- Dependency matrix contains entries for each task in the registry.
+- Agent dispatch map references only valid task identifiers.
+- Batch timeline labels correspond to existing batch definitions.
+- New-task registry links align with main registry identifiers.
+
+**Execution safety constraints**:
+
+- Blocking spike tasks are validated as strict prerequisites for downstream batches.
+- Final audit batch is validated as dependent on completion of all implementation batches.
+- Publish and release-prep tasks are validated as post-feature gates, not mid-plan tasks.
+- Demo tasks are validated as downstream of required frontend and server dependencies.
+
+**Plan-evolution regression checks**:
+
+- Adding a new task requires dependency and batch placement validation before acceptance.
+- Changing a dependency edge triggers re-validation of all affected downstream batches.
+- Removing a task triggers orphan-dependency detection for remaining tasks.
+- Renaming a task requires synchronized updates across timeline, registry, graph, and dispatch sections.

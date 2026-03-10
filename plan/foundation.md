@@ -1,4 +1,4 @@
-# 04 — Foundation
+# Foundation
 
 This document unifies foundation concerns previously split between configuration and types, defining baseline contracts and runtime guarantees that every higher layer depends on.
 It is the single source of truth for type contracts, schema validation, environment flow, model constants, storage selection, MCP health, provider resolution, and memory safeguard typing.
@@ -484,7 +484,7 @@ flowchart TB
 ## Domain Type Contracts
 
 Foundation contracts cover agent, guardrail, MCP, config, storage, memory, stream, SSE events (including trace-step events for pipeline visibility), upload, documents, RAG, files, eval, model, key-pool, cache, location, queue, budget, and memory-support types (temporal references, preference updates, memory control actions, interaction signals, and media facts).
-SSE event types — including SSETraceStepEvent, TraceStepType, and TraceStepData — are defined in the core library and consumed by the client SDK module, React hooks module, and frontend component modules. TraceStepType is a discriminated union covering intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite steps. TraceStepData is a corresponding discriminated union where each step type carries step-specific payload fields plus a common `latencyMs` timing field. See [11 — Streaming & Transport](./11-transport.md) for the full SSE event protocol.
+SSE event types — including SSETraceStepEvent, TraceStepType, and TraceStepData — are defined in the core library and consumed by the client SDK module, React hooks module, and frontend component modules. TraceStepType is a discriminated union covering intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite steps. TraceStepData is a corresponding discriminated union where each step type carries step-specific payload fields plus a common `latencyMs` timing field. See [Streaming & Transport](./transport.md) for the full SSE event protocol.
 GuardMode is canonical in guardrail contracts and resolves by precedence: pipeline override, then agent override, then development default.
 RAG contracts include StructuredResultSet and ResultItem for persisted ranked outputs.
 File contracts include FileRecord lifecycle metadata.
@@ -533,7 +533,7 @@ Memory context layers:
 - UserShortTermContext includes user identity, cross-thread messages, and active flag.
 - CombinedMemoryContext merges thread short-term, optional user short-term, and long-term recall.
 
-Memory deep-dive is in [07 — Memory & Intelligence](./07-memory.md).
+Memory deep-dive is in [Memory & Intelligence](./memory.md).
 
 ---
 
@@ -1128,12 +1128,393 @@ All database-oriented task acceptance in this foundation layer assumes type-safe
 ---
 
 ## Cross-References
-- Requirements and guardrails context: [01 — Requirements & Constraints](./01-requirements.md)
-- System layout context: [03 — System Architecture](./03-architecture.md)
-- Conversation pipeline consumers: [05 — Conversation Pipeline](./05-conversation.md)
-- Memory architecture consumers: [07 — Memory & Intelligence](./07-memory.md)
-- SSE event protocol and trace-step events: [11 — Streaming & Transport](./11-transport.md)
-- Frontend SDK consuming foundation types: [18 — Frontend SDK](./18-frontend-sdk.md)
+- Requirements and guardrails context: [Requirements & Constraints](./requirements.md)
+- System layout context: [System Architecture](./architecture.md)
+- Conversation pipeline consumers: [Conversation Pipeline](./conversation.md)
+- Memory architecture consumers: [Memory & Intelligence](./memory.md)
+- SSE event protocol and trace-step events: [Streaming & Transport](./transport.md)
+- Frontend SDK consuming foundation types: [Frontend SDK](./frontend-sdk.md)
 ---
 
-*Previous: [03 — System Architecture](./03-architecture.md) | Next: [05 — Conversation Pipeline](./05-conversation.md)*
+
+## Test Specifications
+
+Foundation tests are primarily unit tests validating configuration, types, schemas, and shared utilities.
+
+**Configuration system**:
+
+- Deep merge behavior: skip undefined values, override null values, replace arrays, override functions, recurse objects.
+- Configuration validation: invalid configs return descriptive validation errors through Zod schema reporting.
+- Configuration builder: merges per-agent overrides over library defaults correctly.
+- Frozen runtime config: config object is immutable after validation.
+- No hardcoded deployment prompts: library defaults contain no business-specific prompt content.
+- No built-in concept registry: library ships empty concept registry.
+
+**Zod v4 schema validation**:
+
+- All domain schemas accept valid input matching their type contracts.
+- All domain schemas reject invalid input with descriptive error paths.
+- Discriminated unions (TraceStepType, SSEEvent types) correctly discriminate on their tag field.
+- VerbosityLevel schema accepts exactly "standard" and "full".
+- GuardMode resolution: pipeline override wins over agent override wins over development default.
+
+**Storage factory**:
+
+- Explicit config always wins over auto-detection.
+- Postgres branch returns Drizzle-backed store.
+- Memory branch returns in-memory development store.
+- Custom branch returns user-supplied implementation.
+- Auto-detection uses database URL presence.
+- Selection path is logged for debugging.
+- SurrealDB storage uses surqlize typed APIs with no raw query strings.
+- Retrieval-source disablement: unavailable retrieval dependencies disable that source path without disabling unrelated sources.
+
+**MCP health check**:
+
+- Tool key parsing extracts server names using underscore-prefix ownership with greedy matching.
+- Per-server status: matching tools yield connected, zero tools with explicit empty-tool allowance yield empty, and missing tools yield failed.
+- Failure callback is invoked with warn or throw behavior.
+- Periodic health check scheduling functions correctly.
+- No duplicate client creation when wrapper augments existing client.
+- Initial status is unknown before the first check attempt.
+- Connected status enforces configured minimum tool-count expectations.
+
+**Provider resolution**:
+
+- String identifiers resolve to correct provider path.
+- Direct provider model instances pass through unchanged.
+- Factory functions pass through unchanged.
+- Fallback model wraps primary with ordered fallback chain.
+- Fallback callback is invoked when fallback is used.
+- Both stream and generate paths use fallback middleware.
+
+**Environment validation**:
+
+- GOOGLE_API_KEY: comma-separated pool parsed into individual keys.
+- JWT_SECRET: missing in production refuses startup, missing in development enables bypass.
+- DATABASE_URL: hard-required, missing causes startup failure.
+- SURREALDB_URL: missing disables long-term memory only.
+- VALKEY_URL: missing falls back to in-memory cache.
+- S3_ENDPOINT: missing disables upload path.
+- TRIGGER_DEV_API_URL: missing runs jobs in-process.
+- LANGFUSE variables: missing disables observability.
+- Primary provider credentials missing: LLM-dependent features are disabled with explicit degraded behavior.
+- Object-storage credentials missing: upload features are disabled while non-upload flows remain available.
+
+**Numeric configuration constants**:
+
+- All thresholds (USER_SHORTTERM_LIMIT, USER_SHORTTERM_FADEOUT, ROLLING_SUMMARY_MAX_TOKENS, CONTEXT_WINDOW_BUDGET, MAX_RECALL_TOKENS, MAX_INPUT_MESSAGE_LENGTH, GIBBERISH_CONFIDENCE_THRESHOLD, RECENCY_BOOST values, TTL values) applied correctly at boundary values.
+
+**Environment variable contracts — presence, absence, and coupled requirements**:
+
+- Missing primary provider key still allows server startup while model-dependent endpoints return explicit unavailable responses.
+- Comma-separated primary key pools trim whitespace, ignore empty segments, and preserve deterministic rotation order.
+- Single key and multi-key pool forms produce equivalent behavior for non-rotation paths.
+- Missing moderation provider key disables moderation-only guardrail paths without disabling unrelated safety checks.
+- Missing auth secret blocks startup in production mode and never downgrades to warning-only behavior.
+- Missing auth secret in non-production enables documented development bypass path and logs clear security posture.
+- Missing database connection string fails startup as hard-required dependency.
+- Missing long-term memory database URL disables only long-term memory features while short-term memory continues.
+- Missing cache URL activates in-memory cache fallback without blocking startup.
+- Cache URL rejects non-redis URI scheme inputs at validation time.
+- Missing object-storage endpoint disables upload paths while non-upload chat paths remain available.
+- Object-storage access key is required whenever object-storage endpoint is configured.
+- Object-storage secret key is required whenever object-storage endpoint is configured.
+- Object-storage bucket is required whenever object-storage endpoint is configured.
+- Missing background worker URL keeps jobs in-process.
+- Worker API key is required whenever worker URL is configured.
+- Comma-separated CORS origins parse into a normalized origin allowlist, and empty input falls back to wildcard policy.
+- Missing observability credentials disable exporter integration while core request handling remains healthy.
+- Missing retrieval base URL disables external retrieval source only.
+- Retrieval API key and dataset identifiers are both required when retrieval base URL is present.
+- Runtime port defaults to 3000 when unset.
+- Runtime log level defaults to info when unset.
+
+**Model constants and policy enforcement**:
+
+- Primary model constant is used as canonical model across classification, rewrite, extraction, and synthesis workloads.
+- Embedding constant enforces one canonical embedding model across all embedding generation paths.
+- Embedding dimension constant is fixed at 3072 and mismatched vector lengths are rejected.
+- Primary provider constant routes through provider bridge configuration for all agent creation paths.
+- Key-pool environment constant points to comma-separated primary keys and is not redefined in downstream modules.
+- One-model policy blocks production logic from branching by model family.
+- Grounding mode is treated as capability toggle and never as model switch.
+- Terminal-only model switching is allowed in development/testing and excluded from deployment behavior.
+- Thinking level stays optional in agent-creation configuration and can be omitted without validation failure.
+- Constants are sourced once and reused, preventing duplicated divergent definitions.
+- Key pool rotation is round-robin and deterministic across repeated calls.
+
+**Thinking-level assignments**:
+
+- Default agent path assigns no explicit thinking level.
+- Classifier path assigns minimal thinking level.
+- Summarization path assigns minimal thinking level.
+- Fact extraction path assigns low thinking level.
+- Grounding agent path assigns no explicit thinking level.
+- Intent validation path assigns minimal thinking level.
+- Query rewriting path assigns low thinking level.
+- Evidence scoring path assigns low thinking level.
+
+**Core type-system coverage**:
+
+- Agent-domain contracts validate required and optional fields for configuration, mode, response, stream chunks, and parallel grounding results.
+- Guardrail-domain contracts validate severity, verdicts, function interfaces, concept registries, pipeline config, flags, aggregate verdicts, and guard mode behavior.
+- MCP-domain contracts validate server and client configuration shapes.
+- Configuration-domain contracts validate library config and deep-partial override compatibility.
+- Storage-domain contracts validate storage config across memory, postgres, and custom branches.
+- Memory-domain contracts validate memory config structure and default-injection compatibility.
+- Stream-domain contracts validate stream config, SSE config, request body contracts, and session-meta delivery options.
+- SSE event-domain contracts validate text-delta, session-meta, trace-step, CTA, citation, location, tripwire, done, and error event shapes.
+- Upload-domain contracts validate direct file context, upload config, upload result, file result, blocking-stage config, and processing-mode values.
+- Documents-domain contracts validate processed documents, page splits, summaries, image descriptions, raster extraction, and page image outputs.
+- Retrieval-domain contracts validate hybrid result structures, query-tool config, chunk config, retrieval result, citation shape, and document answer shape.
+- Files-domain contracts validate storage config, object-storage config, cleanup dependencies, and cleanup results.
+- Eval-domain contracts validate eval config, scorer config, and evaluation-runner config.
+- Model-domain contracts validate model config and fallback model config shapes.
+- Key-pool-domain contracts validate key-pool config and runtime pool interfaces.
+- Cache-domain contracts validate cache config and cache interface contracts.
+- Location-domain contracts validate tool config, geocode provider interfaces, image-search interfaces, image results, and location results.
+- Queue-domain contracts validate task payload, background payloads, budget aggregation payloads, cleanup payloads, and queue adapter interfaces.
+- Budget-domain contracts validate usage events, budget config, and budget-check result contracts.
+- Memory-support contracts validate temporal references, preference updates, control actions, interaction signals, media facts, fact types, and structured result records.
+- Trace-step discriminated unions validate all documented step categories with step-specific payload shape plus common latency timing.
+- Runtime-enumerable error-code object and compile-time union remain aligned for message-map coverage checks.
+
+**Memory defaults and safeguard typing**:
+
+- User short-term limit default enforces cap of 20 cross-thread user messages.
+- User short-term fadeout default stops injection after three turns in active thread.
+- Rolling summary model default points to canonical primary model.
+- Rolling summary token cap default enforces 2048-token upper bound.
+- Thread resurrection gap default enforces 604800-second inactivity threshold.
+- Context window budget default enforces 120000-token total assembly budget.
+- Long-term recall cap default enforces 4096-token recall ceiling.
+- Input message length default enforces 32000-character maximum.
+- Gibberish confidence threshold default is 0.3 for low-confidence language handling.
+- Extraction safeguards default to enabled.
+- Recency boost defaults apply 1.5 multiplier inside 24 hours and 1.2 inside seven days.
+- Structured result retention default enforces seven-day lifespan.
+- Memory inspection tooling defaults to enabled.
+- Interaction signal retention default enforces 30-day lifespan.
+- Media fact retention default enforces 30-day lifespan.
+- Fact attribution typing permits only self, third-party, or general targets.
+- Fact certainty typing permits only stated, hypothetical, or asked certainty.
+- Extraction safeguard typing includes sarcasm, attribution, hypothetical, and hallucination-prevention switches.
+- Context budget typing includes total context, recall, and summary budget controls.
+- Thread resurrection typing includes inactivity threshold and rehydration behavior controls.
+- Combined memory context typing requires thread short-term layer, optional user short-term layer, and long-term recall layer.
+
+**Schema rules and runtime validation**:
+
+- Zod v4 namespace import pattern is enforced consistently.
+- One-argument record form is rejected in schema definitions.
+- Optionality is explicit and never delegated to deep-partial helpers.
+- Function and provider-instance fields use broad schema acceptance with additional runtime guarding.
+- Safe agent configuration schema matches canonical agent contract shape.
+- Guardrail severity and verdict schemas enforce supported value sets.
+- Concept registry and guardrail pipeline schemas enforce complete nested structures.
+- MCP server schema validates required fields and optional settings.
+- Storage schema validates explicit backend selection contracts.
+- Memory schema validates all memory configuration keys and default behavior.
+- Model schema validates primary and fallback model configuration objects.
+- Evaluation schema validates scorer and evaluator configuration.
+- Trace-step event schema discriminates by step field and validates step-specific payloads.
+- Verbosity schema accepts only standard and full values.
+- Validation helper behavior returns typed output on pass and structured error data on failure.
+- Schema defaults populate omitted fields only where defaults are explicitly defined.
+- Inferred schema output types remain aligned with declared domain contracts.
+
+**Configuration merge and ownership boundaries**:
+
+- Built-in defaults plus user overrides always follow merge-then-validate flow.
+- Undefined override values are ignored and do not erase defaults.
+- Null override values replace defaults intentionally.
+- Array overrides replace, rather than merge, prior arrays.
+- Function overrides replace prior handlers directly.
+- Nested object overrides recurse by key while preserving untouched siblings.
+- Invalid merged config returns descriptive, field-specific validation feedback.
+- Library remains owner of defaults and shared contracts.
+- Server remains owner of deployment-required runtime checks.
+
+**Storage factory behavior**:
+
+- Explicit backend configuration takes precedence over environment auto-detection in every branch.
+- Explicit postgres selection returns typed postgres-backed storage.
+- Explicit memory selection returns in-memory storage.
+- Explicit custom selection returns caller-provided implementation unchanged.
+- No explicit config with database URL present auto-selects postgres.
+- No explicit config and no database URL auto-selects in-memory storage.
+- Backend selection emits clear log records describing chosen path.
+- Postgres access uses typed ORM query construction only.
+- SurrealDB-oriented implementations use typed query APIs only.
+- Raw query-string paths are treated as validation failures for database access policy.
+
+**MCP health-check and registration behavior**:
+
+- Health check lists observed tools and compares them against configured server set.
+- Tool keys map to server ownership through underscore-prefixed namespace parsing.
+- Names containing underscores use greedy ownership matching to avoid ambiguous mapping.
+- Connected status requires tool presence and configured minimum count threshold satisfaction.
+- Empty status requires zero tools with explicit empty-tools allowance.
+- Failed status is assigned when expected tools are absent or minimum counts are unmet.
+- Unknown status persists until first health-check execution.
+- Warn-on-failure mode records warning and returns status map.
+- Throw-on-failure mode raises typed connection error and aborts flow.
+- Periodic checks run on configured cadence and update status transitions.
+- Wrapper augments existing client behavior without creating duplicate clients.
+
+**Provider resolution and fallback contracts**:
+
+- Provider resolution accepts model identifiers as strings and resolves provider path.
+- Provider resolution accepts direct model instances as pass-through values.
+- Provider resolution accepts model-factory inputs as pass-through values.
+- Fallback wrapper applies ordered chain after primary failure.
+- Stream generation path uses fallback middleware.
+- Non-stream generation path uses fallback middleware.
+- Fallback callback emits once when fallback provider is actually used.
+- Primary provider success does not trigger fallback provider calls.
+- Primary and fallback failure path surfaces original primary error context.
+
+**Subpath barrel export compliance**:
+
+- MCP module-group barrel includes all MCP health and client exports.
+- Memory module-group barrel includes short-term memory and long-term memory client exports.
+- Guardrails module-group barrel includes input, output, factory, pipeline, language, hate-speech, and zero-leak exports.
+- Retrieval module-group barrel includes retrieval infrastructure exports.
+- Upload module-group barrel includes upload pipeline exports.
+- Files module-group barrel includes storage and registry exports.
+- Documents module-group barrel includes document pipeline exports.
+- Database module-group barrel includes file-storage and cost-tracking exports.
+- LLM module-group barrel includes key-pool exports.
+- Observability module-group barrel includes tracing and custom span exports.
+- Cache module-group barrel includes cache implementation exports.
+- Trigger module-group barrel includes background task exports.
+- Location module-group barrel includes location-tool exports.
+- Any new public function, type, or class updates its module-group barrel in the same change.
+- Top-level barrel aggregates subpath barrels only and does not bypass module-group ownership.
+
+**Environment variable contracts — full foundation matrix**:
+
+- GOOGLE_API_KEY accepts comma-separated key pools for rotation.
+- GOOGLE_API_KEY allows startup when absent, while model-dependent endpoints return explicit unavailable behavior.
+- OPENAI_API_KEY is treated as moderation-only credential and does not gate unrelated request paths.
+- Missing OPENAI_API_KEY disables moderation guardrail path while keeping other guardrails active.
+- JWT_SECRET is mandatory in production mode and startup is refused when missing.
+- JWT_SECRET missing in non-production mode enables documented development bypass behavior.
+- PORT defaults to 3000 when unset.
+- DATABASE_URL is hard-required and startup is refused when missing.
+- SURREALDB_URL missing disables long-term memory features only.
+- VALKEY_URL missing activates in-memory cache fallback without blocking startup.
+- VALKEY_URL validation accepts redis URI scheme inputs for remote cache configuration.
+- S3_ENDPOINT missing disables upload behavior while non-upload flows remain available.
+- S3_ACCESS_KEY is required whenever S3_ENDPOINT is configured.
+- S3_SECRET_KEY is required whenever S3_ENDPOINT is configured.
+- S3_BUCKET is required whenever S3_ENDPOINT is configured.
+- TRIGGER_DEV_API_URL missing keeps background job execution in-process.
+- TRIGGER_DEV_API_KEY is required whenever TRIGGER_DEV_API_URL is configured.
+- CORS_ALLOWED_ORIGINS defaults to wildcard behavior when unset.
+- CORS_ALLOWED_ORIGINS parses comma-separated values into normalized allowed-origins list.
+- LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL missing together disable observability export path.
+- RAGFLOW_BASE_URL missing disables external retrieval integration while other sources continue.
+- RAGFLOW_API_KEY is required whenever RAGFLOW_BASE_URL is configured.
+- RAGFLOW_DATASET_IDS is required whenever RAGFLOW_BASE_URL is configured.
+- LOG_LEVEL defaults to info when unset.
+- Production mode plus missing JWT_SECRET always enforces fail-closed startup refusal as a security boundary.
+
+**Foundation core stack validation spike**:
+
+- Agent core validations confirm factory output preserves required identity, instruction, and runtime configuration contracts.
+- Agent core validations confirm primary model selection is canonical across classification, rewriting, and synthesis paths.
+- Agent core validations confirm stream output emits expected incremental events and clean terminal completion.
+- Agent core validations confirm guardrail tripwire transitions execute blocking behavior on unsafe input.
+- Agent core validations confirm connected tool listing reflects configured tool ownership and availability.
+- Agent core validations confirm grounding mode emits grounding metadata with response output.
+- Agent core validations confirm memory thread isolation prevents cross-thread leakage.
+- Agent core validations confirm request context fields propagate to downstream runtime and tool execution.
+- Agent core validations confirm concurrent streams remain isolated without event interleaving corruption.
+- Agent core validations confirm trace identity is stable per request and unique across unrelated requests.
+- Agent core validations confirm usage payload shape includes expected accounting fields and typed values.
+- Stream and guard validations confirm emitted event envelopes follow documented shape across all stream phases.
+- Stream and guard validations confirm input tripwire activates before unsafe requests enter execution flow.
+- Stream and guard validations confirm output tripwire activates when generated content violates safety policy.
+- Stream and guard validations confirm handoff event appears with transfer metadata during orchestrated routing.
+- Stream and guard validations confirm asynchronous abort edges terminate stream safely without dangling work.
+- Stream and guard validations confirm tool-call suppression prevents disallowed tool execution when safety policy requires suppression.
+- Framework and SDK validations confirm streaming path remains operational through current integration layer.
+- Framework and SDK validations confirm historical import compatibility for prior consumer import patterns.
+- Framework and SDK validations confirm Zod v4 contracts remain valid across runtime validation and typing boundaries.
+- Framework and SDK validations confirm AI SDK integration behavior remains compatible for generation and streaming.
+- Framework and SDK validations confirm terminal rendering path displays progressive output and final state correctly.
+- Framework and SDK validations confirm evaluation workflows remain compatible with expected runner and scorer behavior.
+- Framework and SDK validations confirm custom scorer wiring accepts user-defined scoring behavior.
+- Framework and SDK validations confirm direct SDK usage can coexist with framework wrappers in one deployment.
+- Server and route validations confirm historical HTTP behavior notes remain accurate against current route behavior.
+- Server and route validations confirm lifecycle hooks run in correct order for startup, readiness, and shutdown.
+- Server and route validations confirm CORS preflight handling returns expected allow responses for permitted origins.
+- External service validations confirm SurrealDB WebSocket connectivity path establishes and maintains healthy connection state.
+- External service validations confirm SurrealDB graph operations handle linked records with expected traversal behavior.
+- External service validations confirm SurrealDB vector operations support embedding storage and similarity access patterns.
+- External service validations confirm SurrealDB embedded-mode behavior matches documented local deployment expectations.
+- External service validations confirm MTREE limitation behavior is documented and guarded by fallback query strategy.
+- External service validations confirm SQL-backed memory path persists and retrieves memory records reliably.
+- External service validations confirm embedding-dimension contracts reject mismatched vector lengths.
+- External service validations confirm Langfuse API integration records traces when credentials are present.
+- External service validations confirm worker SDK integration dispatches and tracks background jobs correctly.
+- External service validations confirm Valkey operations cover set, get, hash, ttl, and deletion reliability.
+- External service validations confirm ORM adapter interactions execute typed query paths without raw string fallbacks.
+- External service validations confirm typed SurrealDB access remains within strongly-typed query boundaries.
+- External service validations confirm typed environment loading enforces expected presence and default contracts.
+- External service validations confirm result-wrapper behavior distinguishes success payloads from structured failures.
+- External service validations confirm structured logger emits machine-parseable fields for request and error contexts.
+- External service validations confirm SQL adapter initialization fails fast on invalid connection configuration.
+- External service validations confirm OpenAPI re-spike coverage matches current route and payload contracts.
+- External service validations confirm language detector behavior remains accurate near multilingual confidence boundaries.
+- External service validations confirm evasion-resistant moderation detects obfuscated unsafe content patterns.
+- External service validations confirm multilingual profanity handling applies policy consistently across supported languages.
+- External service validations confirm supplemental dictionary updates affect moderation and detection outcomes as expected.
+
+**Foundation RAG and multimodal dependency spike**:
+
+- PDF processing slices documents into per-page units with deterministic page ordering.
+- Multimodal summarization path accepts page imagery inputs and returns coherent page-level summaries.
+- Base64 text payload inputs are accepted and decoded for downstream extraction workflows.
+- Concurrency limiter caps simultaneous page-processing work to configured upper bounds.
+- Per-page object storage upload stores each page artifact with stable mapping to source page index.
+- Office-document conversion path transforms supported office formats into processable intermediate artifacts.
+- Per-page text extraction returns text content aligned to each page slice.
+- Image resize path normalizes oversized page renders before multimodal analysis.
+- Text chunking path produces bounded-size chunks suitable for retrieval indexing.
+- Hybrid retrieval schema stores both lexical and vector retrieval metadata for each chunk.
+- Hybrid retrieval query path combines lexical and vector signals into merged ranking results.
+- Text RAG vector path stores and retrieves embeddings for text-only retrieval workflows.
+- Batch embedding workflow submits chunk groups and handles partial-failure retry behavior.
+- Object storage client behavior covers upload, retrieval, and error surfacing under transient failures.
+- Raster extraction path produces image outputs compatible with multimodal page-analysis input requirements.
+- Vector chart rendering path produces chart assets used in retrieval and synthesis visualization workflows.
+
+### Extension: Structured Output Guarantees
+
+- Provider-enforced tier (Tier 1) produces fully schema-compliant output when constrained decoding is available.
+- Zod v4 schema is passed into provider structured output mode for Tier 1 providers.
+- Validated retry tier (Tier 2) validates output with Zod v4 and automatically retries on validation failure.
+- Validation error context is included in retry prompts for Tier 2 providers.
+- Plugin-extended tier (Tier 3) allows self-hosted engines to register constrained decoding plugins.
+- Framework detects available provider capability at runtime without consumer configuration.
+- Framework automatically selects the strongest guarantee tier based on detected capabilities.
+- Zod v4 schemas are automatically translated to provider-native structured output definitions.
+- Validated retry mode uses configurable maximum retry count with exponential backoff.
+- Framework returns raw provider output plus structured error payload when retries are exhausted with no silent failure.
+- Schema translation produces correct output for OpenAI JSON Schema form and Anthropic tool-definition form.
+- Invalid schema definitions are rejected at agent creation time with descriptive errors.
+
+### Extension: Multi-Tenant Config Hierarchy
+
+- Five-level resolution chain merges global → organization → tenant → agent → request-scoped overrides.
+- Tenant isolation prevents config leakage between tenants.
+- Organization defaults propagate to all tenants within the organization.
+- Tenant overrides correctly supersede organization defaults.
+- Request-scoped overrides take highest precedence.
+- Single-tenant deployments without organization or tenant layers behave identically to the current 3-level system.
+- Each config level independently validates against Zod v4 schemas with descriptive errors identifying the failing level.
+- Tenant and organization identifiers are extracted from JWT claims in request context.
+- DeepPartial merge semantics apply consistently across all five levels.

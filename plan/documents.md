@@ -1,4 +1,4 @@
-# 08 — Document Processing
+# Document Processing
 
 > **Scope**: Upload pipeline, multimodal-first processing, per-page summarization, progressive retrieval, S3 storage layout, file metadata tables, and cleanup.
 >
@@ -399,7 +399,7 @@ The transition from `enriching` back to `ready` on background stage failure is i
 
 ### Stranded File Recovery
 
-If the API process crashes or restarts while a file is in `summarizing` state, the file is stranded — no active process is working on it, and the client sees it stuck forever. The TTL cleanup job (see [15 — Infrastructure](./15-infrastructure.md)) handles recovery:
+If the API process crashes or restarts while a file is in `summarizing` state, the file is stranded — no active process is working on it, and the client sees it stuck forever. The TTL cleanup job (see [Infrastructure](./infrastructure.md)) handles recovery:
 
 - On each scheduled run, the cleanup job queries for files in `summarizing` state whose `updated_at` exceeds a configurable staleness threshold (default: 10 minutes).
 - For each stranded file, the job resets the file status to `uploading` and re-enqueues the blocking stage via the queue adapter. The re-enqueued job picks up from scratch (idempotent — `page_index` rows are upserted, not inserted).
@@ -770,17 +770,17 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 | Document | Relationship |
 |----------|-------------|
-| **System Architecture** ([03 — System Architecture](./03-architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
-| **Foundation** ([04 — Foundation](./04-foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
-| **RAG & Retrieval** ([09 — Retrieval & Evidence](./09-retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
-| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
-| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
+| **System Architecture** ([System Architecture](./architecture.md)) | Defines the end-to-end upload and retrieval architecture that this document's processing pipeline implements in detail. |
+| **Foundation** ([Foundation](./foundation.md)) | Supplies processing thresholds, provider settings, and environment values used by routing, summarization, and storage flows. |
+| **RAG & Retrieval** ([Retrieval & Evidence](./retrieval.md)) | Consumes `page_index` summaries and enrichment outputs produced here as primary retrieval inputs. |
+| **Server Implementation** ([Server Implementation](./server.md)) | Hosts upload/status/image endpoints and invokes this processing pipeline from route handlers. |
+| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Provides Compose services (Postgres, MinIO, Valkey, Trigger.dev, LibreOffice) required to run blocking and background stages. |
 
 ---
 
 ## Task Specifications
 
-> **SPIKE_RAG_DEPS** — canonical task specification is in [04 — Foundation](./04-foundation.md). This document's pipeline tasks depend on its output.
+> **SPIKE_RAG_DEPS** — canonical task specification is in [Foundation](./foundation.md). This document's pipeline tasks depend on its output.
 
 ---
 
@@ -859,11 +859,11 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ---
 
-> **UPLOAD_ENDPOINT** — canonical task specification is in [12 — Server Implementation](./12-server.md#task-upload_endpoint-upload-endpoint). The server route wires UPLOAD_PIPELINE to the HTTP layer.
+> **UPLOAD_ENDPOINT** — canonical task specification is in [Server Implementation](./server.md#task-upload_endpoint-upload-endpoint). The server route wires UPLOAD_PIPELINE to the HTTP layer.
 
 ---
 
-> **DOCKER_COMPOSE** — canonical task specification is in [15 — Infrastructure](./15-infrastructure.md#task-docker_compose-docker-compose-infrastructure). That spec includes LibreOffice headless, MinIO bucket init, and all compose profiles.
+> **DOCKER_COMPOSE** — canonical task specification is in [Infrastructure](./infrastructure.md#task-docker_compose-docker-compose-infrastructure). That spec includes LibreOffice headless, MinIO bucket init, and all compose profiles.
 
 ---
 
@@ -877,4 +877,159 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ---
 
-*Previous: [07 — Memory & Intelligence](./07-memory.md) | Next: [09 — Retrieval & Evidence](./09-retrieval.md)*
+## Test Specifications
+
+**Upload validation**:
+
+- Magic bytes check (not extension-based) against known signatures.
+- Size limit: 5MB per file exactly at boundary.
+- Turn limit: 5 files per turn exactly at boundary.
+- Quota check: reject if result exceeds user maximum.
+- Atomic quota reservation occurs before processing begins.
+- Supported types: PDF, DOCX, TXT, PNG, JPG, JPEG, WEBP.
+- .doc legacy binary rejected with clear error message.
+- Quota reservation rollback on processing failure.
+
+**Document routing**:
+
+- Images: direct mode. TXT up to 8K tokens: direct mode. TXT above 8K: RAG mode.
+- PDF up to 6 pages: direct mode. PDF above 6: indexed mode.
+- DOCX routing matches PDF after conversion.
+- Exact boundary values: 6 pages is direct, 7 pages is indexed.
+
+**DOCX conversion**:
+
+- LibreOffice sidecar invocation over Docker network.
+- Local non-container fallback uses host LibreOffice process when containerized converter is unavailable in local development.
+- Thirty-second timeout handling.
+- Converted PDF stored in S3 with updated metadata.
+- Temp file cleanup after conversion.
+- Failed conversion marks file as failed.
+
+**Per-page summarization**:
+
+- PDF splitting into single-page outputs.
+- Image extraction with 100px minimum dimension filter.
+- Gemini structured output: summary 150-400 words, image descriptions, vector-chart flag.
+- Embedding generation per page.
+- Progress total is set from page count before page loop execution.
+- User-facing progress messages reflect stage and completed-page count.
+- Vector-chart fallback: PNG render when flag is true and no raster images.
+- Concurrency control with configurable limit and round-robin key distribution.
+- Retry failed pages up to three times with exponential backoff.
+- Single failed page does not abort entire document.
+
+**Background enrichment**:
+
+- Raw text extraction and truncation to 1800 tokens.
+- Embedding and tsvector generation.
+- Failure reverts to ready state, file remains queryable from summaries.
+- Dev mode fallback: in-process when Trigger.dev environment absent.
+
+**File status state machine**:
+
+- All transitions validated: uploading to summarizing, summarizing to ready, ready to enriching, enriching to enriched, enriching to ready on failure.
+- Failure transitions: uploading to failed, summarizing to failed.
+- Deletion transitions: ready or enriched to deleted.
+- No backward transitions for any event sequence.
+
+**Stranded file recovery**:
+
+- TTL cleanup detects files in summarizing state beyond ten minutes.
+- Reset and re-enqueue with idempotent re-execution.
+- After three retries, transition to failed.
+
+**Cleanup**:
+
+- Per-file: requires both file identifier and user identity, removes S3 objects, page-index rows, vector chunks, marks deleted, releases quota.
+- Per-thread: iterates all files for thread plus user, excluding global-scope files.
+- TTL: scheduled daily, finds expired non-deleted files.
+- Idempotent: safe to run twice with same input.
+
+**Quota reservation correctness**:
+
+- Quota reservation increments used-bytes atomically before accepting upload bytes.
+- Concurrent uploads cannot oversubscribe quota because post-increment checks occur in the same atomic operation.
+- Rejections for over-quota requests happen before any object write.
+- Reservation rollback is required when later processing fails after successful reservation.
+- Rollback correctness keeps quota accounting consistent across retry attempts.
+
+**DOCX conversion resilience**:
+
+- Sidecar-converter unavailability in local development triggers host-process fallback path.
+- Fallback activation is limited to non-container local execution context.
+- Conversion timeout at 30 seconds returns deterministic failure status.
+- Temporary conversion workspace is removed on both success and failure paths.
+- Converted artifact metadata replaces source MIME classification for downstream routing.
+
+**Progress accounting invariants**:
+
+- Total page count is persisted before per-page processing begins.
+- Current progress increments exactly once per successfully completed page operation.
+- Progress message always reflects persisted current and total counters.
+- Parallel page completion does not allow duplicate progress increments for one page.
+
+**Vector chart fallback conditions**:
+
+- Fallback render executes only when vector-chart signal is true and raster extraction count is zero.
+- If either condition is false, fallback render is skipped.
+- Fallback render produces full-page PNG artifact for multimodal summarization support.
+- Pages with extracted raster images never render fallback PNG solely due to vector-chart flag.
+
+**Concurrency control semantics**:
+
+- Per-key summarization concurrency limit is configurable independently from default key-pool settings.
+- Effective parallelism respects key-tier capacity while enforcing per-key cap.
+- Work distribution across keys follows round-robin fairness under sustained load.
+- Raising per-key limits for higher-tier keys increases throughput without changing correctness behavior.
+
+**Retry and failure isolation**:
+
+- Page retry uses exponential backoff growth across attempts for transient errors.
+- Exactly three retry attempts are executed before page-level permanent failure classification.
+- One page failure never cancels remaining page tasks in the same file.
+- Final page index can contain expected page-number gaps corresponding to terminally failed pages.
+- Retry counters are page-scoped and do not leak across neighboring pages.
+
+**Background enrichment fallback behavior**:
+
+- Background-stage start transitions status from ready to enriching.
+- Background-stage success transitions status from enriching to enriched.
+- Background-stage failure transitions status from enriching back to ready while preserving summary queryability.
+- Development mode without queue credentials runs enrichment in-process with equivalent enrichment outputs.
+
+**File-status transition matrix**:
+
+- Transition validation rejects invalid jumps outside the documented state graph.
+- Uploading can move only to summarizing or failed.
+- Summarizing can move only to ready or failed.
+- Ready can move only to enriching or deleted.
+- Enriching can move only to enriched or ready.
+- Enriched can move only to deleted.
+- Failed and deleted remain terminal for processing flow.
+
+**Stranded-file recovery guarantees**:
+
+- Stranded-file detection uses default staleness threshold of ten minutes based on last update time.
+- Recovery resets stranded summarizing files to uploading before re-enqueue.
+- Re-execution remains idempotent through update-or-insert page index behavior.
+- Recovery retry count is capped at exactly three attempts per file.
+- Exceeding retry cap transitions file to failed with diagnostic error reason.
+- Recovery path emits structured error-level diagnostic logs on terminal failure.
+
+**Cleanup race protection and ownership checks**:
+
+- Per-file cleanup requires both file identity and user identity to pass before destructive actions begin.
+- Ownership mismatch on either field blocks cleanup actions for defense-in-depth.
+- Optional distributed lock prevents concurrent cleanup double-release races on quota counters.
+- Lock contention does not bypass non-negative quota floor safeguards.
+- Thread cleanup excludes global-scope files by default.
+
+**Image extraction boundary conditions**:
+
+- Image at exactly 100x100 pixels meets the minimum dimension threshold and is extracted.
+- Image at 99x100 pixels falls below the minimum width threshold and is not extracted.
+- Image at 100x99 pixels falls below the minimum height threshold and is not extracted.
+- Page containing only decorative icons where all images are below 100x100 pixels produces no extracted images at all.
+- Page with a mix of small decorative icons and one qualifying image extracts only the qualifying image.
+- Boundary dimension check uses greater-than-or-equal comparison, not strict greater-than.

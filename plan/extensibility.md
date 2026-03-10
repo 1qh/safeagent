@@ -1,4 +1,4 @@
-# 24 - Extensibility and Plugin Architecture Plan
+# Extensibility and Plugin Architecture Plan
 
 > Scope: Extensibility architecture, plugin model, provider contracts, lifecycle hooks, and extension point governance for the safeagent library.
 > Tasks: EXTENSIBILITY_INFRA (Extension Point Infrastructure and Provider Contracts)
@@ -848,4 +848,202 @@ These boundaries are enforced through the registration validation system. Extens
 
 ## Navigation
 
-*Previous: [23 — Coding Standards](./23-coding-standards.md) | Next: [25 — Durable Execution & HITL](./25-durable-execution.md)*
+## Test Specifications
+
+**Extension point contract validation behavior**:
+
+- All 12 extension point contracts compile and pass structural validation at initialization.
+- Each extension point contract includes typed identity, schema, and handler semantics.
+- Contract shape validation rejects incomplete or malformed extension registrations.
+- Contract shape validation produces explicit error messages naming the failing extension and contract area.
+- Built-in default implementations pass all published contract test suites.
+- Custom implementations that satisfy contract tests register successfully.
+- Custom implementations that violate contract invariants fail registration with actionable diagnostics.
+
+**Registration and startup validation behavior**:
+
+- Extension registration occurs during initialization and completes before the system enters ready state.
+- Incompatible extensions cause startup failure with explicit diagnostics naming the extension and failure reason.
+- Duplicate extension registration triggers deterministic deduplication behavior.
+- Identity model validates name and optional deduplication key for uniqueness.
+- Required extensions that fail validation block startup entirely.
+- Optional extensions that fail validation emit warning-level governance events without blocking startup.
+- Registration outcomes are emitted to observability for audit trails.
+- Rejected extensions are excluded from the activation graph.
+- Ready set snapshot is immutable for the active initialization cycle.
+
+**Lifecycle hook system behavior**:
+
+- All named phases fire in correct order: pre-request, post-intent, pre-guardrail, post-guardrail, pre-retrieval, post-retrieval, tool start, tool end, memory read, memory write, pre-response, post-response, error.
+- Hooks execute in registration order within each scope.
+- Each hook receives the result of the previous hook in the chain.
+- Global scope hooks fire for all requests.
+- Agent-scoped hooks fire only for matching agent context.
+- Request-scoped hooks fire only for matching request context.
+- Scope precedence follows request over agent over global.
+- Explicit priority overrides default registration order when configured.
+- Hook failures are isolated and do not collapse the global pipeline.
+- Hook timeout boundaries prevent critical-path stalls.
+- Hook execution traces include scope, ordering, and phase metadata.
+
+**Override hierarchy behavior**:
+
+- Request-level override has highest precedence over agent and global.
+- Agent-level override has middle precedence over global default.
+- Global default has base precedence.
+- Override scopes are resolved once per request lifecycle.
+- Scope resolution is traceable for debugging and audit.
+- Mixed defaults and custom entries compose correctly at every stage.
+- Conflict resolution produces deterministic outcomes with clear diagnostics.
+
+**Composition pattern behavior**:
+
+- Multiple extensions of the same type chain in sequence with deterministic ordering.
+- Priority ordering drives execution when chain members conflict.
+- Fallback chains activate secondary providers after failure threshold or hard fault.
+- Fallback activation preserves policy, trace continuity, guardrails, auth, and access controls.
+- Composition failures degrade gracefully where policy permits.
+- Composition failures fail fast where security risk is high.
+- Composition metadata is exported through observability providers.
+
+**Security model behavior**:
+
+- Trust levels are explicitly declared: built-in (highest), first-party (reviewed), third-party (sandboxed).
+- Trust level influences capability grants and execution boundaries.
+- Capability declarations are mandatory for privileged actions including network, storage, and memory access.
+- Undeclared capability usage is blocked and audited.
+- Isolation rules prevent cross-extension state access between instances.
+- Timeout enforcement is mandatory across all extension calls.
+- Timeout expiry triggers graceful degradation for non-critical extensions.
+- Timeout expiry triggers hard fail for high-risk extension classes.
+- Circuit breakers protect against repeated extension failures.
+- Circuit breaker state transitions are observable and auditable.
+- Extension invocation is fully traced through observability with identity, scope, capability set, and outcome class.
+
+**Tool extension behavior**:
+
+- Custom tools register with typed identity, schema, description, and handler semantics.
+- Tool execution is sandboxed under declared capability bounds.
+- Tool timeout enforcement prevents stalls from blocking response flow.
+- Tool outputs are still subject to guardrail and policy checks.
+- MCP tool providers attach through stdio or HTTP transport with explicit health checks.
+- Per-agent filtering governs which external tools are available.
+- Tool invocation latency and failure rates are tracked in observability.
+
+**Guardrail extension behavior**:
+
+- Custom guardrails cannot weaken built-in safety controls (additive-only policy).
+- Custom guardrails compose via pipeline factory with worst-wins aggregation.
+- Multiple guardrails run in parallel with agent generation by default.
+- Triggered guardrails cancel in-flight response generation safely.
+- Policy bypass attempts are rejected during registration.
+- Guardrail audit entries are immutable in trace export flow.
+
+**Memory provider extension behavior**:
+
+- Per-user isolation is mandatory and validated during extension registration.
+- Cross-user memory leakage is a hard failure condition in all operations.
+- Custom providers implement read, write, search, and delete with deterministic identity scoping.
+- Temporal filtering support is mandatory for compliance and relevance.
+- Fact supersession handling is mandatory for correctness.
+- Provider-specific errors are normalized to safe public outcomes.
+
+**Storage provider extension behavior**:
+
+- All data access flows through ORM abstraction layers with no raw query pathways.
+- Transaction support is required for state integrity.
+- Health checks are required for startup validation and runtime health.
+- Concurrency semantics are deterministic under contention.
+- Credential handling remains outside extension method interfaces.
+
+**Retrieval strategy extension behavior**:
+
+- Returned scores map to evidence gate expectations.
+- File-level access control is always enforced before returning candidate results.
+- Metadata leakage across users is prohibited.
+- Filtering behavior is deterministic under equal inputs.
+- Result shaping cannot bypass evidence bundle constraints.
+
+**Document processor extension behavior**:
+
+- Processors implement extract-and-chunk semantics with typed chunk payloads and metadata.
+- Chunk model compatibility with the embedding pipeline is mandatory.
+- Failure handling preserves queue stability.
+- Processor behavior is deterministic for reproducibility.
+- Processor sandboxing limits file system and network exposure.
+- Access labels propagate from source document to all chunks.
+
+**LLM provider extension behavior**:
+
+- Tool calling support is mandatory for compatibility.
+- Streaming support is mandatory for transport continuity.
+- Normalized format support is mandatory for downstream layers.
+- Cancellation support is mandatory for guardrail interruption.
+- Credentials remain in environment-managed boundaries and never in extension method payloads.
+- Provider output still passes through guardrail and policy layers.
+- Provider fallback cannot skip mandatory safety checks.
+
+**Transport extension behavior**:
+
+- All nine standard event categories are preserved across transport implementations.
+- Event ordering guarantees remain intact.
+- Verbosity filtering is deterministic and testable.
+- Disconnect behavior does not corrupt request state.
+- Transport extensions do not bypass guardrail enforcement output.
+- Backpressure handling avoids memory exhaustion conditions.
+
+**Observability provider extension behavior**:
+
+- OpenTelemetry gen_ai semantic conventions are supported.
+- Trace continuity survives retries, fallbacks, and cancellations.
+- Sensitive fields support configurable redaction policies.
+- Export failures do not block primary response pathways.
+- Evaluation datasets are isolated by tenant and policy boundary.
+
+**Authentication extension behavior**:
+
+- Auth is highest-trust extension class with strict governance and explicit trust declaration.
+- Auth context is available before tool and memory actions.
+- Auth context cannot be modified by lifecycle hooks.
+- Auth outcomes are immutable for downstream execution phases.
+- Principal isolation is preserved across concurrent requests.
+- Auth failure rates and source trends are continuously monitored.
+
+**Frontend component extension behavior**:
+
+- Component overrides cannot access restricted auth payload data.
+- Event handlers respect policy guardrails and role constraints.
+- Visual overrides do not obscure policy or consent indicators.
+- Slot content sanitization is required for untrusted sources.
+- Accessibility compliance remains mandatory under customization.
+- Registry supports deterministic override order for conflicting entries.
+
+**Contract test suite exportability behavior**:
+
+- Contract tests cover happy path, error handling, timeout, concurrent access, isolation, ordering, fallback, override precedence, security restrictions, additive guardrail compliance, auth immutability, and observability signal emission.
+- Contract test suites are runnable by extension authors against their custom implementations.
+- Passing contract tests is required before registration in production environments.
+- Built-in defaults pass their own contract suites as a release quality gate.
+- Failure diagnostics include scenario names and expected behavior deltas.
+
+**Performance and scalability behavior**:
+
+- Extension overhead is measurable by default through observability.
+- Per-extension latency is tracked across percentiles.
+- Per-extension failure rate is tracked by scope and trust level.
+- Circuit breaker thresholds are tunable per extension type.
+- Lazy loading reduces startup cost for optional extensions.
+- Concurrent execution limits prevent resource starvation.
+- Performance budgets can be defined per extension category with budget breach governance alerts.
+- Throughput tests include mixed default and custom extension mixes at 10M user scale.
+
+### Extension: Deferred Tool Loading
+
+- Deferred tools register with metadata only and no full schema at startup.
+- Tool search returns relevant tools by description and tags.
+- On-demand loading populates full schema into runtime context.
+- Tool token budget is enforced so excess tools are not loaded.
+- Frequently used tools are loaded eagerly based on priority.
+- Session cache prevents repeated loading of the same tool.
+- MCP server connections remain deferred until a tool from that server is needed.
+- Graceful fallback behavior applies when tool search finds no matches.

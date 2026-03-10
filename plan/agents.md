@@ -1,4 +1,4 @@
-# 06 — Agents & Orchestration
+# Agents & Orchestration
 
 > **Scope**: Agent creation factory wrapping `@openai/agents`, SDK bridge helper for Gemini, orchestrator with handoff-based sub-agent routing, multi-intent handling, live synthesis streaming, provider fallback, and context shaping behaviors that make responses feel natural under real conversational conditions.
 >
@@ -386,7 +386,7 @@ On resurrection, the orchestrator auto-triggers memory recall using key entities
 
 It also injects resumption metadata containing a readable time delta and last-topic summary so the model can acknowledge continuity naturally while still running fresh intent analysis for the new turn.
 
-**Ordering guarantee**: Memory loading (all layers in parallel) completes before intent detection runs. Auto-triggered recall uses raw user message as the search query and does not depend on classified intent. This avoids circular dependency between memory loading and intent detection. See [07 — Memory & Intelligence](./07-memory.md) for the two-phase memory and intent pipeline.
+**Ordering guarantee**: Memory loading (all layers in parallel) completes before intent detection runs. Auto-triggered recall uses raw user message as the search query and does not depend on classified intent. This avoids circular dependency between memory loading and intent detection. See [Memory & Intelligence](./memory.md) for the two-phase memory and intent pipeline.
 
 ### Clarification Patience Model in Orchestrator Policy
 
@@ -513,7 +513,7 @@ Core orchestration behaviors:
 - Progress tracking: completion is tracked as processed items versus total items, enabling percent-complete reporting.
 - Backpressure: when worker output exceeds reducer throughput, the orchestrator applies queueing or throttling to stabilize flow.
 
-Durability note: checkpoint-backed fan-out state and recovery behavior should align with durable execution guidance in [25 — Durable Execution](./25-durable-execution.md), so incomplete worker sets can resume without reprocessing completed items.
+Durability note: checkpoint-backed fan-out state and recovery behavior should align with durable execution guidance in [Durable Execution](./durable-execution.md), so incomplete worker sets can resume without reprocessing completed items.
 
 ---
 
@@ -838,11 +838,11 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 | Component | Interaction |
 |-----------|------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines quality, safety, and behavior constraints for all orchestrated agent runs |
-| **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides intent signals, rewritten queries, ambiguity markers, and dependency hints used by orchestrator and router |
-| **Memory & Intelligence** ([07 — Memory & Intelligence](./07-memory.md)) | Supplies thread short-term, user short-term, long-term recall, rolling summaries, and recall policies used during context assembly |
-| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
-| **Server** ([12 — Server Implementation](./12-server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines quality, safety, and behavior constraints for all orchestrated agent runs |
+| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Provides intent signals, rewritten queries, ambiguity markers, and dependency hints used by orchestrator and router |
+| **Memory & Intelligence** ([Memory & Intelligence](./memory.md)) | Supplies thread short-term, user short-term, long-term recall, rolling summaries, and recall policies used during context assembly |
+| **Transport** ([Streaming & Transport](./transport.md)) | Carries live synthesis streams, location events, and structured event flow over SSE |
+| **Server** ([Server Implementation](./server.md)) | Hosts orchestration runtime, queue integration boundaries, provider fallback wiring, and deployment controls |
 
 ---
 
@@ -1076,4 +1076,277 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ---
 
-*Previous: [05 — Conversation Pipeline](./05-conversation.md) | Next: [07 — Memory & Intelligence](./07-memory.md)*
+
+## Test Specifications
+
+**Agent factory**:
+
+- Creation with sensible defaults and full customizability.
+- System prompt wiring through Gemini's dedicated system instruction field.
+- Provider bridge wiring and model resolution.
+- No hardcoded business prompts in library.
+
+**Orchestrator**:
+
+- Multi-intent supervision via handoffs between sub-agents.
+- Sub-agent lifecycle management: creation, execution, result collection, cleanup.
+- Live synthesis: streaming merge of sub-agent results into unified response.
+- Dependent intent handling: sequential processing with constraint passing.
+- Independent intent handling: parallel processing with result merging.
+
+**Agent behaviors**:
+
+- Auto-trigger memory recall on first message in new thread.
+- Context budgeting: token allocation across layers with priority-based truncation.
+- Response energy matching: input characteristics determine output calibration hint.
+- Clarification patience model: after threshold turns synthesize best-effort answer.
+- Location enrichment tool: pluggable geocoding, cached results, suppressed from stream.
+- Tool registration: dynamic scoping per agent, namespace isolation, no duplicate instances.
+- Grounding mode: separate agent mode for web-grounded responses with grounding metadata.
+- Provider-agnostic configuration: no model-specific branching in core agent logic.
+
+**Agent factory — configuration, wiring, and mode guarantees**:
+
+- Factory output is a configured agent instance with safe defaults and override support.
+- Identity fields and instruction content are required and validated before agent creation.
+- Provider bridge wiring produces valid model interface object for execution runtime.
+- Guardrails are wired through input and output guard arrays for every created agent.
+- Memory integration wiring includes conversation-store support with configurable history window.
+- Tool wiring supports custom tools and external tool registrations in one agent configuration.
+- Thinking-level input is forwarded to provider configuration when set.
+- Guard mode controls active guardrail behavior according to configured mode.
+- Request context fields such as user identity and thread identity propagate into tool runtime context.
+- Default chat mode returns non-empty response output.
+- Grounding mode returns non-empty response output and grounding metadata when applicable.
+- Tools mode returns non-empty response output with working tool loop.
+- Structured-output mode returns schema-conforming typed JSON result.
+- Grounding mode and custom tool mode are mutually exclusive within one agent call.
+- Factory creates separate agent instances when both grounding and tool use are needed.
+- Concurrent execution calls with different thread identifiers do not leak stream or memory state.
+
+**Agent factory — validation and constraints**:
+
+- Missing required config fields fail fast with descriptive validation errors.
+- Invalid guardrail config shape fails validation before runtime execution.
+- Invalid memory config shape fails validation before runtime execution.
+- Invalid tool definitions fail validation before runtime execution.
+- Invalid structured output schema definition fails at setup path.
+- Grounding plus custom tools in one config is rejected by mutual-exclusion validation.
+- Structured-output and normal-chat execution return type contracts remain distinct and reliable.
+
+**Orchestrator pattern — supervisor and handoff behavior**:
+
+- Orchestrator is configured as supervisor agent with handoffs to intent-scoped sub-agents.
+- Handoffs are exercised through agent-transfer control path with explicit ownership transfer.
+- Single-intent requests follow direct tool path without handoff overhead.
+- Multi-intent requests split into sub-queries and route to sub-agents.
+- Independent multi-intent requests run sub-agent executions in parallel.
+- Dependent multi-intent requests run in dependency order.
+- Handoff context filtering limits each sub-agent to intent-relevant history.
+- Routing callbacks record handoff decisions for observability.
+- Sub-agent execution results stream back to orchestrator for synthesis.
+- Sub-agent failures degrade gracefully when at least one sibling path succeeds.
+- All-sub-agent failure path propagates explicit user-facing error.
+- Handoff spans are emitted for tracing across orchestrated paths.
+
+**Sub-agent lifecycle and scoped execution**:
+
+- Sub-agent instances are created per intent with isolated tool scope.
+- Sub-agent prompt context includes intent-specific framing for focused reasoning.
+- Tool scope is derived from topic source-priority configuration.
+- Source entries map to expected tool capabilities for retrieval and synthesis.
+- Rewrite strategy assignment per source is passed into sub-agent tool config.
+- Evidence sufficiency tool is attached with topic threshold configuration.
+- Handoff-scoped context excludes irrelevant conversation turns.
+- Sub-agent result collection includes partial completions when sibling sub-agents are still running.
+
+**Context assembly and budgeting in orchestration layer**:
+
+- Context assembly order is system prompt, current message, tool definitions, thread turns, rolling summary, recalled facts, then user short-term context.
+- Token estimation uses character-count divided-by-four approximation.
+- Estimated usage is compared against configured context window budget before reasoning begins.
+- Budget overflow triggers truncation in reverse priority order.
+- User short-term context is dropped first under budget pressure.
+- Auto-recalled facts are capped at configured recall-token ceiling under budget pressure.
+- Rolling summary is compacted before thread-turn truncation.
+- Oldest thread turns are dropped after higher-truncation-priority layers are reduced.
+- System prompt is non-truncatable.
+- Current user message is non-truncatable.
+- Tool definitions are non-truncatable.
+
+**Implicit references, energy calibration, resumption, and clarification policy**:
+
+- Anaphoric phrases trigger implicit-reference candidate injection before reasoning.
+- Referent candidate set includes recent turns and recalled candidates.
+- Referent candidates outside active window trigger expanded recall from summary and longer-term layers.
+- Reference handling remains retrieval-first and does not force pre-resolution.
+- Response-energy hint is computed from length, formality markers, and complexity.
+- Short casual inputs bias toward concise response style.
+- Detailed inputs bias toward fuller response style.
+- Safety and correctness needs can override brevity-biased calibration.
+- Resurrection gap detection marks long-inactive threads for resumption handling.
+- Resurrection handling injects staleness notice with readable inactivity duration.
+- Resumption metadata includes time delta and last-topic summary.
+- Resurrection path still runs fresh intent analysis for current turn.
+- Clarification policy asks one concise clarifying question for genuine ambiguity.
+- Clarification loop counter tracks consecutive clarification rounds by thread.
+- When clarification limit is reached, orchestrator returns best-effort response with explicit assumptions.
+
+**Auto-trigger memory recall policy**:
+
+- First turn in a new thread triggers memory recall before agent reasoning starts.
+- Auto-trigger recall results are injected alongside thread short-term and user short-term context.
+- Auto-trigger recall uses raw incoming message as recall query.
+- Existing-thread turns use agent-initiated recall decisions rather than unconditional recall.
+- First-turn auto-trigger improves vague-context handling for new-thread openings.
+- Later-turn agent-initiated mode avoids unnecessary recall token spend.
+
+**Live synthesis streaming behavior**:
+
+- Multi-agent live synthesis starts streaming on first completed sub-agent result.
+- First completion content is expressed naturally instead of as detached fragment.
+- Later sub-agent completions are woven into ongoing stream.
+- Final output is coherent unified narrative rather than concatenated outputs.
+- Time to first token is bounded by fastest sub-agent completion.
+- Progress visibility is preserved while slower sub-agents continue.
+- Stream completion emits clean terminal event after synthesis finalization.
+
+**Dependent intent coordination and constraint passing**:
+
+- Dependent-intent structures are detected from validator output and trigger sequential orchestration path.
+- Feedback-first stage produces structured constraints before dependent search stage starts.
+- Constraint object includes constraint type, entities, and metadata.
+- Dependent stage receives constraints through handoff-scoped context.
+- Dependent search planning respects exclusion constraints from prior stage.
+- Independent intents continue parallel execution and are not forced into sequential mode.
+- Mixed sets with one dependent chain and one independent intent schedule appropriately.
+- Constraint-aware filtering removes disliked entities from downstream result set.
+- Partial failures in dependent chains still return available successful outputs with partial-failure signaling.
+
+**Tool registry and assignment flow**:
+
+- Orchestrator tool set includes handoff controls, rewrite capability, and source-execution tools for direct single-intent path.
+- Sub-agent tool set includes source-specific retrieval tools, recall tools, rewrite capability, and evidence-scoring tool.
+- CTA suggestion capability is restricted to orchestrator end-of-response scope.
+- Topic source-priority entries map deterministically to tool assignments.
+- External retrieval source maps to external retrieval tool with topic dataset configuration.
+- Document retrieval source maps to document-search tool.
+- Grounding-search source maps to grounding path with configured rewrite strategy.
+- Memory-recall source maps to memory-recall tool.
+- Direct-answer source maps to no-tool synthesis path.
+- Sub-agent receives only selected scoped tools and no extra global leakage.
+
+**Location enrichment tool behavior**:
+
+- Location tool factory returns valid tool definition with location-search naming.
+- Tool input contract accepts place list with optional contextual text for disambiguation.
+- Tool-call and tool-result chunks for location enrichment are suppressed from outbound stream.
+- Stream processor emits clean location events derived from location tool results.
+- Cache is checked before geocoding call for each requested place.
+- Cache hit path skips geocoding provider call.
+- Cache miss path calls configured geocoding provider with place and optional context.
+- Optional image-search provider is called when configured.
+- Missing image-search provider yields empty images array without failure.
+- Enrichment payloads are cached with configured TTL.
+- One location event is emitted per successfully resolved place.
+- Geocoding null result skips place silently with warning log.
+- Geocoding failure degrades silently for that place while continuing other places.
+- Geocoding and image-search provider interfaces remain pluggable for deployment substitution.
+- Place-image provider helper returns compatible image-search implementation.
+
+**Agent router behavior and caching**:
+
+- Router classifies query to dispatch target for multi-agent deployments.
+- Classification runs with minimal-thinking profile for low-latency routing.
+- Enum output mode is used for compact routing output.
+- Per-thread cache keeps agent continuity across turns.
+- Cache miss triggers fresh classification and subsequent cache write.
+- Cache hit bypasses classifier call and dispatches cached target.
+- Explicit user reclassification request invalidates cached routing decision.
+- New threads with no cache route correctly via fresh classification path.
+- Concurrent requests on same thread avoid duplicate classifier work.
+- Latency measurements cover classifier call and cache hit paths.
+- Deployment profile differences in available agents are respected by router dispatch.
+
+**Provider fallback behavior**:
+
+- Primary provider success returns primary result with no fallback call.
+- Primary provider failure triggers fallback attempt when fallback is configured.
+- Fallback success returns fallback result.
+- Primary and fallback failure rethrows original primary error for caller context.
+- Primary timeout path can engage fallback within total timeout budget.
+- Sequential fallback order is deterministic and test-covered.
+
+**Queue-scaling orchestration modes**:
+
+- Development mode runs orchestrated execution in-process without queue overhead.
+- Production simple mode allows single-intent in-process and multi-intent queued execution.
+- Production full mode routes all requests through queue for uniform scaling.
+- Queue mode preserves orchestration semantics and result synthesis behavior.
+
+**MCP client resilience and configuration**:
+
+- Static allowlist controls which tools are exposed per agent.
+- Static blocklist controls which tools are excluded per agent.
+- Tool list caching for stable servers avoids re-listing on every request.
+- Health monitor detects availability changes in connected MCP servers and updates connection state.
+- Reconnection retries with backoff after MCP server disconnects and restores tool availability on success.
+- Runtime MCP server disconnect triggers health status change and automatic reconnection begins.
+
+### Extension: Dynamic Fan-Out
+
+- Orchestrator spawns the correct number of workers for runtime-determined fan-out size.
+- Result aggregation merges outputs from all workers correctly.
+- Partial-failure handling follows configured policy for fail-all, succeed-with-partial, and retry-failed behaviors.
+- Concurrency limits prevent spawning beyond the configured maximum worker count.
+- Progress tracking reports accurate completion percentage throughout execution.
+- Backpressure throttles workers when reducer capacity is overwhelmed.
+- Worker timeout enforcement terminates individual workers that exceed configured duration.
+- Worker state cleanup releases all resources after completion or failure.
+- Result ordering matches the original input order regardless of worker completion order.
+- Fan-out with zero qualifying inputs completes immediately with an empty result set.
+
+### Extension: MCP Client Protocol Integration
+
+- Every agent type accepts MCP server connections as a peer parameter alongside local tools.
+- All three transport modes (stdio, SSE, streamable HTTP) connect and exchange messages successfully.
+- Transport mode is auto-detected from connection configuration without consumer hints.
+- Tool definitions from MCP servers merge into the agent tool registry identically to local tools.
+- Allowlist controls per MCP server expose only approved tools to the agent.
+- Denylist controls per MCP server block specific tools from appearing in the agent registry.
+- Tool-definition caches refresh when MCP servers signal capability changes.
+- MCP connections are established on demand at first use and not at agent creation time.
+- Pooled connection management includes health checks, reconnect on failure, and graceful shutdown.
+- MCP connections inherit the agent trust boundary so untrusted servers run inside sandbox constraints.
+- Agents attach to multiple MCP servers simultaneously with tools from all servers available.
+- Tool-name conflicts across servers are resolved by server priority order.
+- Duplicate client creation is prevented when the same MCP server is referenced by multiple agents.
+- Connection failure to one MCP server does not block tools from other servers.
+
+### Extension: Computer Use and Browser Agent Patterns
+
+- Provider-agnostic computer use interface supports screenshot capture, action execution, accessibility-tree reads, and viewport dimension management.
+- Screenshot-based perception mode captures rendered frames and works across any interface.
+- Accessibility-tree perception mode uses structured page semantics and is preferred for web workflows.
+- Accessibility-tree perception consumes substantially fewer tokens than screenshot-heavy flows.
+- Perception mode is selectable per run.
+- Playwright MCP, Anthropic Computer Use, and OpenAI CUA are interchangeable plugin implementations.
+- Core safeagent package does not include any computer use provider by default.
+- All computer use execution runs in isolated environments and not on the host machine.
+- Orchestrator enforces configurable allowlist of permitted actions.
+- Read-only profiles allow observation while blocking mutation actions.
+- Browser sessions preserve page state, cookies, and navigation history across multi-step execution.
+- Visual token usage is tracked separately from text token usage in budget accounting.
+- High-risk actions require explicit human approval checkpoints when configured.
+- Screenshots, actions, and page-state transitions are logged for compliance and replay.
+
+### Extension: Generative UI Tool
+
+- UI component tool emits validated component payloads following CTA/location suppression pattern.
+- Only component types registered in the server catalog are accepted.
+- Invalid component payloads are dropped with warning log and not surfaced to client.
+- Inline and block display modes are correctly specified per emission.
+- Multiple UI components per response emit as separate events.
+- Text fallback is mandatory in every component payload.
+- Component payloads contain no executable content (no scripts, no event handlers, no raw markup).
+- Progressive rendering interleaves ui-component events with text-delta events.

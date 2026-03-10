@@ -1,4 +1,4 @@
-# 05 — Conversation Pipeline
+# Conversation Pipeline
 > **Scope**: Full conversation pipeline from input validation to response assembly.
 >
 > This document unifies prior intent and query pipeline plans into one coherent flow. Humanlike signals are first-class behavior within normal pipeline stages.
@@ -118,7 +118,7 @@ Intent routing consumes three-layer context:
 - User short-term (cross-thread messages when active).
 - Long-term recall (auto-triggered for new threads).
 
-Ordering guarantee: memory loading completes before intent detection. First-turn recall uses raw user message and does not depend on pre-classified intent. See [07 — Memory & Intelligence](./07-memory.md).
+Ordering guarantee: memory loading completes before intent detection. First-turn recall uses raw user message and does not depend on pre-classified intent. See [Memory & Intelligence](./memory.md).
 
 ### Context Boundary Enforcement
 
@@ -817,12 +817,12 @@ flowchart TB
 ## Cross-References
 | Component | Interaction |
 |-----------|------------|
-| Requirements | [01 — Requirements & Constraints](./01-requirements.md) |
-| Architecture | [03 — System Architecture](./03-architecture.md) |
-| Agents & Orchestration | [06 — Agents & Orchestration](./06-agents.md) |
-| Memory | [07 — Memory & Intelligence](./07-memory.md) |
-| Retrieval | [09 — Retrieval & Evidence](./09-retrieval.md) |
-| Infrastructure | [15 — Infrastructure](./15-infrastructure.md) |
+| Requirements | [Requirements & Constraints](./requirements.md) |
+| Architecture | [System Architecture](./architecture.md) |
+| Agents & Orchestration | [Agents & Orchestration](./agents.md) |
+| Memory | [Memory & Intelligence](./memory.md) |
+| Retrieval | [Retrieval & Evidence](./retrieval.md) |
+| Infrastructure | [Infrastructure](./infrastructure.md) |
 
 ---
 ## Task Specifications
@@ -1013,4 +1013,317 @@ flowchart TB
 - RAGFlow HTTP API reference
 
 ---
-*Previous: [04 — Foundation](./04-foundation.md) | Next: [06 — Agents & Orchestration](./06-agents.md)*
+
+## Test Specifications
+
+
+Conversation pipeline tests span unit tests for individual phases and end-to-end tests for the complete five-phase flow (Phase 0 through Phase 4).
+
+**Phase 0 — input validation and language gate**:
+
+- Fast language detection for clear allow and block paths.
+- Ambiguous or mixed-language content proceeds to intent classification.
+- Clear unsupported language triggers p0 tripwire block.
+- Post-intent gate checks intended output language support.
+- Translation edge cases: input in one language with intent to translate to another.
+
+**Phase 1 — non-actionable detection**:
+
+- Pleasantries, acknowledgments, and single-emoji messages short-circuit.
+- Gibberish via entropy and language reliability signals short-circuits.
+- Mixed actionable turns do not short-circuit.
+- False-positive avoidance for short valid tokens, abbreviations, and non-Latin scripts.
+- Short-circuit path skips embedding, LLM intent, rewriting, source routing, and fact extraction.
+
+**Phase 2 — context assembly**:
+
+- Three-layer context loading: thread short-term, user short-term, long-term recall.
+- Memory-load barrier: context assembly completes before intent classification begins.
+- First-turn recall uses the raw incoming user message before any rewrite stage exists.
+- Trust hierarchy enforcement: system instruction highest, user messages medium, retrieved content zero trust.
+- Retrieved content wrapped with reinforcement boundaries (sandwich framing, not delimiters alone).
+- Zero-trust content containing instruction-like patterns: redacted or preserved with data-only framing.
+- Unmarked zero-trust content never inserted into instruction-adjacent positions.
+
+**Phase 3 — intent classification**:
+
+- Embedding router: semantic hint generation with confidence scoring and Valkey cache interaction.
+- LLM intent validator: structured output with all fields (intent, topics, rewritten query, clarification, language, temporal, dependent intents, negations, replay structure, behavioral signals).
+- Speculative pre-fetching: starts on embedding guess, cancels on LLM disagreement.
+- Correction detection: triggers re-interpretation of previous response.
+- Frustration detection: signals de-escalation behavior.
+- Topic abandonment: flushes stale topic context.
+- Multi-intent decomposition: sub-queries with parallel or sequential processing.
+- Dependent intents: dependency ordering with constraint passing between intents.
+- Low-confidence or no-match intent outcomes trigger clarification behavior.
+- Attribute negation: property-level exclusion distinct from entity exclusion.
+- Query replay: parameter substitution with thread context recovery.
+- Temporal resolution: phrases resolved to concrete ranges using user timezone with UTC fallback.
+
+**Phase 3 — multi-intent dependency patterns**:
+
+- Feedback plus constrained-search chains apply exclusion constraints from feedback before search execution begins.
+- Comparison plus selection chains require selection stage to consume ranked comparison output rather than raw candidate list.
+- Context-establishment plus follow-up-query chains require query stage to consume established context from prior stage.
+- Negation plus alternative-request chains require alternative generation to target the explicitly negated entity or attribute.
+
+**Phase 4 — rewrite and source routing**:
+
+- Seven rewrite triggers: pronoun referent, short query expansion, multi-intent separation, specific identifier preservation, jargon alignment, ordinal resolution, query replay reconstruction.
+- Entity preservation guardrail: all original entities appear verbatim in rewrite, guardrail failure discards rewrite.
+- Source priority: parallel fan-out across all configured sources with priority weighting at merge.
+- Fail-fast source error handling: a failing source stops that source path while other sources continue.
+- Result merging: weight formula application, priority as scaling factor not absolute gate.
+- Attribute negation application: per-source negation strategies (minus-prefix, contextual clause, negation-aware recall, negative preference framing).
+- Dependent-intent exclusion filtering is applied before merged ranking.
+- Topic-level rewrite-strategy override takes precedence over library defaults.
+- Empty result handling: normal versus suspicious empties with logging.
+
+**RAGFlow integration**:
+
+- Read-only retrieval: query mapping, chunk-to-citation mapping, dataset isolation.
+- Topic-level dataset overrides take precedence over global defaults.
+- Single request must not mix incompatible dataset embeddings.
+
+**Phase 0 — language gate decision boundaries**:
+
+- High-confidence unsupported-language detection triggers immediate p0 tripwire blocking before intent routing.
+- High-confidence supported-language detection proceeds directly to intent classification without extra language checks.
+- Ambiguous-language detection never blocks at phase 0 and always defers to later intent-stage validation.
+- Mixed-language inputs with actionable intent proceed to intent classification path.
+- Ambiguous confidence near decision boundary prefers allow-to-classify over hard block.
+- p0 block path returns deterministic unsupported-language behavior without entering rewrite or source fan-out.
+- Post-intent language gate validates intended output language against supported-language policy.
+- Intended output language unsupported after intent classification triggers block even when input language was supported.
+- Intended output language supported after intent classification produces allow decision even for mixed-language input.
+- Translation-intent signal and translation-target language from intent output are both honored in post-intent language policy.
+
+**Phase 1 — non-actionable subtype classification**:
+
+- Pleasantry-only turns classify as non-actionable with pleasantry subtype.
+- Acknowledgment-only turns classify as non-actionable with acknowledgment subtype.
+- Single-emoji-only turns classify as non-actionable with emoji-only subtype.
+- Gibberish turns classify as non-actionable with gibberish subtype.
+- Non-actionable return payload always includes subtype and short-circuit routing decision.
+- Gibberish detection combines entropy signal with language reliability signal instead of single-metric gating.
+- Mixed turns that include even one actionable request bypass non-actionable short-circuit.
+- Short valid abbreviations avoid gibberish false positives.
+- Non-Latin scripts with coherent linguistic signal avoid gibberish false positives.
+- Short-circuit path bypasses embedding routing.
+- Short-circuit path bypasses LLM intent validation.
+- Short-circuit path bypasses query rewriting.
+- Short-circuit path bypasses source routing and retrieval fan-out.
+- Short-circuit path bypasses fact extraction side effects.
+
+**Phase 2 — three-layer context assembly and trust enforcement**:
+
+- Context assembly includes thread short-term context with latest turns and rolling summary.
+- Context assembly includes user short-term cross-thread messages only when cross-thread injection is active.
+- Context assembly includes long-term recall layer for relevant memory context.
+- Memory loading for all context layers completes before intent classification starts.
+- First-turn recall query uses raw user message and does not depend on pre-classified intent labels.
+- System instructions are assembled as highest-trust policy layer.
+- User messages are assembled as medium-trust content.
+- Retrieved chunks, recalled memory text, and cross-thread fragments are assembled as zero-trust data.
+- Zero-trust content is wrapped with prefix-and-suffix reinforcement boundaries.
+- Delimiter-only wrapping without reinforcement boundaries is treated as invalid assembly.
+- Instruction-like patterns in zero-trust content trigger safe transform decision before assembly.
+- High-risk instruction-like segments in zero-trust content are redacted with explicit security marker.
+- Low-risk instruction-like segments in zero-trust content are preserved only with explicit data-only framing.
+- Unmarked zero-trust content is never inserted adjacent to instruction-priority content.
+
+**Phase 3 — embedding router behavior**:
+
+- Startup embedding precomputes topic-example vectors from server-defined intent configuration.
+- Cached vectors are persisted in cache storage and reused at runtime for similarity checks.
+- Query embedding input concatenates rolling summary, cross-thread context, recent turns, and current message.
+- Runtime computes cosine similarity between query vector and cached topic vectors.
+- Top similarity match and confidence score are returned for downstream hinting.
+- Confidence above configured threshold marks high-confidence router outcome.
+- Confidence below configured threshold marks low-confidence or ambiguity outcome.
+- Empty or sparse intent-example configuration does not crash runtime classification flow.
+- Intent configuration changes invalidate cached vectors and trigger re-embedding.
+- Vague new-thread follow-ups remain classifiable when cross-thread context provides disambiguation signal.
+
+**Phase 3 — embedding router cache mechanics**:
+
+- Startup path extracts topic examples from intent configuration before serving live routing requests.
+- Startup path batches example embedding generation to reduce repeated embedding calls.
+- Startup path stores generated topic vectors in a Valkey hash for runtime lookup.
+- Per-query routing embeds the incoming query before similarity scoring.
+- Per-query routing fetches cached topic vectors from Valkey hash storage.
+- Per-query routing computes cosine similarity between query embedding and each cached topic embedding.
+- Per-query routing sorts similarity results in descending score order.
+- Per-query routing returns highest-scoring topic match together with confidence score.
+- Cache invalidation deletes the existing Valkey hash when intent configuration changes.
+- Cache invalidation triggers full re-embedding of topic examples after hash deletion.
+- Similarity fetch and cosine scoring overhead remains minor relative to embedding latency.
+
+**Phase 3 — LLM validator authority and structured output fields**:
+
+- LLM validator always runs, including when embedding router confidence is high.
+- Embedding router guess is passed as hint rather than final authority.
+- Structured output includes validated intent and validated topic selections.
+- Structured output includes rewritten query baseline and clarification requirement flag.
+- Structured output includes detected-intent count for downstream orchestration branching.
+- Structured output includes intended output language.
+- Structured output includes translation-intent signal.
+- Structured output includes translation target language.
+- Structured output includes resolved temporal references.
+- Structured output includes dependent-intent indicator and dependency order.
+- Structured output includes attribute-level negations.
+- Structured output includes query-replay structure with substitution details.
+- Structured output includes correction signal.
+- Structured output includes frustration signal.
+- Structured output includes topic-abandonment signal.
+- Structured output includes ambiguity signal for proactive clarification behavior.
+- No-match outcomes from validation route to clarification-first fallback behavior.
+
+**Phase 3 — speculative prefetch and agreement handling**:
+
+- Embedding stage starts speculative source prefetch immediately after initial intent guess.
+- Agreement between embedding guess and LLM validated intent reuses speculative prefetched results.
+- Disagreement cancels speculative fetch work and refetches using validated intent.
+- Cancellation path avoids stale-source reuse from superseded intent guesses.
+- Agreement path improves early retrieval readiness without changing final intent authority.
+- Slow embedding results do not break correctness when LLM path completes first.
+- Embedding failure degrades to LLM-validated routing path.
+- LLM timeout or failure degrades to embedding-hint routing path where configured.
+- Dual classification-path failure propagates explicit upstream error.
+
+**Phase 3 — correction, frustration, abandonment, and clarification**:
+
+- Correction signal triggers immediate reinterpretation against corrected user constraint.
+- Correction reinterpretation prioritizes new user correction over stale prior assistant framing.
+- Frustration tracking accumulates escalation trend across turns.
+- Escalation trend injects de-escalation context signal for response strategy.
+- Topic abandonment signal flushes stale active-topic context before synthesis.
+- Low-confidence ambiguous cases trigger proactive clarification rather than forced assumptions.
+- Clarification route is used for no-match and low-confidence ambiguous outcomes.
+
+**Phase 3 — low-confidence investigation routing**:
+
+- No-match fallback remains fixed to clarification route.
+- Low-confidence outcomes route to agent investigation with available tools before clarification fallback.
+- High-confidence outcomes route directly to matched pipeline execution.
+- Multi-intent outcomes route through orchestrator splitting rather than single-pipeline execution.
+
+**Temporal and language piggyback behaviors**:
+
+- Temporal expression resolution uses request-context user timezone when present.
+- Temporal expression resolution uses UTC fallback when timezone is unavailable.
+- Yesterday resolves to prior-day start-to-end range.
+- Last-week resolves to seven-day window ending yesterday.
+- This-morning resolves to day-start through current time.
+- Last-month resolves to rolling thirty-day window ending yesterday.
+- Today resolves to day-start through current time.
+- Resolved temporal range is passed as temporal hint before semantic ranking in memory retrieval.
+- Temporal filtering is applied before semantic ranking to constrain candidate set.
+- Language piggyback output supports translation-intent edge cases without extra model call.
+
+**Phase 4 — conditional rewrite and trigger matrix**:
+
+- Rewrite decision evaluates all seven triggers and uses pass-through when none fire.
+- Pronoun-referent trigger rewrites sparse anaphoric queries with recovered referent context.
+- Short-query trigger expands minimal terms into retrieval-ready phrasing.
+- Multi-intent trigger produces intent-separated rewrites for downstream split execution.
+- Highly-specific trigger preserves exact identifiers such as error codes and unique tokens.
+- Jargon-mismatch trigger aligns query phrasing with source vocabulary.
+- Ordinal-reference trigger resolves ordinal mention into explicit referenced entity.
+- Query-replay trigger reconstructs prior query with parameter substitutions.
+- No-trigger path preserves original query for all sources.
+- Trigger path applies source-specific rewriting rather than one global rewrite output.
+- Trigger evaluation order is deterministic and test-covered.
+
+**Ordinal resolution, query replay, and preservation guardrail**:
+
+- Ordinal references resolve against recent structured result memory entries.
+- Ordinal resolution produces explicit entity names in rewritten output.
+- Query replay retrieves origin query from thread context before applying substitutions.
+- Query replay with valid origin reconstructs full intent structure and updated parameters.
+- Query replay without valid origin falls back to standard context-aware rewrite path.
+- Entity-preservation guardrail requires every original name, code, date, and identifier to appear verbatim in rewrite.
+- Guardrail failure discards rewritten output and falls back to original query.
+- Rewrite fidelity checks run before source dispatch to prevent entity-loss retrieval errors.
+
+**Source-specific rewrite strategies and precedence**:
+
+- Vector retrieval sources apply HyDE strategy behavior.
+- Lexical retrieval sources apply entity-focused keyword extraction behavior.
+- Grounding-search source applies dense-keyword expansion behavior.
+- Topic-level rewrite-strategy override has first precedence.
+- Library default strategy mapping applies only when topic override is absent.
+- Strategy modules remain independently testable and importable.
+- Strategy outputs preserve exact identifiers from original query text.
+- Empty query input to strategy path returns typed validation error behavior.
+
+**Source routing, execution, and fail-fast policy**:
+
+- Source priority list defines weighting order only; all configured sources still execute in parallel.
+- Parallel fan-out includes external retrieval, document retrieval, grounding search, memory recall, and direct answer paths.
+- Priority weighting is applied during merge, not at dispatch time.
+- Source error propagation is fail-fast to orchestrator rather than silent auto-fallback.
+- Circuit-breaker behavior remains infrastructure concern and is not hidden inside routing layer.
+- Empty priority list produces explicit empty-output behavior without crash.
+- Per-source latency skew does not change deterministic weighted merge logic.
+
+**Attribute negation and dependent-intent exclusion handling**:
+
+- Attribute-level negations are applied during per-source query formulation.
+- Grounding-search negations map to minus-prefixed exclusion terms.
+- Retrieval-source negations map to contextual negative clauses.
+- Document retrieval negations map to adapter-specific negative clauses.
+- Memory recall negations shape recall query context to avoid conflicting facts.
+- Direct-answer negations shape synthesis framing to respect excluded attributes.
+- Dependent-intent entity exclusions are applied in merge filtering stage.
+- Attribute-level negation behavior remains distinct from entity-exclusion constraints.
+
+**Result merging and priority weighting math**:
+
+- Priority weight formula applies as one minus source index divided by total source count.
+- Weighted score is computed as raw score multiplied by priority weight.
+- Ranked outputs sort by weighted score descending.
+- Weighting is a scaling factor and not an absolute inclusion gate.
+- High raw relevance from lower-priority source can outrank weak high-priority result.
+- Weighted merge remains stable for identical weighted scores via deterministic tiebreak order.
+
+**Empty-result semantics and suspicious-empty surfacing**:
+
+- Empty-result mode marked normal is accepted as expected no-result outcome.
+- Empty-result mode marked suspicious is surfaced as unexpected no-result condition.
+- Suspicious empties emit warning telemetry and orchestrator-visible status.
+- Normal empties do not produce warning-level surfacing.
+
+**RAGFlow request and response contracts**:
+
+- Retrieval integration remains read-only and never invokes generation endpoints.
+- Request payload includes question, dataset identifiers, top-k, similarity threshold, and vector-weight fields.
+- Bearer authentication is required for external retrieval requests.
+- HTTP error responses propagate as typed retrieval failures.
+- Malformed retrieval responses propagate as typed parsing failures.
+- Response mapping captures chunk content, score, document identifier, positions, and keywords.
+- Chunk mapping produces canonical citation quote and source fields for streaming.
+- Retrieval-only metadata stays internal for evidence scoring and does not leak as citation payload.
+- Topic-level dataset overrides replace global dataset defaults at call time.
+- Requests mixing incompatible embedding datasets are rejected.
+- Missing retrieval base configuration disables external retrieval source gracefully.
+
+**Intent configuration and scale behavior**:
+
+- Server-defined intent catalog drives all business-intent classification; library has no baked-in domain intents.
+- Topic examples list is required for embedding-router semantic grounding quality.
+- Topic source-priority list determines source set and merge weighting behavior.
+- Topic dataset overrides apply per topic and override global dataset list.
+- Topic rewrite-strategy overrides apply per source before default mapping.
+- Topic evidence-threshold overrides are accepted and carried into downstream evidence gating.
+- Topic empty-result behavior overrides are honored per source.
+- Optional embedding confidence threshold overrides default threshold behavior.
+- Fallback behavior for no-match intents remains clarification path.
+- Intent configuration update triggers full embedding-cache rebuild.
+
+**Library-server responsibility split assertions**:
+
+- Strategy modules, source-priority engine, retrieval client wrapper, citation mapping, and weighting formula are library responsibilities.
+- Deployment values, per-topic overrides, and source policy assignments are server responsibilities.
+- Empty-result defaults come from library and are overridable by server configuration.
+- Typed pipeline interfaces are provided by library and implemented with domain behavior by server.

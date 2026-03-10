@@ -1,4 +1,4 @@
-# 13 — TUI App
+# TUI App
 
 > **Scope**: The OpenTUI Solid terminal application. A full-featured chat client that talks to the safeagent layer, renders streaming markdown, handles slash commands, supports file uploads, and runs in either direct runtime mode or remote SDK mode.
 >
@@ -606,9 +606,9 @@ OpenTUI handles terminal resize natively. Layout reflows automatically and chat 
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines baseline behavior and client parity targets that this TUI must satisfy. |
-| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
-| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines baseline behavior and client parity targets that this TUI must satisfy. |
+| **Transport** ([Streaming & Transport](./transport.md)) | Defines stream semantics and event contracts used by SDK mode and mirrored by direct mode. |
+| **Server Implementation** ([Server Implementation](./server.md)) | Defines server-side upload and guardrail behavior that the TUI matches in terminal UX. |
 
 ---
 
@@ -797,4 +797,131 @@ TUI_SHELL, TUI_COMMANDS, TUI_AGENT
 
 ---
 
-*Previous: [12 — Server Implementation](./12-server.md) | Next: [14 — Observability](./14-observability.md)*
+## Test Specifications
+
+**Setup and rendering**:
+
+- Correct JSX import-source configuration for OpenTUI Solid compilation.
+- Preload configuration for reactive state updates.
+- Full-screen layout with four persistent panels.
+- Terminal resize reflow.
+
+**Keyboard handling**:
+
+- Enter submits, Shift+Enter inserts newline.
+- Ctrl+C cancels stream or quits with guarded behavior.
+- Ctrl+L clears state and pending attachments.
+- Up and Down arrow for input history recall.
+- Tab for slash command autocomplete.
+- Escape dismisses overlays.
+
+**Command routing**:
+
+- Slash commands intercepted before agent.
+- Known commands dispatched to handlers.
+- Unknown commands show inline error message.
+- Tab completion works for all supported command names.
+
+**Chat display**:
+
+- Streaming markdown rendering with syntax-highlighted code blocks.
+- Auto-scroll follows new content unless user scrolled up.
+- Auto-scroll resumes when user returns to bottom.
+- Only currently streaming message re-renders per chunk.
+
+**Input component**:
+
+- Multiline growth up to eight lines, then internal scrolling.
+- Empty and whitespace-only submissions rejected.
+- Input disabled during streaming, re-enabled when streaming ends.
+- Local in-memory input history separate from chat history.
+
+**Agent integration**:
+
+- Direct mode: import library runtime and call execution directly.
+- Client SDK mode: remote execution with equivalent stream semantics.
+- Event normalization: same downstream handling regardless of mode.
+- TripWire handling: exception caught, error banner displayed, fallback text shown.
+- Stream cancellation: Ctrl+C cancels stream, partial response preserved.
+
+**File upload flow**:
+
+- File picker with type filtering, arrow navigation, multi-select.
+- Magic bytes validation for type checking.
+- Progress tracking through file status state machine.
+- Pending attachment management through status bar.
+- Cleanup on /clear command.
+- Edge cases: oversize file, excess files, quota exceeded, unsupported type.
+
+**Runtime-preload and keyboard invariants**:
+
+- Runtime preload wiring is limited to TUI runtime context and never leaks into non-TUI execution contexts.
+- Preload registration remains active through startup, stream lifecycle, and overlay transitions.
+- Keyboard handling scans confirm no shell-level key-press handler property usage in any render path.
+- Root keyboard router ignores unsupported key combinations without blocking child handlers.
+- Global shortcuts continue functioning while overlays are open unless overlay explicitly captures focus.
+
+**Markdown rendering depth**:
+
+- Emphasis rendering distinguishes bold, italic, and combined emphasis markers visually.
+- Inline code rendering preserves monospace styling and contrast distinct from body text.
+- Ordered list rendering preserves numbering continuity across streamed chunks.
+- Unordered list rendering preserves bullet hierarchy and indentation depth.
+- Blockquote rendering preserves quote indicator styling and text wrapping behavior.
+- Mixed markdown blocks in one assistant turn maintain stable ordering as chunks append.
+- Partially streamed markdown tokens recover into correct final formatting when closing delimiters arrive later.
+
+**Scroll and long-output behavior**:
+
+- Long assistant responses remain scrollable beyond terminal viewport height without truncation.
+- Scroll position stays anchored correctly while new chunks append to very long messages.
+- User-initiated upward scrolling suppresses auto-follow even during heavy chunk bursts.
+- Returning to bottom re-enables auto-follow and catches up with accumulated output.
+- Terminal-height changes during long messages preserve readable viewport state.
+
+**Input submission and history correctness**:
+
+- Empty input submission is rejected with no command dispatch and no agent call side effect.
+- Whitespace-only input submission is rejected without adding history entries.
+- History order is most-recent-first on upward traversal after multiple submissions.
+- Downward traversal returns entries in reverse traversal order and clears at history boundary.
+- Duplicate consecutive submissions are stored as separate history entries in original submit order.
+
+**Command behavior fidelity**:
+
+- `/model` with argument sets active model immediately and surfaces confirmation in status bar.
+- `/model` argument parsing trims surrounding whitespace before model match.
+- `/model` unknown argument produces non-destructive error feedback without mutating active model.
+- `/clear` emits explicit confirmation as system message after message-state reset.
+- `/clear` during pending attachments clears attachments and confirms cleared attachment count.
+- `/upload` with inline path argument bypasses picker and starts validation path immediately.
+- Tab completion cycles deterministically through multiple matching commands on repeated Tab presses.
+- Tab completion wraps from last candidate back to first candidate.
+
+**Agent stream event display guarantees**:
+
+- Tool-call events always render as system messages with tool identity and call context.
+- Tool-result events always render as follow-up system messages mapped to originating tool call.
+- Tool-call and tool-result rendering order remains consistent under interleaved text deltas.
+- Stream-finish handling finalizes assistant message and status indicators exactly once.
+- Session state remains recoverable after transport interruption mid-stream.
+
+**Error-state resilience**:
+
+- Tripwire handling always shows fallback assistant text and error banner together in one failure path.
+- Rate-limit error surfaces retry guidance and countdown when retry metadata exists.
+- Countdown state updates at one-second cadence until retry eligibility.
+- Transport error mid-stream transitions UI into recoverable idle state with input re-enabled.
+- Recoverable transport error preserves already streamed partial assistant content.
+- Escape dismissal clears visible error banner without deleting preserved chat history.
+
+**Picker and attachment constraint enforcement**:
+
+- Supported picker types are listed visibly while unsupported entries remain visible but greyed out.
+- Oversize file above five-megabyte limit shows inline picker error on selection attempt.
+- Selecting more than five files shows inline footer error and blocks confirmation.
+- Mismatched magic bytes against declared type yields clear rejection message.
+- Invalid inline-path upload with unsupported type yields explicit validation failure state.
+- Status bar shows `N files ready` once all selected files reach ready state.
+- Ready-state indicator clears after next successful message submission includes attachments.
+- Canceling picker leaves pending attachment state unchanged unless explicit clear action occurs.

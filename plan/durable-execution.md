@@ -1,4 +1,4 @@
-# 25 — Durable Execution and Human-in-the-Loop Plan
+# Durable Execution and Human-in-the-Loop Plan
 
 > **Scope**: Durable workflow persistence, replay and recovery controls, and human oversight operating patterns for safeagent at 10M-user scale.
 >
@@ -563,13 +563,13 @@ flowchart TD
 
 | Plan Area | Connection |
 |---|---|
-| [06 — Agents and Orchestration](./06-agents.md) | Durable checkpointing wraps orchestration loops and tool action flow. |
-| [11 — Transport](./11-transport.md) | Detached run lifecycle aligns with streaming and connection boundaries. |
-| [12 — Server](./12-server.md) | Request acceptance, auth boundary, and run identity handoff anchor detached execution. |
-| [14 — Observability](./14-observability.md) | Checkpoint, approval, latency, and escalation metrics align with tracing and governance. |
-| [15 — Infrastructure](./15-infrastructure.md) | Circuit breakers, resource controls, and resilience posture support durable runtime safety. |
-| [16 — Testing](./16-testing.md) | Fault injection, replay determinism, and async approval tests validate reliability claims. |
-| [24 — Extensibility and Plugin Architecture Plan](./24-extensibility.md) | Pluggable checkpoint backend contracts align with extension governance model. |
+| [Agents and Orchestration](./agents.md) | Durable checkpointing wraps orchestration loops and tool action flow. |
+| [Transport](./transport.md) | Detached run lifecycle aligns with streaming and connection boundaries. |
+| [Server](./server.md) | Request acceptance, auth boundary, and run identity handoff anchor detached execution. |
+| [Observability](./observability.md) | Checkpoint, approval, latency, and escalation metrics align with tracing and governance. |
+| [Infrastructure](./infrastructure.md) | Circuit breakers, resource controls, and resilience posture support durable runtime safety. |
+| [Testing](./testing.md) | Fault injection, replay determinism, and async approval tests validate reliability claims. |
+| [Extensibility and Plugin Architecture Plan](./extensibility.md) | Pluggable checkpoint backend contracts align with extension governance model. |
 
 ## Delivery Checklist
 
@@ -591,4 +591,49 @@ flowchart TD
 
 ## Navigation
 
-*Previous: [24 — Extensibility](./24-extensibility.md) | Next: [26 — AI Operations](./26-ai-operations.md)*
+## Test Specifications
+
+
+**Checkpoint persistence and recovery behavior**:
+
+- Checkpoint persistence preserves resumable workflow state across worker crashes without losing replay-critical context.
+- Pod restarts trigger deterministic recovery scans that restore resumable runs from canonical durable state.
+- Recovery after multi-day pause validates policy freshness and authorization before any resume transition.
+- Resume ownership is single-holder and idempotent so duplicate resume attempts do not create divergent run paths.
+- Recovery failures route to bounded retry or quarantine outcomes with operational visibility.
+
+**Time-travel replay and history fork behavior**:
+
+- Replay can resume from any prior checkpoint while preserving immutable historical lineage.
+- Forked replay creates a new branch with explicit parent linkage and reason attribution.
+- Corrected-state injection is accepted only within forked branches and remains fully auditable.
+- Replay comparison across branches preserves outcome traceability for investigation and root-cause analysis.
+
+**Background lifecycle and deterministic backbone behavior**:
+
+- Long-running workflows detach from request connections while preserving durable run identity continuity.
+- Background execution emits completion and failure outcomes through asynchronous lifecycle signaling.
+- Deterministic control flow governs state transitions around agent reasoning so side effects occur only at valid boundaries.
+- Deterministic checkpoint boundaries ensure replay reproducibility under equivalent inputs and policy state.
+
+**HITL and oversight mode behavior**:
+
+- Approval gates suspend high-risk actions until a valid human decision is recorded.
+- HITL waits and decisions persist durably and can resume correctly without an active client connection.
+- Human-on-the-loop mode observes and annotates actions without blocking routine execution.
+- Human-in-the-loop mode blocks selected actions until approve, reject, or edit outcomes are resolved.
+- Mode selection follows risk policy and remains auditable across workflow transitions.
+
+**Automation ratio and escalation behavior**:
+
+- Automation ratio policy enforces configured human-review share by risk class, tenant, and governance posture.
+- Ratio tightening and relaxation follow governed change controls with measurable safety and throughput impact.
+- Escalation routes trigger on deadline miss, authority mismatch, policy conflict, or emergency indicators.
+- Review queue behavior preserves assignment, overdue visibility, reassignment, and escalation depth continuity.
+
+**Checkpoint lifecycle and capacity behavior**:
+
+- Checkpoint TTL windows, cleanup, and archive transitions execute with lineage safety and auditability.
+- Lifecycle policies honor legal holds and preserve replay-addressable metadata through archive states.
+- Concurrent workflow limits enforce user, tenant, and global fairness under sustained load.
+- Failure isolation ensures one workflow fault or replay failure cannot corrupt unrelated workflows.

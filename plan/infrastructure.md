@@ -1,4 +1,4 @@
-# 15 — Infrastructure
+# Infrastructure
 > All infrastructure is containerized and declarative. The API server is stateless, and every piece of durable state lives in a purpose-built external service. Background jobs run in Trigger.dev, real-time counters live in Valkey, and every service exposes a health check. When Valkey is unavailable, the system degrades gracefully with in-memory fallbacks. When Trigger.dev is absent, jobs execute in-process. Nothing is mandatory except Postgres.
 ---
 ## Table of Contents
@@ -73,12 +73,12 @@ graph TB
 - **Typed data access boundaries** — PostgreSQL infrastructure operations (budgets, cleanup metadata, lifecycle updates) run through Drizzle type-safe queries, and SurrealDB operations run through surqlize typed APIs. Raw query strings are excluded.
 ### Degradation Model (Canonical)
 - **Postgres unavailable**: hard failure. Core persistence is unavailable, so the instance is `down` and should return HTTP 503 for health checks.
-- **JWT secret absent in production** (`NODE_ENV=production`): hard failure. Authentication is a security boundary, and auth fail-open would allow unauthorized data access. The server refuses to start. This is the only non-Postgres hard failure (see [12 — Server Implementation](./12-server.md)).
+- **JWT secret absent in production** (`NODE_ENV=production`): hard failure. Authentication is a security boundary, and auth fail-open would allow unauthorized data access. The server refuses to start. This is the only non-Postgres hard failure (see [Server Implementation](./server.md)).
 - **SurrealDB unavailable**: degrade gracefully. Long-term memory is disabled, but chat and short-term memory continue via Postgres.
 - **MinIO or S3 unavailable**: degrade gracefully. File upload and file-backed document retrieval are disabled, but chat and non-file agent flows continue.
 - **Valkey unavailable**: degrade gracefully. Rate limiting falls back to per-instance in-memory behavior where each API instance tracks its own counters independently. Global rate enforcement is lost, but per-instance protection remains. Budget checks fail-open so users are never blocked due to infrastructure failure, because budget enforcement is soft limits and not a hard security boundary. This is an intentional availability trade-off: temporary over-admission during a Valkey outage is preferable to blocking all users. Valkey availability should be treated as operationally critical and monitored accordingly, because sustained Valkey downtime means rate limits and budgets are effectively per-instance only.
 - **Trigger.dev unavailable**: degrade gracefully. Background jobs execute in-process via the fallback queue adapter.
-**Relationship to must-have requirements**: [01 — Requirements & Constraints](./01-requirements.md) lists capabilities like S3 storage, SurrealDB memory, and Valkey rate limiting as must-have deliverables. Must-have means the implementation must be shipped and tested. The degradation model above governs runtime behavior during transient outages, crash recovery, and rolling deployments. These are complementary rather than contradictory: code exists and works when infrastructure is present, while the system remains available when infrastructure is temporarily absent. A production deployment missing a must-have service indefinitely is an operational misconfiguration, not a supported configuration. The health endpoint reports `degraded` status and monitoring should alert on sustained degradation.
+**Relationship to must-have requirements**: [Requirements & Constraints](./requirements.md) lists capabilities like S3 storage, SurrealDB memory, and Valkey rate limiting as must-have deliverables. Must-have means the implementation must be shipped and tested. The degradation model above governs runtime behavior during transient outages, crash recovery, and rolling deployments. These are complementary rather than contradictory: code exists and works when infrastructure is present, while the system remains available when infrastructure is temporarily absent. A production deployment missing a must-have service indefinitely is an operational misconfiguration, not a supported configuration. The health endpoint reports `degraded` status and monitoring should alert on sustained degradation.
 ---
 ## Docker Compose Service Map
 Every service, its purpose, health check, and persistence volume are shown below. Services are organized by profile group.
@@ -152,7 +152,7 @@ Deployment follows profile-based topology evolution:
 - **Production baseline** uses stateless API replicas behind load balancing, with rolling replacement and health-gated traffic admission.
 - **Failure posture** keeps Postgres as the sole hard dependency and treats all other infrastructure as degradable with explicit health reporting.
 - **Operational guardrails** require alerting on prolonged degraded mode, especially Valkey unavailability that weakens global rate and budget enforcement.
-This strategy aligns with [03 — System Architecture](./03-architecture.md), [04 — Foundation](./04-foundation.md), [12 — Server Implementation](./12-server.md), and [14 — Observability](./14-observability.md).
+This strategy aligns with [System Architecture](./architecture.md), [Foundation](./foundation.md), [Server Implementation](./server.md), and [Observability](./observability.md).
 ---
 ## API Key Pool
 The key pool distributes Gemini API calls across N API keys using round-robin. A single key adds zero overhead. N keys provide N× throughput by spreading requests across independent rate limit quotas.
@@ -197,7 +197,7 @@ flowchart LR
     end
 ```
 ### Key Concepts
-- **Comma-separated env var** — the key pool environment variable resolves to the `GOOGLE_API_KEY` environment variable (see [04 — Foundation](./04-foundation.md)). That variable contains API keys separated by commas. Whitespace is trimmed. A single key with no comma means no pool is created, and callers use the provider directly.
+- **Comma-separated env var** — the key pool environment variable resolves to the `GOOGLE_API_KEY` environment variable (see [Foundation](./foundation.md)). That variable contains API keys separated by commas. Whitespace is trimmed. A single key with no comma means no pool is created, and callers use the provider directly.
 - **Independent counters** — provider and embedder calls cycle through keys independently. Summarization may call the provider first and the embedder later, and separate counters distribute load evenly across both paths.
 - **Per-key concurrency** — default is 5 concurrent requests per key. With 3 keys, the system supports 15 concurrent API calls. This is configurable through a per-key concurrency setting.
 - **Health checking** — each key tracks consecutive failures. After 3 failures, the key is marked unhealthy and skipped. A background probe re-tests unhealthy keys every 60 seconds. If all keys are unhealthy, the pool falls back to round-robin across all keys in degraded mode.
@@ -928,4 +928,178 @@ Object keys use user-prefixed hierarchy for ownership cleanup. Concentrated uplo
 - Sliding window rate limiting: [https://redis.io/docs/latest/develop/data-types/sorted-sets/](https://redis.io/docs/latest/develop/data-types/sorted-sets/)
 - AsyncLocalStorage: [https://bun.sh/docs/runtime/web-apis](https://bun.sh/docs/runtime/web-apis)
 ---
-*Previous: [14 — Observability](./14-observability.md) | Next: [16 — Testing](./16-testing.md)*
+
+## Test Specifications
+
+**Docker Compose**:
+
+- Core profile five services start correctly with health checks.
+- Langfuse profile adds four services on non-conflicting ports.
+- Trigger profile adds five services.
+- Port conflict resolution: Valkey on 6379, Langfuse Redis on 6380, ClickHouse native on 9100, Langfuse web on 3100.
+
+**API key pool**:
+
+- Round-robin distribution uses independent provider and embedder counters.
+- Exhaustion handling marks unhealthy keys, probes recovery, and degrades to full-key rotation when all keys are unhealthy.
+
+**Cache module**:
+
+- Valkey-backed cache behavior is validated alongside in-memory fallback semantics when unavailable.
+
+**TTL cleanup scheduler**:
+
+- Scheduled cleanup behavior validates expiry targeting, idempotency, and continuation on per-file failures.
+
+**Health-check module**:
+
+- Dependency probes are aggregated into overall health state with service-level detail.
+
+**Degradation model**:
+
+- Postgres unavailable: hard failure, HTTP 503.
+- JWT secret absent in production: hard failure, startup refused.
+- Each optional service (SurrealDB, MinIO, Valkey, Trigger.dev, Langfuse) degrades gracefully per documented behavior.
+- Valkey unavailable: budget fail-open, per-instance rate limiting, in-memory cache.
+
+**Budget enforcement**:
+
+- Pessimistic reservation: increment by estimate, check limit, rollback on over-limit.
+- Reconciliation: adjust counter based on actual versus estimated usage.
+- Daily and monthly counter auto-expiry.
+- Atomic increment and expiration committed as one unit.
+- Valkey unavailable returns allowed true with warning.
+- Admin capabilities: detail, update with cache invalidation, paginated list.
+
+**Rate limiting**:
+
+- Sliding window sorted sets with Lua script atomicity.
+- Member uniqueness using random UUID for same-millisecond handling.
+- Retry-After derived from oldest in-window entry, clamped to minimum one second.
+- Per-user keying with custom key extraction support.
+- Development no-op fallback when Valkey unavailable.
+
+**Circuit breaker**:
+
+- Three-state machine: closed, open, half-open.
+- Closed to open: after configured consecutive failures.
+- Open to half-open: after reset timeout elapsed.
+- Half-open to closed: limited successful probes complete before closing.
+- Half-open to open: probe fails.
+
+**Breaker registry and snapshots**:
+
+- Registry returns isolated named breakers.
+- Health snapshot includes all breaker states for endpoint reporting.
+
+**Trigger.dev integration**:
+
+- Production dispatch to Trigger.dev task endpoint.
+- Development in-process fallback executes same handlers.
+- Registered tasks: background-enrichment, budget-aggregation, cleanup, expired-file-cleanup.
+
+**Graceful shutdown sequencing**:
+
+- Shutdown order validates admission stop, stream drain, telemetry flush, then dependency disconnect.
+
+**Structured logging**:
+
+- Hierarchical categories with async context propagation.
+- Request correlation through request identifier.
+
+**Docker Compose service-level guarantees**:
+
+- Postgres container boots with pgvector extension available for application queries.
+- MinIO health endpoint reports healthy state before dependent upload checks run.
+- MinIO bucket initialization creates required application bucket automatically.
+- MinIO bucket initialization creates required media bucket automatically.
+- SurrealDB health probe responds healthy before memory-enabled paths are marked ready.
+- Valkey ping health check returns healthy status and expected pong semantics.
+- Trigger profile exposes web interface on port 3040 without collision.
+- Langfuse profile exposes web interface on port 3100 without collision.
+- Langfuse analytics endpoint remains reachable on port 8123 in profile mode.
+- LibreOffice sidecar health probe reports ready before DOCX conversion routes enable.
+- Startup initialization script creates langfuse database automatically on first boot.
+- Startup initialization script creates trigger database automatically on first boot.
+- Environment template includes complete variable set for S3, SurrealDB, Valkey, Trigger, Langfuse, and LibreOffice.
+
+**Key pool deterministic behavior**:
+
+- Pool size equals parsed non-empty key count from configured comma-separated source.
+- Parsed keys trim leading and trailing whitespace before pool construction.
+- Empty key list fails fast with explicit validation error.
+- Blank-only key entries fail fast and never create placeholder providers.
+- Provider selector rotates keys in strict round-robin sequence.
+- Embedder selector rotates keys independently from provider sequence.
+- Concurrency limit equals active key count multiplied by per-key concurrency setting.
+- Missing key configuration returns undefined pool from environment helper.
+- Single-key configuration returns undefined pool from environment helper.
+
+**Valkey cache interface completeness**:
+
+- Cache factory selects Redis-backed implementation when redis-style URL is configured.
+- Cache factory selects in-memory fallback implementation when cache URL is absent.
+- Redis-backed cache supports read operation across string and serialized payload values.
+- Redis-backed cache supports write operation with optional TTL.
+- Redis-backed cache supports delete operation for explicit key invalidation.
+- Redis-backed cache supports increment operation for counters.
+- Redis-backed cache supports decrement operation for counters.
+- Redis-backed cache supports explicit expiration update operation.
+- Redis-backed cache close operation releases client resources cleanly.
+- Redis-backed cache health operation reports connectivity status.
+- Raw client accessor exposes Redis client for sorted sets and transactional units.
+- In-memory fallback stores entries in map-backed storage.
+- In-memory fallback enforces TTL expiration at read time.
+- In-memory fallback periodic sweep removes expired entries every sixty seconds.
+
+**Cost tracking hot-path and persistence semantics**:
+
+- Budget checks read only Valkey counters on request hot path.
+- Budget checks avoid Postgres queries on hot path when limit cache is warm.
+- Daily counter keys auto-expire at UTC midnight boundary.
+- Monthly counter keys auto-expire at UTC month-end boundary.
+- Counter updates and expiration assignments execute atomically in same transaction unit.
+- Usage-event persistence path is append-only and never mutates prior events.
+- Token-recording persistence is non-blocking relative to response streaming path.
+- Budget exceeded response returns HTTP 429 with descriptive denial payload.
+- Daily counter keys are scoped per user and auto-expire at the UTC day boundary.
+- Monthly counter keys are scoped per user and auto-expire at the UTC month-end boundary.
+- Per-user limit overrides are cached and reused before TTL expiry.
+- Override-cache invalidation occurs immediately after admin limit update.
+- Admin detail path returns user limits, current spend, and period metadata.
+- Admin update path persists overrides and reports updated values.
+- Admin listing path enforces pagination boundaries.
+- Admin listing path supports over-budget filter behavior.
+
+**Rate limiting algorithm guarantees**:
+
+- Sliding window uses sorted sets for in-window request accounting.
+- Lua execution keeps prune, insert, count, oldest-read, and expiry operations atomic.
+- Member identity includes UUID segment to guarantee uniqueness for same-millisecond requests.
+- Retry-After derives from oldest in-window entry age.
+- Retry-After values are clamped to minimum one-second guidance.
+- Per-user keying defaults to authenticated user identity.
+- Custom key extraction path supports alternate route-level identity derivation.
+- Development fallback path degrades to no-op when raw Redis client is unavailable.
+
+**Degradation and fallback reliability**:
+
+- Valkey outage triggers in-memory cache fallback without server crash.
+- Valkey outage switches rate limiting to per-instance behavior.
+- Valkey outage keeps budget checks fail-open while emitting warning logs.
+- Trigger absence routes background jobs through in-process adapter.
+- Langfuse absence disables tracing while preserving core request flow.
+
+**Trigger and scheduled-task behavior**:
+
+- Registered background enrichment task dispatches expected payload contract.
+- Registered budget aggregation task runs on configured five-minute cadence.
+- Registered cleanup task handles isolated per-file failures and continues batch.
+- Registered expired-file-cleanup task executes schedule-based TTL sweeps.
+
+**Connection and shutdown safeguards**:
+
+- Cache close operation is invoked during graceful shutdown.
+- Postgres pool close operation is invoked after stream drain window.
+- SurrealDB connection close operation runs during shutdown teardown.
+- In-process running-task drain waits for settle before process exit.

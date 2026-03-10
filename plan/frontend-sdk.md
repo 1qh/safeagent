@@ -1,4 +1,4 @@
-# 18 — Frontend SDK
+# Frontend SDK
 
 > **Scope**: React hooks (React hooks subpath), web components (web components subpath), React Native components (native components subpath), trace visualization components, component installation CLI, Storybook documentation, and end-to-end type safety across the frontend stack.
 >
@@ -1259,4 +1259,154 @@ Readiness signals before moving to demos:
 - Installer workflows are deterministic and conflict-aware.
 - Storybook provides exhaustive state documentation for web surfaces.
 
-*Previous: [17 — Execution Plan](./17-execution.md) | Next: [19 — Demos](./19-demos.md)*
+## Test Specifications
+
+**Module boundaries and scaffolding**:
+
+- Frontend subpath exports resolve correctly for client SDK, React hooks, web components, and native components.
+- Module boundaries prevent server-only runtime imports into frontend packages.
+
+**Transport adapter**:
+
+- SSE parsing with correct line buffering.
+- Event type discrimination producing typed event objects.
+- Reconnection follows transport semantics without mid-stream resume assumptions.
+
+**React hooks**:
+
+- Hook set coverage includes chat transport compatibility, feedback behavior, file-upload behavior, trace-step projection, connection selection, and detail-mode control.
+- Hooks integrate with AI SDK ChatTransport interface.
+
+**Web components**:
+
+- 48 ai-elements based components render correctly with proper ARIA attributes.
+- Eight custom components (trace timeline, verbosity toggle, server switch, and others) function correctly.
+- Component installation CLI provides individual component installation.
+
+**Native components**:
+
+- Native component module coverage is validated separately from web components with shared hook parity.
+
+**Trace UI**:
+
+- Dedicated trace visualization behavior tests cover timeline rendering, step typing, and detail-mode transitions.
+
+**Type safety**:
+
+- SSE event types flow through client SDK to React hooks to UI components without type loss.
+- Runtime event parsing validates against Zod schemas.
+
+**Accessibility**:
+
+- WCAG 2.1 AA compliance for all components.
+- Keyboard navigation for all interactive elements.
+- Screen reader compatibility with appropriate ARIA attributes.
+
+**Offline queue**:
+
+- Messages queued when server unreachable.
+- Auto-sync on reconnect with no duplicate delivery.
+
+**Storybook**:
+
+- Usage examples for all web components.
+- Storybook scope remains web-component documentation only.
+
+**Component installer**:
+
+- Dependency validation blocks unsupported installs with clear diagnostics.
+- Conflict detection prevents unintended overwrite of existing local component artifacts.
+
+**Scaffold and workspace boundaries**:
+
+- Frontend subpath modules are discoverable by workspace graph and task tooling.
+- Module-stub type checking passes cleanly for hooks, web components, and native components modules.
+- Shared frontend dependency graph validates with no circular references.
+- Storybook startup succeeds with placeholder stories in baseline scaffold state.
+- Hook, web, and native boundaries remain separated with no cross-layer leakage.
+- Frontend modules do not import server-only engine internals.
+- Workspace tasks can target hooks, web components, and native components independently.
+
+**React hook transport behavior**:
+
+- Chat-hook transport works with safeagent stream flow without consumer-side adapter glue.
+- Stream text events map to AI SDK message updates in expected order.
+- Stream status transitions map to loading, streaming, and completion states correctly.
+- Completion events finalize run state exactly once per request.
+- Trace-step collection remains empty in standard mode.
+- Trace-step collection appends ordered entries only in full mode.
+- Feedback hook supports optimistic state before server confirmation.
+- Feedback hook rolls back optimistic state on submission failure.
+- Upload hook emits deterministic progress transitions across upload lifecycle states.
+- Upload hook returns final typed file references on success.
+- Server-connection hook supports endpoint switching without stale closure usage.
+- Verbosity hook updates outgoing transport metadata for subsequent requests.
+- Hook exports remain fully typed and reusable across both web and native consumers.
+
+**Web component consistency and accessibility**:
+
+- ai-elements wrappers render correctly in isolated story state.
+- ai-elements wrappers render correctly in integrated chat-surface state.
+- Custom components consume hook state and emit expected callback semantics.
+- API shape remains consistent across related primitive wrappers.
+- Custom CSS class extension points apply without breaking default internals.
+- Slot-override behavior works for key composition surfaces.
+- Accessibility semantics are present for custom controls and dynamic surfaces.
+- Offline-state UI provides actionable reconnect guidance.
+- Error-state UI provides actionable retry affordances.
+
+**Trace UI fidelity**:
+
+- Every incoming trace-step event appears exactly once in timeline rendering.
+- Step-type icon mapping matches supported step taxonomy.
+- Latency-bar color thresholds follow green/yellow/red policy boundaries.
+- Latency-bar widths remain proportional to relative step latency.
+- Detail-panel expansion is keyboard accessible.
+- Detail-panel expansion is pointer accessible.
+- Full mode auto-opens trace panel on incoming assistant run.
+- Standard mode keeps trace panel hidden and lightweight.
+- Total pipeline latency summary remains numerically accurate.
+
+**Native component parity**:
+
+- Native chat flow preserves semantic parity with web chat behavior.
+- Shared hook API behavior is identical across web and native contexts.
+- Native attachment flow supports document and image inputs.
+- Offline queue visibility shows pending-count and sync transitions.
+- Reconnect replay transitions drain queued messages in FIFO order.
+- Thread switching remains stable during network transitions.
+- Server switching remains stable during network transitions.
+- Native styling remains consistent and maintainable through utility patterns.
+- Required polyfills are active for stream and clone support.
+
+**Frontend CLI install guarantees**:
+
+- Single-component install resolves full dependency closure.
+- Multi-component install resolves merged dependency closure deterministically.
+- Web registry and native registry are independently addressable.
+- Unsupported install targets are blocked by validation checks.
+- Repeated installs produce deterministic output layouts.
+- Existing local conflicts are detected and blocked from silent overwrite.
+- Customization workflow copies editable component source into consumer space.
+
+**Storybook coverage quality**:
+
+- Every web component has at least one representative story.
+- Custom components include state-rich stories covering key branches.
+- Mock generators produce stable fixtures across repeated runs.
+- Story rendering remains stable across supported browsers.
+- Visual baseline artifacts are produced for high-impact surfaces.
+- Accessibility checks run against documented story states.
+
+### Extension: Generative UI Renderer
+
+- Component registry maps component type discriminators to renderer implementations.
+- Built-in renderers produce correct output for data-table, chart, metric card, image gallery, code block, and markdown block.
+- Custom renderers override built-in renderers when registered.
+- Fallback chain resolves: custom → built-in → text fallback.
+- React hook consumes ui-component events and resolves appropriate renderer.
+- Web component wrapper delegates to registry-based rendering.
+- React Native renderers use platform-appropriate implementations.
+- Inline components render within text flow and block components render as standalone sections.
+- All built-in renderers meet WCAG 2.1 AA accessibility requirements.
+- Renderers treat all data payloads as untrusted input with no dynamic script execution.

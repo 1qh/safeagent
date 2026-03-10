@@ -1,4 +1,4 @@
-# 28 — Developer Experience & Onboarding
+# Developer Experience & Onboarding
 
 > **Scope**: Developer Experience and onboarding governance for `safeagent` from first encounter to expert usage.
 >
@@ -443,14 +443,14 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 ### Cross-Reference Table
 | Related File | Relationship to This File | Dependency Direction | Coordination Requirement |
 |---|---|---|---|
-| [04 — Foundation](./04-foundation.md) | Establishes baseline architecture and runtime policy | Foundation constrains DX design choices | Keep Bun-only and single-package constraints aligned |
-| [13 — TUI](./13-tui.md) | Defines terminal interaction patterns that complement studio workflows | TUI informs local developer interaction ergonomics | Align diagnostics language and trace affordances |
-| [14 — Observability](./14-observability.md) | Defines trace and telemetry semantics extended here | Observability underpins diagnostics and studio visibility | Keep OpenTelemetry payload semantics consistent |
-| [16 — Testing](./16-testing.md) | Defines core testing strategy expanded here for DX | Testing enables onboarding confidence and CI policy | Harmonize deterministic test posture and quality gates |
-| [19 — Demos](./19-demos.md) | Provides adoption-facing demonstrations and runnable narratives | Demos accelerate onboarding and template validation | Keep examples synchronized with template ecosystem |
-| [20 — Documentation](./20-documentation.md) | Defines docs architecture and publishing standards | Documentation carries onboarding and migration guidance | Ensure progressive disclosure language remains consistent |
-| [23 — Coding Standards](./23-coding-standards.md) | Sets implementation discipline and quality norms | Standards affect template quality and assistant guidance | Ensure diagnostics and type safety constraints stay aligned |
-| [24 — Extensibility](./24-extensibility.md) | Governs extension boundaries and trust controls | Extensibility enables MCP-first tool publishing | Align registry policy, sandboxing, and trust metadata |
+| [Foundation](./foundation.md) | Establishes baseline architecture and runtime policy | Foundation constrains DX design choices | Keep Bun-only and single-package constraints aligned |
+| [TUI](./tui.md) | Defines terminal interaction patterns that complement studio workflows | TUI informs local developer interaction ergonomics | Align diagnostics language and trace affordances |
+| [Observability](./observability.md) | Defines trace and telemetry semantics extended here | Observability underpins diagnostics and studio visibility | Keep OpenTelemetry payload semantics consistent |
+| [Testing](./testing.md) | Defines core testing strategy expanded here for DX | Testing enables onboarding confidence and CI policy | Harmonize deterministic test posture and quality gates |
+| [Demos](./demos.md) | Provides adoption-facing demonstrations and runnable narratives | Demos accelerate onboarding and template validation | Keep examples synchronized with template ecosystem |
+| [Documentation](./documentation.md) | Defines docs architecture and publishing standards | Documentation carries onboarding and migration guidance | Ensure progressive disclosure language remains consistent |
+| [Coding Standards](./coding-standards.md) | Sets implementation discipline and quality norms | Standards affect template quality and assistant guidance | Ensure diagnostics and type safety constraints stay aligned |
+| [Extensibility](./extensibility.md) | Governs extension boundaries and trust controls | Extensibility enables MCP-first tool publishing | Align registry policy, sandboxing, and trust metadata |
 
 ### Delivery Acceptance Gates
 - All required sections in this file are present and populated with governance language.
@@ -643,4 +643,113 @@ flowchart TB
 
 ## Navigation
 ---
-Previous: [27 — Security & Compliance](./27-security-compliance.md) | Next: [29 — API Governance & Consumer Migration](./29-api-governance.md)
+
+## Test Specifications
+
+
+**Project onboarding behavior**:
+
+- Project creation flow is interactive and guides users through provider choice, use case, and framework integration selection.
+- Template selection prompts include clear language explaining the implications of each choice.
+- Generated project produces visible output on first run with mock provider and no cloud credentials.
+- Environment template defaults to local-first provider behavior and avoids accidental cloud coupling.
+- Template metadata identifies intended audience level for each template choice.
+- Onboarding recovery guidance enables first-time users to resolve setup issues without external support.
+
+**Progressive API tier behavior**:
+
+- Tier one provides zero-config happy-path behavior that produces useful outcomes without expert controls.
+- Tier two provides explicit configuration overrides for common production adjustments.
+- Tier three provides builder composition with middleware extensibility and lifecycle controls.
+- Tier transitions are incremental and preserve behavior clarity without requiring disruptive rewrites.
+- Beginners are never forced into expert controls to complete core tasks.
+- Discriminated union outcomes include stable identifiers and structured payload variants for safe narrowing.
+- Runtime validation failures map to documented error taxonomy categories.
+
+**Error taxonomy and diagnostics behavior**:
+
+- Error taxonomy provides at least fifteen distinct named error types covering all documented categories.
+- Every error is classified into one of at least eight semantic domains.
+- Every error is classified into one of three fault-origin categories: developer, framework, or external.
+- Every error message answers what happened, why it happened, and what should happen next.
+- Error identification uses stable discriminants that work across transpilation and bundling differences.
+- Step-level error isolation prevents one tool failure from terminating entire agent execution.
+- Partial success outcomes remain visible with structured failure records.
+- Recovery policies support retry, skip, and fallback decisions by error category.
+
+**Local development environment behavior**:
+
+- Ollama is supported as first-class local provider with documented primary provider path.
+- Mock provider mode requires zero API keys for local development and testing.
+- Core architecture is offline-capable for memory, tools, and tracing workflows.
+- Environment validation checks setup readiness and returns actionable guidance on missing prerequisites.
+- Provider switching requires only a single configuration decision point change.
+- Offline behavior degrades gracefully and reports precise missing capabilities.
+- Local provider behavior is parity-tested against cloud-backed providers for core flows.
+- Local data workflows use surqlize for SurrealDB interactions and Drizzle for PostgreSQL interactions with no raw query access.
+
+**Interactive development studio behavior**:
+
+- Local browser-based studio starts correctly and renders agent chat, trace viewer, and tool sandbox surfaces.
+- Agent chat interface supports real-time behavioral testing with streaming responses.
+- Step trace viewer displays timing data at both step granularity and end-to-end granularity.
+- Tool sandbox validates tools in isolation before agent attachment with schema validation.
+- Token usage and cost visibility differentiate estimated and observed values clearly.
+- Tracing activation requires zero configuration through middleware-based defaults.
+- Traces are stored locally and automatically excluded from source control workflows.
+
+**Testing utilities behavior**:
+
+- Mock provider returns fixture-based responses and supports streaming simulation behavior.
+- Mock provider supports controlled error injection for failure path testing.
+- Agent run simulation helper returns complete step trace for assertions.
+- Fixture recording mode captures real responses and replays deterministically.
+- Deterministic mode produces identical results across repeated runs with fixed temperature, seeded identifiers, and retry suppression.
+- Custom test matchers support expressive agent-specific assertions.
+- Fixture governance prohibits sensitive data capture in fixtures by default.
+- Recording cadence validation ensures fixtures do not drift from live provider behavior.
+
+**Template and starter ecosystem behavior**:
+
+- Template gallery provides all six required template creation flows (basic, tool-enabled, multi-agent, RAG, HITL, local-model-first) successfully.
+- Every template produces visible output on first run and includes adaptation notes for real deployment.
+- Every template aligns with Bun-only and single-package constraints.
+- Template lifecycle states (active, maintenance, archived) are enforced by governance.
+- Framework integration guidance covers Elysia and Hono while preserving framework-native patterns.
+- Standalone runnable examples are independently executable with declared dependencies.
+
+**AI coding agent integration behavior**:
+
+- AI coding agent skill definition loads with correct metadata and instruction payloads.
+- Lightweight metadata loads by default within a small token budget.
+- Full instruction set loads on demand when deeper guidance is needed.
+- Metadata layer includes core principles, safety constraints, and key terminology.
+- Drift detection identifies outdated assistant guidance before release publication.
+- Multi-assistant ecosystem support covers Claude Code, Cursor, and Gemini CLI.
+
+**TypeScript performance budget behavior**:
+
+- Type-checking performance stays within the defined budget with thirty or more tools configured.
+- Incremental edit feedback latency remains within acceptable bounds in common development flows.
+- Memory pressure under high-schema and high-tool workloads stays within governance limits.
+- Diagnostic latency for complex discriminated union outcomes remains responsive.
+- Regression thresholds trigger intervention before release promotion.
+
+**OpenTelemetry and observability integration behavior**:
+
+- OpenTelemetry export emits valid trace data to configured endpoints.
+- Export compatibility is verified against Langfuse, Braintrust, and Jaeger.
+- Trace schema captures step lifecycle, tool invocations, guardrail decisions, and error category metadata.
+- Local trace persistence supports short-loop debugging with easy cleanup.
+- Export behavior avoids coupling to a single vendor data model.
+- Instrumentation defaults are safe, informative, and low overhead.
+
+**Tool development workflow behavior**:
+
+- Tool sandbox executes tools in isolation with correct schema validation behavior.
+- Tool contracts define input and output schema expectations validated before agent attachment.
+- Trace replay reproduces specific executions with preserved timing and context metadata.
+- MCP-first publishing model produces publishable MCP server output per tool.
+- Tool metadata format includes ownership, maturity, trust level, and support policy.
+- Publishing readiness checks include security, reliability, and documentation validation.
+- Deprecated tools remain discoverable with migration guidance until retirement window closes.

@@ -1,4 +1,4 @@
-# 07 — Memory & Intelligence
+# Memory & Intelligence
 
 > **Scope**: A three-layer memory architecture combining thread short-term continuity, user short-term cross-thread carry-forward, and long-term user intelligence. Covers rolling summaries, resilient fact extraction with safeguards, emotional carry-forward, temporal fact state, contradiction-safe fact supersession, structured result memory, recall ranking, thread resurrection, user memory control, and context budget enforcement.
 >
@@ -117,7 +117,7 @@ Layer boundaries are strict:
 
 ### How it works
 
-The agent factory wiring in [05 — Conversation Pipeline](./05-conversation.md) injects a conversation store scoped by `userId` and `threadId`. Before each model call, the memory module loads the last ten turns plus the rolling summary and prepends them to context.
+The agent factory wiring in [Conversation Pipeline](./conversation.md) injects a conversation store scoped by `userId` and `threadId`. Before each model call, the memory module loads the last ten turns plus the rolling summary and prepends them to context.
 
 ```mermaid
 sequenceDiagram
@@ -1193,7 +1193,7 @@ flowchart LR
 
 ### Temporal-aware recall
 
-Temporal expressions resolved by [06 — Agents & Orchestration](./06-agents.md) are passed as `temporalHint` date ranges.
+Temporal expressions resolved by [Agents & Orchestration](./agents.md) are passed as `temporalHint` date ranges.
 
 ```mermaid
 flowchart TB
@@ -1494,10 +1494,10 @@ Emotional carry-forward can over-persist if decay is too long.
 
 | Component | Interaction |
 |-----------|------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines trust, controllability, and persistence constraints memory must satisfy |
-| **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
-| **Agents & Orchestration** ([06 — Agents & Orchestration](./06-agents.md)) | Defines tool invocation behavior, temporal expression resolution, and source-priority execution that consume memory context |
-| **Document Processing** ([08 — Document Processing](./08-documents.md)) | Coexists with memory recall in source fan-out and citation-aware synthesis |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines trust, controllability, and persistence constraints memory must satisfy |
+| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Provides request context wiring, stream completion callback, and rolling summary insertion points |
+| **Agents & Orchestration** ([Agents & Orchestration](./agents.md)) | Defines tool invocation behavior, temporal expression resolution, and source-priority execution that consume memory context |
+| **Document Processing** ([Document Processing](./documents.md)) | Coexists with memory recall in source fan-out and citation-aware synthesis |
 
 ---
 
@@ -1797,4 +1797,180 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ---
 
-*Previous: [06 — Agents & Orchestration](./06-agents.md) | Next: [08 — Document Processing](./08-documents.md)*
+## Test Specifications
+
+Memory tests span unit tests for individual operations and end-to-end tests for the complete three-layer lifecycle.
+
+**Thread short-term memory**:
+
+- Load last ten turns from conversation store scoped by user and thread identity.
+- Persist new turn after stream completes.
+- Drop turns outside sliding window from context but keep in storage.
+- Roll dropped turns into mandatory rolling summary.
+- Edge cases: first turn returns zero turns, exactly ten turns fit in window, eleventh turn triggers summary.
+
+**User short-term memory**:
+
+- Cross-thread loading: load messages from other threads scoped by user identity.
+- User-turn-only constraint: assistant messages are excluded from cross-thread loading.
+- Fade-out: injection stops after configured turn threshold.
+- Framing: injected context strictly for ambiguity resolution, not proactive mention.
+- Edge cases: no prior threads returns empty, user with many threads returns only configured limit.
+
+**Rolling summaries**:
+
+- Trigger on window overflow with incremental merge.
+- Token budget enforcement and compaction when exceeded.
+- Compaction priority: remove resolved items, collapse old detail, merge topics.
+- Summary preserves topic trajectory, decisions, entities, and open loops.
+- Summary excludes verbatim transcript and obsolete preferences.
+- Thread-summary retrieval operation returns current rolling summary for direct recap requests.
+
+**Thread resurrection**:
+
+- Gap detection exceeding configured threshold.
+- Entity extraction from rolling summary.
+- Memory recall triggered with extracted entities.
+- Staleness note injected.
+- Edge cases: just under gap threshold yields no resurrection, just over triggers it.
+
+**Fact extraction pipeline**:
+
+- User-only content: never extracts facts from assistant-originated content.
+- Attribution filter: self yields user fact, third_party yields interaction signal, general discarded.
+- Certainty filter: stated yields store, hypothetical or asked yields discard.
+- Sarcasm detection: inverts polarity from conversational context.
+- Temporal classification: PAST, PRESENT, FUTURE states.
+- Contradiction detection: attribute match plus semantic check triggers supersession.
+- Deduplication: cosine similarity at 0.92 threshold with exact boundary behavior.
+- Low-confidence fact rejection: extracted candidates below threshold are discarded.
+- Emotional context: extraction with decay counter, turn-by-turn decrement.
+- Interaction signals: search queries, discussed entities, user actions, temporal markers.
+- Media facts: vision description plus entity extraction from shared images.
+- Injection defense: classify candidate facts, reject instruction-like patterns.
+- Fire-and-forget: extraction failure logs error, skips extraction, persists short-term anyway.
+
+**Fact supersession and deduplication**:
+
+- Similarity search returns top five existing facts.
+- Below 0.7: add new fact independently. Between 0.7 and 0.92: check predicate match. At or above 0.92: skip as duplicate.
+- Predicate match with contradiction: supersede old fact with pointer and edge.
+- Predicate match without contradiction: coexist.
+- Superseded records kept for audit.
+- Recall excludes superseded facts by default.
+
+**Memory recall tool**:
+
+- Auto-trigger on first message in new thread.
+- Agent-controlled recall on subsequent turns.
+- Semantic search on facts, interactions, and media facts.
+- Graph traversal limited to two hops.
+- Temporal filter when hint provided.
+- Recency weighting: 24-hour 1.5x, 7-day 1.2x, beyond 7 days 1.0x.
+- TTL refresh on recalled records.
+
+**Memory control tools**:
+
+- Inspect: loads active facts grouped by type, excludes superseded, and covers interactions, media, and result sets.
+- Delete: search, show candidates, require confirmation, remove records and edges, purge cache, and delete related result sets.
+- Edge cases: zero matches returns explicit message, user decline cancels deletion.
+
+**Structured result memory**:
+
+- Result-set detection runs after responses that contain structured ordered outputs.
+- Structured result storage includes user scope, originating query, ordered results, source thread, and expiry metadata.
+- Seven-day TTL is applied to stored result sets with scheduled expiry cleanup.
+- Ordinal resolution maps phrases such as second and last to concrete items from recent result sets.
+- Out-of-range ordinal references return typed out-of-range errors.
+- Missing recent result set returns typed clarification guidance.
+- Cross-thread resolution is user-scoped and uses the most recent valid set.
+
+**Context window budget**:
+
+- Track usage across all layers.
+- Priority-based truncation order: system prompt (non-truncatable), current user message (non-truncatable), tool definitions (non-truncatable), last ten thread turns, rolling summary, recalled long-term memory, then user short-term cross-thread context.
+- Budget enforcement prevents context overflow.
+
+**Memory poisoning defense**:
+
+- Injection classifier at extraction time rejects instruction-like facts.
+- Recalled facts framed as zero-trust data-only content.
+- Periodic cleanup scans for injection patterns in stored facts.
+
+**Rolling summary compaction boundaries**:
+
+- Compaction applies strict priority order: remove resolved historical items first, then collapse older detail, then merge related historical topics.
+- Stable user preferences and explicit user decisions remain preserved through compaction even when token pressure is high.
+- Summary token cap is hard-enforced and compaction repeats until the summary is under the configured maximum.
+- Summary overflow never displaces non-summary core context segments.
+
+**Emotional context decay lifecycle**:
+
+- New emotional-state entries initialize with default five-turn decay when no custom setting is provided.
+- Decay decrements exactly once per user turn, not per assistant chunk or system event.
+- Emotional state remains active while decay is greater than zero and is injected only in that active period.
+- At decay equals zero, emotional state transitions to inactive state that is excluded from tone shaping.
+- Inactive emotional states remain queryable in audit and inspection outputs.
+
+**Interaction and media extraction precision**:
+
+- Interaction extraction persists temporal markers as first-class interaction context data.
+- Every interaction record stores created-at time and supports temporal recall filtering against that field.
+- Media extraction always produces a vision-derived semantic description before entity extraction.
+- Media entity extraction is derived from the semantic description and not from raw binary content.
+- Raw media bytes are never stored in long-term memory records.
+
+**Duplicate and correction boundaries**:
+
+- Exact cosine similarity at 0.92 is treated as duplicate and skipped.
+- Similarity just below 0.92 remains eligible for correction or coexistence logic.
+- Similarity at 0.70 enters related-fact branch and executes predicate-dimension checks.
+- Similarity below 0.70 always creates an independent fact without contradiction checks.
+
+**Stream failure and extraction guarantees**:
+
+- Partial or errored streams set the internal stream-error marker and skip long-term extraction.
+- Marker-driven extraction skip prevents storing malformed partial outputs as durable memory.
+- Short-term turn persistence still executes after stream error to preserve immediate continuity.
+- Extraction failure logging is internal only and does not alter user-facing stream result.
+
+**Structured result ordinal robustness**:
+
+- Ordinal resolution returns typed out-of-range failures when index is outside available result bounds.
+- Missing recent result-set context returns typed clarification response rather than generic failure.
+- Most-recent valid result set is chosen deterministically when multiple active sets exist.
+- Expired result sets are excluded from ordinal resolution candidate selection.
+
+**Recall TTL refresh semantics**:
+
+- Successful recall updates last-accessed timestamp on every returned record.
+- Successful recall refreshes each returned record expiry timestamp using record-type TTL.
+- Non-returned records do not receive TTL refresh side effects.
+- Refresh writes remain scoped to returned rows to avoid unintended lifetime extension.
+
+**Deletion atomicity and cache hygiene**:
+
+- Deletion is atomic at per-record granularity so each removed node also removes its attached edges in one unit.
+- Orphaned relationship edges are prevented across fact, interaction, and media deletion paths.
+- Cache purge executes as part of confirmed deletion flow before subsequent recall opportunities.
+- Related structured result-set cleanup runs in the same confirmed deletion transaction scope.
+
+**Memory-intent execution ordering**:
+
+- Memory loading phase for thread, cross-thread, and long-term layers completes before intent validation phase begins.
+- Intent detection never recursively re-enters memory loading in the same request cycle.
+- Two-phase memory-then-intent contract remains stable for both first-turn auto-recall and later tool-triggered recall.
+
+**Context budget protection**:
+
+- Core non-truncatable segments remain protected under all overflow conditions.
+- Truncation order is enforced exactly and lower-priority cross-thread context is reduced before long-term recall is truncated.
+- Long-term recall respects configured recall-token cap before any non-truncatable segments are considered.
+- Budget enforcement rejects only when non-truncatable core alone exceeds total budget.
+
+**Communication style memory influence on response tone**:
+
+- Communication style memory persists learned user communication preferences.
+- Emotional cue activates short-lived tone context that influences response tone calibration.
+- Active emotional state is injected into response context during its active decay window.
+- Inactive emotional states stop influencing tone and are excluded from response context injection.

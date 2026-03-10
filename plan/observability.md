@@ -1,4 +1,4 @@
-# 14 — Observability
+# Observability
 > **Scope**: Langfuse integration via the `@openai/agents` framework tracing exporter interface and direct Langfuse SDK usage, complete trace lifecycle instrumentation, span taxonomy, custom observability spans for guardrails, retrieval, file processing, and memory operations, user feedback scoring, prompt management, production logging strategy, dashboard and alerting design, cost tracking metrics, and Promptfoo self-test infrastructure.
 >
 > **Tasks**: LANGFUSE_MODULE (Langfuse Observability Module), CUSTOM_SPANS (Custom Observability Spans), FEEDBACK_ENDPOINT (User Feedback Endpoint), PROMPT_MGMT (Langfuse Prompt Management), EVAL_CONFIG (Eval/Scoring Configuration), SELF_TEST (Self-Test Infrastructure)
@@ -183,7 +183,7 @@ Scores can attach to traces (user feedback) or to specific spans (guardrail verd
 
 ### Trace-Step Events and Langfuse Correlation
 
-Trace-step SSE events (defined in [11 — Streaming & Transport](./11-transport.md)) are a real-time subset of Langfuse trace data, projected through the streaming layer for frontend visualization. Both share the same traceId: the engine generates a traceId per request, includes it in the `session-meta` SSE event, and uses it for Langfuse trace creation. This means:
+Trace-step SSE events (defined in [Streaming & Transport](./transport.md)) are a real-time subset of Langfuse trace data, projected through the streaming layer for frontend visualization. Both share the same traceId: the engine generates a traceId per request, includes it in the `session-meta` SSE event, and uses it for Langfuse trace creation. This means:
 
 - Each trace-step event corresponds to a custom span or generation in Langfuse.
 - The frontend trace timeline and the Langfuse dashboard show the same pipeline execution from different perspectives — real-time streaming vs post-hoc analysis.
@@ -648,14 +648,14 @@ The schema is extensible so domain programs can append controlled metadata witho
 ### Immutable Provenance Storage
 Provenance entries are append-only and immutable after creation. Storage policy follows WORM constraints to prevent post-hoc alteration. Integrity is tamper-evident through chained cryptographic digests or Merkle-style commitment structures so any mutation attempt is detectable during audit.
 
-Provenance storage is isolated from operational logs. Operational logs support debugging and reliability analysis; provenance is a compliance artifact designed for legal transparency and evidentiary workflows. Retention windows follow regulatory obligations and data minimization requirements, coordinated with GDPR handling and EU AI Act documentation duties (see [27 — Security & Compliance](./27-security-compliance.md)).
+Provenance storage is isolated from operational logs. Operational logs support debugging and reliability analysis; provenance is a compliance artifact designed for legal transparency and evidentiary workflows. Retention windows follow regulatory obligations and data minimization requirements, coordinated with GDPR handling and EU AI Act documentation duties (see [Security & Compliance](./security-compliance.md)).
 
 When persistence spans multiple data systems, PostgreSQL persistence uses Drizzle and SurrealDB persistence uses surqlize to keep governance and audit behavior consistent across storage backplanes.
 
 ### Prompt Revision Registry
 Every prompt template is registered by content hash so each historical output can be tied to the exact prompt revision used at generation time. The registry provides deterministic prompt reconstruction for audits, dispute resolution, and policy reviews.
 
-This registry integrates with PromptOps governance defined in [26 — AI Operations](./26-ai-operations.md), ensuring prompt change controls, approvals, and release documentation remain connected to downstream provenance records.
+This registry integrates with PromptOps governance defined in [AI Operations](./ai-operations.md), ensuring prompt change controls, approvals, and release documentation remain connected to downstream provenance records.
 
 ### Reasoning Chain Capture
 High-stakes decisions require reasoning-chain capture beyond final text output. Capture depth is risk-tiered:
@@ -691,13 +691,13 @@ Together they provide both fast incident diagnosis and defensible transparency r
 ## Cross-References
 | Component | Interaction |
 |-----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines reliability, safety, privacy, and quality targets that observability validates continuously. |
-| **Conversation Pipeline** ([05 — Conversation Pipeline](./05-conversation.md)) | Trace and span taxonomy maps directly to pipeline stages and classification outcomes. |
-| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
-| **Server** ([12 — Server Implementation](./12-server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
-| **Infrastructure** ([15 — Infrastructure](./15-infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
-| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Trace visualization components consume trace-step events correlated with Langfuse traces via shared traceId. Frontend feedback hooks submit scores to Langfuse through the feedback endpoint. |
-| **Demo Applications** ([19 — Demo Applications](./19-demos.md)) | Both demos implement feedback submission (traceId-linked), verbosity toggle (triggers trace-step event emission), and trace timeline rendering — all flowing into Langfuse observability. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines reliability, safety, privacy, and quality targets that observability validates continuously. |
+| **Conversation Pipeline** ([Conversation Pipeline](./conversation.md)) | Trace and span taxonomy maps directly to pipeline stages and classification outcomes. |
+| **Agents** ([Agents & Orchestration](./agents.md)) | Agent runtime consumes tracing helpers and emits lifecycle traces for every run. |
+| **Server** ([Server Implementation](./server.md)) | Server wiring provides feedback ingestion, score submission, and trace ownership checks. |
+| **Infrastructure** ([Infrastructure](./infrastructure.md)) | Deployment topology hosts Langfuse services, storage dependencies, and alert routing infrastructure. |
+| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Trace visualization components consume trace-step events correlated with Langfuse traces via shared traceId. Frontend feedback hooks submit scores to Langfuse through the feedback endpoint. |
+| **Demo Applications** ([Demo Applications](./demos.md)) | Both demos implement feedback submission (traceId-linked), verbosity toggle (triggers trace-step event emission), and trace timeline rendering — all flowing into Langfuse observability. |
 | **Circuit Breaker** (CIRCUIT_BREAKER) | Prompt manager wraps remote fetches with the circuit breaker to avoid repeated latency spikes during Langfuse outages. |
 ---
 ## Task Specifications
@@ -740,7 +740,7 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Create guardrail without scoring helper (undefined) → process input → assert no error, guardrail works normally, no span/score creation attempted
 - Execute file processing with mock observability → assert `file.process` parent span → assert `file.summarize` child span captures page count and token total
 ---
-> **FEEDBACK_ENDPOINT** — canonical task specification is in [12 — Server Implementation](./12-server.md#task-feedback_endpoint-feedback-endpoint). The server route wires Langfuse score submission to the HTTP layer. See also LANGFUSE_MODULE for the scoreHelper dependency.
+> **FEEDBACK_ENDPOINT** — canonical task specification is in [Server Implementation](./server.md#task-feedback_endpoint-feedback-endpoint). The server route wires Langfuse score submission to the HTTP layer. See also LANGFUSE_MODULE for the scoreHelper dependency.
 ---
 ### Task PROMPT_MGMT: Langfuse Prompt Management Integration
 **What to do**: Build prompt management factory returning a prompt manager with startup preload, prompt fetch, manual refresh, and cache stats methods. Startup preload fetches configured prompt keys from the Langfuse API at startup and hydrates an in-memory cache with per-entry expiry. Prompt fetch serves cached prompts with variable interpolation (`{{var}}` tokens) and strict missing-variable checks. On cache miss or expiry, attempt refresh then fall back to local prompts from `fallbackPrompts` config. Wrap remote fetches with the CIRCUIT_BREAKER circuit breaker to avoid repeated latency spikes. Use request-abort controls to bound network calls. Never fail startup when Langfuse is unavailable and fallback prompts exist. Never expose Langfuse secret key in logs or error messages. Export via subpath barrel.
@@ -797,4 +797,139 @@ Together they provide both fast incident diagnosis and defensible transparency r
 - Promptfoo documentation: https://promptfoo.dev/docs
 - Promptfoo custom providers: https://promptfoo.dev/docs/providers/custom-api
 ---
-*Previous: [13 — TUI App](./13-tui.md) | Next: [15 — Infrastructure](./15-infrastructure.md)*
+
+
+## Test Specifications
+
+**Langfuse integration**:
+
+- Tracing exporter translates framework trace and span events into Langfuse API calls.
+- Automatic span creation for agent runs, LLM generations, tool calls, guardrails, handoffs.
+- Custom domain spans added for input guardrail, output guardrail, RAG pipeline, file processing, memory operations.
+- No-op behavior when Langfuse not configured: all consumers work without null checks.
+
+**Trace lifecycle**:
+
+- Every agent interaction produces trace.
+- Trace identifier is shared between SSE events and Langfuse traces.
+- Verbosity controls SSE emission only, Langfuse always receives full trace.
+
+**PII redaction**:
+
+- Two-layer pipeline: deterministic entity detection plus structured-output LLM review.
+- Default-on in production.
+- Confidence failures route to quarantine.
+- Redaction counters and reason tags visible for audit.
+
+**User feedback**:
+
+- Trace ownership validation prevents cross-user score submission.
+- Binary score (zero or one) attached to trace.
+- Rate limiting: ten requests per user per minute.
+- Graceful handling when Langfuse absent: 200 response with traced false.
+
+**Prompt management**:
+
+- Startup preload from Langfuse with cache hydration.
+- Variable interpolation with strict missing-variable checks.
+- Stale-while-revalidate semantics on cache expiry.
+- Circuit breaker prevents repeated latency spikes.
+- Langfuse outage at startup loads fallback prompts.
+- Langfuse outage at runtime falls back to local prompt.
+
+**Self-test infrastructure**:
+
+- Promptfoo subprocess spawning with ephemeral server.
+- Config generation and result parsing.
+- Clean dependency boundary: no Promptfoo library import.
+
+**Framework tracing and exporter registration**:
+
+- Framework auto-traces agent runs and exports them into Langfuse under the active trace.
+- Framework auto-traces model generations with token and latency metadata.
+- Framework auto-traces tool calls and tool outcomes with proper parent linkage.
+- Framework auto-traces guardrail checks and severity outcomes.
+- Framework auto-traces handoff transitions with source and destination identities.
+- Exporter is registered through framework batch trace processor path rather than ad-hoc per-event flush wiring.
+- Batch processor registration honors lifecycle flush on process shutdown.
+
+**Realtime mode and sampling policy**:
+
+- Realtime flushing defaults enabled in development mode.
+- Realtime flushing defaults disabled in production mode.
+- Explicit realtime override in config takes precedence over environment default.
+- Ratio sampling accepts valid probability ranges and rejects invalid ranges.
+- Ratio sampling honors configured probability under repeated request sampling runs.
+- Custom sampling mode invokes caller sampler function per trace-decision point.
+- Always sampling mode traces every eligible request without skipping.
+
+**Custom span and score specifics**:
+
+- Input guardrail span records boolean pass score true for safe outcomes.
+- Input guardrail span records boolean pass score false for blocked outcomes.
+- Input guardrail blocked path emits blocked score signal with concept metadata.
+- Input guardrail flagged path emits flagged score signal with concept metadata.
+- Streaming guardrail span records boolean pass score on safe stream completion.
+- Streaming guardrail tripwire path emits tripwire score when abort path is triggered.
+- RAG parent span emits child span set matching indexed query mode.
+- RAG parent span emits child span set matching rag query mode.
+- File processing parent span emits child spans matching indexed processing path.
+- File processing parent span emits child spans matching rag-mode processing path.
+- DOCX conversion emits dedicated conversion span with conversion duration metadata.
+- Memory-operation parent span emits store-fact child span when extraction persists facts.
+- Memory-operation parent span emits search child span for recall lookups.
+- Memory-operation parent span emits graph-traverse child span when relation traversal occurs.
+- Memory-operation parent span emits expire-stale child span when cleanup path runs.
+- Guardrail flag callback factory output is compatible with guardrail pipeline flag callback contract.
+- Span helpers perform no-op behavior when score helper is undefined.
+
+**Feedback endpoint robustness**:
+
+- Trace-owner check prevents score submission across user boundaries.
+- Feedback rate limit enforces ten requests per user per minute.
+- Rate-limit response returns deterministic denial without partial score write.
+- Langfuse-disabled mode returns success with `traced` false indicator and no error.
+- Langfuse-enabled mode returns success with score attached to trace.
+
+**Prompt management reliability**:
+
+- Startup preload fetches all configured prompt keys before first request handling.
+- Missing configured prompt key at preload records warning and keeps fallback availability.
+- Prompt interpolation succeeds when all required variables are provided.
+- Missing interpolation variable triggers strict failure rather than silent placeholder leakage.
+- Cache entry remains fresh until TTL boundary and serves cached compiled prompt.
+- Expired cache entry triggers refresh attempt and updates cache on success.
+- Network fetch failure falls back to local prompt without blocking request path.
+- Repeated upstream failures trigger circuit-breaker open behavior.
+- Circuit-open state avoids repeated high-latency remote attempts.
+- Secret-bearing values are redacted from logs and surfaced errors.
+
+**Eval configuration and provider factory**:
+
+- Scorer-config builder outputs valid scorer config for ratio sampling mode.
+- Scorer-config builder outputs valid scorer config for always mode.
+- Scorer-config builder outputs valid scorer config for custom predicate mode.
+- Eval-provider factory wraps agent in Promptfoo-compatible provider contract.
+- Provider call executes agent run and returns output with usage metadata.
+- Evaluation runner starts HTTP service on random assigned port.
+- Generated Promptfoo config references correct ephemeral HTTP provider URL.
+- Runner shuts down HTTP service cleanly on completion or timeout.
+
+**Self-test runner integration**:
+
+- Self-test runner generates valid Promptfoo config from provided test-case matrix.
+- Generated self-test config preserves per-case assertions and expected output fields.
+- Self-test flow parses Promptfoo output into structured pass and fail result shape.
+- Self-test flow cleans temporary artifacts and ephemeral server resources after completion.
+
+### Extension: Content Provenance
+
+- Provenance records are created for every agent output.
+- Provenance schema includes all required fields: output identifier, model identifier, prompt hash, context chunks, tool results, and timestamps.
+- Immutable storage rejects modification attempts on existing records.
+- Hash-chain integrity verification detects tampering.
+- Prompt revision registry resolves historical prompts by content hash.
+- Reasoning-chain capture respects configured depth levels (minimal, standard, full).
+- GDPR export includes all provenance records for a given user.
+- EU AI Act transparency reporting generates valid output.
+- Provenance records link correctly to Langfuse trace spans.

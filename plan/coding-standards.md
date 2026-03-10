@@ -1,4 +1,4 @@
-# 23 — Coding Standards, Linting, Formatting, and Type-Checking
+# Coding Standards, Linting, Formatting, and Type-Checking
 
 > Scope: Coding standards, linting, formatting, and type-checking enforcement for both safeagent library and server projects using lintmax at maximum strictness.
 > Tasks: CODE_STANDARDS (Coding Standards and Enforcement Infrastructure)
@@ -562,4 +562,59 @@ flowchart LR
 
 ## Navigation
 
-*Previous: [22 — Monitoring & Alerting](./22-monitoring.md) | Next: [24 — Extensibility](./24-extensibility.md)*
+## Test Specifications
+
+
+**Enforcement pipeline behavior**:
+
+- All six tools execute in deterministic order during fix operations.
+- Check mode validates without modifying any files.
+- Fix mode is idempotent on a codebase with no violations.
+- CI quality gate rejects any change containing lint, format, or type failures.
+- Pipeline covers all supported file types: TypeScript, JavaScript, JSX, TSX, CSS, JSON, Markdown.
+
+**Biome enforcement behavior**:
+
+- All Biome rule categories are active at error severity.
+- Dynamically generated configuration includes newly added rules automatically.
+- Formatting violations are caught and fixable: indentation, quotes, semicolons, trailing commas, bracket placement.
+- Framework domain rules are active for React, Next.js, and Tailwind contexts.
+
+**oxlint enforcement behavior**:
+
+- All seven oxlint categories are active at error severity: correctness, performance, style, pedantic, restriction, suspicious, nursery.
+- All plugin domains are enabled and producing diagnostics.
+- Kebab-case file naming is enforced.
+- Capitalized comments are enforced.
+
+**ESLint type-aware enforcement behavior**:
+
+- Type-checked rules require TypeScript project references and produce type-aware diagnostics.
+- All warning-level rules from plugins are promoted to error severity.
+- Arrow function preference with implicit returns is enforced.
+- Consistent type import syntax is enforced with separate type imports.
+- Import, type, and interface sorting follows natural ordering.
+- Sorted JSX props are enforced in TSX files.
+- Unused inline disable comments are flagged as errors.
+
+**TypeScript strictness behavior**:
+
+- Strict mode is active with all family checks enabled.
+- Unchecked indexed access requires null checking.
+- Override keyword is required for overridden members.
+- Switch cases must break or return without fallthrough.
+- Module syntax matches runtime behavior under verbatim module syntax.
+- Each file is independently compilable under isolated modules.
+
+**Rule exception governance behavior**:
+
+- Project-specific exceptions are configured through the override system with documented justification.
+- Inline disable comments for non-existent rules are flagged as errors.
+- Exception audit detects stale overrides no longer needed.
+- New exceptions require review approval before activation.
+
+**Markdown and manifest formatting behavior**:
+
+- Markdown files are formatted through Prettier.
+- Markdown prose wrapping produces diff-friendly output through Flowmark.
+- Package manifest field ordering is deterministic and consistent.

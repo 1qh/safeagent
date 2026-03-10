@@ -1,4 +1,4 @@
-# 02 — Research & Decisions
+# Research & Decisions
 
 > **This document is the complete research record.** Every spike finding, Metis review item, finalized discussion decision, and architectural choice that shaped the system is captured here. Other plan files reference this document for the "why" behind their design. Nothing in this document is speculative — every item was validated, reviewed, or explicitly decided.
 
@@ -811,4 +811,4 @@ Every implementation task installs dependencies with `bun add <package>` (no dep
 
 ---
 
-*Previous: [01 — Requirements & Constraints](./01-requirements.md) | Next: [03 — System Architecture](./03-architecture.md)*
+

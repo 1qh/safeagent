@@ -1,4 +1,4 @@
-# 10 — Guardrails & Safety
+# Guardrails & Safety
 
 > **Scope**: Input and output guardrail system, severity levels, GuardMode behavior, zero-leak buffered mode, guardrail authoring factories, pipeline orchestration, and integration with the `@openai/agents` framework guardrail system.
 >
@@ -926,12 +926,12 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines non-negotiable safety constraints, policy boundaries, and quality targets that this guardrail architecture must enforce. |
-| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Provides the conversation lifecycle and intent-stage outputs that LANG_GUARD Post-Intent Gate uses for intended output language enforcement. |
-| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Wires guardrail processors into agent creation and orchestrator synthesis so safety checks run before and during responses. |
-| **Retrieval & Evidence** ([09 — Retrieval & Evidence](./09-retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
-| **Streaming & Transport** ([11 — Streaming & Transport](./11-transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
-| **Server** ([12 — Server Implementation](./12-server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines non-negotiable safety constraints, policy boundaries, and quality targets that this guardrail architecture must enforce. |
+| **Conversation** ([Conversation Pipeline](./conversation.md)) | Provides the conversation lifecycle and intent-stage outputs that LANG_GUARD Post-Intent Gate uses for intended output language enforcement. |
+| **Agents** ([Agents & Orchestration](./agents.md)) | Wires guardrail processors into agent creation and orchestrator synthesis so safety checks run before and during responses. |
+| **Retrieval & Evidence** ([Retrieval & Evidence](./retrieval.md)) | Separates evidence sufficiency decisions from safety guardrails while feeding grounded content into the guarded synthesis path. |
+| **Streaming & Transport** ([Streaming & Transport](./transport.md)) | Defines stream event behavior for tripwire signaling, fallback injection, and production-safe output suppression semantics. |
+| **Server** ([Server Implementation](./server.md)) | Owns ConceptRegistry mappings, pipeline configuration, and observability sinks that consume `onFlag` events and p0/p1 traces. |
 
 ---
 
@@ -1160,4 +1160,214 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ---
 
-*Previous: [09 — Retrieval & Evidence](./09-retrieval.md) | Next: [11 — Streaming & Transport](./11-transport.md)*
+
+## Test Specifications
+
+**Input guardrail pipeline**:
+
+- All guardrails run in parallel, all verdicts collected before aggregation.
+- Worst-wins aggregation: p0 > p1 > p2.
+- p0 triggers abort and tripwire, p1 triggers flag callback with message pass-through, p2 passes silently.
+- Empty guardrail array means message always passes.
+- No short-circuit on first p0 (all verdicts collected).
+- Error in individual guardrail propagates, stream terminates.
+
+**Injection detection ensemble**:
+
+- Tier one heuristic: regex-driven detection of role-override, delimiter injection, encoding obfuscation, imperative patterns.
+- Tier two ML classification: trained injection classifier.
+- Tier three LLM-as-judge: lightweight judge model with structured output.
+- All tiers run in parallel.
+- Tool-risk-dependent judge execution: read-only side effects allow parallel judge execution, write or destructive risk enforces blocking judge execution.
+- Decision logic: LLM-alone blocks, two-tier triggers flag, single non-LLM passes.
+- Edge cases: only tier one triggers yields pass, tier one plus tier two yields flag, tier three alone yields block.
+
+**Output guardrail sliding window**:
+
+- Configurable buffer size, default fifty tokens.
+- Per-chunk evaluation against all output guardrails.
+- Production mode: p0 suppresses all remaining chunks, injects fallback.
+- Development mode: p0 throws tripwire exception.
+- Multi-token patterns spanning chunk boundaries caught by sliding window.
+
+**Output-side injection detection**:
+
+- System prompt leakage: fingerprint-based matching catches verbatim and paraphrased leakage.
+- Attention collapse: flag responses over-indexing on single chunk.
+
+**Zero-leak buffered mode**:
+
+- Buffer phase holds configured token count server-side.
+- Violation during buffer: suppress entire buffer, zero bytes sent, inject fallback.
+- Buffer full with no violation: flush and switch to streaming with sliding window.
+- Zero buffer size behaves equivalently to unbuffered streaming mode.
+
+**Guardrail factories**:
+
+- Regex: patterns plus concept plus severity yields guardrail function.
+- Keyword: keywords plus concept plus severity yields guardrail function, case-insensitive matching.
+- LLM: classifier callback plus concept yields guardrail function.
+- External moderation: endpoint plus concept plus failure mode yields guardrail function.
+- External open failure mode: network errors return p2 with warning.
+- External closed failure mode: network errors return p0.
+- Composite: constituents run in parallel, worst-wins aggregation.
+- All factories return identical function signature.
+
+**Language guard**:
+
+- Opt-in behavior: disabled by default and only active when explicitly configured.
+- Fast detect: eld detection with confidence threshold.
+- Post-intent gate: read intended output language from intent result.
+- Output scanner: catch unsupported-language drift mid-stream with dominance thresholding.
+- Edge cases: translation intent, mixed language with place names, short text below minimum length.
+
+**Hate speech guard**:
+
+- Opt-in behavior: disabled by default and only active when explicitly configured.
+- English engine: obscenity library with leet-speak, Unicode confusables, repetition handling.
+- Multilingual engine: profanity library with Unicode word boundaries across supported languages.
+- LDNOOBW supplement for thinner language coverage.
+- Both engines run in parallel, any match returns p0.
+
+**Escalation detection**:
+
+- Sliding window anomaly scoring across turns.
+- Behavioral signals: privilege escalation phrases, topic drift from session intent, tool call velocity anomalies, argument drift.
+
+**Memory-deletion cache purge**:
+
+- After memory deletion, Valkey embedding-cache entries referencing deleted facts are purged before subsequent recall.
+
+**Escalation monitor turn-window behavior**:
+
+- Escalation monitor updates sliding-window risk score on every user turn.
+- Risk score window evicts oldest turn signals when window length is exceeded.
+- Privilege-escalation phrases, topic drift, tool-call velocity spikes, and argument drift each contribute to score updates.
+- Repeated medium-risk turns can accumulate into higher-severity outcomes through window aggregation.
+
+**Injection fast-reject timing**:
+
+- Heuristic tier executes as fast-reject path before waiting on slower classifier tiers.
+- Fast-reject signaling is observable in timing metrics and short-circuits dangerous payload progression.
+- Fast-reject behavior remains active even when ML or judge tiers are degraded.
+- Fast-reject does not bypass final worst-wins aggregation semantics.
+
+**Tier performance and recall targets**:
+
+- Heuristic tier recall target is approximately 60 percent for known pattern families.
+- ML tier recall target is approximately 80 percent for broader injection families.
+- Judge tier recall target is approximately 85 percent or better for adaptive attacks.
+- Test datasets include adversarial and benign sets to verify target behavior ranges.
+
+**Blocking versus parallel judge modes**:
+
+- Read-only tool plans allow judge tier to run in parallel mode.
+- Write-capable or destructive tool plans force blocking judge mode before execution.
+- Mode selection is configurable and testable per tool-risk category.
+- Configuration mistakes cannot silently downgrade destructive paths to parallel mode.
+
+**Three-tier decision matrix coverage**:
+
+- Judge-only trigger returns block even when other tiers pass.
+- Any two-tier trigger combination returns flag when judge tier is not blocking.
+- Single non-judge trigger returns pass with optional telemetry.
+- Zero-tier trigger returns clean pass.
+- Matrix tests cover all eight boolean trigger combinations.
+
+**Output sliding window guarantees**:
+
+- Output window default is fifty tokens and can be overridden per pipeline configuration.
+- Window trimming keeps latest text slice only and preserves detection continuity across chunk boundaries.
+- Window-size overrides do not alter severity semantics or fallback behavior.
+- Non-text chunks bypass scanning without mutating text window state.
+
+**Buffered-mode latency behavior**:
+
+- Buffer fill delay follows buffer-size divided by token-throughput estimate.
+- Measured first-token delay aligns with configured buffer size and observed stream rate.
+- Latency overhead is bounded and reported in buffered-mode performance tests.
+- Buffer-size tuning tests validate security versus latency trade-off table claims.
+
+**Production suppression permanence**:
+
+- Once production output p0 fires, all subsequent model chunks for that stream remain permanently suppressed.
+- Fallback injection occurs once per violating stream and no additional unsafe chunks leak afterward.
+- Suppression permanence holds even if later chunks would have passed guardrails.
+
+**Zero-leak buffer invariants**:
+
+- Default zero-leak buffer size is fifty tokens unless explicitly overridden.
+- Any p0 during preflush buffer phase guarantees zero model bytes are emitted to clients.
+- Buffer-size zero mode is behaviorally equivalent to standard unbuffered streaming.
+- Concurrent zero-leak streams maintain isolated buffers with no cross-stream contamination.
+
+**Factory behavior contracts**:
+
+- Regex-based factory executes synchronously with near-zero added latency.
+- Keyword-based factory executes synchronously with case-insensitive matching.
+- Judge-based factory defaults to primary model when no alternate classifier model is configured.
+- External moderation factory enforces explicit fail-open or fail-closed behavior on transport errors.
+- Composite factory default aggregation mode is worst-wins when no custom strategy is provided.
+
+**Language-guard enforcement specifics**:
+
+- Language detection uses eld for both fast input check and streaming output drift check.
+- Input fast stage may constrain detection language subset to supported outputs.
+- Post-intent language gate is enforced as a separate gate after intent resolution and before orchestration.
+- Output drift stage uses unrestricted detection and compares dominant language against supported list.
+- Dominance threshold requires unsupported language to exceed fifty percent of window characters before p0.
+- Short unsupported fragments inside supported-language output do not trigger blocking.
+- Translation-intent, mixed-language ambiguity, named-entity foreign fragments, and short-text cases each have dedicated matrix tests.
+
+**Hate-speech engine specifics**:
+
+- English engine includes 70 pattern families with confusable, leet, and repetition normalization.
+- Multilingual engine includes 3739-word profanity corpus coverage.
+- Vietnamese seed additions are loaded and enforced with the same blocking semantics.
+- English and multilingual engines run in parallel for both input and output scans.
+- Any single-engine match returns p0 block.
+
+**Pipeline orchestrator guarantees**:
+
+- Orchestrator supports framework parallel-run mode for input guardrails by default.
+- Guard-mode precedence is pipeline-level override, then agent-level setting, then default development.
+- Default behavior without explicit mode remains development.
+- Returned input and output arrays remain framework-compatible for direct wiring.
+- Security ordering is invariant: input checks before orchestration, output checks before client emission.
+
+**Memory deletion guardrail lifecycle**:
+
+- Guardrail triggers after successful memory-deletion execution.
+- Deleted fact identifiers are used to query cache keys requiring purge.
+- Matching cache entries are purged before next recall cycle can run.
+- Purge action writes auditable log record with deletion context.
+- Guardrail runs as post-execution output-stage enforcement.
+
+**Multi-guardrail p0 tie-breaking**:
+
+- Worst-severity aggregation selects p0 over p1 and p2 in all mixed-result sets.
+- If multiple p0 verdicts exist, concept identifier comes from first p0 by configured guardrail array order.
+- Server-controlled guardrail ordering therefore controls deterministic p0 concept selection.
+- Tie-breaking is identical for input and output aggregation paths.
+
+### Extension: Code Execution Sandboxing
+
+- All model-generated code execution runs in an isolated sandbox environment.
+- Direct execution on application servers is disallowed by default.
+- Isolation controls cover process, filesystem, memory, and network boundaries.
+- Provider-agnostic sandbox capability layer supports code execution, file upload and download, lifecycle management, and deterministic cleanup.
+- Sandbox prevents secret leakage from host or control-plane environments.
+- Resource exhaustion controls prevent runaway compute and disk growth.
+- Escape-resistant boundaries reduce container and VM breakout risk.
+- Outbound and inbound network access is restricted to an explicit allowlist.
+- Resource limits are configurable per sandbox instance for CPU, memory, disk, and network quotas.
+- Maximum execution duration is enforced with hard termination at timeout.
+- File transfer flows enforce size limits, content validation, and policy checks before acceptance.
+- Ephemeral lifecycle creates per execution and destroys after completion by default.
+- Persistent lifecycle is available only for approved multi-step workflows requiring state continuity.
+- Framework emits prominent runtime warning if code execution is requested without a configured sandbox provider.
+- Insecure execution path requires explicit opt-out acknowledgment before execution continues.
+- Warning and acknowledgment events are captured in audit telemetry.
+- Every code execution produces an audit trail containing request metadata, inputs, outputs, policy decisions, and resource usage.
+- Sandbox compute costs are attributed to the requesting agent, user, and tenant for budget governance.
+- Sandboxes may expose MCP servers so sandbox capabilities are available as agent tools.

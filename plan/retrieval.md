@@ -1,4 +1,4 @@
-# 09 — Retrieval & Evidence
+# Retrieval & Evidence
 
 > **Scope**: Unified retrieval, evidence validation, file resolution, visual grounding, structured citations, and anti-hallucination architecture for document-grounded answers.
 >
@@ -1242,10 +1242,10 @@ flowchart TD
 
 | Component | Relationship |
 |-----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
-| **Conversation** ([05 — Conversation Pipeline](./05-conversation.md)) | Orchestration registers the document search tool, applies context-aware file resolution, and invokes post-gate generation. |
-| **Documents** ([08 — Document Processing](./08-documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
-| **Transport** ([11 — Streaming & Transport](./11-transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines quality targets, grounding guarantees, and response correctness constraints that retrieval and evidence must satisfy. |
+| **Conversation** ([Conversation Pipeline](./conversation.md)) | Orchestration registers the document search tool, applies context-aware file resolution, and invokes post-gate generation. |
+| **Documents** ([Document Processing](./documents.md)) | Produces page summaries, raw text enrichment, page images, and metadata consumed by retrieval and evidence gating. |
+| **Transport** ([Streaming & Transport](./transport.md)) | Streaming and transport semantics determine how structured evidence-backed responses and refusals are delivered. |
 
 ---
 
@@ -1424,4 +1424,167 @@ flowchart TD
 
 ---
 
-*Previous: [08 — Document Processing](./08-documents.md) | Next: [10 — Guardrails & Safety](./10-guardrails.md)*
+
+## Test Specifications
+
+**Hybrid search with RRF**:
+
+- Three-arm fusion: summary vector, raw vector, keyword tsvector.
+- Over-fetch 40 candidates per arm, RRF with k=50 smoothing.
+- Group by file_id and page_number before score aggregation.
+- Return top 10 pages.
+- Cross-arm agreement dominates single-arm dominance.
+- All arms execute through Drizzle-composed queries.
+
+**Graceful degradation**:
+
+- Summary-only mode: arms two and three return zero rows, arm one provides results.
+- Enriched mode: all three arms contribute.
+- Same user flow regardless of enrichment status.
+
+**Content sanitization**:
+
+- Injection pattern classifier evaluates each retrieved chunk.
+- Strip external image embeds, dynamic URL patterns, hidden markup.
+- Wrap chunks with explicit data-only boundaries.
+- Latency cost approximately 50-100ms per retrieval.
+
+**Structured citations**:
+
+- Attribute-first generation: plan citations before prose.
+- Citation fields: source, file identifier, page, quote, scope, images.
+- Presigned URLs with seven-day TTL.
+- Quotes verbatim from raw text when available, summary-derived when summary-only.
+
+**Evidence bundle gate**:
+
+- Sufficiency scoring: coverage 0.4, confidence 0.4, completeness 0.2 weights.
+- Gate open: plan citations and generate prose.
+- Gate closed: hard refusal, soft caveat, or clarification per config.
+- Thresholds configurable per topic.
+
+**FileRegistry**:
+
+- Temporal reference resolution: yesterday, last week, recently.
+- Ordinal reference resolution: third document, first PDF.
+- Named reference: fuzzy match against filenames.
+- Timezone handling: user timezone from request header, UTC fallback.
+- Ambiguity: ask user to clarify, no arbitrary guess.
+- Cache invalidation on deletion or status changes.
+
+**Cross-conversation RAG**:
+
+- Thread scope versus global scope.
+- Scope boost: thread results at full score, global at 0.85x multiplier.
+- Global scope never crosses user boundaries.
+
+**Anti-hallucination architecture**:
+
+- Four-layer verification: FileRegistry resolution, evidence gate, attribute-first citations, transparent refusal.
+- Phantom file reference caught at layer one.
+- Weak evidence caught at layer two.
+- Unsupported claims caught at layer three.
+- Partial evidence explicitly noted at layer four.
+
+**File edge cases**: all 28 documented scenarios across six categories (content Q&A, cross-reference, visual, ambiguity, conversational, format-specific) each have corresponding test coverage.
+
+**RRF scoring and deduplication detail**:
+
+- Candidate union from all retrieval arms is grouped by file and page before score aggregation.
+- Grouped-page score is the sum of reciprocal-rank contributions from each arm where that page appears.
+- Pages missing in an arm contribute zero from that arm without penalizing other contributions.
+- Tie-breaking across equal aggregate scores is deterministic and stable across repeated runs.
+
+**Sanitization latency and variance**:
+
+- Retrieval-time sanitization latency is measured with lower bound near 50 milliseconds and upper bound near 100 milliseconds.
+- Variance across repeated runs stays within defined operational tolerance and does not exceed service-level budgets.
+- Latency instrumentation isolates classifier, stripping, and boundary-framing sub-steps.
+- Sanitization cost remains additive and bounded regardless of summary-only versus enriched mode.
+
+**Citation URL lifetime and expiry handling**:
+
+- Citation image URLs are generated with seven-day time-to-live.
+- Image redirect fallback endpoint returns fresh signed URL when cached URL expires.
+- Expired or invalid image URL requests return typed not-found or expiry-safe response behavior.
+- Citation payload always includes refresh-capable path metadata for URL renewal.
+
+**File reference timezone behavior**:
+
+- Temporal resolution reads timezone from request header when provided.
+- UTC fallback is used when timezone header is absent or invalid.
+- Day-boundary calculations for references like yesterday honor resolved timezone.
+- Daylight-saving transitions resolve temporal windows without off-by-one-day drift.
+
+**Ambiguity and clarification contracts**:
+
+- Ambiguous file matches return explicit candidate list payload with enough metadata for user disambiguation.
+- Candidate-list ordering is deterministic and auditable.
+- Resolver never picks an arbitrary candidate when multiple plausible matches exist.
+- Clarification response format remains consistent across temporal, ordinal, and named ambiguity sources.
+
+**Cross-conversation ranking behavior**:
+
+- Global-scope evidence is included alongside thread-scope evidence for same-user queries.
+- Default global ranking multiplier is 0.85x and is configurable.
+- Setting multiplier to 1.0 yields equal treatment for thread and global evidence.
+- Mixed-scope result sets preserve scope metadata in ranking outputs and citations.
+
+**Large text chunking boundaries**:
+
+- Large text chunking uses 4000-character chunks with 800-character overlap.
+- Boundary-adjacent concepts remain retrievable across chunk edges due to overlap continuity.
+- First and last chunk boundaries handle short tail segments without data loss.
+- Chunk position metadata supports citation anchoring for text retrieval responses.
+
+**Evidence scoring determinism**:
+
+- Sufficiency formula applies coverage 0.4, confidence 0.4, and completeness 0.2 weights exactly.
+- Equivalent evidence inputs always produce identical sufficiency outputs.
+- Topic-level configuration can override weights and thresholds without code-path changes.
+- Completeness component remains binary and tied to minimum distinct-passage requirement.
+
+**Evidence-gate passage thresholds**:
+
+- Minimum distinct passages threshold is configurable per topic policy.
+- Gate closes when distinct-passage count is below configured threshold even with high similarity.
+- Gate opens only when threshold and weighted sufficiency requirements are both satisfied.
+- Threshold updates apply predictably at configuration reload boundaries.
+
+**Twenty-eight file edge-case suites**:
+
+- Content Q&A suite covers page-specific questions, location queries, contains checks, ordinal references, temporal references, and full-document summarization.
+- Cross-reference suite covers internet comparisons, document-to-document comparisons, merged findings, topic-source identification, and revision diffs.
+- Visual suite covers show-images requests, chart-and-table question answering, and extracted-table question answering.
+- Ambiguity and negative suite covers source disambiguation, critique requests, OCR fallback, deleted-file handling, never-uploaded handling, corrupted-file handling, too-large handling, and poor-OCR handling.
+- Conversational suite covers session-context references, page navigation follow-ups, deepening follow-ups, mid-conversation file switching, and multilingual file queries.
+- Format-specific suite covers code-aware file handling behavior with syntax-sensitive retrieval expectations.
+
+**Visual grounding reliability**:
+
+- Visual interpretation occurs at query time against page images rather than precomputed static answers.
+- OCR-failure paths route to multimodal visual interpretation when images are available.
+- Missing visual assets and missing fallback text produce explicit no-visual-content outcomes.
+- Low-confidence visual interpretations return caveated responses instead of confident assertions.
+
+**Anti-hallucination layer interactions**:
+
+- Layer-one file resolution failure blocks downstream retrieval and generation.
+- Layer-two evidence gate blocks prose when evidence is insufficient regardless of prompt intent.
+- Layer-three citation planning prevents uncited claims from entering final prose.
+- Layer-four transparency guarantees explicit refusal or caveat instead of silent degradation.
+- Combined-layer architecture targets lower hallucination rates than gate-only and prompt-only baselines.
+
+### Extension: RAG Feedback Loop
+
+- Negative user feedback is ingested and linked to originating query, retrieved documents, and evidence bundle.
+- Document-level quality scores accumulate from feedback ratio, evidence sufficiency, and retrieval frequency.
+- Low-quality documents are demoted in future ranking results.
+- RRF fusion weights adjust based on aggregated per-arm feedback correlation.
+- Evidence gate thresholds tighten for topics with high negative feedback rates.
+- Semantic cache entries are invalidated on negative feedback for the cached response.
+- Parameter changes are reversible and auto-rollback triggers when quality metrics degrade.
+- Feedback-driven adjustments do not activate below the configured minimum sample size.
+- Proportional feedback attribution distributes signal based on evidence contribution scores.
+- All parameter changes are logged with before/after values and rollback eligibility.
+- Operator-pinned parameters resist feedback-driven drift.

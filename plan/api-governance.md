@@ -1,4 +1,4 @@
-# 29 — API Governance & Consumer Migration
+# API Governance & Consumer Migration
 
 ## Table of Contents
 - [Public API Surface Definition](#public-api-surface-definition)
@@ -348,10 +348,10 @@
 
 | Plan File | Governance Connection |
 |---|---|
-| [04 — Foundation](./04-foundation.md) | Core contract baseline, Bun-only posture, Drizzle and surqlize data-access constraints, and Zod v4 schema discipline |
-| [21 — Release Pipeline](./21-release-pipeline.md) | Conventional commit enforcement, release gates, pre-release handling, and publication safeguards |
-| [23 — Coding Standards](./23-coding-standards.md) | Documentation quality discipline, CI quality checks, and governance consistency enforcement |
-| [24 — Extensibility](./24-extensibility.md) | Extension contract lifecycle expectations, communication obligations, and migration commitments |
+| [Foundation](./foundation.md) | Core contract baseline, Bun-only posture, Drizzle and surqlize data-access constraints, and Zod v4 schema discipline |
+| [Release Pipeline](./release-pipeline.md) | Conventional commit enforcement, release gates, pre-release handling, and publication safeguards |
+| [Coding Standards](./coding-standards.md) | Documentation quality discipline, CI quality checks, and governance consistency enforcement |
+| [Extensibility](./extensibility.md) | Extension contract lifecycle expectations, communication obligations, and migration commitments |
 
 ## Delivery Checklist
 - Public API surface definition is documented with explicit internal boundary policy.
@@ -416,4 +416,119 @@ flowchart TB
 - surqlize package information: https://www.npmjs.com/package/surqlize
 
 ---
-Previous: [28 — Developer Experience & Onboarding](./28-developer-experience.md)
+
+## Test Specifications
+
+
+**Public API surface governance behavior**:
+
+- Public API surface matches the documented export list exactly.
+- Export additions require governance review for naming, contract clarity, and stability assignment.
+- Export removals require deprecation and migration artifacts before release admission.
+- Re-exporting internal symbols is prohibited and detected by automated checks.
+- Public API inventory is regenerated during release validation and drift blocks release promotion.
+- Export aggregation governance detects duplicate surfaces before release acceptance.
+- Top-level exports are curated for mainstream usage and avoid broad passthrough behavior.
+- Category-level exports are organized by domain and avoid exposing implementation detail.
+- Consumer guidance is Bun-only with no alternate runtime assumptions.
+- Package scope remains the single npm package `safeagent` with no scoped package families.
+- Data access guidance promotes surqlize for SurrealDB and Drizzle for PostgreSQL with raw-query ergonomics excluded from the public API posture.
+
+**Stability tier governance behavior**:
+
+- Stability tier annotations exist on all public exports.
+- Tier assignment is visible in package documentation, API reference metadata, and release notes.
+- Experimental tier is visibly marked at every discovery point and is opt-in by consumer choice.
+- Internal tier symbols do not leak through top-level export surfaces.
+- Tier transition from experimental to stable requires readiness review including adoption data and defect rate.
+- Tier mislabeling discovered in release prep blocks release admission.
+- Extension contracts carry independent tier labels in addition to base API tier labels.
+
+**Semantic release policy behavior**:
+
+- Semantic release rules derive the correct release type from commit history.
+- Release classification is validated by change review automation.
+- Release classification conflicts require human adjudication before publication.
+- Pre-release channel publishes successfully and installs correctly with clear instability risk marking.
+- Release safety gates require clean type contract checks, API inventory diff checks, and compatibility test pass status.
+- Release artifacts include compatibility matrix references and deprecation timelines when applicable.
+
+**Deprecation policy behavior**:
+
+- Deprecated APIs emit runtime warnings with migration-guide references.
+- Minimum grace period of one full major release cycle is enforced.
+- Deprecation records include rationale, scope, target removal release, and recommended replacement path.
+- Migration guidance is available before the first deprecation release ships.
+- CI checks validate deprecation metadata completeness, warning text presence, documentation link integrity, and block undocumented deprecations.
+- CI checks fail on expired grace periods without removal decision.
+- Removal readiness review confirms migration support quality and communication obligations were met.
+
+**Breaking change protocol behavior**:
+
+- Breaking changes are detected by automated compatibility checks.
+- Proposal intake requires problem statement, alternatives, impact narrative, and stability-tier scope classification.
+- Impact assessment covers adoption breadth, migration complexity, operational risk, and ecosystem risk for extension authors.
+- Approved proposals require migration plan and communication plan commitment before implementation.
+- Consumer communications use consistent terminology with timeline checkpoints and clear replacement guidance.
+- Automated migration tooling is required when mechanical transition exists.
+- Emergency breakage exceptions require incident-level governance approval and post-event migration documentation.
+
+**Migration guide framework behavior**:
+
+- Automated migration tooling updates prior consumer usage patterns correctly and preserves documented behavior.
+- Every migration guide follows standardized structure including impact summary, prerequisites, risk profile, and validation checklist.
+- Conceptual before-and-after comparisons focus on behavior and outcomes without source-level snippets.
+- Migration tooling includes dry-run insight for impact visibility and deterministic output expectations.
+- Incremental migration is preferred over big-bang cutovers with old and new API shapes coexisting during transition windows.
+- Coexistence windows include explicit conflict-resolution guidance and clear sunset milestones.
+- Migration guides remain maintained throughout grace periods and updated when field feedback reveals ambiguity.
+
+**Consumer upgrade testing behavior**:
+
+- Consumer canary fixtures pass against the current release.
+- Compatibility matrix defines which release lines are tested together including current and prior major line pairings.
+- Matrix coverage includes stable-only, stable-plus-experimental, extension-heavy, and type-contract-sensitive consumer patterns.
+- Matrix regressions block publication until addressed or waived by governance.
+- Canary participants receive pre-release artifacts and migration briefings with triaged feedback severity labels.
+- Regression fixtures reflect real consumer integration patterns sourced from anonymized support learnings.
+- CI checks include API inventory diffs, type-contract diffs, migration-document linkage, deprecation-lifecycle consistency, and extension contract compatibility gates.
+- Compatibility reports are retained for audit and trend analysis.
+
+**Extension contract stability behavior**:
+
+- Extension contracts maintain backward compatibility within each stability tier.
+- Extension contracts are governed independently from core feature rollout speed with explicit stability tier assignments.
+- Contract change notice includes impact narrative, migration timeline checkpoints, and compatibility testing expectations.
+- Contract changes require migration path documentation and fallback behavior guidance before release approval.
+- Extension contract test suites are part of routine release qualification.
+- Extension contract regression signals receive high-priority triage.
+- Extension author communication channels require predictable cadence and archived announcements for traceability.
+
+**Type contract governance behavior**:
+
+- Type contract changes are classified correctly as breaking or non-breaking.
+- Narrowing a union, adding required fields, tightening generic constraints, and re-shaping discriminants are classified as breaking changes.
+- Type-level breakage requires major release classification.
+- Zod v4 schema governance mirrors type governance and drift between type and schema contracts blocks release.
+- Type contract review requires consumer ergonomics, inference behavior, and migration complexity assessments.
+- Type contract diff reports are generated in release preparation in both human-readable and machine-readable formats.
+
+**Governance operating cadence behavior**:
+
+- Weekly triage reviews evaluate active deprecations, pending breaks, migration gaps, support trends, and canary feedback.
+- Monthly governance reviews evaluate tier accuracy, labeling consistency, documentation quality, and adoption telemetry.
+- Quarterly strategy reviews evaluate API surface growth, simplification opportunities, and long-horizon ecosystem risk.
+- Governance decision records are retained with rationale, expected consumer impact, and explicit success signals.
+- Governance KPIs track migration completion rate, regression frequency, notice lead time, deprecation completion rate, and extension contract incident rate.
+
+**Exception and escalation handling behavior**:
+
+- Emergency API changes follow fast-track governance with incident-level approval and audit logging.
+- Exception requests require business and technical rationale with explicit risk acceptance.
+- Security-critical triggers escalate immediately with required sign-offs from designated governance owners.
+- Time-bounded approvals expire if not acted upon within configured windows and re-enter the queue.
+- Post-exception stabilization plans are required with follow-up compatibility verification and closure evidence.
+- Escalation update cadence ensures stakeholders receive progress at defined intervals until resolution.
+- Audit retention preserves the complete exception lifecycle for compliance and trend analysis.
+- Closure requires compliance-restoration checks confirming governance posture is fully restored.
+- Governance exceptions are reviewed in retrospective cadence to prevent pattern normalization.

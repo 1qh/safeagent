@@ -1,4 +1,4 @@
-# 26 — AI Operations Plan
+# AI Operations Plan
 > **Scope**: AI operations for safeagent at 10M-user scale covering cost intelligence, prompt lifecycle governance, and agent evaluation with strict safety and rollback controls.
 >
 > **Tasks**: COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, AIOPS_RUNTIME_GOVERNANCE
@@ -822,14 +822,14 @@ Scalability and security are mandatory, not optional optimizations.
 ## Cross-References
 | Plan File | Relevant Scope | Connection |
 |---|---|---|
-| [05 — Conversation Pipeline](./05-conversation.md) | Intent and context pipeline | Provides normalized context and intent signals used by semantic cache and dynamic routing. |
-| [06 — Agents & Orchestration](./06-agents.md) | Agent execution and tool orchestration | Provides runtime hooks for budget contracts, per-agent attribution, and routing reason tags. |
-| [12 — Server Implementation](./12-server.md) | Request lifecycle and auth boundaries | Provides identity scope required for safe cache reuse and per-user cost attribution. |
-| [14 — Observability](./14-observability.md) | Tracing and prompt baseline | Extended here with PromptOps lineage governance and scorer-layer decision controls. |
-| [15 — Infrastructure](./15-infrastructure.md) | Budget and infra baseline | Extended here with semantic cache policy and gateway cost-optimization patterns. |
-| [16 — Testing](./16-testing.md) | Eval and regression baseline | Extended here with composable scorer families, dataset freshness governance, and CI threshold policy. |
-| [21 — Release Pipeline](./21-release-pipeline.md) | Promotion and rollback flow | Extended here with atomic behavior bundles, shadow mode, and prompt experiment lanes. |
-| [22 — Monitoring](./22-monitoring.md) | Alerts and marker correlation | Extended here with cost-intelligence anomaly thresholds and rollout decision-state operations. |
+| [Conversation Pipeline](./conversation.md) | Intent and context pipeline | Provides normalized context and intent signals used by semantic cache and dynamic routing. |
+| [Agents & Orchestration](./agents.md) | Agent execution and tool orchestration | Provides runtime hooks for budget contracts, per-agent attribution, and routing reason tags. |
+| [Server Implementation](./server.md) | Request lifecycle and auth boundaries | Provides identity scope required for safe cache reuse and per-user cost attribution. |
+| [Observability](./observability.md) | Tracing and prompt baseline | Extended here with PromptOps lineage governance and scorer-layer decision controls. |
+| [Infrastructure](./infrastructure.md) | Budget and infra baseline | Extended here with semantic cache policy and gateway cost-optimization patterns. |
+| [Testing](./testing.md) | Eval and regression baseline | Extended here with composable scorer families, dataset freshness governance, and CI threshold policy. |
+| [Release Pipeline](./release-pipeline.md) | Promotion and rollback flow | Extended here with atomic behavior bundles, shadow mode, and prompt experiment lanes. |
+| [Monitoring](./monitoring.md) | Alerts and marker correlation | Extended here with cost-intelligence anomaly thresholds and rollout decision-state operations. |
 
 ## Task Specifications
 ### COST_INTELLIGENCE_LAYER
@@ -886,4 +886,65 @@ Scalability and security are mandatory, not optional optimizations.
 - PostgreSQL policy remains Drizzle ORM only.
 
 ## Navigation
-*Previous: [25 — Durable Execution & HITL](./25-durable-execution.md) | Next: [27 — Security & Compliance](./27-security-compliance.md)*
+
+## Test Specifications
+
+
+**Semantic cache behavior**:
+
+- Semantic lookup reuses meaning-equivalent results only when similarity, policy, authorization, and TTL checks all pass.
+- Similarity thresholds are risk-tier aware and tuned to balance reuse savings against false-match quality risk.
+- Cache invalidation reacts to source, policy, authorization, and prompt-bundle changes before unsafe reuse can occur.
+- Cache warming raises hit-rate for stable high-frequency intents without violating spend or safety constraints.
+
+**Dynamic routing and prompt cache behavior**:
+
+- Dynamic routing classifies complexity, risk, and expected budget before generation and selects the lowest valid cost lane.
+- Routing decisions never bypass policy floor, capability requirements, or active budget contracts.
+- Prompt cache architecture maximizes provider cacheability through stable deterministic prefixes and bounded dynamic tails.
+- Cache-aware prompt assembly tracks miss causes and preserves deterministic ordering for repeatable cache-hit behavior.
+
+**Cost attribution and budget contract behavior**:
+
+- Cost events are attributable per agent, user, and workflow with consistent accounting for retries and tool overhead.
+- Budget contracts enforce limits for cost, steps, tool calls, output tokens, and retries using deterministic outcomes.
+- Soft budget pressure triggers controlled compression behaviors while hard breaches trigger controlled stop or handoff.
+
+**Prompt lifecycle experimentation behavior**:
+
+- Prompt A/B experiments apply deterministic traffic splitting, sticky assignment, and predefined guard-metric stop rules.
+- Statistical comparison and confidence thresholds govern winner selection without unsafe or premature promotions.
+- Atomic bundle rollout moves prompt, tools, policy, and retrieval settings together and rolls them back together.
+- Rollback behavior restores full prior bundle state with traceable reason and post-rollback verification continuity.
+
+**Shadow mode and evaluation behavior**:
+
+- Shadow mode runs candidate behavior in parallel, compares deltas, and preserves production output visibility for users.
+- Shadow divergence tracking covers quality, safety, latency, cost, and tool-validity dimensions.
+- LLM-as-judge scorers produce composable semantic evaluations for accuracy, relevance, and safety dimensions.
+- Judge outputs remain calibration-governed so scoring drift is detected before it distorts rollout decisions.
+
+**Dataset governance and regression behavior**:
+
+- Eval datasets maintain governed import, item identity, ground truth or rubric expectations, and freshness lifecycle state.
+- Item-level tracking preserves score history, failure categories, quarantine actions, and rollout-marker linkage.
+- Experiment tracking captures baseline deltas and detects regressions that trigger hold, block, or rollback decisions.
+- CI evaluation gates enforce promotion thresholds and block critical safety or quality regressions.
+
+**CLASSic governance behavior**:
+
+- CLASSic reporting tracks Cost, Latency, Accuracy, Stability, and Security across reasoning and action layers.
+- CLASSic deltas are required decision inputs for promotion, hold, rollback, and escalation governance states.
+
+### Extension: Conversation Intelligence
+
+
+- Per-conversation quality score aggregates turn-level CLASSic dimension scores with recency weighting.
+- Topic extraction classifies conversation topics using intent classification infrastructure.
+- Engagement scoring combines turn count, regeneration rate, abandonment point, feedback ratio, and follow-up rate.
+- Satisfaction composite score merges explicit feedback, engagement signals, quality scores, and evidence sufficiency.
+- Trend detection computes rising/falling topic popularity, quality direction, and engagement drift on rolling windows.
+- Trend alerts fire when metrics cross configurable thresholds.
+- Cohort analysis segments data by time period, user cohort, agent configuration, topic, and environment.
+- Privacy-preserving aggregation operates on metrics and labels, never on raw conversation content.
+- Conversation metrics are stored via Drizzle ORM with configurable retention and rollup to daily/weekly aggregates.

@@ -1,4 +1,4 @@
-# 22 — Monitoring, Alerting, and Incident Response
+# Monitoring, Alerting, and Incident Response
 
 > **Scope**: Real-time operational monitoring, health signal collection, alerting, escalation, SLA governance, incident response, status communication, and capacity forecasting for the safeagent library plus thin server deployment at 10M-user scale.
 >
@@ -2509,4 +2509,278 @@ Integration notes:
 - Prompt experiment observability is active with per-variant outcome comparison and significance-based decision gating.
 - Graceful degradation monitoring is active with degraded-state quality-floor, fallback headroom, and recovery-stability controls.
 
-*Previous: [21 — Release Pipeline](./21-release-pipeline.md) | Next: [23 — Coding Standards](./23-coding-standards.md)*
+
+## Test Specifications
+
+**Health check behavior**:
+
+- Shallow health check confirms process liveness and memory within configured limits.
+- Deep health check verifies database connectivity, cache reachability, object storage availability, and queue worker status.
+- Health check endpoint returns structured response with per-dependency status.
+- Fleet-aggregated health reflects worst-case status across horizontally scaled instances.
+- Dependency failure in deep health check marks the affected component as degraded without marking the entire service as down.
+
+**Metrics collection accuracy**:
+
+- Request rate metrics increment for every inbound request grouped by endpoint category.
+- Response latency metrics capture p50, p95, and p99 distributions per endpoint category.
+- Error rate metrics distinguish between client errors and server errors.
+- Active SSE connection count reflects currently open streaming connections in real time.
+- Guardrail trigger rate tracks input-blocked and output-blocked events separately.
+- Token consumption rate is attributed to the correct model identity.
+- Infrastructure metrics for each dependency (Postgres, SurrealDB, Valkey, MinIO, Trigger.dev) report expected dimensions.
+
+**Alert rule behavior**:
+
+- Critical alert fires when error rate exceeds the critical threshold.
+- Warning alert fires when latency p99 exceeds the warning threshold.
+- Alert deduplication suppresses repeated alerts for the same condition within the configured window.
+- Alert grouping combines related alerts from the same service into a single notification.
+- Alert silencing during planned maintenance prevents false alarms.
+- Escalation triggers when a critical alert remains unacknowledged past the timeout.
+
+**SLA monitoring**:
+
+- Rolling window SLA calculation reflects the configured measurement period.
+- SLA breach triggers an alert when availability drops below the defined target.
+- Error budget tracking shows remaining allowable downtime for the current period.
+
+**Incident lifecycle**:
+
+- Detection phase fires an alert within the defined mean-time-to-detect target.
+- Triage phase classifies incident severity and assigns an incident commander.
+- Mitigation applies fix or rollback and restores service within the mean-time-to-recover target.
+- Status page updates reflect current incident state for public visibility.
+- Post-mortem produces a blameless review document with root cause and preventive actions.
+
+**Status page behavior**:
+
+- Public status page displays per-component health status.
+- Historical uptime percentage is accurate over the trailing measurement window.
+- Planned maintenance announcements appear before the maintenance window begins.
+- Status update subscriptions deliver notifications to subscribers on state change.
+
+**LLM quality monitoring behavior**:
+
+- Sampled response evaluator assigns groundedness, relevance, coherence, and safety scores for each sampled response.
+- Sampling rate remains within the configured three-to-five percent band during normal traffic windows.
+- Sampling rate increases automatically during active incident windows.
+- Sampling rate increases automatically after prompt changes during the configured observation window.
+- Sampling preserves stratified representation across user tiers.
+- Sampling preserves stratified representation across streaming and non-streaming response modes.
+- Hallucination objective triggers a warning alert at the early degradation threshold.
+- Hallucination objective triggers a critical alert when burn pace indicates budget exhaustion risk.
+- Quality score time-series shows regression markers aligned with prompt deployments.
+- Quality score time-series shows regression markers aligned with model mix changes.
+- Golden prompt replay detects semantic drift against validated historical baselines.
+- Positive feedback rate trend correlates with evaluator score movement.
+- Regeneration rate trend correlates with evaluator score movement.
+- Session abandonment trend correlates with evaluator score movement.
+- Evaluator scoring executes asynchronously without adding measurable user response latency.
+
+**Agentic workflow monitoring behavior**:
+
+- Agent execution graph metrics capture nested span depth across tool calls, memory operations, and handoffs.
+- Loop depth warning signal appears when iteration depth approaches the configured maximum.
+- Loop depth critical alert fires when iteration depth exceeds the configured maximum.
+- Stuck state detection triggers when the same execution step repeats beyond the configured threshold.
+- Plan drift score tracks divergence from the declared task goal.
+- Plan drift alerting detects sudden drift increases after control-plane changes.
+- Per-tool call success metrics distinguish first-attempt success from eventual success.
+- Sub-agent handoff failure rate tracks unsuccessful handoff attempts.
+- Sub-agent handoff monitoring detects orphaned handoff states with no downstream completion.
+- Memory read relevance score tracks correlation with run completion outcomes.
+- Memory write failure rate is tracked separately from memory write retry behavior.
+- Memory leakage monitoring triggers a critical alert for confirmed cross-user context contamination.
+- Runaway agent cost circuit breaker halts sessions that exceed the configured cost ceiling.
+- Circuit breaker activation records an auditable event with partial run metadata preserved.
+
+**RAG pipeline monitoring behavior**:
+
+- Retrieval relevance monitoring alerts when average similarity drops below the configured threshold.
+- Hit rate monitoring detects sustained drops that indicate potential knowledge base staleness.
+- Context precision metric tracks the percentage of retrieved chunks actually used in final responses.
+- Embedding drift monitoring detects distribution shift between query embeddings and index embeddings.
+- Vector search latency is monitored independently from generation latency.
+- Vector latency alerting can trigger even when end-to-end latency appears stable.
+- Chunk utilization efficiency detects under-utilized large context windows.
+- Response support density monitoring detects increases in unsupported response content.
+- RAG monitoring includes data access layer health through Drizzle ORM on relational retrieval paths.
+- RAG monitoring includes data access layer health through surqlize on memory-augmented retrieval paths.
+
+**Security monitoring behavior**:
+
+- Prompt injection detection rate is tracked independently from false positive rate.
+- Prompt injection monitoring distinguishes direct attacks from benign false detections.
+- Indirect prompt injection monitoring covers external content sources read by agents.
+- Indirect injection monitoring alerts on high-risk source clusters with repeated policy conflicts.
+- PII-in-output scanning triggers a critical alert on confirmed sensitive data leakage.
+- Guardrail effectiveness trending detects sudden activation drops as potential bypass indicators.
+- Guardrail effectiveness trending detects sudden activation spikes as potential attack surges.
+- Jailbreak attempt rate tracking clusters adversarial inputs by pattern family.
+- New adversarial cluster emergence triggers prioritization for defensive updates.
+- Security monitoring tracks mitigation impact on attack-success indicators after defensive updates.
+
+**Burn rate alert behavior**:
+
+- Fast-burn windows trigger critical paging when budget consumption pace indicates rapid exhaustion risk.
+- Slow-burn windows trigger warning alerts when sustained low-grade degradation persists.
+- Burn rate alerting evaluates availability objectives independently from other reliability objectives.
+- Burn rate alerting evaluates latency objectives independently from other reliability objectives.
+- Burn rate alerting evaluates quality objectives independently from other reliability objectives.
+- Burn rate alerting evaluates cost objectives independently from other reliability objectives.
+- Error budget dashboards display remaining budget percentage for each monitored objective.
+- Error budget dashboards display projected depletion time under current burn pace.
+- Multi-window burn rate policy replaces threshold-only alerting for core reliability objectives.
+
+**Synthetic monitoring behavior**:
+
+- Golden prompt canaries execute on a five-minute cadence.
+- Golden prompt canaries validate known-answer expectations against baseline quality bands.
+- Canary alerting triggers warning for single-window degradation.
+- Canary alerting triggers critical for sustained multi-window degradation.
+- End-to-end agent workflow synthetics execute on a fifteen-minute cadence.
+- End-to-end agent workflow synthetics verify task completion success.
+- End-to-end agent workflow synthetics verify expected tool usage integrity.
+- End-to-end agent workflow synthetics verify step count remains within healthy bounds.
+- RAG pipeline synthetics verify expected documents appear in top-k retrieval results.
+- RAG pipeline synthetics verify relevance scores remain within configured policy bands.
+- Model provider failover synthetics verify fallback activation when primary provider degrades.
+- Synthetic probe scheduler health is monitored with freshness alerts for delayed or missed runs.
+
+**Token cost anomaly detection behavior**:
+
+- Per-user cost spike detection compares short-window spend against rolling historical baseline.
+- Per-user anomaly alerting separates moderate spike warnings from severe spike critical alerts.
+- Per-feature cost regression detection compares post-change cost against rolling baseline.
+- Token budget burn rate projection triggers early warning when pace exceeds monthly target.
+- Model cost mix shift detection alerts when expensive-model request share changes unexpectedly.
+- Runaway agent session cost alert triggers immediate halt at the configured hard ceiling.
+- Context window utilization monitoring alerts on sustained high utilization.
+- Context window utilization monitoring alerts on sustained low utilization.
+- Input-to-output token ratio anomaly detection flags abnormal verbosity growth patterns.
+- Input-to-output token ratio anomaly detection flags abnormal compression patterns.
+
+**SLI refinement behavior**:
+
+- Agent task completion SLI measures successful completion outcomes rather than transport success alone.
+- Agent task completion SLI is segmented by user journey criticality.
+- Response quality SLI measures sampled responses above threshold across groundedness, relevance, coherence, and safety dimensions.
+- Streaming responsiveness SLI measures time-to-first-token independently from total response duration.
+- Streaming responsiveness SLI segmentation detects localized degradation by journey and region.
+- Tool call reliability SLI measures first-attempt success rate by tool family.
+- Memory retrieval accuracy SLI measures relevance of returned context for active intent.
+- Each refined SLI has a dedicated objective target.
+- Each refined SLI has an attached multi-window burn rate alert policy.
+
+**Prompt deployment correlation behavior**:
+
+- Prompt changes emit deployment markers visible on quality dashboards.
+- Prompt changes emit deployment markers visible on cost dashboards.
+- Prompt changes emit deployment markers visible on latency dashboards.
+- Post-change regression detection compares quality scores against rolling baseline within a configurable window.
+- Regression detection identifies hallucination-rate increases beyond tolerated bands after prompt changes.
+- Automatic rollback triggers when quality drops beyond tolerance after prompt deployment.
+- Rollback verification confirms recovery toward baseline trajectories before closure.
+- Correlation engine links prompt changes to metric movements with confidence levels.
+- Correlation summaries distinguish likely causal movement from coincidental movement.
+
+**Business metric correlation behavior**:
+
+- Task completion rate is correlated with agent success rate.
+- Divergence alerting triggers when task completion drops without matching agent success movement.
+- User retention trend is correlated with response quality score trajectory.
+- Support ticket volume is correlated with hallucination rate and off-topic response signals.
+- Revenue per user is correlated with successful high-value agent outcomes.
+- Churn events are correlated with recent quality degradation incidents.
+- Divergence alerting triggers when business outcomes diverge from expected patterns inferred from AI quality signals.
+
+**Chaos engineering validation behavior**:
+
+- Model provider latency injection triggers time-to-first-token objective alerts within policy windows.
+- Model provider error injection triggers circuit-breaker activation visible in responder dashboards.
+- Response quality degradation injection triggers sampled quality monitoring alerts even when latency is healthy.
+- Context overflow injection triggers degraded-state handling observable in quality dashboards.
+- Embedding degradation injection triggers RAG relevance and hit-rate objective alerts.
+- Vector latency injection triggers retrieval SLI alerts on both fast-burn and slow-burn windows.
+- Memory unavailability injection triggers fallback to stateless mode visible in monitoring.
+- Tool dependency failure injection triggers per-tool reliability alerts with correct dependency identification.
+- Forced loop-depth injection triggers loop alerts and cost circuit-breaker before budget exposure.
+- Token budget exhaustion simulation triggers rate-limiting alerts at warning and critical thresholds.
+- Missing expected alert during chaos experiment is flagged as monitoring coverage gap.
+- Chaos outcomes feed into recurring alert coverage audits.
+
+**AIOps and anomaly detection behavior**:
+
+- Dynamic baselines learn daily and weekly seasonality patterns for key metrics.
+- Anomaly alerts trigger only on statistically significant deviations from dynamic baseline.
+- Dynamic baselines reduce false positive rate compared to equivalent static thresholds.
+- AI-assisted root cause analysis correlates logs, metrics, traces, and recent deployments when alert fires.
+- Root cause analysis surfaces relevant runbook and probable cause within target time.
+- Automated incident summarization includes blast radius estimation and affected user segments.
+- Natural language querying returns valid investigation results across monitoring data.
+- Anomaly correlation engine detects shared root cause across multiple independent anomalies.
+- Correlation reduces alert storms by grouping downstream effects under root anomaly.
+
+**Model provider health monitoring behavior**:
+
+- Per-provider latency distribution is tracked continuously and segmented by model family.
+- Provider error rate monitoring distinguishes rate limits, server errors, and timeouts.
+- Rate limit proximity warnings trigger before hard limits are reached.
+- Quota utilization pace alerts when consumption rate threatens allocation exhaustion.
+- Provider behavior change detection identifies silent output distribution shifts via golden prompt canaries.
+- Multi-provider health comparison dashboard ranks providers by current health for routing decisions.
+- Fallback provider health is assessed continuously with pre-failover quality delta estimation.
+- Provider SLA compliance tracking records evidence for credit claims.
+
+**Meta-monitoring behavior**:
+
+- Metric ingestion lag alerts when data freshness falls beyond operational limits.
+- Metric pipeline data loss or gap detection triggers remediation workflows.
+- Scheduled test alerts verify all severity routing paths remain functional.
+- Silent alert delivery failure detection triggers backup notification paths.
+- LLM-as-judge evaluator pipeline health is monitored independently from product quality signals.
+- Sampling coverage alerts when coverage drops below minimum confidence thresholds.
+- Synthetic probe scheduler health monitors uptime, execution success, and freshness.
+- Dashboard panel staleness detection alerts when stale data risks misleading responders.
+- Coverage gap audit detects new services or features lacking objective monitoring.
+- Coverage percentage is tracked as a reliability maturity metric.
+
+**Prompt A/B testing observability behavior**:
+
+- Traffic split ratios across prompt variants are monitored for drift from configured allocation.
+- Per-variant sample sizes are tracked for statistical power sufficiency.
+- Quality scores are compared across prompt variants with confidence bounds.
+- Hallucination rate deltas across variants are tracked with statistical significance.
+- Cost per task is compared across variants to detect cost regressions before full rollout.
+- Latency comparison across variants detects regressions in experimental variants.
+- Statistical significance gating prevents premature promotion decisions.
+- Experiments running beyond planned windows trigger alerts.
+- Concurrent experiment interference detection prevents result contamination.
+- User-level assignment consistency is verified across sessions.
+
+**Graceful degradation monitoring behavior**:
+
+- System entry into degraded states is detected and tracked with time-in-degradation metrics.
+- Prolonged degradation beyond policy thresholds triggers escalation alerts.
+- Quality scores during degraded operation are monitored separately from normal operation.
+- Degraded mode quality floor enforcement alerts when minimum acceptable bars are approached.
+- Fallback model performance is tracked independently for quality, latency, and cost.
+- Fallback capacity headroom monitoring alerts before fallback exhaustion causes cascading impact.
+- Feature flag state combinations are monitored for unexpected or unsafe configurations.
+- Recovery from degradation is validated for quality, latency, and cost restoration.
+- Flapping detection identifies oscillation between degraded and normal states.
+- Degraded-mode user messaging delivery is verified.
+
+### Extension: Disaster Recovery
+
+- PostgreSQL backup completes within configured frequency targets.
+- SurrealDB backup produces restorable snapshots.
+- MinIO bucket replication maintains data integrity.
+- Valkey rebuild-from-source restores rate-limiting state correctly.
+- Automated restore validation runs on schedule and passes.
+- RTO measurements stay within defined targets per service tier.
+- RPO measurements confirm no data loss beyond defined thresholds.
+- Failover procedures execute without service interruption beyond RTO limits.
+- Cross-region replication maintains consistency within configured lag thresholds.
+- Disaster-recovery escalation triggers correctly transition incident handling into DR-event handling.

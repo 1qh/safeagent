@@ -1,4 +1,4 @@
-# 11 — Streaming & Transport
+# Streaming & Transport
 
 > **Scope**: SSE streaming pipeline, custom SSE event protocol boundary, trace-step event family, verbosity-level filtering, CTA tool streaming, and the client SDK module.
 >
@@ -91,7 +91,7 @@ stream handler factory is an Elysia route handler factory exported by the librar
 
 The handler executes the agent with streaming enabled and receives an async stream of framework events. Event families include model text chunks, run item events (tool calls, messages, handoffs), and agent update events for handoff switches. The handler maps these to the ten SSE event types. Framework guardrail tripwire exceptions are caught at the boundary and emitted as `tripwire` SSE events.
 
-The factory accepts an error-message mapping parameter — a plain object keyed by error code string, where values are either a static message string or a function that derives a message from metadata. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [12 — Server Implementation](./12-server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
+The factory accepts an error-message mapping parameter — a plain object keyed by error code string, where values are either a static message string or a function that derives a message from metadata. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [Server Implementation](./server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
 
 ```mermaid
 flowchart TB
@@ -168,7 +168,7 @@ Proxies and load balancers close idle connections after a timeout, typically 30 
 
 Two error types get special treatment at the HTTP boundary:
 
-- **TripWire**: thrown by the guardrail system when a p0 input violation is detected, or when a p0 output violation is detected in development mode. The handler catches it, stops the stream, and emits a `tripwire` SSE event containing `conceptId`, `reason`, and a fallback message. `reason` is the user-facing message, while `conceptId` is the canonical guardrail concept identifier. In production mode, output p0 violations do NOT throw TripWire — they suppress remaining chunks and inject a fallback as a normal `text-delta` event (see [10 — Guardrails & Safety](./10-guardrails.md) for details).
+- **TripWire**: thrown by the guardrail system when a p0 input violation is detected, or when a p0 output violation is detected in development mode. The handler catches it, stops the stream, and emits a `tripwire` SSE event containing `conceptId`, `reason`, and a fallback message. `reason` is the user-facing message, while `conceptId` is the canonical guardrail concept identifier. In production mode, output p0 violations do NOT throw TripWire — they suppress remaining chunks and inject a fallback as a normal `text-delta` event (see [Guardrails & Safety](./guardrails.md) for details).
 - **Unknown errors**: anything else becomes a generic `error` SSE event. The stream closes cleanly rather than dropping the connection mid-response.
 
 The output sliding window used by output guardrails also runs eld language detection on accumulated text. When LanguageGuardConfig.supportedLanguages is configured and eld detects output drift into an unsupported language, the output guardrail returns p0 and the stream follows the same tripwire or suppress-and-fallback path as any other output guardrail violation. This acts as the final safety net for cases where input passed earlier checks but generated output drifts into an unsupported language.
@@ -248,7 +248,7 @@ Interrupt handling must preserve state integrity:
 
 #### Durable Execution Tie-In (File 25)
 
-The **ROLLBACK** policy depends on durable execution checkpoints defined in [25 — Durable Execution](./25-durable-execution.md). Pre-run and step-level checkpoints make rollback deterministic by restoring a known-good session snapshot before replaying the replacement request.
+The **ROLLBACK** policy depends on durable execution checkpoints defined in [Durable Execution](./durable-execution.md). Pre-run and step-level checkpoints make rollback deterministic by restoring a known-good session snapshot before replaying the replacement request.
 
 ```mermaid
 stateDiagram-v2
@@ -488,7 +488,7 @@ No additional indexes beyond the primary key — lookups are always by trace ide
 
 Trace-step events provide real-time visibility into the engine pipeline for developer debugging and tracing. They expose what the engine is doing internally — intent classification, memory recall, guardrail evaluation, retrieval, tool execution, and context assembly — as structured SSE events. These events are emitted only when the verbosity level is `full`, ensuring end users never see internal pipeline details.
 
-This is the primary mechanism for the frontend trace and debug experience described in [18 — Frontend SDK](./18-frontend-sdk.md). When verbosity is `standard` (the default), only user-facing events are emitted. When verbosity is `full`, trace-step events are interleaved with regular events to show pipeline activity in real time.
+This is the primary mechanism for the frontend trace and debug experience described in [Frontend SDK](./frontend-sdk.md). When verbosity is `standard` (the default), only user-facing events are emitted. When verbosity is `full`, trace-step events are interleaved with regular events to show pipeline activity in real time.
 
 ### Trace-Step Event Envelope
 
@@ -585,7 +585,7 @@ Trace-step events are a real-time subset of the data that Langfuse captures asyn
 | Persistence | Ephemeral (client memory only) | Permanent (Langfuse storage) |
 | Correlation | Same trace identifier from `session-meta` | Same trace identifier |
 
-A developer can watch trace-step events in real-time during a conversation, then switch to Langfuse for deep post-hoc analysis of the same request using the shared trace identifier. See [14 — Observability](./14-observability.md) for the full Langfuse tracing architecture.
+A developer can watch trace-step events in real-time during a conversation, then switch to Langfuse for deep post-hoc analysis of the same request using the shared trace identifier. See [Observability](./observability.md) for the full Langfuse tracing architecture.
 
 ### Trace-Step Collector
 
@@ -617,7 +617,7 @@ The chat streaming endpoint accepts a verbosity control parameter that controls 
 | Level | Events Emitted | Target Audience |
 |-------|---------------|----------------|
 | `standard` (default) | `session-meta`, `text-delta`, `cta`, `citation`, `location`, `ui-component`, `tripwire`, `done`, `error` | End users, production applications |
-| `full` | All `standard` events plus `trace-step` events interleaved at their natural pipeline positions | Developers debugging pipeline behavior via [18 — Frontend SDK](./18-frontend-sdk.md) verbosity toggle |
+| `full` | All `standard` events plus `trace-step` events interleaved at their natural pipeline positions | Developers debugging pipeline behavior via [Frontend SDK](./frontend-sdk.md) verbosity toggle |
 
 ### Verbosity Filtering
 
@@ -1053,14 +1053,14 @@ Structured SSE event payloads require validation at both the emit boundary on th
 
 | Document | Relationship |
 |----------|-------------|
-| **Requirements** ([01 — Requirements & Constraints](./01-requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
-| **Foundation** ([04 — Foundation](./04-foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
-| **Agents** ([06 — Agents & Orchestration](./06-agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the framework stream event sequence consumed by this SSE transport layer. |
-| **Guardrails & Safety** ([10 — Guardrails & Safety](./10-guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
-| **Server Implementation** ([12 — Server Implementation](./12-server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
-| **Observability** ([14 — Observability](./14-observability.md)) | Trace-step events share the trace identifier with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
-| **Frontend SDK** ([18 — Frontend SDK](./18-frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
-| **Demos** ([19 — Demos](./19-demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
+| **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
+| **Foundation** ([Foundation](./foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
+| **Agents** ([Agents & Orchestration](./agents.md)) | Defines orchestrator and processor-chain behavior, including location tool orchestration, that produces the framework stream event sequence consumed by this SSE transport layer. |
+| **Guardrails & Safety** ([Guardrails & Safety](./guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
+| **Server Implementation** ([Server Implementation](./server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
+| **Observability** ([Observability](./observability.md)) | Trace-step events share the trace identifier with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
+| **Frontend SDK** ([Frontend SDK](./frontend-sdk.md)) | Consumes client SDK module events (including `trace-step`) and builds React hooks, web components, and React Native components on top of this transport layer. |
+| **Demos** ([Demos](./demos.md)) | Demo applications that exercise the full SSE protocol including trace-step events and verbosity toggle. |
 
 ---
 
@@ -1226,4 +1226,196 @@ Build the client SDK module as a zero-dependency TypeScript package:
 
 ---
 
-*Previous: [10 — Guardrails & Safety](./10-guardrails.md) | Next: [12 — Server Implementation](./12-server.md)*
+
+## Test Specifications
+
+**SSE event types**:
+
+- All nine event types (session-meta, text-delta, trace-step, cta, citation, location, tripwire, done, error) conform to defined schemas.
+- Each event type serializes to valid SSE format.
+
+**Verbosity filtering**:
+
+- Standard mode excludes trace-step events.
+- Full mode includes all event types.
+- Verbosity does not affect Langfuse tracing (always full).
+
+**CTA streaming**:
+
+- Tool-call events suppressed from stream.
+- Clean CTA event emitted with schema validation: id, label, action type, optional URL and icon.
+- Maximum three CTAs per response enforced.
+
+**Location streaming**:
+
+- Location-search tool-call and tool-result events suppressed from output.
+- Clean location event emitted with coordinate data.
+
+**Client SDK transport**:
+
+- SSE parsing with correct line buffering for incomplete chunks.
+- Event type discrimination and typed event object construction.
+- Reconnection with backoff and jitter; client sends the last event identifier on reconnect for server-side resume support.
+- Offline queue: bounded in-memory queue with overflow callback and oldest-item drop policy.
+- Feedback flow attaches the stored trace identifier from session metadata.
+- File-upload flow sends multipart payload with progress callbacks and returns file reference.
+- Authentication refresh callback runs before requests when configured for short-lived tokens.
+- Payload-security validation is enforced at server emit boundary and client parse boundary.
+
+**Context-provider dependency injection**:
+
+- Context-provider hook receives authenticated request identity and thread context and can return optional system-message array.
+- Null or empty return from context-provider results in no additional injected system messages.
+- Direct-file context injection path is verified through context-provider outputs before agent execution.
+- Context-provider output preserves message ordering relative to baseline system prompt blocks.
+
+**Identity extraction and request context**:
+
+- User identity is resolved exclusively from token subject claim and forwarded into request context.
+- Thread identity from request payload and user identity from token are both present in every agent stream call.
+- Missing or invalid token prevents stream handler invocation.
+- Context identity cannot be overridden by model-generated data.
+
+**Keepalive stream behavior**:
+
+- Keepalive comment frames are emitted at fixed configured cadence during long-lived streams.
+- Keepalive timer starts with stream and is cleared on normal completion.
+- Keepalive timer is also cleared on tripwire and unknown-error termination paths.
+- Keepalive comments never mutate event sequencing for typed SSE events.
+
+**Tripwire payload contract**:
+
+- Tripwire events include concept identifier, human-readable reason, and fallback message fields.
+- Input-side p0 violations emit tripwire and terminate stream without further deltas.
+- Development-mode output p0 violations emit tripwire with the same payload shape.
+- Production output p0 path suppresses chunks and injects fallback delta instead of tripwire emission.
+
+**Output language drift safety net**:
+
+- Output sliding-window language scan uses accumulated stream text for drift detection.
+- Unsupported dominant language in configured policy produces output p0 behavior.
+- Drift handling follows the same mode-dependent path as other output p0 violations.
+- Supported-language output remains unaffected by scanner when no drift condition is met.
+
+**Internal versus external stream boundary**:
+
+- Internal framework events remain library-internal and are not exposed directly to network clients.
+- HTTP boundary maps internal events to custom named SSE protocol.
+- TUI consumes internal stream directly while preserving processor-chain semantics.
+- Protocol boundary invariants hold when new internal event kinds are added.
+
+**Session metadata and ownership persistence**:
+
+- Session metadata event is always the first emitted event before any text delta.
+- Trace ownership row is inserted before first outbound SSE event.
+- Trace ownership persistence enforces one trace identifier to one owning user mapping.
+- Feedback ownership verification succeeds only when trace ownership row matches requester.
+
+**Trace-step emission and filtering**:
+
+- Trace-step collector remains always active in processor chain regardless of requested verbosity.
+- Full verbosity emits trace-step events interleaved at natural pipeline positions.
+- Standard verbosity suppresses trace-step emission while keeping identical pipeline execution.
+- HTTP boundary applies verbosity filtering without mutating internal event production.
+- TUI receives trace-step data directly without HTTP filtering.
+
+**Trace-step envelope and type coverage**:
+
+- Trace-step envelope includes type discriminator, step discriminator, step data payload, latency, and timestamp fields.
+- Step-type coverage includes intent-detected, memory-recall, guardrail-input, guardrail-output, retrieval, tool-call-start, tool-call-end, context-budget, source-fetch, and rewrite.
+- Source-fetch step supports started, completed, and failed state payload variants.
+- Trace-step payloads preserve discriminated-union typing across all supported step kinds.
+
+**Verbosity security and performance invariants**:
+
+- Verbosity parameter propagates from route input to stream handling unchanged.
+- Standard mode emits eight user-facing event families with no trace-step writes.
+- Full mode adds trace-step events as ninth family without changing core pipeline behavior.
+- Standard mode has no additional stream-write overhead from suppressed trace-step events.
+- Full mode is restricted by developer-level authorization policy at server boundary.
+
+**CTA streaming integrity**:
+
+- CTA tool factory derives allowed suggestion schema directly from server CTA catalog.
+- Catalog ownership remains server-side while tool mechanics remain library-side.
+- Raw CTA tool-call and tool-result chunks are suppressed from outbound SSE stream.
+- Processor emits clean CTA event payload only for valid CTA suggestions.
+- Guardrail-aborted streams emit no CTA events due to processor ordering.
+- CTA payload enforces maximum three suggestions and required field structure.
+
+**Client SDK behavior guarantees**:
+
+- Runtime dependency graph remains zero production dependencies.
+- Browser and React Native compatible transport behavior is validated.
+- Optional typed-client integration path remains optional and does not affect base SDK contract.
+- Incremental SSE parser handles chunked transport and multi-line data assembly correctly.
+- Reconnect delay follows bounded exponential backoff with jitter.
+- Last-event identifier is stored and sent on reconnect attempts.
+- Offline queue capacity is configurable and overflow drops oldest entry while firing overflow callback.
+- Upload requests include authorization and progress reporting hooks.
+- Feedback submission automatically attaches latest trace identifier.
+- Token refresh callback executes before each request when configured.
+
+**SSE schema and payload security**:
+
+- Location payload type enum is restricted to supported place categories.
+- Location image metadata shape enforces required and optional fields exactly.
+- Citation payload URL fields validate trusted pattern constraints before emission.
+- Location coordinate values validate numeric range before emission.
+- Location image providers are enforced against configured provider policy.
+- Trace-step payloads are sanitized to prevent internal leakage in production streams.
+- Client-side schema validation rejects unknown fields and malformed payloads.
+- Client-side URL validation blocks rendering of nonconforming URLs.
+
+### Extension: Concurrent Request Policy
+
+- REJECT policy returns an error to the second request while the first continues.
+- ENQUEUE policy queues the second request and processes it after the first completes.
+- INTERRUPT policy cancels the first run and starts the second immediately.
+- ROLLBACK policy reverts state before starting the second request.
+- In-flight cancellation drains the current step cleanly.
+- Client receives the correct notification for each policy outcome.
+- State consistency is maintained across all policy transitions.
+- Rapid successive requests under each policy produce correct outcomes without race conditions.
+- Cleanup after INTERRUPT cancellation releases all resources from the cancelled run.
+- Queue depth limits prevent unbounded ENQUEUE accumulation under burst traffic.
+
+### Extension: Real-Time Voice and Audio Transport
+
+- Provider-agnostic voice interface defines four required capabilities: speech-to-text listen, text-to-speech speak, bidirectional streaming connect, and structured event emission.
+- Speech-to-text produces incremental transcript output.
+- Text-to-speech provides low-latency audio playback streaming.
+- Bidirectional streaming enables continuous real-time exchange.
+- Two architecture modes are selectable per voice session: cascaded pipeline and speech-to-speech.
+- Cascaded pipeline routes through STT then LLM then TTS with safety gating between stages.
+- Speech-to-speech mode provides lowest latency with reduced control points.
+- Primary media transport uses WebRTC for real-time duplex audio.
+- Session signaling uses WebSocket for connection negotiation and state updates.
+- HTTP chunked transfer serves as fallback when real-time channels are unavailable.
+- All media and signaling channels use encrypted transport.
+- Voice session establishment requires authenticated session authorization and rejects unauthenticated callers before media exchange.
+- Per-tenant concurrent session limits are enforced.
+- Per-session duration caps are enforced.
+- Rate limiting on session creation prevents resource exhaustion attacks.
+- Voice activity detection uses configurable sensitivity tuning for noisy and quiet environments.
+- Silence threshold duration is configurable for turn-finalization timing.
+- Interruption handling allows user barge-in with immediate generation cancellation or pause.
+- Voice sessions emit structured transport events for transcript updates, speaker audio, interruptions, and connection state.
+- Tool execution during active voice sessions does not break audio continuity.
+- Transcript updates and speaker streaming remain synchronized as a single live session timeline.
+- Configurable admission limits on concurrent voice sessions per tenant prevent resource exhaustion.
+- Backpressure controls throttle new session creation when infrastructure approaches capacity.
+- Degraded-mode behavior activates under sustained load with cascaded fallback and graceful session shedding.
+
+### Extension: Generative UI SSE Protocol
+
+- ui-component SSE event type is emitted with correct component type, data payload, mode, and fallback.
+- UI component stream processor suppresses tool-call and tool-result chunks and emits clean ui-component events.
+- Processor chain ordering is correct: guardrail → CTA → location → UI component → trace-step.
+- Clients that predate the ui-component event type ignore it gracefully per SSE specification.
+- Schema validation rejects malformed component data before emission.
+- ui-component events appear at their natural stream position interleaved with text-delta events.
+- Client reconnection after mid-stream disconnect resumes without duplicate ui-component events.
+- Partial payload delivery during stream interruption does not produce corrupted component state on the client.
+- Per-response emission limits prevent unbounded component generation.
+- Payload size caps reject oversized component data before emission.

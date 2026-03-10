@@ -1,4 +1,4 @@
-# 03 — System Architecture
+# System Architecture
 
 > **safeagent** is a multi-tenant AI agent platform built for 10 million users. Every piece of state lives outside the API server. The server itself is stateless, horizontally scalable, and replaceable at any time without data loss.
 
@@ -195,7 +195,7 @@ graph LR
 
 ## Docker Compose Service Map
 
-Services are grouped into runtime profiles. The default profile starts the recommended local development stack. Only Postgres is strictly required to boot — all other services degrade gracefully when absent (see [15 — Infrastructure](./15-infrastructure.md) for the degradation model). Optional profiles add observability and background job infrastructure.
+Services are grouped into runtime profiles. The default profile starts the recommended local development stack. Only Postgres is strictly required to boot — all other services degrade gracefully when absent (see [Infrastructure](./infrastructure.md) for the degradation model). Optional profiles add observability and background job infrastructure.
 
 ```mermaid
 graph TB
@@ -247,9 +247,9 @@ graph TB
 
 ### Core Constants
 
-All model, provider, and environment constants are defined in the single source of truth: [04 — Foundation](./04-foundation.md). No constants are duplicated here — refer to file 04 for the authoritative table.
+All model, provider, and environment constants are defined in the single source of truth: [Foundation](./foundation.md). No constants are duplicated here — refer to file 04 for the authoritative table.
 
-**Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [15 — Infrastructure](./15-infrastructure.md) for the complete service list.
+**Trigger profile** adds Trigger.dev's self-hosted stack (five services). The webapp provides the dashboard and HTTP API. The supervisor orchestrates task execution via the docker proxy. Electric handles real-time event streaming from Postgres. A local registry hosts task container images. All services connect to the default-profile Postgres and Valkey instances. See [Infrastructure](./infrastructure.md) for the complete service list.
 
 **Langfuse profile** adds six services for full agent observability. Langfuse Web and Worker share the Postgres server (using a separate `langfuse` database) and the MinIO server (using a separate `langfuse-media` bucket). ClickHouse stores trace event data. A dedicated Redis instance (on port 6380 to avoid collision with Valkey on 6379) handles Langfuse's internal queue.
 
@@ -538,7 +538,7 @@ Each API instance uses three separate connection pools targeting the same Postgr
 - **Custom pgvector pool**: RAG embedding queries. Moderate concurrency during file processing.
 - **Drizzle ORM pool**: All schema-managed tables. Highest concurrency — file metadata, usage events, page index queries all go here.
 
-The total per-instance connection count must stay low enough that `N instances × connections_per_instance + worker_connections + langfuse_connections < max_connections`. At 10 API instances with 20 connections each, that's 200 connections consumed by API alone — zero headroom for workers or Langfuse. **PgBouncer (or equivalent connection pooler) is required in any deployment beyond single-instance development** (see [15 — Infrastructure § Postgres at Scale](./15-infrastructure.md#postgres-at-scale)). PgBouncer multiplexes hundreds of application connections onto a smaller pool of actual Postgres connections, eliminating the per-instance pool sizing constraint entirely. The `max_connections=200` value in Docker Compose is a local development default — production Postgres behind PgBouncer can serve thousands of application-side connections.
+The total per-instance connection count must stay low enough that `N instances × connections_per_instance + worker_connections + langfuse_connections < max_connections`. At 10 API instances with 20 connections each, that's 200 connections consumed by API alone — zero headroom for workers or Langfuse. **PgBouncer (or equivalent connection pooler) is required in any deployment beyond single-instance development** (see [Infrastructure § Postgres at Scale](./infrastructure.md#postgres-at-scale)). PgBouncer multiplexes hundreds of application connections onto a smaller pool of actual Postgres connections, eliminating the per-instance pool sizing constraint entirely. The `max_connections=200` value in Docker Compose is a local development default — production Postgres behind PgBouncer can serve thousands of application-side connections.
 
 **SurrealDB** uses a persistent WebSocket connection per API instance. The TypeScript SDK manages reconnection automatically.
 
@@ -581,4 +581,123 @@ The total per-instance connection count must stay low enough that `N instances �
 
 ---
 
-*Previous: [02 — Research & Decisions](./02-research.md) | Next: [04 — Foundation](./04-foundation.md)*
+## Test Specifications
+
+### Architecture Invariants
+
+This section verifies non-negotiable architecture invariants for stateless scaling, service boundaries, request sequencing, storage ownership, and degradation behavior.
+
+**Stateless API invariants**:
+
+- Any API instance can handle any incoming request without sticky-session requirement.
+- Load balancing behavior remains correct with no session affinity assumptions.
+- Mid-stream reconnection can continue through a different API instance.
+- Instance restart during active traffic does not corrupt shared persistent state.
+
+**Postgres connection budget invariants**:
+
+- Total Postgres connection budget enforces hard upper limit of two hundred connections.
+- Budget allocation across API, workers, and observability services stays within hard limit.
+- PgBouncer integration path is validated for production-scale pooling behavior.
+- Connection exhaustion handling degrades gracefully without process crash.
+
+**SurrealDB connection invariants**:
+
+- SurrealDB client uses persistent WebSocket per process.
+- WebSocket drop triggers automatic reconnect path.
+- Reconnect path avoids duplicate concurrent SurrealDB connections.
+- Memory operations recover after reconnect without manual intervention.
+
+**Valkey connection invariants**:
+
+- Valkey integration uses one shared client per process.
+- Connection URL uses redis-style scheme compatibility.
+- Additional ad-hoc client creation is blocked in steady-state runtime.
+
+**MinIO connection invariants**:
+
+- MinIO operations use stateless HTTP request flow.
+- MinIO integration avoids persistent connection-pool dependency.
+- Repeated object operations remain stable without long-lived pooled sockets.
+
+**Chat request sequence invariants**:
+
+- Request flow enforces rate-check before budget-check.
+- Request flow enforces budget-check before memory-load.
+- Request flow enforces memory-load before model stream start.
+- Persistence stage runs after stream completion.
+- Accounting stage runs after persistence stage.
+- Out-of-order execution attempts are rejected by sequencing checks.
+
+**File upload timing invariants**:
+
+- Synchronous upload phase completes under one-second target in nominal conditions.
+- Background enrichment executes asynchronously after synchronous completion.
+- Slow enrichment does not block upload response acknowledgement.
+- Upload response returns status promptly before enrichment completion.
+
+**Storage responsibility isolation**:
+
+- Postgres stores conversation, page index, file metadata, and usage records.
+- SurrealDB stores long-term memory only.
+- MinIO stores binary object payloads only.
+- Valkey stores cache and counter data only.
+- Cross-system duplication is prohibited except designated cache copies.
+
+**Compose-profile topology invariants**:
+
+- Default profile starts exactly five core services.
+- Langfuse profile adds four observability services on top of default profile.
+- Trigger profile adds five background services on top of default profile.
+- Dependency ordering respects health-gated startup sequence.
+- Service health checks gate dependent service readiness.
+
+**Graceful degradation invariants**:
+
+- Postgres-only boot path is viable for core service startup.
+- SurrealDB failure degrades long-term memory independently.
+- MinIO failure degrades file capabilities independently.
+- Valkey failure degrades rate-limit and budget behavior independently.
+- Trigger failure degrades background execution mode independently.
+- Langfuse failure degrades tracing behavior independently.
+
+**Horizontal scaling invariants**:
+
+- Postgres read replicas support read scaling with primary-write separation.
+- Postgres partitioning strategy supports high-write growth paths.
+- SurrealDB scaling model supports vertical expansion with bounded per-user corpus assumptions.
+- MinIO distributed mode supports storage throughput scaling.
+- MinIO object keying strategy remains user-identity scoped.
+- Valkey cluster mode supports shard scaling.
+- Valkey hash-tag strategy keeps related keys colocated.
+- Valkey eviction strategy follows allkeys-lru policy under pressure.
+
+**Network topology invariants**:
+
+- Services communicate over a single Docker bridge network.
+- External network access is limited to API port 3000 and MinIO console port 9001.
+- Internal-only services are not exposed externally by default.
+- Cross-service communication uses internal addresses on bridge network.
+
+**Layer-boundary enforcement**:
+
+- Library modules do not import server-only route and runtime wiring modules.
+- Server modules consume library public surfaces rather than internal private paths.
+- Cross-boundary import violations are detected by static checks.
+- TUI, client SDK, and frontend modules consume library boundaries without server internals.
+
+### System Architecture
+
+Architecture invariants are verified through integration and end-to-end tests rather than dedicated unit tests. These tests validate structural properties of the running system.
+
+**Testable invariants**:
+
+- Layer boundary enforcement: library imports do not pull server-specific modules and vice versa.
+- Storage responsibility isolation: each storage system handles only its designated data categories per the storage decision table.
+- Docker Compose profiles: default profile starts five services, Langfuse profile adds observability, Trigger profile adds background jobs.
+- Graceful degradation topology: each optional service unavailability triggers the correct fallback per the degradation model.
+- Horizontal scaling: stateless API design verified by running concurrent requests across multiple API instances sharing the same external services.
+- Connection management: pool limits respected under load, PgBouncer integration functional.
+- Network topology: all services communicate over single Docker bridge network with correct port assignments.
+- Data flow invariants: chat request follows rate-check then budget-check then memory-load then LLM-stream sequence, with persistence and accounting after stream completion.
+- File upload flow: synchronous upload phase completes under one second, asynchronous enrichment runs in background.
