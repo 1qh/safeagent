@@ -7,17 +7,17 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 ## Preservation Status
 
 - Source files in `plan_v0`: 30
-- Preserved files in `plan`: 30
+- Preserved source files in `plan`: 30
 - Missing files: 0
 - Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`
 
 ---
 
-## One-to-One Preservation Map
+## Source-to-Current Preservation Map
 
 | Source (`plan_v0`) | Preserved (`plan`) | Status |
 |---|---|---|
-| `overview.md` | `overview.md` | Preserved (additive Quick Start section) |
+| `overview.md` | `overview.md` | Preserved (additive reader-first links) |
 | `requirements.md` | `requirements.md` | Preserved |
 | `research.md` | `research.md` | Preserved |
 | `architecture.md` | `architecture.md` | Preserved |
@@ -46,7 +46,7 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 | `documentation.md` | `documentation.md` | Preserved |
 | `release-pipeline.md` | `release-pipeline.md` | Preserved |
 | `testing.md` | `testing.md` | Preserved |
-| `execution.md` | `execution.md` | Preserved |
+| `execution.md` | `execution.md` | Preserved (additive workflow/source-of-truth sections) |
 
 ---
 
@@ -60,3 +60,13 @@ Use this sequence to start implementation quickly:
 4. Domain task specification document
 5. [Quality Gates](./quality-gates.md)
 6. [Operations](./operations.md)
+
+---
+
+## Verification Procedure
+
+- File parity check: all source filenames in `plan_v0` exist in `plan`.
+- Missing check: no source file is absent from `plan`.
+- Additions check: reader-first files are additive and do not replace source files.
+- Content loss check: no removed lines from source files unless explicitly documented.
+- Scheduling authority check: task ordering and dependency truth remain centralized in [Execution Plan](./execution.md).
