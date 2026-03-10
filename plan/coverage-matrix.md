@@ -87,3 +87,5 @@ Use this sequence to start implementation quickly:
 
 - `execution.md`: count wording and gate-layer wording were corrected for consistency with the current 129-task model and task-level versus project-level gate separation.
 - `ai-operations.md`: top metadata label was clarified from task-style wording to internal-layer wording to avoid execution-task ambiguity.
+- 24 module docs: repeated Task/Test relationship boilerplate was shortened to a compact equivalent sentence.
+- 30 source docs: per-file `Table of Contents` blocks were removed under [Compact Authoring Standard](./compact-authoring-standard.md) to reduce token overhead without changing normative schemas.
