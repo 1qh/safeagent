@@ -27,7 +27,7 @@
 
 ## Architecture Overview
 
-The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `tripwire`, `done`, `error`) designed for the client SDK module and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
+The streaming system keeps framework stream events internal to the safeagent library. At the HTTP boundary, stream handler factory iterates the internal stream output and translates framework events into a custom named-event SSE protocol (`session-meta`, `text-delta`, `trace-step`, `cta`, `citation`, `location`, `ui-component`, `tripwire`, `done`, `error`) designed for the client SDK module and other SSE consumers. The `trace-step` events provide real-time pipeline visibility for developer debugging and are only emitted when the verbosity level is `full`.
 
 ```mermaid
 graph TB
@@ -55,6 +55,7 @@ graph TB
         EVT_CTA["event: cta\ndata: { cta: [...] }"]
         EVT_CIT["event: citation\ndata: { citation }"]
         EVT_LOC["event: location\ndata: { location: { name, type, lat, lng, images, context? } }"]
+        EVT_UI["event: ui-component\ndata: { componentType, data, mode, fallback }"]
         EVT_TRIP["event: tripwire\ndata: { conceptId, reason, fallbackMessage }"]
         EVT_DONE["event: done\ndata: {}"]
         EVT_ERR["event: error\ndata: { code, message }"]
@@ -88,7 +89,7 @@ graph TB
 
 stream handler factory is an Elysia route handler factory exported by the library. It wires together every concern that touches the HTTP streaming path: context injection, agent execution stream invocation, internal stream event to SSE translation, keepalive, and error handling. The server registers it as a route and configures auth middleware; the library owns all the streaming logic inside. The library also exports the underlying framework-agnostic stream processing primitives for non-Elysia consumers (e.g., tests, TUI).
 
-The handler executes the agent with streaming enabled and receives an async stream of framework events. Event families include model text chunks, run item events (tool calls, messages, handoffs), and agent update events for handoff switches. The handler maps these to the eight SSE event types. Framework guardrail tripwire exceptions are caught at the boundary and emitted as `tripwire` SSE events.
+The handler executes the agent with streaming enabled and receives an async stream of framework events. Event families include model text chunks, run item events (tool calls, messages, handoffs), and agent update events for handoff switches. The handler maps these to the ten SSE event types. Framework guardrail tripwire exceptions are caught at the boundary and emitted as `tripwire` SSE events.
 
 The factory accepts an error-message mapping parameter — a plain object keyed by error code string, where values are either a static message string or a function that derives a message from metadata. When the handler catches an error and emits an `error` SSE event, it looks up the error's code in this map to populate the `message` field. If the code is not in the map, a generic fallback message is used. The server passes its error message map (defined in [12 — Server Implementation](./12-server.md)) when constructing the handler. This is the DI mechanism that keeps the library language-agnostic while letting the server control user-facing tone.
 
@@ -429,7 +430,7 @@ flowchart LR
     end
 
     subgraph WIRE["SSE Wire"]
-        SSE["Custom named SSE events\nsession-meta | text-delta | trace-step | cta | citation | location | tripwire | done | error"]
+        SSE["Custom named SSE events\nsession-meta | text-delta | trace-step | cta | citation | location | ui-component | tripwire | done | error"]
     end
 
     subgraph CLIENTS["External Clients"]
@@ -615,7 +616,7 @@ The chat streaming endpoint accepts a verbosity control parameter that controls 
 
 | Level | Events Emitted | Target Audience |
 |-------|---------------|----------------|
-| `standard` (default) | `session-meta`, `text-delta`, `cta`, `citation`, `location`, `tripwire`, `done`, `error` | End users, production applications |
+| `standard` (default) | `session-meta`, `text-delta`, `cta`, `citation`, `location`, `ui-component`, `tripwire`, `done`, `error` | End users, production applications |
 | `full` | All `standard` events plus `trace-step` events interleaved at their natural pipeline positions | Developers debugging pipeline behavior via [18 — Frontend SDK](./18-frontend-sdk.md) verbosity toggle |
 
 ### Verbosity Filtering
@@ -624,8 +625,8 @@ The chat streaming endpoint accepts a verbosity control parameter that controls 
 flowchart LR
     HANDLER["stream handler factory"]
     VERBOSITY{"verbosity\nparameter"}
-    STANDARD_FILTER["Emit user-facing\nevents only\n(8 event types)"]
-    FULL_FILTER["Emit all events\nincluding trace-step\n(9 event types)"]
+    STANDARD_FILTER["Emit user-facing\nevents only\n(9 event types)"]
+    FULL_FILTER["Emit all events\nincluding trace-step\n(10 event types)"]
     SSE["SSE Response"]
 
     HANDLER --> VERBOSITY
@@ -1072,7 +1073,7 @@ Build stream handler factory that turns internal agent stream output into a well
 - Executing the agent with streaming enabled to get the internal async event stream
 - Accepting a verbosity control parameter (`standard` or `full`) from the route handler. When `standard`, only user-facing events are emitted. When `full`, `trace-step` events are also emitted alongside user-facing events.
 - Running the trace-step collector in the processor chain to capture pipeline milestone data (intent classification, guardrail verdicts, memory recall, retrieval results, tool execution, context budget) as `trace-step` data events
-- Iterating internal framework stream events and mapping them to the nine SSE event types:
+- Iterating internal framework stream events and mapping them to the ten SSE event types:
   - Raw model stream event (text delta) → `text-delta` SSE event
   - Run-item stream event with CTA-suggestion tool call → `cta` SSE event (tool chunks suppressed)
   - Run-item stream event with location-search tool call → `location` SSE event (tool chunks suppressed)
@@ -1169,7 +1170,7 @@ Build the client SDK module as a zero-dependency TypeScript package:
 
 - SSE connection management using Fetch API streaming
 - Incremental SSE line parser (handles chunked delivery, multi-line data fields)
-- Typed event dispatch: register callbacks for each of the nine event types (including `trace-step`)
+- Typed event dispatch: register callbacks for each of the ten event types (including `trace-step` and `ui-component`)
 - `trace-step` event dispatch with step-type discrimination: the trace-step callback receives a discriminated union payload typed by `step` field, allowing consumers to handle each pipeline step differently
 - Auto-reconnection with exponential backoff and jitter; respect `Last-Event-ID`
 - Offline message queue: enabled via offline-queue config; queues send-message calls when offline; drains FIFO on reconnect; emits a client-local overflow callback (NOT an SSE event) when queue is full and drops oldest
@@ -1188,7 +1189,7 @@ Build the client SDK module as a zero-dependency TypeScript package:
 **Acceptance Criteria**:
 
 - Package installs with zero production dependencies
-- All nine event types are handled with typed callbacks (including `trace-step`)
+- All ten event types are handled with typed callbacks (including `trace-step` and `ui-component`)
 - Session-meta callback fires before text-delta callback on every stream
 - The trace identifier from `session-meta` is stored and attached to feedback submission automatically
 - Connection drops trigger reconnection with backoff; `Last-Event-ID` is sent
