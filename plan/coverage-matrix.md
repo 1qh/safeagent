@@ -9,7 +9,7 @@ This matrix tracks preservation from `plan_v0` into the current `plan` workspace
 - Source files in `plan_v0`: 30
 - Preserved source files in `plan`: 30
 - Missing files: 0
-- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`
+- Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`
 
 ---
 
@@ -57,10 +57,12 @@ Use this sequence to start implementation quickly:
 1. [Start Here](./start-here.md)
 2. [Constraints](./constraints.md)
 3. [Execution Plan](./execution.md)
-4. [Domain Playbooks](./domain-playbooks.md)
-5. Domain task specification document
-6. [Quality Gates](./quality-gates.md)
-7. [Operations](./operations.md)
+4. [Implementation Workflow](./implementation-workflow.md)
+5. [Task Verification Index](./task-verification-index.md)
+6. [Domain Playbooks](./domain-playbooks.md)
+7. Domain task specification document
+8. [Quality Gates](./quality-gates.md)
+9. [Operations](./operations.md)
 
 ---
 

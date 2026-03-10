@@ -10,8 +10,10 @@ This is the primary entry point for implementation work. Use it to choose a read
 2. Read [System Plan Overview](./overview.md) and [System Architecture](./architecture.md).
 3. Read [Execution Plan](./execution.md) and locate your assigned task.
 4. Open the domain document listed in the execution routing index.
-5. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
-6. Use [Operations](./operations.md) if your task touches runtime behavior.
+5. Read [Implementation Workflow](./implementation-workflow.md).
+6. Read [Task Verification Index](./task-verification-index.md) for behavioral test ownership.
+7. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
+8. Use [Operations](./operations.md) if your task touches runtime behavior.
 
 ---
 
@@ -21,8 +23,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 
 1. [Execution Plan](./execution.md) → locate TASK_X in the per-task routing index.
 2. Open the mapped domain document and complete task acceptance criteria and QA scenarios.
-3. Read linked test assertions for the same domain.
-4. Validate against [Quality Gates](./quality-gates.md).
+3. Use [Task Verification Index](./task-verification-index.md) to find the behavioral test owner file.
+4. Follow [Implementation Workflow](./implementation-workflow.md) for completion evidence sequencing.
+5. Validate against [Quality Gates](./quality-gates.md).
 
 ### Technical Lead (ordering and risk)
 
@@ -36,7 +39,8 @@ This is the primary entry point for implementation work. Use it to choose a read
 1. [Quality Gates](./quality-gates.md)
 2. [Testing](./testing.md)
 3. [Release Pipeline](./release-pipeline.md)
-4. [Coverage Matrix](./coverage-matrix.md)
+4. [Task Verification Index](./task-verification-index.md)
+5. [Coverage Matrix](./coverage-matrix.md)
 
 ### Operations and Security
 
@@ -54,6 +58,8 @@ This is the primary entry point for implementation work. Use it to choose a read
 - Product boundaries and done criteria: [Requirements & Constraints](./requirements.md)
 - Consolidated non-negotiables: [Constraints](./constraints.md)
 - Testing and verification policy: [Testing](./testing.md), [Quality Gates](./quality-gates.md)
+- Task completion sequencing and evidence model: [Implementation Workflow](./implementation-workflow.md)
+- Task-level behavioral ownership mapping: [Task Verification Index](./task-verification-index.md)
 - Operational readiness and incidents: [Operations](./operations.md)
 - Architectural rationale and validated decisions: [Research & Decisions](./research.md)
 

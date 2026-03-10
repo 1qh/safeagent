@@ -50,6 +50,8 @@ This document defines the verification sequence that every implementation task m
 
 - Requirement-level done criteria: [Requirements & Constraints](./requirements.md)
 - Test policy and coverage maps: [Testing](./testing.md)
+- Task-level verification ownership: [Task Verification Index](./task-verification-index.md)
+- Task completion evidence model: [Implementation Workflow](./implementation-workflow.md)
 - CI and release controls: [Release Pipeline](./release-pipeline.md)
 - Security and compliance controls: [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 - Execution dependency gates: [Execution Plan](./execution.md)
