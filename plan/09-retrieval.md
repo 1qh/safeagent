@@ -17,6 +17,7 @@
 - [Page Context Assembly](#page-context-assembly)
 - [Structured Citations and Attribute-First Generation](#structured-citations-and-attribute-first-generation)
 - [Evidence Bundle Gate](#evidence-bundle-gate)
+- [Feedback-Driven Retrieval Optimization](#feedback-driven-retrieval-optimization)
 - [FileRegistry](#fileregistry)
 - [Cross-Conversation RAG](#cross-conversation-rag)
 - [Large TXT RAG](#large-txt-rag)
@@ -623,6 +624,47 @@ The minimum-distinct-passages setting, weights, thresholds, and gate-closed beha
 | `clarify` | Query ambiguity | Clarification question before retrying retrieval. |
 
 The system blocks prose generation when the gate is closed.
+
+---
+
+## Feedback-Driven Retrieval Optimization
+
+Feedback signals from grounded-answer outcomes are fed back into retrieval controls so quality improves over time instead of only being observed.
+
+### Closed-Loop Signals
+
+- Negative feedback events, including thumbs-down and regeneration requests on retrieval-grounded answers, SHALL be ingested as retrieval quality signals and linked to the originating query, retrieved document set, and evidence bundle.
+- Each document page accumulates a rolling quality score from positive feedback ratio, evidence sufficiency outcomes from the gate, and retrieval frequency so persistent weak performers can be demoted in later ranking.
+- When one retrieval arm repeatedly appears in negatively rated outcomes, fusion weighting across summary vector, raw vector, and keyword retrieval SHALL be adjusted to reduce that arm's impact.
+- Gate relevance thresholds MAY be adapted per topic; topics with sustained negative feedback tighten evidence requirements before user-facing claims are allowed.
+- Negative feedback on a cached semantic answer SHALL invalidate that cache record to prevent repeated delivery of stale low-quality outcomes.
+
+### Governance and Safety Controls
+
+- All feedback-driven parameter changes MUST be reversible, with automatic rollback when post-adjustment quality metrics degrade during the configured evaluation window.
+- Feedback-driven adjustments MUST NOT trigger until a statistically meaningful sample is reached, using configurable minimum feedback counts per document and per topic.
+- Multi-document answers use proportional feedback attribution based on evidence contribution strength, rather than equal split attribution.
+- Every parameter adjustment MUST produce an audit trail with before and after values, triggering feedback sample details, and rollback eligibility window, aligned with the provenance controls defined in plan 14.
+- Operators can pin retrieval parameters for selected topics or document sets to prevent unwanted drift during sensitive periods.
+
+### Closed Feedback Loop
+
+```mermaid
+flowchart LR
+    USER_FEEDBACK["User Feedback"] --> QUALITY_SIGNALS["Quality Signals\nlinked to query, evidence, and documents"]
+    QUALITY_SIGNALS --> SAMPLE_GATE{"Minimum Sample\nReached?"}
+    SAMPLE_GATE -->|"No"| MONITOR_ONLY["Monitor Only\nno parameter change"]
+    SAMPLE_GATE -->|"Yes"| PARAMETER_ADJUSTMENT["Parameter Adjustment\nweights, thresholds, ranking bias"]
+    PARAMETER_ADJUSTMENT --> RETRIEVAL_RUNTIME["Improved Retrieval\nupdated ranking and filtering"]
+    RETRIEVAL_RUNTIME --> BETTER_ANSWERS["Better Answers\nstronger evidence support"]
+    BETTER_ANSWERS --> USER_FEEDBACK
+    PARAMETER_ADJUSTMENT --> AUDIT_TRAIL["Audit Trail\nbefore and after plus rollback window"]
+    PARAMETER_ADJUSTMENT --> SAFE_ROLLBACK["Safe Rollback\nrevert on quality regression"]
+    SAFE_ROLLBACK --> RETRIEVAL_RUNTIME
+    QUALITY_SIGNALS --> SEMANTIC_CACHE_CONTROL["Semantic Cache Control\ninvalidate negatively rated entries\nplan 26 alignment"]
+    SEMANTIC_CACHE_CONTROL --> RETRIEVAL_RUNTIME
+    OPERATOR_OVERRIDE["Operator Override\npin protected parameters"] --> PARAMETER_ADJUSTMENT
+```
 
 ---
 

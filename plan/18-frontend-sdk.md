@@ -14,6 +14,7 @@
 - [Web Components (Web components module)](#web-components-web-components-module)
 - [ai-elements Adoption](#ai-elements-adoption)
 - [Custom Components](#custom-components)
+- [Generative UI Component Rendering](#generative-ui-component-rendering)
 - [Trace Visualization (TRACE_UI)](#trace-visualization-trace_ui)
 - [React Native Components (Native components module)](#react-native-components-native-components-module)
 - [Component Installation CLI](#component-installation-cli)
@@ -488,6 +489,90 @@ Implementation constraints:
 - All custom components allow style extension through `className`.
 - All custom components support semantic role mapping.
 - All custom components consume hook state only through typed interfaces.
+
+## Generative UI Component Rendering
+
+Generative UI component rendering defines how dynamic component events become visible output across web and native surfaces.
+The transport section defines ui-component event semantics and the agent section defines component-producing tool behavior.
+This section defines the frontend rendering contract that connects those events to deterministic, accessible presentation.
+
+Component registry:
+- The frontend SDK SHALL provide a component registry where application teams register renderer implementations by component type.
+- The registry maps server catalog discriminators to rendering implementations.
+- Registry registration order is deterministic so override behavior is predictable.
+
+Built-in renderers:
+- The frontend SDK ships built-in renderers for data table, chart bar, chart line, chart pie, metric card, image gallery, code block, and markdown block.
+- Applications can override any built-in renderer without forking the shared rendering model.
+- Built-in renderer output follows shared visual and accessibility policies.
+
+Custom renderers:
+- Applications can register custom renderers for domain-specific component types.
+- A custom renderer receives validated payload data and display mode, then returns rendered output.
+- Custom renderer registration uses the same registry contract as built-in renderer registration.
+
+Fallback chain:
+- When a ui-component event arrives with an unregistered type, renderer resolution follows a fixed chain.
+- First evaluate application custom renderer registrations.
+- Next evaluate built-in renderer registrations.
+- Last render text fallback from the event payload.
+- This chain guarantees that each event produces visible output.
+
+React hook integration:
+- A dedicated hook consumes ui-component events from chat transport.
+- The hook resolves renderer selection through the registry and emits progressive output as events arrive.
+- Progressive rendering preserves stream order and avoids waiting for full completion before initial display.
+
+Web component support:
+- A web component wrapper exposes the same registry-driven rendering behavior for non-React environments.
+- The wrapper accepts component events and delegates rendering to registered renderer implementations.
+- Registry semantics remain consistent with React-based integrations.
+
+React Native support:
+- Native renderers use platform-appropriate presentation primitives for charts and tables while preserving shared registry semantics.
+- The native surface keeps the same registry pattern and hook interface for cross-platform behavior parity.
+- Platform adaptation stays within renderer implementations rather than transport or registry contracts.
+
+Display mode handling:
+- Inline mode renders component output within message text flow.
+- Block mode renders component output as standalone sections between text segments.
+- Renderer selection and layout behavior SHALL respect mode values carried by each event.
+
+Accessibility:
+- All built-in renderers MUST satisfy WCAG 2.1 AA requirements.
+- Chart renderers include equivalent data table alternatives for assistive access.
+- Interactive renderers support full keyboard navigation and clear focus visibility.
+
+Storybook coverage:
+- Every built-in renderer has Storybook stories for full data variation coverage.
+- Story coverage includes empty states, error states, inline mode, and block mode.
+- Story review gates verify rendering consistency, accessibility semantics, and regression stability.
+
+Security:
+- Renderers MUST treat all payload data as untrusted input.
+- Direct raw HTML injection primitives are prohibited.
+- Dynamic script execution is prohibited.
+- External resource loading from payload URLs requires domain allowlist validation before retrieval.
+
+```mermaid
+flowchart LR
+    UI_COMPONENT_EVENT[UI Component Event]
+    REGISTRY_LOOKUP[Registry Lookup]
+    CUSTOM_RENDERER_CHECK[Custom Renderer Check]
+    BUILT_IN_RENDERER_CHECK[Built-In Renderer Check]
+    TEXT_FALLBACK[Text Fallback]
+    RENDERER_RESOLUTION[Renderer Resolution]
+    RENDERED_OUTPUT[Rendered Output]
+
+    UI_COMPONENT_EVENT --> REGISTRY_LOOKUP
+    REGISTRY_LOOKUP --> CUSTOM_RENDERER_CHECK
+    CUSTOM_RENDERER_CHECK --> RENDERER_RESOLUTION
+    CUSTOM_RENDERER_CHECK --> BUILT_IN_RENDERER_CHECK
+    BUILT_IN_RENDERER_CHECK --> RENDERER_RESOLUTION
+    BUILT_IN_RENDERER_CHECK --> TEXT_FALLBACK
+    TEXT_FALLBACK --> RENDERER_RESOLUTION
+    RENDERER_RESOLUTION --> RENDERED_OUTPUT
+```
 
 ## Trace Visualization (TRACE_UI)
 

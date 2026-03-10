@@ -7,6 +7,8 @@
 > **Scale**: 119 implementation tasks + 4 final audit tasks = 123 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
 > **Scale Update (Documents 28, 29)**: 121 implementation tasks + 4 final audit tasks = 125 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
+>
+> **Scale Update (Gap Round 4)**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
 
 ---
 
@@ -23,6 +25,7 @@
 - [Batch Completion Rules](#batch-completion-rules)
 - [New Task Registry (Documents 05, 06, 07, 09, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)](#new-task-registry-documents-05-06-07-09-10-18-19-20-21-22-23-24-25-26-27)
 - [Execution Addendum (Documents 28, 29)](#execution-addendum-documents-28-29)
+- [Execution Addendum (Gap Analysis Round 4)](#execution-addendum-gap-analysis-round-4)
 
 ---
 
@@ -1400,9 +1403,37 @@ The following 2 tasks were added for developer workflow maturity and public API 
 
 ---
 
+## Execution Addendum (Gap Analysis Round 4)
+
+### New Tasks
+
+The following 4 tasks were added for retrieval quality feedback, generative UI, conversation intelligence, and multi-tenant configuration. Each integrates into mid-to-late execution where prerequisite infrastructure is stable.
+
+| Task | Name | Source | Batch | Category | Depends On |
+|------|------|--------|------|----------|------------|
+| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Document 09 extension | 8b | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
+| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Documents 06, 11, 18 extensions | 9 | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
+| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | Document 26 extension | 10 | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Document 04 extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
+
+### Batch and Total Impact
+
+| Item | Previous | Updated |
+|------|----------|---------|
+| Total tasks | 125 | 129 |
+| Batch 4 tasks | 7 | 8 |
+| Batch 8b tasks | existing | +1 |
+| Batch 9 tasks | existing | +1 |
+| Batch 10 tasks | existing | +1 |
+| Maximum concurrency | 18 (Batch 6) | 18 (Batch 6) |
+
+---
+
 *Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Documents 05, 06, 07, 09, 10), 8 engine-gap tasks, 9 frontend SDK tasks (Document 18, 19), and 11 operations and quality tasks (Documents 20, 21, 22, 23, 24, 25, 26, 27), all fully integrated into the batch structure and dependency matrix.*
 
 *Execution addendum update: 121 implementation tasks + 4 final audit tasks = 125 total across the same 16 execution batches, with Documents 28 and 29 integrated into Batch 11 and FINAL respectively.*
+
+*Execution addendum update (gap round 4): 125 implementation tasks + 4 final audit tasks = 129 total. RAG feedback loop (Batch 8b), generative UI (Batch 9), conversation intelligence (Batch 10), multi-tenant config (Batch 4) integrated into existing batches.*
 
 ---
 

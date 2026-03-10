@@ -5342,6 +5342,77 @@ Memory tests span unit tests for individual operations and end-to-end tests for 
 - MCP server connections remain deferred until a tool from that server is needed.
 - Graceful fallback behavior applies when tool search finds no matches.
 
+### Module: RAG Feedback Loop (09-extension)
+
+- Negative user feedback is ingested and linked to originating query, retrieved documents, and evidence bundle.
+- Document-level quality scores accumulate from feedback ratio, evidence sufficiency, and retrieval frequency.
+- Low-quality documents are demoted in future ranking results.
+- RRF fusion weights adjust based on aggregated per-arm feedback correlation.
+- Evidence gate thresholds tighten for topics with high negative feedback rates.
+- Semantic cache entries are invalidated on negative feedback for the cached response.
+- Parameter changes are reversible and auto-rollback triggers when quality metrics degrade.
+- Feedback-driven adjustments do not activate below the configured minimum sample size.
+- Proportional feedback attribution distributes signal based on evidence contribution scores.
+- All parameter changes are logged with before/after values and rollback eligibility.
+- Operator-pinned parameters resist feedback-driven drift.
+
+### Module: Generative UI Tool (06-extension)
+
+- UI component tool emits validated component payloads following CTA/location suppression pattern.
+- Only component types registered in the server catalog are accepted.
+- Invalid component payloads are dropped with warning log and not surfaced to client.
+- Inline and block display modes are correctly specified per emission.
+- Multiple UI components per response emit as separate events.
+- Text fallback is mandatory in every component payload.
+- Component payloads contain no executable content (no scripts, no event handlers, no raw markup).
+- Progressive rendering interleaves ui-component events with text-delta events.
+
+### Module: Generative UI SSE Protocol (11-extension)
+
+- ui-component SSE event type is emitted with correct component type, data payload, mode, and fallback.
+- UI component stream processor suppresses tool-call and tool-result chunks and emits clean ui-component events.
+- Processor chain ordering is correct: guardrail → CTA → location → UI component → trace-step.
+- Clients that predate the ui-component event type ignore it gracefully per SSE specification.
+- Schema validation rejects malformed component data before emission.
+- ui-component events appear at their natural stream position interleaved with text-delta events.
+
+### Module: Generative UI Renderer (18-extension)
+
+- Component registry maps component type discriminators to renderer implementations.
+- Built-in renderers produce correct output for data-table, chart, metric card, image gallery, code block, and markdown block.
+- Custom renderers override built-in renderers when registered.
+- Fallback chain resolves: custom → built-in → text fallback.
+- React hook consumes ui-component events and resolves appropriate renderer.
+- Web component wrapper delegates to registry-based rendering.
+- React Native renderers use platform-appropriate implementations.
+- Inline components render within text flow and block components render as standalone sections.
+- All built-in renderers meet WCAG 2.1 AA accessibility requirements.
+- Renderers treat all data payloads as untrusted input with no dynamic script execution.
+
+### Module: Conversation Intelligence (26-extension)
+
+- Per-conversation quality score aggregates turn-level CLASSic dimension scores with recency weighting.
+- Topic extraction classifies conversation topics using intent classification infrastructure.
+- Engagement scoring combines turn count, regeneration rate, abandonment point, feedback ratio, and follow-up rate.
+- Satisfaction composite score merges explicit feedback, engagement signals, quality scores, and evidence sufficiency.
+- Trend detection computes rising/falling topic popularity, quality direction, and engagement drift on rolling windows.
+- Trend alerts fire when metrics cross configurable thresholds.
+- Cohort analysis segments data by time period, user cohort, agent configuration, topic, and environment.
+- Privacy-preserving aggregation operates on metrics and labels, never on raw conversation content.
+- Conversation metrics are stored via Drizzle ORM with configurable retention and rollup to daily/weekly aggregates.
+
+### Module: Multi-Tenant Config Hierarchy (04-extension)
+
+- Five-level resolution chain merges global → organization → tenant → agent → request-scoped overrides.
+- Tenant isolation prevents config leakage between tenants.
+- Organization defaults propagate to all tenants within the organization.
+- Tenant overrides correctly supersede organization defaults.
+- Request-scoped overrides take highest precedence.
+- Single-tenant deployments without organization or tenant layers behave identically to the current 3-level system.
+- Each config level independently validates against Zod v4 schemas with descriptive errors identifying the failing level.
+- Tenant and organization identifiers are extracted from JWT claims in request context.
+- DeepPartial merge semantics apply consistently across all five levels.
+
 ## Coverage Map
 
 Every Must Have feature area maps to one or more testing layers.

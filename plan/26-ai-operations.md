@@ -29,6 +29,7 @@
 - [Eval Datasets](#eval-datasets)
 - [Experiments and Regression Detection](#experiments-and-regression-detection)
 - [CLASSic Framework](#classic-framework)
+- [Conversation Intelligence Analytics](#conversation-intelligence-analytics)
 - [CI Integration and Eval Gates](#ci-integration-and-eval-gates)
 - [Operational Concerns](#operational-concerns)
 - [Cache Warming Strategy](#cache-warming-strategy)
@@ -645,6 +646,37 @@ Each scored on reasoning and action layers.
 - Stability under dependency turbulence.
 - Security of authorization boundaries.
 
+## Conversation Intelligence Analytics
+Conversation intelligence bridges per-turn evaluation signals with conversation-level operational and business visibility.
+- Each conversation SHALL maintain a rolling quality aggregate derived from per-turn CLASSic dimension scores across Cost, Latency, Accuracy, Stability, and Security.
+- Conversation quality weighting SHALL prioritize recent turns while preserving full-thread signal contribution.
+- Topic extraction SHALL reuse the same classification infrastructure used for intent detection in file 05.
+- Topic labels SHALL be stored at conversation scope for trend analysis and operator visibility.
+- Engagement scoring SHALL combine turn count, regeneration rate, session duration, abandonment point when present, feedback ratio, and follow-up question rate.
+- Engagement interpretation SHALL treat high sustained engagement as value delivery and low engagement with early abandonment as failure risk.
+- Satisfaction composite score SHALL combine explicit user feedback with highest weighting, engagement signals, quality aggregates, and evidence sufficiency averages.
+- Satisfaction composite score SHALL serve as the primary single-number conversation health indicator for operators.
+- Trend detection SHALL run on rolling windows across topic and agent segments.
+- Trend outputs SHALL include topic popularity direction, topic quality direction, engagement drift, and satisfaction trajectory.
+- Trend alerts SHALL trigger when configurable thresholds are crossed.
+- Cohort analysis SHALL support segmentation by time period, user cohort, agent configuration, topic, and deployment environment.
+- Cohort views SHALL support conversation-level A/B comparison across agent configurations.
+- Privacy-preserving aggregation SHALL operate on aggregated metrics and topic labels, not raw conversation content.
+- Individual conversation content SHALL never be exported to analytics pipelines.
+- PII filtering from file 14 SHALL apply before analytics ingestion.
+- Conversation-level metrics SHALL be stored in PostgreSQL through Drizzle ORM with configurable retention windows.
+- Raw per-turn scores SHALL be retained for the analysis window, then rolled up into daily and weekly aggregates.
+- Conversation intelligence outputs SHALL feed a dedicated conversation health panel in the monitoring dashboard from file 22 alongside infrastructure and business panels.
+- Cross-reference: turn-level CLASSic scoring in this file, user feedback in file 14, business metric correlation in file 22, intent classification in file 05.
+
+```mermaid
+flowchart TB
+  PER_TURN_SCORES[PER_TURN_SCORES] --> CONVERSATION_AGGREGATION[CONVERSATION_AGGREGATION]
+  CONVERSATION_AGGREGATION --> TOPIC_EXTRACTION[TOPIC_EXTRACTION]
+  TOPIC_EXTRACTION --> TREND_DETECTION[TREND_DETECTION]
+  TREND_DETECTION --> OPERATOR_DASHBOARD[OPERATOR_DASHBOARD]
+```
+
 ## CI Integration and Eval Gates
 Eval gates are mandatory release controls.
 - Deployment marker baseline is owned in file 22; this plan adds AI-behavior gate coupling and rollback linkage requirements.
@@ -849,6 +881,7 @@ Scalability and security are mandatory, not optional optimizations.
 - Operational concerns include warmup, dashboards, alerts, freshness, and rollout decisions.
 - Cross-reference table links to 05, 06, 12, 14, 15, 16, 21, and 22.
 - Six Mermaid diagrams use UPPER_SNAKE semantic IDs.
+- Conversation intelligence analytics includes a dedicated Mermaid pipeline with UPPER_SNAKE conceptual IDs.
 - Security and scalability controls are explicit.
 - PostgreSQL policy remains Drizzle ORM only.
 

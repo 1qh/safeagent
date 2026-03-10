@@ -18,6 +18,7 @@
 - [Live Synthesis Streaming](#live-synthesis-streaming)
 - [Dependent Intent Handling](#dependent-intent-handling)
 - [Tool Registry](#tool-registry)
+- [Generative UI Component Tool](#generative-ui-component-tool)
 - [MCP Client Protocol Integration](#mcp-client-protocol-integration)
 - [Location Enrichment Tool (LOCATION_TOOL)](#location-enrichment-tool-location_tool)
 - [Agent Router (Query Classification)](#agent-router-query-classification)
@@ -573,6 +574,36 @@ flowchart TB
     TOOL_MAPPING --> MAP_DIRECT_ANSWER["'direct_answer' -> no tool needed<br/>(agent answers from context)"]
 
     MAP_RAGFLOW & MAP_DOCUMENT_QA & MAP_GROUNDING_SEARCH & MAP_MEMORY_RECALL & MAP_DIRECT_ANSWER --> SCOPED_SUB_AGENT["Sub-Agent created with<br/>selected tools only"]
+```
+
+### Generative UI Component Tool
+
+The current event model supports text, CTA, citation, and location outputs, but it does not yet support dynamic component emission. To close that gap, the framework SHALL include a UI component tool pattern that lets agents emit structured component payloads while preserving clean stream semantics.
+
+Core requirements:
+
+- **UI component tool**: the framework SHALL provide a dedicated UI component tool that follows the same suppression pattern as CTA and location handling; tool-call chunks remain internal, and the stream emits clean ui-component events.
+- **Component type registry**: the server SHALL define a catalog of allowed component types such as chart, data-table, form, card, metric, image-gallery, map, and code-block, each with an explicit accepted data shape. Agents can emit only catalog-defined component types.
+- **Schema-validated payloads**: each component type SHALL define its contract with a Zod v4 schema. Emissions that fail validation are dropped and logged as warnings; invalid payloads are never surfaced to clients.
+- **Inline and block modes**: each emission SHALL declare presentation mode as inline or block so clients can place components inside text flow or between text segments.
+- **Multiple components per response**: a single agent response MAY emit multiple components, and each component is sent as its own ui-component event.
+- **Progressive rendering**: ui-component events SHALL emit as soon as each tool execution completes, interleaved with text-delta events so clients can build pages progressively.
+- **Fallback behavior**: every component payload SHALL include a text fallback representation. Clients that support the component render rich output; clients that do not support it render the fallback text.
+- **Security**: component payloads MUST be data-only and MUST NOT include executable content, including scripts, event handlers, or raw HTML.
+- **Tool placement**: the UI component tool sits in the processor chain after guardrails and before the transport boundary, aligned with transport behavior in file 11 and client rendering behavior in file 18.
+
+```mermaid
+flowchart LR
+    AGENT_OUTPUT[AGENT_RESPONSE]
+    UI_COMPONENT_TOOL[UI_COMPONENT_TOOL]
+    SCHEMA_VALIDATION[SCHEMA_VALIDATION]
+    SUPPRESSION_LAYER[SUPPRESSION_LAYER]
+    UI_COMPONENT_EVENT[UI_COMPONENT_SSE_EVENT]
+
+    AGENT_OUTPUT --> UI_COMPONENT_TOOL
+    UI_COMPONENT_TOOL --> SCHEMA_VALIDATION
+    SCHEMA_VALIDATION --> SUPPRESSION_LAYER
+    SUPPRESSION_LAYER --> UI_COMPONENT_EVENT
 ```
 
 ---

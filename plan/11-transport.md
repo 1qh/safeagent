@@ -16,6 +16,7 @@
 - [Verbosity Levels](#verbosity-levels)
 - [Concurrent Invocation Policy (Double-Texting)](#concurrent-invocation-policy-double-texting)
 - [Real-Time Voice and Audio Transport](#real-time-voice-and-audio-transport)
+- [Generative UI Event Protocol](#generative-ui-event-protocol)
 - [CTA Streaming (CTA_STREAMING)](#cta-streaming-cta_streaming)
 - [Client SDK (CLIENT_SDK)](#client-sdk-client_sdk)
 - [SSE Event Type Reference](#sse-event-type-reference)
@@ -391,6 +392,18 @@ End-to-end voice response latency target SHALL be measured from user silence det
 ### Session Persistence and Durability
 
 Voice session state ties into conversation memory in File 05 and durable execution guarantees in File 25 so interruptions, reconnects, and resumed turns preserve coherent context and execution state.
+
+---
+
+## Generative UI Event Protocol
+
+- **Tenth event type**: `ui-component` joins the existing nine SSE event types as the channel for agent-generated dynamic UI.
+- **Event shape**: each `ui-component` event carries a component type discriminator from the server-registered catalog, component-specific data payload validated against a Zod v4 schema, display mode (`inline` or `block`), and a mandatory text fallback for clients that do not support that component type.
+- **Suppression pattern**: this follows the same model as CTA and location handling, where UI component tool-call and tool-result framework events are suppressed from the SSE stream and replaced by a clean `ui-component` event.
+- **Stream processor placement**: the UI component processor sits in the chain after location and before trace-step collection: Agent -> Guardrail -> CTA -> Location -> UI Component -> Trace-Step -> Output.
+- **Ordering guarantee**: `ui-component` events appear at their natural position in the response stream, interleaved with `text-delta` events so the agent's intended content flow is preserved.
+- **Security invariant**: `ui-component` payloads are data-only with no executable content and no raw markup; client renderers interpret payload data through registered component implementations.
+- **Graceful degradation**: clients that predate `ui-component` ignore unknown SSE event names per SSE behavior and still receive the text fallback through `text-delta` events.
 
 ---
 
@@ -858,6 +871,7 @@ All event types are shared between the server (emitter) and the client (consumer
 | `cta` | CTA payload | Call-to-action suggestions from the CTA tool. |
 | `citation` | Citation payload | Source citation metadata for grounded output. |
 | `location` | Location payload | Location enrichment data for a place mentioned by the agent. Emitted progressively as places are geocoded and enriched. Client renders map pins and inline image galleries. |
+| `ui-component` | UI component payload | Structured dynamic UI payload emitted in-stream for rich client rendering with required text fallback. |
 | `tripwire` | Tripwire payload | Guardrail p0 violation. Stream ends after this. |
 | `done` | Done payload | Stream completed normally. |
 | `error` | Error payload | Unexpected error. Stream ends after this. |
@@ -970,6 +984,19 @@ classDiagram
         location: LocationResult
     }
     SSE_LOCATION_EVENT --> LOCATION_RESULT
+```
+
+### SSEUIComponentEvent
+
+```mermaid
+classDiagram
+    class SSE_UI_COMPONENT_EVENT {
+        type: "ui-component"
+        componentType: string
+        data: object
+        mode: "inline" | "block"
+        fallback: string
+    }
 ```
 
 ### SSETripwireEvent

@@ -21,6 +21,7 @@ It is the single source of truth for type contracts, schema validation, environm
 - [Memory and Extraction Safeguard Types](#memory-and-extraction-safeguard-types)
 - [Zod Schemas](#zod-schemas)
 - [Configuration System](#configuration-system)
+- [Multi-Tenant Configuration Hierarchy](#multi-tenant-configuration-hierarchy)
 - [Storage Factory](#storage-factory)
 - [MCP Health Check](#mcp-health-check)
 - [Provider Resolution](#provider-resolution)
@@ -611,6 +612,82 @@ Environment contract handling:
 - Typed environment object uses @t3-oss/env-core with Zod v4 schemas.
 - Library owns defaults and shared contracts.
 - Server owns deployment-required runtime checks.
+
+---
+
+## Multi-Tenant Configuration Hierarchy
+
+The configuration hierarchy expands from three levels to five levels for high-scale multi-tenant operation while preserving the existing DeepPartial merge model.
+
+Resolution chain and precedence:
+
+- Global library defaults.
+- Organization defaults.
+- Tenant overrides.
+- Agent overrides.
+- Request-scoped overrides as highest precedence.
+
+Each level applies the same merge semantics already defined in this foundation layer.
+
+Organization layer:
+
+- Organizations group tenants under a shared policy surface.
+- Organization defaults define shared model preferences, guardrail policy baselines, and budget ceilings.
+- Organization configuration inherits from global defaults and can be refined by tenant configuration.
+
+Tenant layer:
+
+- Tenants represent isolated consumer environments within an organization.
+- Tenant configuration may override model selection, guardrail strictness, memory retention policy, tool availability, budget limits, and rate-limit quotas.
+
+Tenant isolation invariant:
+
+- Tenant boundary isolation is mandatory and enforced during resolution.
+- No tenant configuration may leak into another tenant.
+- No cross-tenant inheritance is allowed outside the shared organization layer.
+- This invariant is a security boundary.
+
+Request-scoped overrides:
+
+- The existing request-scoped override mechanism remains the final precedence layer.
+- Per-request behavior tuning is supported without mutating organization or tenant policy.
+
+Backward compatibility:
+
+- Single-tenant deployments that omit organization and tenant layers behave exactly like the current three-level flow.
+- Organization and tenant layers are opt-in and default to empty pass-through behavior.
+
+Config validation and runtime resolution:
+
+- Each level validates independently against Zod v4 schemas.
+- Invalid input at any level is rejected with descriptive errors that identify level and field.
+- Organization and tenant identifiers are read from authenticated request context claims.
+- The resolver selects the correct organization and tenant layers before merge.
+
+Merge order:
+
+- Merge applies left to right through the full chain.
+- Undefined values are skipped.
+- Null values override.
+- Arrays are replaced.
+- Function values override.
+- Objects recurse.
+
+```mermaid
+flowchart LR
+    GLOBAL_DEFAULTS["GLOBAL_DEFAULTS\nGlobal Library Defaults"]
+    ORGANIZATION_DEFAULTS["ORGANIZATION_DEFAULTS\nOrganization Defaults"]
+    TENANT_OVERRIDES["TENANT_OVERRIDES\nTenant Overrides"]
+    AGENT_OVERRIDES["AGENT_OVERRIDES\nAgent Overrides"]
+    REQUEST_OVERRIDES["REQUEST_OVERRIDES\nRequest-Scoped Overrides"]
+    RESOLVED_CONFIG["RESOLVED_CONFIG\nFinal Resolved Configuration"]
+
+    GLOBAL_DEFAULTS --> ORGANIZATION_DEFAULTS
+    ORGANIZATION_DEFAULTS --> TENANT_OVERRIDES
+    TENANT_OVERRIDES --> AGENT_OVERRIDES
+    AGENT_OVERRIDES --> REQUEST_OVERRIDES
+    REQUEST_OVERRIDES --> RESOLVED_CONFIG
+```
 
 ---
 
