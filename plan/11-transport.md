@@ -989,16 +989,13 @@ classDiagram
 
 ### SSE UI Component Event
 
-```mermaid
-classDiagram
-    class SSE_UI_COMPONENT_EVENT {
-        type: ui-component
-        componentType: Component category from server catalog
-        data: Schema-validated payload
-        mode: Inline within text or standalone block
-        fallback: Plain text alternative
-    }
-```
+| Field | Description |
+|-------|-------------|
+| type | `ui-component` |
+| componentType | Component category from server catalog |
+| data | Schema-validated payload |
+| mode | Inline within text or standalone block |
+| fallback | Plain text alternative |
 
 The `ui-component` event delivers agent-generated dynamic UI payloads to clients. It carries a component category identifier, a schema-validated data payload, a display mode, and a mandatory text fallback. The category determines which client-side renderer handles the payload. Clients without a matching renderer display the text fallback from the paired text-delta emission.
 
