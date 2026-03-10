@@ -368,10 +368,10 @@
 - Define operating cadence, KPI tracking, and escalation process for governance exceptions.
 
 **Depends On**
-- FOUNDATION
+- CORE_TYPES
 - RELEASE_PIPELINE
-- CODING_STANDARDS
-- EXTENSIBILITY
+- CODE_STANDARDS
+- EXTENSIBILITY_INFRA
 - DEVELOPER_EXPERIENCE
 
 **Batch**

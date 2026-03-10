@@ -160,7 +160,7 @@ graph LR
 | Bottleneck | Batch | Why It's Dangerous | Mitigation |
 |------------|------|--------------------|------------|
 | SPIKE_CORE_STACK — Core stack validation spike | BLOCKING_SPIKE_BATCH | Blocks everything. If any core dependency fails under Bun, the stack is revised before implementation continues. | Execute first. No other work begins until SPIKE_CORE_STACK passes. |
-| SPIKE_RAG_DEPS — RAG Dependencies Spike | RAG_VALIDATION_BATCH | Blocks document processing, RAG infra, and file storage. Three critical Batch FOUNDATION_A_BATCH tasks depend on SPIKE_RAG_DEPS. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
+| SPIKE_RAG_DEPS — RAG Dependencies Spike | RAG_VALIDATION_BATCH | Blocks document processing, RAG infra, and file storage. Critical downstream tasks include DOC_PIPELINE, FILE_STORAGE, and RAG_INFRA. | Execute immediately after SPIKE_CORE_STACK. Validates unpdf, JIMP, pgvector, etc. |
 | CI_PIPELINE — CI/CD quality gates | FOUNDATION_B_BATCH | Blocks RELEASE_PIPELINE. If CI gates are unstable, release automation cannot be trusted and late-stage delivery stalls. | Build CI_PIPELINE in Batch FOUNDATION_B_BATCH with strict gating and keep it green continuously. |
 | AGENT_FACTORY — Agent Factory | AGENT_PIPELINE_BATCH | Critical gate for most integration paths. 9 Batch INTEGRATION_BATCH tasks and multiple downstream server/orchestration paths wait on AGENT_FACTORY outputs. | Priority assignment. Deep category agent with focused scope. |
 | SERVER_ROUTES — Server Routes | SERVER_ROUTES_SUBAGENT_BATCH | Key gate in Batch SERVER_ROUTES_SUBAGENT_BATCH. All server endpoints (UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, FILE_CRUD, ADMIN_API), demos (DEMO_WEB, DEMO_MOBILE), and barrel exports (BARREL_EXPORTS) depend on SERVER_ROUTES. | Complex task — depends on 8 prior tasks. Cannot be parallelized further. |
@@ -254,7 +254,7 @@ graph LR
 | CIRCUIT_BREAKER | Circuit breaker for external calls | `deep` | CORE_TYPES |
 | **REWRITE_STRATEGIES** | **Rewrite Strategy Modules (HyDE, EntityExtraction, DenseKeywords)** | `quick` | CORE_TYPES |
 | USER_SHORTTERM_MEM | User short-term memory (cross-thread) | `unspecified-high` | SHORT_TERM_MEM |
-| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | `unspecified-high` | SCAFFOLD_LIB, CODE_STANDARDS |
 
 > **NEW**: REWRITE_STRATEGIES (from the Conversation Pipeline document) delivers three independently importable rewrite strategy modules. Depends only on types — fits naturally alongside other CORE_TYPES-dependent tasks.
 
@@ -271,9 +271,9 @@ graph LR
 | OUTPUT_GUARD | Streaming output guardrail (framework output guardrail with tripwire-trigger pattern) | `deep` | CORE_TYPES, ZOD_SCHEMAS |
 | GUARD_FACTORY | External guardrail adapter | `unspecified-high` | CORE_TYPES |
 | **FILE_REGISTRY** | **FileRegistry — Temporal + ordinal + named resolution engine** | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
-| MULTI_TENANT_CONFIG | Five-level config hierarchy (global → organization → tenant → agent → request) with tenant isolation and JWT-based resolution | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy (global → organization → tenant → agent → request) with tenant isolation and token-aware resolution | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS |
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
-| **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | FOUNDATION, CORE_TYPES |
+| **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
 
 > **NEW**: FILE_REGISTRY (from the Retrieval document) implements per-user file reference resolution (Postgres + Valkey cache). EVIDENCE_GATE (from the Retrieval document) implements the structural anti-hallucination gate with Attribute-First citation planning and is scheduled in Batch SELFTEST_MIDINTEGRATION_BATCH.
 
@@ -413,7 +413,7 @@ graph LR
 | WEB_COMPONENTS | Web UI components (Web Components Package — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
 | RN_COMPONENTS | React Native components (Native Components Package — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
-> **Note**: BARREL_EXPORTS depends on ALL library module tasks (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, and STORYBOOK_FRONTEND). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
+> **Note**: BARREL_EXPORTS depends on ALL library module tasks that are complete by ENDPOINTS_BARREL_BATCH (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, and RN_COMPONENTS). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
 
 ---
 
@@ -446,7 +446,7 @@ graph LR
 | DEMO_MOBILE | Expo mobile demo (offline-first, server management, tab navigation, local SQLite persistence) | `deep` | RN_COMPONENTS, SERVER_ROUTES |
 | DOCS_CONTENT | Documentation content authoring | `writing` | DOCS_SITE, ALL core module tasks |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | `writing` | MONITORING_INFRA |
-| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | `unspecified-high` | CORE_TYPES, LANGFUSE_MODULE, E2E_TESTS, DOCS_SITE, EXTENSIBILITY_INFRA |
 
 ---
 
@@ -461,7 +461,7 @@ graph LR
 | AUDIT_CODE | Code quality review | `unspecified-high` | PKG_PUBLISH |
 | AUDIT_QA | Full QA run — agent-executed | `unspecified-high` + `playwright` | PKG_PUBLISH |
 | AUDIT_SCOPE | Scope fidelity check | `deep` | PKG_PUBLISH |
-| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | `unspecified-high` | CORE_TYPES, RELEASE_PIPELINE, CODE_STANDARDS, EXTENSIBILITY_INFRA, DEVELOPER_EXPERIENCE |
 
 ---
 
@@ -647,7 +647,7 @@ graph TB
     TRIGGER_TASKS["TRIGGER_TASKS Trigger.dev"] --> SERVER_ROUTES
     RATE_LIMITING["RATE_LIMITING Rate Limit"] --> SERVER_ROUTES
     JWT_AUTH["JWT_AUTH JWT"] --> SERVER_ROUTES
-    JWT_AUTH --> MULTI_TENANT_CONFIG
+
 
     SERVER_ROUTES:::crit --> BARREL_EXPORTS["BARREL_EXPORTS Barrel"]
     SERVER_ROUTES --> UPLOAD_ENDPOINT["UPLOAD_ENDPOINT Upload EP"]:::crit
@@ -1098,7 +1098,7 @@ graph LR
 | VALKEY_CACHE | CORE_TYPES, SCAFFOLD_LIB | COST_TRACKING, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL, EMBED_ROUTER, FILE_REGISTRY | FOUNDATION_B_BATCH |
 | CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | FOUNDATION_B_BATCH |
 | REWRITE_STRATEGIES | CORE_TYPES | REWRITE_TOOL | FOUNDATION_B_BATCH |
-| CI_PIPELINE | SCAFFOLD_LIB, TEST_INFRA | RELEASE_PIPELINE | FOUNDATION_B_BATCH |
+| CI_PIPELINE | SCAFFOLD_LIB, CODE_STANDARDS | RELEASE_PIPELINE | FOUNDATION_B_BATCH |
 | CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER, MULTI_TENANT_CONFIG | CONFIG_GUARDS_BATCH |
 | INPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS | CONFIG_GUARDS_BATCH |
 | OUTPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS, ZERO_LEAK_GUARD | CONFIG_GUARDS_BATCH |
@@ -1106,9 +1106,9 @@ graph LR
 | LANG_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | INTEGRATION_BATCH |
 | HATE_SPEECH_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | INTEGRATION_BATCH |
 | FILE_REGISTRY | STORAGE_WRAPPER, VALKEY_CACHE | DOC_SEARCH, VISUAL_GROUNDING | CONFIG_GUARDS_BATCH |
-| MULTI_TENANT_CONFIG | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH | — | CONFIG_GUARDS_BATCH |
+| MULTI_TENANT_CONFIG | CONFIG_DEFAULTS, ZOD_SCHEMAS | — | CONFIG_GUARDS_BATCH |
 | SUMMARY_CAP | SHORT_TERM_MEM | — | CONFIG_GUARDS_BATCH |
-| EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | CONFIG_GUARDS_BATCH |
+| EXTENSIBILITY_INFRA | CORE_TYPES, CONFIG_DEFAULTS | — | CONFIG_GUARDS_BATCH |
 | EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING, RAG_FEEDBACK_LOOP | SELFTEST_MIDINTEGRATION_BATCH |
 | AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL, DURABLE_EXECUTION, AI_OPERATIONS | AGENT_PIPELINE_BATCH |
 | STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | AGENT_PIPELINE_BATCH |
@@ -1148,7 +1148,7 @@ graph LR
 | FACT_SUPERSESSION | FACT_EXTRACTION, SURREALDB_CLIENT | — | SERVER_TUI_PIPELINE_BATCH |
 | RESPONSE_CALIBRATION | CORE_TYPES, AGENT_FACTORY | — | SERVER_TUI_PIPELINE_BATCH |
 | AGENT_ROUTER | AGENT_FACTORY, SSE_STREAMING | E2E_TESTS | SERVER_TUI_PIPELINE_BATCH |
-| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE, MULTI_TENANT_CONFIG | SERVER_TUI_PIPELINE_BATCH |
+| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE | SERVER_TUI_PIPELINE_BATCH |
 | LLM_INTENT | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER | PREFETCH_COORD, REWRITE_TOOL, ORCHESTRATOR, DEPENDENT_INTENT, ATTRIBUTE_NEGATION, QUERY_REPLAY, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | SERVER_TUI_PIPELINE_BATCH |
 | SOURCE_ROUTER | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS | PREFETCH_COORD | SERVER_TUI_PIPELINE_BATCH |
 | TUI_UPLOAD | TUI_SHELL, TUI_COMMANDS, TUI_AGENT | E2E_TESTS | EXTENDED_INTEGRATION_BATCH |
@@ -1171,7 +1171,7 @@ graph LR
 | SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | SERVER_ROUTES_SUBAGENT_BATCH |
 | WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | ENDPOINTS_BARREL_BATCH |
 | RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | ENDPOINTS_BARREL_BATCH |
-| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE | PKG_PUBLISH | ENDPOINTS_BARREL_BATCH |
+| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI | PKG_PUBLISH | ENDPOINTS_BARREL_BATCH |
 | UPLOAD_ENDPOINT | SERVER_ROUTES, UPLOAD_PIPELINE | E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | ENDPOINTS_BARREL_BATCH |
 | FEEDBACK_ENDPOINT | SERVER_ROUTES, LANGFUSE_MODULE | E2E_TESTS | ENDPOINTS_BARREL_BATCH |
 | FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | ENDPOINTS_BARREL_BATCH |
@@ -1192,18 +1192,18 @@ graph LR
 | DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | FRONTEND_DEMOS_BATCH |
 | DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | FRONTEND_DEMOS_BATCH |
 | INCIDENT_PROCEDURES | MONITORING_INFRA | — | FRONTEND_DEMOS_BATCH |
-| DEVELOPER_EXPERIENCE | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY | API_GOVERNANCE | FRONTEND_DEMOS_BATCH |
+| DEVELOPER_EXPERIENCE | CORE_TYPES, LANGFUSE_MODULE, E2E_TESTS, DOCS_SITE, EXTENSIBILITY_INFRA | API_GOVERNANCE | FRONTEND_DEMOS_BATCH |
 | AUDIT_PLAN | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
 | AUDIT_CODE | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
 | AUDIT_QA | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
 | AUDIT_SCOPE | PKG_PUBLISH | — | FINAL_AUDIT_BATCH |
-| API_GOVERNANCE | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE | — | FINAL_AUDIT_BATCH |
+| API_GOVERNANCE | CORE_TYPES, RELEASE_PIPELINE, CODE_STANDARDS, EXTENSIBILITY_INFRA, DEVELOPER_EXPERIENCE | — | FINAL_AUDIT_BATCH |
 
 ### BARREL_EXPORTS Full Dependency List (Barrel Exports)
 
 BARREL_EXPORTS depends on every library module that exports public API surface:
 
-> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE
+> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI
 
 This is the complete list of all tasks that produce exports in the core library. BARREL_EXPORTS only handles the **top-level barrel** — see Subpath Barrel Export Convention below.
 
@@ -1386,13 +1386,13 @@ The following 11 tasks were added for coding standards, CI quality gates, releas
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
 | CODE_STANDARDS | Coding standards enforcement (lintmax max strictness) | Coding Standards | SCAFFOLDING_BATCH | `quick` | SCAFFOLD_LIB, SCAFFOLD_SERVER |
-| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Release Pipeline | FOUNDATION_B_BATCH | `unspecified-high` | SCAFFOLD_LIB, TEST_INFRA |
+| CI_PIPELINE | CI/CD pipeline with 4-stage quality gates | Release Pipeline | FOUNDATION_B_BATCH | `unspecified-high` | SCAFFOLD_LIB, CODE_STANDARDS |
 | RELEASE_PIPELINE | Release automation (canary deployment + rollback) | Release Pipeline | E2E_DEPLOY_BATCH | `unspecified-high` | CI_PIPELINE, PKG_PUBLISH, SERVER_ROUTES |
 | DOCS_SITE | Documentation site infrastructure (Fumadocs) | Documentation | E2E_DEPLOY_BATCH | `unspecified-high` | SCAFFOLD_LIB |
 | DOCS_CONTENT | Documentation content authoring | Documentation | FRONTEND_DEMOS_BATCH | `writing` | DOCS_SITE, ALL core module tasks |
 | MONITORING_INFRA | Monitoring infrastructure (dashboards, AI monitoring, alerts) | Monitoring | E2E_DEPLOY_BATCH | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
 | INCIDENT_PROCEDURES | Incident response procedures (runbooks, on-call, drills) | Monitoring | FRONTEND_DEMOS_BATCH | `writing` | MONITORING_INFRA |
-| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Extensibility | CONFIG_GUARDS_BATCH | `deep` | FOUNDATION, CORE_TYPES |
+| EXTENSIBILITY_INFRA | Extension point infrastructure (12 typed contracts, lifecycle hooks, registration, composition, security, contract tests) | Extensibility | CONFIG_GUARDS_BATCH | `deep` | CORE_TYPES, CONFIG_DEFAULTS |
 | DURABLE_EXECUTION | Durable workflow execution and HITL infrastructure | Durable Execution | INTEGRATION_BATCH | `deep` | AGENT_FACTORY, STORAGE_WRAPPER, SSE_STREAMING |
 | AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | AI Operations | EXTENDED_INTEGRATION_BATCH | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
 | SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Security | E2E_DEPLOY_BATCH | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
@@ -1403,12 +1403,12 @@ The following 6 tasks were added for developer workflow maturity, public API gov
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
-| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | FRONTEND_DEMOS_BATCH | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
-| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL_AUDIT_BATCH | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
+| DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | FRONTEND_DEMOS_BATCH | `unspecified-high` | CORE_TYPES, LANGFUSE_MODULE, E2E_TESTS, DOCS_SITE, EXTENSIBILITY_INFRA |
+| API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL_AUDIT_BATCH | `unspecified-high` | CORE_TYPES, RELEASE_PIPELINE, CODE_STANDARDS, EXTENSIBILITY_INFRA, DEVELOPER_EXPERIENCE |
 | RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Retrieval extension | EXTENDED_INTEGRATION_BATCH | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
 | GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | ENDPOINTS_BARREL_BATCH | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
 | CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | E2E_DEPLOY_BATCH | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
-| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | CONFIG_GUARDS_BATCH | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, token-aware resolution | Foundation extension | CONFIG_GUARDS_BATCH | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS |
 
 *Covers all 125 implementation tasks + 4 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
 

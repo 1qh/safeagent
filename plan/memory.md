@@ -1558,7 +1558,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - Ordered by recency, limited by the configured user short-term limit.
 - Fade-out controlled by the configured user short-term fade-out threshold.
 - Injection framing restricts proactive mention.
-- Injection order is system prompt, rolling summary, cross-thread, thread turns, current message.
+- Injection order follows canonical context assembly: system prompt, current message, tool definitions, thread turns, rolling summary, recalled facts, then cross-thread user short-term context.
 - Uses shared Postgres pool and efficient indexing.
 - Cross-thread context also feeds embedding router and validator.
 - Unit coverage validates selection and fade-out logic.

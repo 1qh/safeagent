@@ -1010,7 +1010,7 @@ flowchart TB
 - LLM_INTENT, REWRITE_TOOL
 
 **Batch**
-- SELFTEST_MIDINTEGRATION_BATCH
+- EXTENDED_INTEGRATION_BATCH
 
 **Acceptance Criteria**
 - Attribute negations are extracted into structured output fields.

@@ -303,8 +303,8 @@ Integration notes:
 - Integrate pipeline observability for duration, flaky detection, and failure notification.
 
 **Depends On**
-- FOUNDATION
-- TEST_INFRA
+- SCAFFOLD_LIB
+- CODE_STANDARDS
 
 **Batch**
 - FOUNDATION_B_BATCH

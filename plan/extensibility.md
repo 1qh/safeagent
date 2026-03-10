@@ -737,8 +737,8 @@ flowchart LR
 ### EXTENSIBILITY_INFRA
 - **Task Name:** EXTENSIBILITY_INFRA
 - **Objective:** Implement extension point infrastructure, provider contracts, lifecycle hooks, and registration validation across all safeagent subsystems.
-- **Depends On:** FOUNDATION, CORE_TYPES
-- **Batch:** 4
+- **Depends On:** CORE_TYPES, CONFIG_DEFAULTS
+- **Batch:** CONFIG_GUARDS_BATCH
 
 #### What To Do
 - Define typed contracts for all 12 extension points.

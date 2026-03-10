@@ -309,7 +309,7 @@ Integration notes:
 - Establish preview and production delivery flow with deterministic documentation builds.
 
 **Depends On**
-- FOUNDATION
+- SCAFFOLD_LIB
 
 **Batch**
 - E2E_DEPLOY_BATCH

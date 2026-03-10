@@ -510,7 +510,7 @@ flowchart TB
 - Validate TypeScript strictness policy is fully active.
 - Document every project-specific override with rationale and review trace.
 
-**Depends On**: FOUNDATION
+**Depends On**: SCAFFOLD_LIB, SCAFFOLD_SERVER
 
 **Batch**: SCAFFOLDING_BATCH
 

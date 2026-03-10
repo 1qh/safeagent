@@ -448,11 +448,11 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Define observability integration expectations for standards-based trace export and vendor-neutral routing.
 
 **Depends On**
-- FOUNDATION
-- OBSERVABILITY
-- TESTING_FRAMEWORK
-- DOCUMENTATION
-- EXTENSIBILITY
+- CORE_TYPES
+- LANGFUSE_MODULE
+- E2E_TESTS
+- DOCS_SITE
+- EXTENSIBILITY_INFRA
 
 **Batch**
 - FRONTEND_DEMOS_BATCH
