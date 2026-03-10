@@ -1,42 +1,61 @@
 # Start Here
 
-This document is the reader-first entry point for the plan. It tells builders what to read, in what order, and where each decision source lives.
+This is the primary entry point for implementation work. Use it to choose a reading path, find task ownership quickly, and avoid cross-file searching.
 
 ---
 
-## Fast Reading Order
+## First Hour Path
 
-1. [Requirements & Constraints](./requirements.md)
-2. [Constraints](./constraints.md)
-3. [System Plan Overview](./overview.md)
-4. [System Architecture](./architecture.md)
-5. [Execution Plan](./execution.md)
-6. Assigned domain document (for the task you are implementing)
-7. [Quality Gates](./quality-gates.md)
-8. [Testing](./testing.md)
-9. [Operations](./operations.md)
+1. Read [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md).
+2. Read [System Plan Overview](./overview.md) and [System Architecture](./architecture.md).
+3. Read [Execution Plan](./execution.md) and locate your assigned task.
+4. Open the domain document listed in the execution routing index.
+5. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
+6. Use [Operations](./operations.md) if your task touches runtime behavior.
 
 ---
 
-## If You Are Assigned a Task
+## Role-Based Reading Paths
 
-1. Open [Execution Plan](./execution.md).
-2. Find your task in the routing index and dependency matrix.
-3. Read the task spec in the mapped domain document.
-4. Read the linked test assertions and quality gates.
-5. Implement only after dependency prerequisites are complete.
-6. Verify against task acceptance criteria, QA scenarios, and quality gates.
+### Builder (assigned TASK_X)
+
+1. [Execution Plan](./execution.md) → locate TASK_X in the per-task routing index.
+2. Open the mapped domain document and complete task acceptance criteria and QA scenarios.
+3. Read linked test assertions for the same domain.
+4. Validate against [Quality Gates](./quality-gates.md).
+
+### Technical Lead (ordering and risk)
+
+1. [Execution Plan](./execution.md) for dependency order and critical path.
+2. [Requirements & Constraints](./requirements.md) for non-negotiable boundaries.
+3. [Research & Decisions](./research.md) for decision rationale.
+4. [Domain Playbooks](./domain-playbooks.md) for parallel execution planning.
+
+### QA and Release
+
+1. [Quality Gates](./quality-gates.md)
+2. [Testing](./testing.md)
+3. [Release Pipeline](./release-pipeline.md)
+4. [Coverage Matrix](./coverage-matrix.md)
+
+### Operations and Security
+
+1. [Operations](./operations.md)
+2. [Infrastructure](./infrastructure.md)
+3. [Observability](./observability.md)
+4. [Monitoring](./monitoring.md)
+5. [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 
 ---
 
 ## Single Source Rules
 
-- Scheduling and dependency order: [Execution Plan](./execution.md)
-- Product requirements and boundary constraints: [Requirements & Constraints](./requirements.md)
-- Consolidated operating constraints: [Constraints](./constraints.md)
-- Technical rationale and research decisions: [Research & Decisions](./research.md)
-- Verification policy and audit tasks: [Testing](./testing.md) and [Quality Gates](./quality-gates.md)
-- Runtime operation and incident handling: [Operations](./operations.md)
+- Scheduling, dependencies, and task routing: [Execution Plan](./execution.md)
+- Product boundaries and done criteria: [Requirements & Constraints](./requirements.md)
+- Consolidated non-negotiables: [Constraints](./constraints.md)
+- Testing and verification policy: [Testing](./testing.md), [Quality Gates](./quality-gates.md)
+- Operational readiness and incidents: [Operations](./operations.md)
+- Architectural rationale and validated decisions: [Research & Decisions](./research.md)
 
 ---
 
@@ -45,11 +64,13 @@ This document is the reader-first entry point for the plan. It tells builders wh
 - Core interaction and orchestration: [Conversation Pipeline](./conversation.md), [Agents & Orchestration](./agents.md), [Memory & Intelligence](./memory.md)
 - Retrieval and evidence: [Retrieval & Evidence](./retrieval.md), [Document Intelligence](./documents.md), [Guardrails & Safety](./guardrails.md)
 - Delivery surface: [Streaming & Transport](./transport.md), [Server Implementation](./server.md), [TUI App](./tui.md), [Frontend SDK](./frontend-sdk.md)
-- Runtime and scale: [Infrastructure](./infrastructure.md), [Observability](./observability.md), [Monitoring](./monitoring.md), [Security](./security-compliance.md), [AI Operations](./ai-operations.md)
-- Release and governance: [Coding Standards](./coding-standards.md), [Release Pipeline](./release-pipeline.md), [Documentation](./documentation.md), [Developer Experience](./developer-experience.md), [API Governance](./api-governance.md)
+- Runtime and scale: [Infrastructure](./infrastructure.md), [Observability](./observability.md), [Monitoring](./monitoring.md), [AI Operations Plan](./ai-operations.md), [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
+- Governance and release: [Coding Standards](./coding-standards.md), [Developer Experience](./developer-experience.md), [Documentation](./documentation.md), [Release Pipeline](./release-pipeline.md), [API Governance](./api-governance.md)
+
+For domain-by-domain implementation routes, see [Domain Playbooks](./domain-playbooks.md).
 
 ---
 
-## No-Loss Guarantee
+## Preservation Note
 
-The current workspace preserves all original planning content from `plan_v0` and layers this reader-first entry document on top. See [Coverage Matrix](./coverage-matrix.md) for one-to-one preservation tracking.
+All original planning documents from `plan_v0` are preserved in `plan`, with reader-first guidance layered on top. See [Coverage Matrix](./coverage-matrix.md) for preservation tracking.
