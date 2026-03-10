@@ -52,6 +52,8 @@ This document defines the verification sequence that every implementation task m
 - Test policy and coverage maps: [Testing](./testing.md)
 - Task-level verification ownership: [Task Verification Index](./task-verification-index.md)
 - Task completion evidence model: [Implementation Workflow](./implementation-workflow.md)
+- Batch-level execution sequencing support: [Batch Delivery Playbook](./batch-delivery-playbook.md)
+- Task handoff evidence contract: [Handoff Packet Template](./handoff-packet-template.md)
 - CI and release controls: [Release Pipeline](./release-pipeline.md)
 - Security and compliance controls: [Unified Security Strategy and Regulatory Compliance](./security-compliance.md)
 - Execution dependency gates: [Execution Plan](./execution.md)

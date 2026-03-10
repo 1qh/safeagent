@@ -12,8 +12,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 4. Open the domain document listed in the execution routing index.
 5. Read [Implementation Workflow](./implementation-workflow.md).
 6. Read [Task Verification Index](./task-verification-index.md) for behavioral test ownership.
-7. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
-8. Use [Operations](./operations.md) if your task touches runtime behavior.
+7. Read [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level execution rhythm.
+8. Read [Quality Gates](./quality-gates.md) and [Testing](./testing.md) before implementation.
+9. Use [Operations](./operations.md) if your task touches runtime behavior.
 
 ---
 
@@ -32,7 +33,9 @@ This is the primary entry point for implementation work. Use it to choose a read
 1. [Execution Plan](./execution.md) for dependency order and critical path.
 2. [Requirements & Constraints](./requirements.md) for non-negotiable boundaries.
 3. [Research & Decisions](./research.md) for decision rationale.
-4. [Domain Playbooks](./domain-playbooks.md) for parallel execution planning.
+4. [Domain Playbooks](./domain-playbooks.md) for domain execution planning.
+5. [Batch Delivery Playbook](./batch-delivery-playbook.md) for batch-level control.
+6. [Plan Drift Control](./plan-drift-control.md) for consistency checks.
 
 ### QA and Release
 
@@ -40,7 +43,8 @@ This is the primary entry point for implementation work. Use it to choose a read
 2. [Testing](./testing.md)
 3. [Release Pipeline](./release-pipeline.md)
 4. [Task Verification Index](./task-verification-index.md)
-5. [Coverage Matrix](./coverage-matrix.md)
+5. [Handoff Packet Template](./handoff-packet-template.md)
+6. [Coverage Matrix](./coverage-matrix.md)
 
 ### Operations and Security
 
@@ -60,6 +64,8 @@ This is the primary entry point for implementation work. Use it to choose a read
 - Testing and verification policy: [Testing](./testing.md), [Quality Gates](./quality-gates.md)
 - Task completion sequencing and evidence model: [Implementation Workflow](./implementation-workflow.md)
 - Task-level behavioral ownership mapping: [Task Verification Index](./task-verification-index.md)
+- Batch-level execution rhythm: [Batch Delivery Playbook](./batch-delivery-playbook.md)
+- Ongoing consistency control: [Plan Drift Control](./plan-drift-control.md)
 - Operational readiness and incidents: [Operations](./operations.md)
 - Architectural rationale and validated decisions: [Research & Decisions](./research.md)
 
