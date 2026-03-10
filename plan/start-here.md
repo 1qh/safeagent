@@ -59,7 +59,7 @@ This is the primary entry point for implementation work. Use it to choose a read
 
 ---
 
-## Single Source Rules
+## Source and Support Rules
 
 - Scheduling, dependencies, and task routing: [Execution Plan](./execution.md)
 - Product boundaries and done criteria: [Requirements & Constraints](./requirements.md)
@@ -68,12 +68,15 @@ This is the primary entry point for implementation work. Use it to choose a read
 - Task completion sequencing and evidence model: [Implementation Workflow](./implementation-workflow.md)
 - Task-level behavioral ownership mapping: [Task Verification Index](./task-verification-index.md)
 - Batch-level execution rhythm: [Batch Delivery Playbook](./batch-delivery-playbook.md)
-- Readiness scoring and release posture: [Readiness Scoreboard](./readiness-scoreboard.md)
-- Adversarial and capability stress testing: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
 - Runtime improvement cycle: [AI Operations Plan](./ai-operations.md)
 - Ongoing consistency control: [Plan Drift Control](./plan-drift-control.md)
 - Operational readiness and incidents: [Operations](./operations.md)
 - Architectural rationale and validated decisions: [Research & Decisions](./research.md)
+
+Supporting rollup views:
+
+- Readiness rollup visibility: [Readiness Scoreboard](./readiness-scoreboard.md)
+- Adversarial stress coverage map: [Eval and Adversarial Matrix](./eval-adversarial-matrix.md)
 
 ---
 

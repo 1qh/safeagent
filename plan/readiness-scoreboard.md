@@ -42,11 +42,11 @@ This scoreboard is a read-only rollup of readiness state derived from existing c
 
 ---
 
-## Red-Flag Rules
+## Derived Red-Flag Signals
 
-- Do not claim release readiness if any safety or reliability dimension is unresolved.
-- Do not claim audit readiness if any final audit task is incomplete.
-- Do not close a batch if task delivery and task verification status are inconsistent.
+- Treat release readiness as blocked when authoritative release gates in [Quality Gates](./quality-gates.md) are unresolved.
+- Treat audit readiness as blocked when authoritative audit gates in [Quality Gates](./quality-gates.md) are unresolved.
+- Treat batch closeout as blocked when authoritative batch exit checks in [Batch Delivery Playbook](./batch-delivery-playbook.md) are unresolved.
 
 ---
 

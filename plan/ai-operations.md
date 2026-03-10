@@ -1,7 +1,7 @@
 # AI Operations Plan
 > **Scope**: AI operations for safeagent at 10M-user scale covering cost intelligence, prompt lifecycle governance, and agent evaluation with strict safety and rollback controls.
 >
-> **Tasks**: COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, AIOPS_RUNTIME_GOVERNANCE
+> **Internal Layers within AI_OPERATIONS**: COST_INTELLIGENCE_LAYER, PROMPT_LIFECYCLE_LAYER, AGENT_EVAL_LAYER, AIOPS_RUNTIME_GOVERNANCE
 ---
 ## Table of Contents
 - [Architecture Overview](#architecture-overview)
