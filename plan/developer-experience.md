@@ -424,6 +424,62 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Reproducibility improves through trace replay practices.
 - Ecosystem growth accelerates through standardized publishing and discovery.
 
+## Task Specifications
+
+### Task DEVELOPER_EXPERIENCE: Developer Platform and Onboarding Operations
+
+**Task Name**
+- DEVELOPER_EXPERIENCE
+
+**Objective**
+- Build a cohesive developer-experience platform that shortens time-to-first-success while preserving production-grade guardrails.
+- Provide a progressive path from beginner onboarding through expert workflows without fragmenting the platform contract.
+
+**What To Do**
+- Implement interactive onboarding flow with local-first defaults and visible first-run outcomes.
+- Define progressive API tiers for quick start, standard controls, and expert composition.
+- Define error taxonomy and diagnostics contracts with domain, category, and remediation guidance.
+- Establish local development readiness model with offline-capable workflows and provider abstraction clarity.
+- Define development-studio experience requirements for trace visibility, token awareness, and tool isolation.
+- Define deterministic testing utilities and fixture governance for fast local confidence and CI quality gates.
+- Define template ecosystem with production-credible starter paths and lifecycle ownership.
+- Define AI coding-assistant integration model with lightweight default context and deep on-demand guidance.
+- Define type-performance budget governance for CI and editor responsiveness.
+- Define observability integration expectations for standards-based trace export and vendor-neutral routing.
+
+**Depends On**
+- FOUNDATION
+- OBSERVABILITY
+- TESTING_FRAMEWORK
+- DOCUMENTATION
+- EXTENSIBILITY
+
+**Batch**
+- 11
+
+**Acceptance Criteria**
+- Onboarding flow supports local-first setup and reaches first visible output without cloud dependency.
+- Progressive API contract is clear across tier boundaries and preserves migration clarity.
+- Error taxonomy covers required domains and categories with actionable diagnostics.
+- Local development model supports offline-capable core loops with predictable provider switching.
+- Studio and trace workflows are defined with privacy and retention governance.
+- Testing utility model enables deterministic replay and high-signal CI gate alignment.
+- Template and example ecosystem has ownership, quality bar, and lifecycle policy.
+- AI assistant guidance model supports bounded default context and governed deep guidance.
+- Type-performance and observability governance include measurable thresholds and review cadence.
+
+**QA Scenarios**
+- Run onboarding simulation from clean environment, verify first-run success and recovery guidance quality.
+- Evaluate tier progression from quick to expert usage, verify behavior continuity and documentation clarity.
+- Trigger representative failure classes, verify diagnostics include cause, context, and next-action guidance.
+- Execute offline local workflow with mock provider, verify development loop remains productive.
+- Validate template starter outcomes, verify each path produces runnable output with adaptation notes.
+
+**Implementation Notes**
+- Keep onboarding and diagnostics language consistent with documentation and standards governance.
+- Prioritize deterministic developer feedback loops before introducing optional advanced complexity.
+- Align all DX artifacts to one runtime and package posture to reduce ecosystem fragmentation risk.
+
 ## Delivery Checklist
 
 ### This File Delivers

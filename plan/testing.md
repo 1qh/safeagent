@@ -1594,6 +1594,56 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 **Output format**: `Tasks [N/N compliant] | Contamination [CLEAN/ISSUES] | Unaccounted [CLEAN/ISSUES] | VERDICT`.
 
+### Task FINAL
+
+**Task Name**
+- FINAL
+
+**Objective**
+- Execute final audit consolidation so release readiness is validated across code quality, test quality, build integrity, and documentation integrity.
+- Produce one clear go or no-go decision backed by verifiable evidence from all audit lanes.
+
+**What To Do**
+- Aggregate outcomes from plan, code, QA, and scope audits into one release-readiness view.
+- Run lint audit to confirm no unresolved policy violations remain.
+- Run coverage audit to validate required coverage depth across critical modules.
+- Run build audit to confirm all build targets complete without regression.
+- Run documentation audit to confirm user-facing and API-facing docs are complete and consistent.
+- Reconcile any conflicting findings across audit lanes and classify blocker severity.
+- Verify evidence artifacts exist and are traceable for every final audit assertion.
+- Produce consolidated verdict with blocker list, waived risks, and remediation ownership.
+
+**Depends On**
+- AUDIT_PLAN
+- AUDIT_CODE
+- AUDIT_QA
+- AUDIT_SCOPE
+- API_GOVERNANCE
+
+**Batch**
+- FINAL
+
+**Acceptance Criteria**
+- Lint audit confirms zero unresolved quality-gate violations.
+- Coverage audit confirms critical-path coverage meets defined thresholds.
+- Build audit confirms all required build outputs complete successfully.
+- Documentation audit confirms release-facing docs and references are complete and consistent.
+- Consolidated report clearly labels blocker, warning, and pass outcomes.
+- Final verdict is reproducible from attached evidence artifacts.
+- Any approved risk exception includes owner, timeline, and remediation plan.
+
+**QA Scenarios**
+- Run final audit with fully clean inputs, verify consolidated pass verdict.
+- Introduce lint regression before final audit, verify blocker classification and fail verdict.
+- Drop documentation completeness for one release-critical area, verify documentation audit failure is surfaced.
+- Reduce critical-path coverage below threshold, verify coverage audit blocks final approval.
+- Trigger conflicting sub-audit outcomes, verify reconciliation notes and decision rationale are explicit.
+
+**Implementation Notes**
+- Treat FINAL as a release-decision wrapper over upstream audits, not a replacement for them.
+- Keep evidence linking strict so each verdict line can be traced to a concrete artifact.
+- Prioritize blocker clarity and remediation ownership over verbose narrative.
+
 Per-module test specifications are co-located within each module's plan file under `## Test Specifications`. This ensures test assertions are maintained alongside the features they verify. The Coverage Map below provides the cross-cutting view across all modules.
 
 ### Testing Strategy Self-Validation

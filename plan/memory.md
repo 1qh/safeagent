@@ -1786,6 +1786,298 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ---
 
+### Task CONTEXT_BUDGET: Context Budget Allocation and Enforcement
+
+**Task Name**
+- CONTEXT_BUDGET
+
+**Objective**
+- Define and enforce deterministic token budgeting across context layers so essential instructions and user input are always preserved. Ensure overflow handling is predictable, observable, and safe for long or memory-heavy conversations.
+
+**What To Do**
+- Define a context-layer budget policy with explicit priority ordering and non-truncatable segments.
+- Allocate per-layer token targets for thread turns, rolling summary, recalled memory, and cross-thread context.
+- Implement a pre-reasoning budget estimation pass using the same approximation model across all calls.
+- Add reverse-priority truncation behavior that removes lowest-priority layers first when over budget.
+- Add recall-specific capping so recalled memory cannot consume more than its configured ceiling.
+- Add rolling-summary compaction trigger when summary content exceeds its allocation.
+- Add oldest-turn trimming for thread history as a late-stage overflow control.
+- Capture budget diagnostics for estimated usage, truncation actions, and final assembled size.
+- Ensure budget logic runs before intent detection and before response generation.
+- Define fallback behavior when non-truncatable core content alone exceeds available context.
+
+**Depends On**
+- SHORT_TERM_MEM, USER_SHORTTERM_MEM, FACT_EXTRACTION, MEMORY_RECALL
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Context assembly always applies a consistent priority order.
+- Non-truncatable segments are never removed during overflow handling.
+- Overflow handling always executes in the configured reverse-priority truncation order.
+- Recalled memory never exceeds the configured recall budget cap.
+- Rolling summary compaction is triggered when summary allocation is exceeded.
+- Thread-history trimming removes oldest turns before newer turns.
+- Budget diagnostics include initial estimate, truncation decisions, and final estimate.
+- Budget enforcement runs on every request path that assembles context.
+
+**QA Scenarios**
+- Assemble a request with oversized cross-thread context, verify cross-thread content is reduced first.
+- Assemble a request with oversized recalled memory, verify recall is capped before summary or thread core is removed.
+- Assemble a request with oversized summary, verify compaction occurs and final summary fits its cap.
+- Assemble a request where only core segments exceed budget, verify explicit overflow handling is reported.
+
+**Implementation Notes**
+- Keep budgeting deterministic so repeated identical inputs yield identical truncation outcomes.
+- Preserve separation between estimation, truncation policy, and final assembly for easier testing.
+- Emit structured diagnostics to support tuning without exposing internal details to users.
+
+---
+
+### Task EXTRACTION_SAFEGUARDS: Fact Extraction Quality Safeguards
+
+**Task Name**
+- EXTRACTION_SAFEGUARDS
+
+**Objective**
+- Improve long-term memory quality by filtering low-trust and ambiguous extraction candidates before persistence. Reduce false memories by enforcing attribution, certainty, and contextual-polarity safeguards consistently.
+
+**What To Do**
+- Define a safeguard stage that evaluates each extracted candidate before storage.
+- Enforce attribution classification so only self-attributed user facts are eligible for durable fact storage.
+- Enforce certainty classification to reject hypothetical and question-form statements.
+- Add contextual polarity handling to correctly interpret sarcasm and irony signals.
+- Add source-of-truth validation to reject assistant-originated assumptions from memory writes.
+- Apply confidence threshold checks before any candidate reaches persistence.
+- Add guard logic for instruction-like or injection-shaped candidate content.
+- Route rejected candidates to structured rejection reasons for observability.
+- Ensure interaction-signal fallback is used where facts are not eligible but conversational signal remains useful.
+- Add regression tests for edge cases involving mixed attribution and conflicting sentiment cues.
+
+**Depends On**
+- FACT_EXTRACTION
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Self-attributed factual statements are accepted when confidence and certainty requirements are met.
+- Third-party statements are excluded from user-fact storage.
+- Hypothetical and asked-form statements are excluded from user-fact storage.
+- Sarcastic polarity is interpreted using context, not keyword sentiment alone.
+- Assistant-originated claims are not persisted as user memory.
+- Low-confidence candidates are rejected consistently.
+- Injection-shaped candidates are rejected or quarantined before persistence.
+- Rejection outcomes are observable with categorized reasons.
+
+**QA Scenarios**
+- Provide a self-attributed preference statement, verify it is stored as a fact.
+- Provide a third-party preference statement, verify it is not stored as a user fact.
+- Provide a hypothetical statement, verify it is rejected from fact storage.
+- Provide sarcasm with negative intent in positive wording, verify stored polarity reflects negative intent.
+
+**Implementation Notes**
+- Run safeguards after extraction and before deduplication or supersession side effects.
+- Keep rejection reasons machine-readable for later quality analysis.
+- Favor precision over recall to prevent persistent contamination of memory.
+
+---
+
+### Task FACT_SUPERSESSION: Fact Lifecycle Supersession and Conflict Resolution
+
+**Task Name**
+- FACT_SUPERSESSION
+
+**Objective**
+- Manage fact lifecycle changes without destructive overwrites by preserving lineage between prior and replacement facts. Resolve contradictions in the same attribute dimension while retaining explainable audit history.
+
+**What To Do**
+- Define contradiction detection rules for same-subject and same-attribute dimensions.
+- Compare new candidates against active facts using semantic similarity and dimension matching.
+- Mark replaced facts as superseded rather than deleting them.
+- Link replacement facts to superseded facts with explicit lineage metadata.
+- Ensure only one active fact remains for a contradictory attribute dimension.
+- Preserve coexistence for related but non-contradictory facts.
+- Exclude superseded facts from default recall outputs.
+- Support inspection views that expose supersession lineage for explainability.
+- Record supersession reasons to support downstream debugging and trust analysis.
+- Add lifecycle tests for duplicate, coexistence, and contradiction cases.
+
+**Depends On**
+- FACT_EXTRACTION, SURREALDB_CLIENT
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Contradictory updates create a new active fact and supersede the prior fact.
+- Superseded facts remain queryable in audit or inspection views.
+- Default recall excludes superseded facts.
+- Non-contradictory related facts can coexist without supersession.
+- Duplicate candidates do not create new active records.
+- Supersession lineage includes explicit predecessor and successor linkage.
+- Supersession reasoning is captured for each conflict-resolution event.
+- Lifecycle behavior is deterministic for repeated identical inputs.
+
+**QA Scenarios**
+- Store an initial attribute fact, then provide contradictory update, verify old fact is superseded and new fact is active.
+- Store two compatible attribute facts, verify both remain active.
+- Re-submit an equivalent fact, verify duplicate suppression prevents a new record.
+- Run recall after supersession, verify only the active replacement appears.
+
+**Implementation Notes**
+- Treat supersession as a state transition with lineage, not as deletion.
+- Keep contradiction rules narrow to avoid accidental replacement of orthogonal facts.
+- Validate recall filtering and inspection visibility independently.
+
+---
+
+### Task STYLE_PREFERENCES: User Style Preference Detection and Adaptation
+
+**Task Name**
+- STYLE_PREFERENCES
+
+**Objective**
+- Detect stable communication preferences from user language and persist them as style memory. Use those preferences to calibrate future responses while preserving safety and correctness overrides.
+
+**What To Do**
+- Define extractable style dimensions such as brevity, structure, tone, and detail depth.
+- Extract explicit and implicit style signals from user turns.
+- Normalize style signals into durable preference entries with confidence.
+- Merge new style signals with prior style memory while handling preference updates.
+- Add recency-aware weighting so recent explicit preferences override older weak signals.
+- Inject active style preferences into context as advisory response guidance.
+- Prevent style adaptation from overriding safety, policy, or factual completeness requirements.
+- Expose style preferences in memory inspection output.
+- Add tests for conflicting style signals across turns and threads.
+- Add monitoring fields to track style adaptation hit rate and override events.
+
+**Depends On**
+- FACT_EXTRACTION, SURREALDB_CLIENT
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Explicit style instructions are persisted as style-preference memory.
+- Implicit repeatable style patterns can be persisted when confidence is sufficient.
+- New explicit style instructions can supersede older style preferences.
+- Style guidance is injected into subsequent context assembly.
+- Safety-critical responses can override style brevity when needed.
+- Style preferences are visible in memory inspection output.
+- Conflicting style signals are resolved predictably.
+- Cross-thread continuity preserves user style adaptation behavior.
+
+**QA Scenarios**
+- Give an explicit brevity preference, verify subsequent responses are shorter.
+- Give a later detailed-format preference, verify newer preference takes precedence.
+- Trigger a safety-sensitive request after brevity preference, verify response keeps required safety detail.
+- Inspect memory after style updates, verify current active style preference is listed.
+
+**Implementation Notes**
+- Prioritize explicit user instructions over inferred style patterns.
+- Keep style guidance advisory to avoid hard failures in critical-response paths.
+- Separate style extraction confidence from factual memory confidence.
+
+---
+
+### Task SUMMARY_CAP: Conversation Summary Capping and Rotation Policy
+
+**Task Name**
+- SUMMARY_CAP
+
+**Objective**
+- Keep rolling summaries bounded in size so long-lived threads remain context-efficient. Preserve high-value continuity details while rotating out low-value historical detail under token pressure.
+
+**What To Do**
+- Define a hard maximum token cap for rolling summaries.
+- Add pre-injection cap checks during context assembly.
+- Implement compaction policy that removes resolved or stale detail first.
+- Merge older related topics into concise historical aggregates.
+- Preserve user decisions, active preferences, and unresolved items during compaction.
+- Add repeated compaction passes until summary is under cap.
+- Add rotation markers so summary revisions remain coherent across many compaction cycles.
+- Track summary length and compaction frequency metrics for tuning.
+- Ensure compaction does not alter the meaning of active constraints.
+
+**Depends On**
+- SHORT_TERM_MEM
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Rolling summary never exceeds configured maximum after compaction completes.
+- Compaction removes lower-priority resolved history before active open loops.
+- Active decisions and preferences remain present after compaction.
+- Repeated overflow cycles produce stable and coherent summary output.
+- Summary cap enforcement runs before final context injection.
+- Compaction activity is measurable through summary diagnostics.
+- Over-cap summaries are corrected without dropping protected core context.
+
+**QA Scenarios**
+- Grow a thread until summary exceeds cap, verify compaction brings it under cap.
+- Include resolved and unresolved items, verify resolved items are reduced first.
+- Include explicit user preferences, verify they remain after multiple compactions.
+- Trigger repeated overflow cycles, verify summary stays coherent and bounded.
+
+**Implementation Notes**
+- Use strict priority rules in compaction to keep behavior predictable.
+- Optimize for continuity fidelity, not transcript-like completeness.
+- Keep cap enforcement independent from broader context truncation logic.
+
+---
+
+### Task THREAD_RESURRECTION: Thread Resurrection for Resumed Conversations
+
+**Task Name**
+- THREAD_RESURRECTION
+
+**Objective**
+- Detect long-inactive thread returns and restore enough context for natural continuation. Rehydrate memory with staleness awareness so responses remain coherent without over-trusting stale state.
+
+**What To Do**
+- Define inactivity-gap threshold that classifies a turn as thread resurrection.
+- Evaluate thread inactivity at request start before intent analysis.
+- Extract key entities from rolling summary for targeted recall queries.
+- Trigger memory rehydration using extracted entities plus current user message cues.
+- Inject a staleness note into context when resurrection mode is active.
+- Merge rehydrated memory with recent thread context under normal budget policy.
+- Handle partial rehydration when some memories have expired or been deleted.
+- Track resurrection events and rehydration yield metrics.
+- Add safeguards so resurrection does not suppress fresh intent interpretation.
+- Add tests for near-threshold and long-gap edge cases.
+
+**Depends On**
+- SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Threads crossing the inactivity threshold are flagged as resurrection turns.
+- Resurrection turns trigger targeted recall based on summary-derived entities.
+- Context includes a staleness note when resurrection mode is active.
+- Rehydration gracefully handles missing or expired long-term records.
+- Fresh intent analysis still runs normally on resurrection turns.
+- Resurrection behavior applies only when inactivity threshold is exceeded.
+- Resurrection events and outcomes are observable for monitoring.
+- Resumed responses show continuity without hallucinating unavailable history.
+
+**QA Scenarios**
+- Resume a thread after a long gap, verify resurrection mode and staleness context are injected.
+- Resume just below inactivity threshold, verify normal flow without resurrection handling.
+- Resume after long gap with expired memories, verify partial rehydration without failure.
+- Resume with new intent shift, verify fresh intent interpretation is not blocked by old context.
+
+**Implementation Notes**
+- Keep resurrection detection early so rehydrated context is available before planning.
+- Treat resurrected memory as supportive context, not absolute truth.
+- Reuse standard budget and trust-boundary controls for resurrected content.
+
+---
+
 ## External References
 
 - AI SDK documentation: https://sdk.vercel.ai/docs

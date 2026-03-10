@@ -1006,6 +1006,295 @@ flowchart TB
 - Empty query returns typed error.
 
 ---
+
+### Task ATTRIBUTE_NEGATION: Attribute Negation Detection and Filtering
+
+**Task Name**
+- ATTRIBUTE_NEGATION
+
+**Objective**
+- Detect property-level negations in user requests and propagate them through retrieval and synthesis. Ensure excluded attributes are consistently respected without misclassifying entity-level rejection.
+
+**What To Do**
+- Define negation signal schema that distinguishes attributes from entities.
+- Extend intent interpretation to capture explicit and implicit attribute negations.
+- Normalize extracted negations into canonical filter clauses.
+- Attach negation clauses to rewritten query outputs for downstream sources.
+- Apply source-specific negation formatting for retrieval paths.
+- Preserve negation intent through merge and ranking stages.
+- Ensure dependent intent constraints and attribute negations can coexist without collisions.
+- Add fallback behavior when negation target is ambiguous.
+- Add regression tests for nested and multi-attribute negations.
+
+**Depends On**
+- LLM_INTENT, REWRITE_TOOL
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Attribute negations are extracted into structured output fields.
+- Entity exclusion and attribute negation are handled as distinct mechanisms.
+- Rewritten queries preserve original negation intent.
+- Retrieval paths receive negation constraints in compatible form.
+- Final synthesized answers do not recommend options violating explicit attribute negations.
+- Ambiguous negation targets trigger safe clarification behavior.
+- Multiple negations in one query are all preserved through routing.
+- Tests cover single, multiple, and conflicting negation cases.
+
+**QA Scenarios**
+- Ask for options without a specific attribute, verify returned candidates omit that attribute.
+- Ask for alternatives excluding one entity and one attribute, verify both constraints are honored.
+- Provide ambiguous negation phrasing, verify clarification is requested.
+- Ask with two attribute negations, verify both survive rewrite and retrieval.
+
+**Implementation Notes**
+- Keep negation extraction lossless so downstream filtering has full context.
+- Apply negations before retrieval execution, not only during final synthesis.
+- Avoid over-broad negation expansion that can remove valid results.
+
+---
+
+### Task CLARIFICATION_MODEL: Clarification Patience and Ambiguity Policy
+
+**Task Name**
+- CLARIFICATION_MODEL
+
+**Objective**
+- Implement a bounded clarification strategy that resolves genuine ambiguity while preventing loops. Balance user effort and forward progress by switching to best-effort assumptions after patience limits.
+
+**What To Do**
+- Define ambiguity thresholds using confidence and interpretation spread signals.
+- Create clarification state tracking per thread for consecutive clarification turns.
+- Generate concise clarifying prompts with top plausible interpretations.
+- Limit clarification depth with configurable patience threshold.
+- Switch to best-effort assumption mode after threshold is reached.
+- Record chosen assumptions explicitly in response context for transparency.
+- Reset clarification counters when user provides disambiguating detail.
+- Integrate frustration signals so clarification tone adapts under escalation.
+- Add tests for repeated ambiguity and recovery paths.
+
+**Depends On**
+- LLM_INTENT, EMBED_ROUTER, AGENT_FACTORY
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Low-confidence multi-plausible inputs trigger clarification behavior.
+- Clarification prompts remain concise and interpretation-focused.
+- Consecutive clarification turns are tracked per thread.
+- Patience threshold stops further clarification loops.
+- Post-threshold behavior returns a best-effort response with explicit assumptions.
+- Clarification counter resets when sufficient user detail is provided.
+- Tone adaptation integrates frustration context during clarification.
+- Clarification policy state is available to orchestration flow.
+
+**QA Scenarios**
+- Send an ambiguous request, verify a targeted clarification question is returned.
+- Continue with repeated ambiguity past threshold, verify system proceeds with explicit assumptions.
+- Provide clear disambiguation after one clarification, verify normal execution resumes.
+- Trigger ambiguity with frustration cues, verify clarification tone is de-escalated.
+
+**Implementation Notes**
+- Keep clarification prompts short to minimize user friction.
+- Prioritize progress guarantees over perfect disambiguation after patience is exhausted.
+- Store policy state in thread context so behavior is consistent across turns.
+
+---
+
+### Task CONVERSATION_INTELLIGENCE: Conversation Analytics and Trend Signals
+
+**Task Name**
+- CONVERSATION_INTELLIGENCE
+
+**Objective**
+- Aggregate conversation-level analytics that describe topical focus, sentiment movement, and engagement quality over time. Provide measurable signals for quality monitoring and iterative system tuning.
+
+**What To Do**
+- Define analytics schema for topic extraction, sentiment trajectory, and engagement scoring.
+- Aggregate per-turn signals into conversation-level metrics.
+- Compute topic drift and dominant-topic summaries across sessions.
+- Compute sentiment trend curves and escalation indicators.
+- Compute engagement score using responsiveness, follow-up rate, and completion patterns.
+- Produce a composite conversation quality score from weighted analytics dimensions.
+- Add periodic trend rollups for cohort and time-window reporting.
+- Add anomaly detection for sudden quality regressions.
+- Integrate analytics outputs with observability dashboards.
+- Add validation tests for metric stability and reproducibility.
+
+**Depends On**
+- AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER
+
+**Batch**
+- 10
+
+**Acceptance Criteria**
+- Topic extraction outputs ranked dominant topics per conversation.
+- Sentiment tracking captures directionality across turns.
+- Engagement scoring produces consistent bounded scores.
+- Composite quality score is generated for completed conversations.
+- Trend rollups are available by configurable time windows.
+- Anomaly detection flags significant quality shifts.
+- Metrics are exposed in observability output.
+- Metric computations are deterministic for identical input histories.
+
+**QA Scenarios**
+- Run analytics on a focused conversation, verify dominant topic output matches discussion.
+- Run analytics on an escalating conversation, verify sentiment trend reflects deterioration.
+- Run analytics on short and long conversations, verify engagement scores remain bounded and comparable.
+- Replay identical conversation data twice, verify analytics outputs are identical.
+
+**Implementation Notes**
+- Keep analytics read-oriented and decoupled from online response logic.
+- Favor stable metric definitions over frequent formula churn.
+- Version metric schemas carefully when introducing new dimensions.
+
+---
+
+### Task FRUSTRATION_SIGNAL: Frustration Detection and Adaptive Response Behavior
+
+**Task Name**
+- FRUSTRATION_SIGNAL
+
+**Objective**
+- Detect user frustration signals and escalation trends across turns to guide de-escalation behavior. Improve conversational recovery by adapting tone and guidance without changing core factual output.
+
+**What To Do**
+- Define frustration indicators across wording, repetition, punctuation, and correction density.
+- Score per-turn frustration intensity and maintain rolling trend state.
+- Detect escalation, stabilization, and recovery patterns.
+- Inject de-escalation guidance into orchestration context when escalation is detected.
+- Adapt response style to be calmer, clearer, and more action-oriented under high frustration.
+- Prevent frustration adaptation from weakening safety or policy enforcement.
+- Reset or decay frustration state when recovery signals persist.
+- Expose frustration trend diagnostics for quality monitoring.
+- Add tests for abrupt escalation and gradual recovery cases.
+
+**Depends On**
+- EMBED_ROUTER, LLM_INTENT
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Frustration signals are detected from multi-turn conversation patterns.
+- Escalation trends are distinguished from isolated negative wording.
+- De-escalation guidance is injected when escalation threshold is reached.
+- Responses under high frustration use calmer adaptive framing.
+- Safety and policy behavior remains unchanged by frustration adaptation.
+- Recovery signals reduce or clear active frustration state.
+- Frustration diagnostics are observable for tuning and audits.
+- Detection quality is stable across short and long conversations.
+
+**QA Scenarios**
+- Provide increasingly hostile follow-ups, verify escalation state rises and de-escalation guidance appears.
+- Provide one negative but isolated message, verify no persistent escalation state is created.
+- Move from frustrated language to neutral language, verify frustration state decays.
+- Trigger safety-sensitive request during frustration, verify safety behavior remains intact.
+
+**Implementation Notes**
+- Use trend-based scoring to avoid overreacting to single-turn noise.
+- Keep adaptation focused on tone and structure, not factual policy changes.
+- Make thresholds configurable for domain-specific calibration.
+
+---
+
+### Task NON_ACTIONABLE_DETECT: Non-Actionable Input Detection
+
+**Task Name**
+- NON_ACTIONABLE_DETECT
+
+**Objective**
+- Short-circuit clearly non-actionable turns so expensive intent and retrieval stages are skipped when no actionable request exists. Preserve precision by avoiding false positives on brief but valid requests.
+
+**What To Do**
+- Define subtype taxonomy for greetings, acknowledgments, emoji-only turns, and gibberish.
+- Build conservative first-pass detection rules for non-actionable text patterns.
+- Add gibberish detection combining entropy and language reliability indicators.
+- Add bypass safeguards so mixed actionable content always proceeds to full pipeline.
+- Return structured non-actionable classification with subtype labels.
+- Route non-actionable outcomes to lightweight direct response behavior.
+- Skip embedding, LLM intent, rewrite, source routing, and extraction for confirmed non-actionable turns.
+- Add false-positive protections for abbreviations and non-Latin scripts.
+- Add tests for borderline short-message cases.
+
+**Depends On**
+- EMBED_ROUTER
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Greetings and acknowledgments are classified as non-actionable when no request is present.
+- Emoji-only turns are classified as non-actionable.
+- Gibberish detection uses multi-signal checks, not a single heuristic.
+- Mixed turns containing actionable intent are not short-circuited.
+- Non-actionable outputs include subtype classification.
+- Confirmed non-actionable turns bypass deeper intent and retrieval stages.
+- False-positive rate is controlled for short valid tokens.
+- Classification behavior is consistent across supported language scripts.
+
+**QA Scenarios**
+- Send greeting-only message, verify non-actionable subtype response is returned.
+- Send emoji-only message, verify non-actionable short-circuit occurs.
+- Send short actionable request, verify it continues to full intent pipeline.
+- Send gibberish text, verify non-actionable gibberish subtype is returned.
+
+**Implementation Notes**
+- Keep gating conservative to minimize accidental suppression of real requests.
+- Separate subtype detection from response wording so behavior is reusable.
+- Log short-circuit reasons for ongoing threshold tuning.
+
+---
+
+### Task QUERY_REPLAY: Query Replay and Rephrase Detection
+
+**Task Name**
+- QUERY_REPLAY
+
+**Objective**
+- Detect when users repeat or rephrase prior queries and reconstruct replay intent with parameter substitutions. Improve continuity by reusing prior query structure instead of reinterpreting from scratch.
+
+**What To Do**
+- Define replay detection signals using semantic similarity and temporal proximity.
+- Extract candidate origin query from recent thread and structured result memory.
+- Identify substitution slots such as location, date, or preference constraints.
+- Build replay structure output capturing origin linkage and parameter deltas.
+- Reconstruct a full replay query when confidence is sufficient.
+- Fallback to standard rewrite flow when no reliable origin query is found.
+- Preserve original explicit entities and negations during replay reconstruction.
+- Track replay detection confidence and fallback reason codes.
+- Add tests for paraphrased repeats and partial-parameter changes.
+
+**Depends On**
+- LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Repeated or paraphrased queries can be linked to prior origin queries.
+- Replay output includes structured parameter substitutions.
+- Reconstructed replay query preserves unchanged intent components.
+- Missing origin context triggers safe fallback to standard rewrite.
+- Replay logic preserves explicit entity and negation constraints.
+- Replay confidence is exposed for downstream decision-making.
+- Replay behavior is stable across cross-turn paraphrases.
+- Tests cover exact repeats, paraphrases, and substitution variants.
+
+**QA Scenarios**
+- Ask a query, then request the same with a changed location, verify replay reconstruction applies only location change.
+- Rephrase a prior query without parameter changes, verify replay linkage is detected.
+- Ask similar query without clear origin, verify fallback to standard rewrite path.
+- Replay a prior query with explicit negation, verify negation is preserved.
+
+**Implementation Notes**
+- Prefer high-precision replay matching over aggressive linking.
+- Keep replay reconstruction transparent through structured metadata.
+- Limit origin search scope to recent relevant history for performance.
+
+---
 ## External References
 - AI SDK structured generation documentation
 - AI SDK tools and agents documentation

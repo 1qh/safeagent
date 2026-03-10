@@ -1010,6 +1010,13 @@ Cross-section dependency notes:
 
 **Batch**: 9a
 
+**Task Name**
+- REACT_HOOKS
+
+**Objective**
+- Build a React-hooks integration layer that gives product teams a stable, transport-safe way to drive agent interactions from UI state.
+- Ensure streaming, feedback, upload, and trace behaviors remain consistent across web and native consumers.
+
 **What to do**
 - Implement a transport adapter compatible with AI SDK chat-hook expectations.
 - Integrate SSE lifecycle handling through the client SDK module parser and queue behavior.
@@ -1047,9 +1054,21 @@ Cross-section dependency notes:
 - Toggle verbosity between requests and verify transport metadata changes.
 - Validate type tests for hook output contracts against canonical event unions.
 
+**Implementation Notes**
+- Keep transport state transitions deterministic so reconnect and retry behavior is predictable.
+- Treat trace payload handling as mode-gated to prevent accidental detail leakage in standard mode.
+- Keep hook return contracts stable and composable to reduce downstream migration churn.
+
 ### WEB_COMPONENTS — Web Components
 
 **Batch**: 9b
+
+**Task Name**
+- WEB_COMPONENTS
+
+**Objective**
+- Deliver a framework-ready web component layer that composes shared agent hooks into accessible, customizable UI surfaces.
+- Balance rapid adoption through component reuse with safeagent-specific UX requirements for traceability and reliability.
 
 **What to do**
 - Install and configure ai-elements component set used by safeagent web surfaces.
@@ -1084,9 +1103,21 @@ Cross-section dependency notes:
 - Validate controlled and uncontrolled usage for expandable surfaces.
 - Validate screen reader output for verbosity toggle and server selector.
 
+**Implementation Notes**
+- Prefer composition wrappers over deep forks to preserve upstream accessibility behavior.
+- Keep component state ownership explicit so controlled and uncontrolled modes stay reliable.
+- Treat offline and error UI as first-class states, not edge-case overlays.
+
 ### TRACE_UI — Trace Visualization
 
 **Batch**: 10
+
+**Task Name**
+- TRACE_UI
+
+**Objective**
+- Build a high-signal trace visualization surface that turns low-level step events into debuggable execution timelines.
+- Make developer observability available without degrading default end-user chat experience.
 
 **What to do**
 - Implement a trace timeline component and child primitives for step rows, latency bars, and detail panels.
@@ -1121,9 +1152,21 @@ Cross-section dependency notes:
 - Validate screen reader narration of step labels and latency values.
 - Validate total latency at completion against summed or provided aggregate metrics.
 
+**Implementation Notes**
+- Use stable ordering and idempotent append logic to prevent duplicate or shuffled step entries.
+- Keep latency visualization interpretable under burst conditions by anchoring to clear thresholds.
+- Ensure trace-panel behaviors remain explicitly tied to verbosity mode transitions.
+
 ### RN_COMPONENTS — React Native Components
 
 **Batch**: 9b
+
+**Task Name**
+- RN_COMPONENTS
+
+**Objective**
+- Provide mobile-native agent UI components that preserve cross-platform behavioral parity with web surfaces.
+- Prioritize offline resilience, touch ergonomics, and predictable streaming interactions in constrained mobile runtime conditions.
 
 **What to do**
 - Build native equivalents for conversation, messages, prompt input, attachments, server selector, thread list, verbosity toggle, and offline indicator.
@@ -1158,9 +1201,21 @@ Cross-section dependency notes:
 - Validate SQLite-backed history persistence across app relaunch.
 - Validate server switching behavior with stale token and refreshed token states.
 
+**Implementation Notes**
+- Keep parity centered on behavior contracts, not pixel-level equivalence with web.
+- Isolate platform-specific adaptations inside component boundaries to protect shared hook logic.
+- Treat offline queue visibility and replay clarity as mandatory user trust features.
+
 ### FRONTEND_CLI — Component CLI
 
 **Batch**: 10
+
+**Task Name**
+- FRONTEND_CLI
+
+**Objective**
+- Build a deterministic installer workflow that lets teams adopt and customize frontend SDK components safely.
+- Ensure dependency resolution and project validation prevent broken installs and silent integration drift.
 
 **What to do**
 - Build installer core for component copy workflow.
@@ -1193,9 +1248,21 @@ Cross-section dependency notes:
 - Install when local component already exists and validate conflict strategy.
 - Validate separate registry selection for web and native component families.
 
+**Implementation Notes**
+- Keep registry metadata authoritative so dependency closure remains consistent over time.
+- Fail fast on unsupported target conditions with actionable validation feedback.
+- Preserve consumer ownership by copying editable sources rather than opaque runtime bindings.
+
 ### STORYBOOK_FRONTEND — Storybook
 
 **Batch**: 10
+
+**Task Name**
+- STORYBOOK_FRONTEND
+
+**Objective**
+- Establish Storybook as the canonical component documentation and review surface for frontend SDK web primitives.
+- Use story-driven state coverage to reduce regressions before demo and production integration.
 
 **What to do**
 - Configure Storybook as the web component documentation surface.
@@ -1227,6 +1294,11 @@ Cross-section dependency notes:
 - Validate className customization stories for style extension behavior.
 - Validate slot override stories for custom composition behavior.
 - Validate visual baseline diffs remain stable across routine updates.
+
+**Implementation Notes**
+- Keep story fixtures contract-driven so scenario drift is caught early.
+- Cover state-rich branches explicitly to improve accessibility and regression review quality.
+- Treat visual-baseline updates as governed changes tied to intentional UI behavior shifts.
 
 ## Additional Implementation Notes
 

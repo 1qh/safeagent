@@ -1076,6 +1076,99 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ---
 
+### Task RESPONSE_CALIBRATION: Response Energy Matching and Complexity Calibration
+
+**Task Name**
+- RESPONSE_CALIBRATION
+
+**Objective**
+- Calibrate response energy and depth to match user input complexity, tone, and effort level. Improve conversational fit while preserving correctness, safety, and task completion quality.
+
+**What To Do**
+- Define calibration signals from message length, structural complexity, and formality markers.
+- Classify incoming turns into response-energy bands from concise to expanded.
+- Generate advisory calibration hints for the orchestrator context layer.
+- Blend calibration hints with intent confidence and ambiguity state.
+- Apply tone adaptation rules for concise, neutral, and high-detail response modes.
+- Add override rules so risk, safety, or correctness can force deeper responses.
+- Keep calibration stateless per turn but allow optional thread-level smoothing.
+- Emit calibration diagnostics for observed band, hint, and override reason.
+- Add tests for short casual prompts, technical deep dives, and mixed-style turns.
+
+**Depends On**
+- CORE_TYPES, AGENT_FACTORY
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Input complexity signals map to a deterministic response-energy band.
+- Short low-complexity prompts bias toward concise responses.
+- High-complexity prompts bias toward more detailed responses.
+- Calibration hints are injected before generation starts.
+- Safety and correctness overrides can supersede brevity calibration.
+- Calibration output remains advisory and does not break core generation flow.
+- Diagnostics include selected band and any override trigger.
+- Calibration behavior is consistent across equivalent inputs.
+
+**QA Scenarios**
+- Submit a short casual prompt, verify concise response calibration is selected.
+- Submit a multi-part technical request, verify expanded response calibration is selected.
+- Submit safety-sensitive prompt with concise style, verify safety override forces required detail.
+- Submit repeated similar prompts, verify calibration decisions remain stable.
+
+**Implementation Notes**
+- Keep calibration lightweight to avoid adding material latency.
+- Treat calibration as soft guidance, not a hard output-length constraint.
+- Separate signal extraction from policy mapping for easier tuning.
+
+---
+
+### Task GENERATIVE_UI: Rich UI Component Emission with Safety Governance
+
+**Task Name**
+- GENERATIVE_UI
+
+**Objective**
+- Enable agents to emit rich, structured UI payloads alongside text while enforcing strict safety and compatibility constraints. Support progressive client rendering without exposing executable or unsafe content.
+
+**What To Do**
+- Define a server-controlled catalog of allowed UI component categories.
+- Define Zod v4 contracts for each allowed component payload type.
+- Add validation gate that rejects emissions failing category or schema checks.
+- Implement stream handling that suppresses raw tool payload chatter and emits clean UI events.
+- Support inline and block presentation modes per emitted component.
+- Support multiple UI component emissions within one response stream.
+- Require plain-text fallback text for every emitted component payload.
+- Enforce data-only payload policy with explicit rejection of executable content.
+- Add emission rate and payload-size controls to protect stream performance.
+- Add observability for accepted, rejected, and fallback-rendered component events.
+
+**Depends On**
+- CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS
+
+**Batch**
+- 10
+
+**Acceptance Criteria**
+- Only catalog-approved component categories are emitted.
+- Every emitted component passes its Zod v4 contract validation.
+- Invalid category or schema payloads are dropped before reaching clients.
+- UI events are delivered as clean structured events alongside text streaming.
+- Each component payload includes a non-empty plain-text fallback.
+- Payloads containing executable content are rejected.
+- Multiple components can be emitted in one response without stream corruption.
+- Emission controls enforce configured rate and size limits.
+
+**QA Scenarios**
+- Emit a valid catalog-approved component, verify client receives structured UI event and fallback text.
+- Emit a payload with invalid schema, verify event is rejected and not delivered.
+- Emit a payload with disallowed category, verify rejection occurs.
+- Emit multiple valid components in one response, verify ordering and stream integrity.
+- Emit oversized payload, verify size control blocks delivery.
+
+---
+
 ## External References
 
 - OpenAI Agents SDK documentation: https://openai.github.io/openai-agents-js/

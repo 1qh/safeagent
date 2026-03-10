@@ -570,6 +570,59 @@ flowchart TD
 | [Testing](./testing.md) | Fault injection, replay determinism, and async approval tests validate reliability claims. |
 | [Extensibility and Plugin Architecture Plan](./extensibility.md) | Pluggable checkpoint backend contracts align with extension governance model. |
 
+## Task Specifications
+
+### Task DURABLE_EXECUTION: Durable Workflow Runtime and HITL Gates
+
+**Task Name**
+- DURABLE_EXECUTION
+
+**Objective**
+- Build durable execution infrastructure that preserves workflow continuity across crashes, restarts, and long human-approval waits.
+- Ensure high-risk actions can be paused behind auditable human gates without sacrificing deterministic recovery behavior.
+
+**What To Do**
+- Define checkpoint boundaries for all state transitions, including wait, resume, and terminal states.
+- Implement durable checkpoint persistence with canonical history and hot-state acceleration behavior.
+- Implement lease-based resume ownership to prevent duplicate concurrent recovery execution.
+- Implement crash-recovery scanning for interrupted and resumable workflows after worker restart.
+- Implement replay and fork capabilities for investigation, simulation, and controlled branch correction.
+- Implement asynchronous human-approval states with signed decision ingestion and timeout escalation.
+- Define high-risk action gate policies and escalation paths for approve, reject, edit, and timeout outcomes.
+- Enforce tenant-scoped authorization and immutable audit trails for checkpoint read, write, restore, and export paths.
+- Define retention, compaction, and cleanup governance for checkpoint lifecycle at scale.
+- Define observability signals for checkpoint latency, recovery success, queue depth, and escalation health.
+
+**Depends On**
+- AGENT_FACTORY
+- STORAGE_WRAPPER
+- SSE_STREAMING
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Workflows resume deterministically from durable checkpoints after process interruption.
+- Duplicate resume attempts are prevented through single-owner lease behavior and idempotency controls.
+- HITL decisions are durable, authenticated, and bound to exact pending approval state.
+- Timeout and escalation handling is deterministic and auditable for all approval paths.
+- Replay and fork flows preserve immutable source lineage and explicit branch provenance.
+- Checkpoint authorization and tenant isolation are enforced for all sensitive operations.
+- Checkpoint retention and cleanup policies operate with bounded growth and verifiable deletion outcomes.
+- Operational metrics expose recovery latency, backlog pressure, and approval-queue health.
+
+**QA Scenarios**
+- Interrupt active workflow mid-run, verify resume continues from latest valid checkpoint without divergence.
+- Trigger two concurrent resume attempts for one run, verify only one acquires execution ownership.
+- Route high-risk action into approval wait, submit signed approval, verify deterministic resume.
+- Let approval timeout expire, verify escalation policy activates and outcome is fully audited.
+- Fork from historical checkpoint and replay, verify original branch remains immutable and traceable.
+
+**Implementation Notes**
+- Keep deterministic transition logic separate from model reasoning so replay remains reproducible.
+- Favor canonical-history authority during divergence recovery to avoid split-brain checkpoint state.
+- Treat approval artifacts as security-sensitive control records with strict integrity validation.
+
 ## Delivery Checklist
 
 - Bullet-point ToC is present.

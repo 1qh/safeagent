@@ -784,6 +784,54 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ---
 
+### Task SPIKE_RAG_DEPS: RAG Dependency Validation Spike
+
+**Task Name**
+- SPIKE_RAG_DEPS
+
+**Objective**
+- Validate the full RAG dependency chain before document and retrieval implementation begins.
+- Prove that multimodal processing, embeddings, storage, and retrieval dependencies operate correctly in the target runtime.
+
+**What To Do**
+- Define the spike matrix for document parsing, multimodal processing, embedding generation, and retrieval primitives.
+- Validate PDF page splitting and per-page artifact handling.
+- Validate multimodal summarization dependency behavior for page-level outputs.
+- Validate image extraction and image processing dependency compatibility.
+- Validate vector storage and retrieval dependency behavior for semantic search paths.
+- Validate object storage dependency behavior for upload, read, and cleanup paths.
+- Validate document conversion dependency behavior for office-format ingestion.
+- Validate background execution dependency behavior for asynchronous enrichment stages.
+- Record dependency-specific pass and fail outcomes with mitigation notes.
+
+**Depends On**
+- SPIKE_CORE_STACK
+
+**Batch**
+- 0.5
+
+**Acceptance Criteria**
+- Spike covers all critical RAG and document-processing dependencies.
+- PDF splitting and per-page processing assumptions are validated.
+- Multimodal summary flow dependencies validate expected behavior.
+- Embedding and vector retrieval dependencies validate expected dimensional and search behavior.
+- Object storage dependencies validate core artifact lifecycle operations.
+- Conversion and enrichment dependency paths are validated for expected success and failure modes.
+- Blocking dependency failures are explicitly identified with clear follow-up actions.
+
+**QA Scenarios**
+- Run dependency spike suite for document parsing and summarization, verify full result matrix output.
+- Execute vector indexing and retrieval checks, verify expected semantic lookup behavior.
+- Exercise object storage upload and retrieval path, verify artifact round-trip integrity.
+- Simulate one dependency failure, verify spike output flags blocking impact and mitigation path.
+
+**Implementation Notes**
+- Treat this spike as a hard precondition for document and retrieval implementation tasks.
+- Keep dependency findings traceable to downstream task risk.
+- Capture both runtime compatibility and operational behavior, not only import success.
+
+---
+
 ### Task DOC_PIPELINE: Document Processing Pipeline
 
 **What to do**: Build the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini structured output generation summarizes each page with a schema that includes summary text, image descriptions, and vector-chart detection. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when vector charts are detected and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.

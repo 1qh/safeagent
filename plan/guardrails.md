@@ -937,6 +937,106 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ## Task Specifications
 
+### Task INPUT_VALIDATION: Input Validation Pipeline
+
+**Task Name**
+- INPUT_VALIDATION
+
+**Objective**
+- Build a focused input validation stage that rejects malformed, oversized, or suspicious user content before deeper guardrail and orchestration processing.
+- Reduce security and reliability risk by enforcing deterministic pre-validation rules.
+
+**What To Do**
+- Define validation rules for input length bounds and structural sanity checks.
+- Validate message format expectations across plain text and normalized payload forms.
+- Add injection-signal checks for high-risk instruction patterns and delimiter abuse.
+- Add encoded obfuscation detection coverage for common bypass patterns.
+- Apply normalization before validation so equivalent payloads are judged consistently.
+- Produce deterministic validation outcomes with clear block and pass states.
+- Integrate validation results with guardrail severity handling and observability hooks.
+- Ensure validation logic is reusable by both direct and streaming request entry points.
+
+**Depends On**
+- SSE_STREAMING
+
+**Batch**
+- 3
+
+**Acceptance Criteria**
+- Inputs exceeding configured size limits are rejected before model execution.
+- Invalid or unsupported input formats are rejected with consistent validation outcomes.
+- Injection-like patterns trigger blocking or flagged outcomes per configured policy.
+- Obfuscated payload variants are evaluated after normalization and do not bypass checks.
+- Clean inputs pass without added user-visible friction.
+- Validation outcomes are auditable through structured telemetry events.
+- Validation stage runs before downstream orchestration and tool execution.
+
+**QA Scenarios**
+- Submit an oversized message, verify immediate validation rejection before agent execution.
+- Submit malformed payload content, verify deterministic format-validation failure.
+- Submit a known injection-like prompt pattern, verify blocked or flagged outcome as configured.
+- Submit benign content near boundary limits, verify successful pass and normal processing.
+
+**Implementation Notes**
+- Keep validation deterministic and low-latency to avoid runtime jitter.
+- Separate normalization from policy thresholds to simplify tuning.
+- Align outputs with existing guardrail observability conventions.
+
+### Task HATE_SPEECH_GUARD: Hate Speech and Toxicity Guardrail Processor
+
+**Task Name**
+- HATE_SPEECH_GUARD
+
+**Objective**
+- Implement a robust hate speech and toxicity guardrail processor that blocks abusive content across supported languages.
+- Ensure consistent detection and enforcement on both user input and generated output streams.
+
+**What To Do**
+- Build hybrid detection flow using obscenity for English and @2toad/profanity for multilingual matching, supplemented by LDNOOBW data.
+- Configure normalization to catch evasive variants such as character substitutions and confusables (obscenity recommended transformers).
+- Add multilingual dictionary coverage with LDNOOBW supplement to reinforce thinner language coverage.
+- Load Vietnamese offensive word seed list from curated sources.
+- Support configurable consumer excludeWords (allowlist) and additionalWords (blocklist) APIs.
+- Apply the same hybrid checks on input text and output sliding-window evaluations.
+- Wire detection results into p0 blocking behavior and fallback response flow.
+- Ensure disabled mode bypasses detection cleanly when the guardrail is not enabled (opt-in via config).
+- Emit structured telemetry for blocked and flagged events.
+
+**Depends On**
+- CORE_TYPES
+- GUARD_FACTORY
+
+**Batch**
+- 3
+
+**Acceptance Criteria**
+- obscenity RegExpMatcher configured with English dataset and recommended transformers
+- @2toad/profanity configured with unicodeWordBoundaries enabled
+- LDNOOBW supplement loaded to reinforce thinner language coverage
+- Vietnamese offensive word seed list loaded from curated sources
+- Consumer excludeWords and additionalWords APIs supported
+- Guardrail can be enabled or disabled via config (opt-in)
+- Same hybrid checks run on output sliding window text
+- Evasive text variants are detected by normalization-aware matching
+- Enforcement behavior is consistent across direct and streaming contexts
+- Security events are captured for operational analysis
+
+**QA Scenarios**
+- English profanity is blocked
+- Leet-speak evasion is caught by obscenity matching
+- Multilingual profanity is blocked
+- Whitelisted term is not blocked
+- Consumer-excluded word is not blocked
+- Consumer-added blocked word is blocked
+- Disabled guardrail passes all content
+- Output hate speech is caught during streaming
+- Submit multilingual abusive phrase from configured language set, verify blocking behavior
+
+**Implementation Notes**
+- Keep language coverage extensible without changing enforcement semantics.
+- Favor conservative detection defaults with configurable operator controls.
+- Use consistent severity mapping so downstream handling remains predictable.
+
 ### Task INPUT_GUARD: Input Guardrails
 
 **What to do**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls abort on p0 or `onFlag` on p1.
@@ -1051,33 +1151,6 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Mixed-language message with foreign place name in otherwise supported text is allowed
 - Very short text below minTextLength always passes
 - Output drift into unsupported language is caught and blocked
-
----
-
-### Task HATE_SPEECH_GUARD: Hate Speech Guard
-
-**What to do**: Implement the hybrid hate speech detection guardrail using obscenity for English and @2toad/profanity for multilingual matching, supplemented by LDNOOBW data.
-
-**Depends on**: CORE_TYPES, GUARD_FACTORY
-
-**Acceptance Criteria**:
-- obscenity RegExpMatcher configured with English dataset and recommended transformers
-- @2toad/profanity configured with unicodeWordBoundaries enabled
-- LDNOOBW supplement loaded to reinforce thinner language coverage
-- Vietnamese offensive word seed list loaded from curated sources
-- Consumer excludeWords and additionalWords APIs supported
-- Guardrail can be enabled or disabled via HateSpeechGuardConfig (opt-in)
-- Same hybrid checks run on output sliding window text
-
-**QA Scenarios**:
-- English profanity is blocked
-- Leet-speak evasion is caught by obscenity matching
-- Multilingual profanity is blocked
-- Whitelisted term is not blocked
-- Consumer-excluded word is not blocked
-- Consumer-added blocked word is blocked
-- Disabled guardrail passes all content
-- Output hate speech is caught during streaming
 
 ---
 

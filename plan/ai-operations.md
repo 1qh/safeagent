@@ -831,6 +831,58 @@ Scalability and security are mandatory, not optional optimizations.
 | [Monitoring](./monitoring.md) | Alerts and marker correlation | Extended here with cost-intelligence anomaly thresholds and rollout decision-state operations. |
 
 ## Task Specifications
+
+### AI_OPERATIONS
+
+**Task Name**
+- AI_OPERATIONS
+
+**Objective**
+- Deliver an operational control layer that optimizes model cost, governs behavior rollouts, and blocks quality regressions before user impact.
+- Coordinate cost intelligence, prompt lifecycle governance, and evaluation signals into one auditable runtime decision system.
+
+**What To Do**
+- Implement semantic reuse governance with threshold, TTL, scope, and invalidation controls.
+- Implement dynamic routing policy that chooses lowest-cost safe lane before generation.
+- Implement prompt-cache-aware assembly policy that maximizes stable-prefix reuse.
+- Define per-agent and per-workflow cost attribution with budget-contract enforcement behavior.
+- Govern prompt lifecycle through atomic bundles, gated promotion, and deterministic rollback.
+- Implement controlled experiment lanes with assignment stability, guard metrics, and confidence-based decisions.
+- Implement shadow-comparison governance for pre-rollout divergence detection without user-visible impact.
+- Implement canary decision policy with explicit rollback triggers for safety, quality, latency, and cost regressions.
+- Define composable scorer governance and dataset lifecycle controls for continuous evaluation quality.
+- Integrate conversation-level intelligence outputs into operational trend and health decision surfaces.
+
+**Depends On**
+- AGENT_FACTORY
+- LANGFUSE_MODULE
+- EMBED_ROUTER
+
+**Batch**
+- 8b
+
+**Acceptance Criteria**
+- Cost-control layer enforces proactive optimization paths before expensive generation is executed.
+- Prompt rollout governance supports atomic promotion and full-state rollback without partial behavior drift.
+- Experiment governance prevents unsafe promotion when confidence or guard metrics fail.
+- Shadow and canary controls produce actionable divergence and rollback signals.
+- Evaluation layer combines semantic, rule, and statistical signals with reproducible evidence.
+- Dataset and scorer revisions are traceable with lineage suitable for release decisions.
+- Conversation-intelligence aggregates provide trend and satisfaction indicators for operations.
+- Governance outputs are auditable and align with release and monitoring control planes.
+
+**QA Scenarios**
+- Run repeated semantically similar requests, verify safe cache-hit behavior and tracked savings.
+- Execute candidate behavior in shadow mode, verify production output remains unchanged while divergences are recorded.
+- Run canary progression with induced quality regression, verify automatic rollback trigger and lineage record.
+- Run evaluation suite against fixed dataset snapshot, verify reproducible scoring and gate outcome.
+- Simulate cost anomaly surge, verify alerting and constrained rollout decision state activation.
+
+**Implementation Notes**
+- Keep rollout and rollback decisions coupled to explicit gate states, not ad hoc operator judgment.
+- Preserve strict separation between optimization signals and non-bypassable safety policy floors.
+- Treat lineage completeness as a release-critical artifact for every behavior change.
+
 ### COST_INTELLIGENCE_LAYER
 - The system SHALL enforce proactive spend controls through semantic reuse, dynamic routing, prompt cache optimization, gateway policy, and budget contracts.
 - The system SHALL apply configurable threshold, TTL, and invalidation governance for semantic reuse.

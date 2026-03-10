@@ -492,6 +492,106 @@ flowchart LR
 | [Extensibility and Plugin Architecture Plan](./extensibility.md) | Extension control baseline connected here to approval gates and compromise response. |
 | [Durable Execution and HITL Oversight](./durable-execution.md) | Human oversight controls linked here to Article 14 obligations and high-impact action governance. |
 
+## Task Specifications
+
+### Task SECURITY_COMPLIANCE: Security and Compliance Operations Baseline
+
+**Task Name**
+- SECURITY_COMPLIANCE
+
+**Objective**
+- Implement a unified security and compliance operating layer that ties technical controls to auditable governance outcomes.
+- Ensure threat, privacy, and regulatory obligations can be continuously enforced and evidenced at scale.
+
+**What To Do**
+- Define and operationalize a unified threat model spanning model, data, infrastructure, and extension layers.
+- Build governance mappings for OWASP LLM risk categories to prevention, detection, and escalation controls.
+- Establish audit-trail requirements for decision lineage, oversight interventions, and policy execution outcomes.
+- Formalize GDPR and EU AI Act evidence workflows for transparency, rights handling, and incident reporting readiness.
+- Define DSAR operations with intake, identity verification, fulfillment evidence, and deadline governance.
+- Define breach response governance with severity classification, command structure, and regulator-ready reporting timelines.
+- Establish fairness monitoring governance with cohort-level parity checks, thresholds, and remediation ownership.
+- Define security review gates for high-risk changes and a recurring audit cadence with required evidence outputs.
+- Integrate compliance checkpoints with incident response, monitoring, and access-control ownership models.
+
+**Depends On**
+- MONITORING_INFRA
+- JWT_AUTH
+- GUARD_PIPELINE
+
+**Batch**
+- 10
+
+**Acceptance Criteria**
+- Threat governance exists with explicit ownership, severity model, and remediation SLAs.
+- OWASP LLM risk mapping is complete and linked to enforceable governance controls.
+- Decision and oversight audit trails are immutable, exportable, and regulator-review ready.
+- DSAR workflow governance supports rights intake, fulfillment evidence, and timeline tracking.
+- Breach governance enforces triage, classification, and 72-hour reporting readiness.
+- Compliance mapping for EU AI Act and GDPR duties is explicit, measurable, and reviewable.
+- Fairness governance includes monitored metrics, alert thresholds, and assigned remediation owners.
+- Security review gates and audit cadence are documented and operationally actionable.
+
+**QA Scenarios**
+- Run a simulated high-severity threat review, verify classification, ownership assignment, and escalation path.
+- Process a rights-request workflow, verify identity gating, fulfillment evidence, and deadline tracking.
+- Trigger a breach tabletop scenario, verify triage timeline and reporting-readiness artifacts.
+- Review a fairness alert scenario, verify threshold detection and remediation workflow ownership.
+- Audit a high-risk release change, verify mandatory security-review gate completion before approval.
+
+**Implementation Notes**
+- Keep governance controls mapped to existing technical enforcement points to avoid duplicate policy surfaces.
+- Treat evidence integrity and traceability as first-class acceptance gates for compliance readiness.
+- Favor measurable control definitions so recurring audits remain objective and repeatable.
+
+### Task MULTI_TENANT_CONFIG: Multi-Tenant Isolation and Configuration Hierarchy
+
+**Task Name**
+- MULTI_TENANT_CONFIG
+
+**Objective**
+- Implement tenant-aware configuration resolution that supports controlled overrides without violating isolation boundaries.
+- Ensure every request resolves policy and runtime settings deterministically from the correct tenant context.
+
+**What To Do**
+- Define a five-level configuration hierarchy from global through request scope.
+- Specify deterministic precedence rules and conflict resolution across all hierarchy levels.
+- Implement tenant and organization boundary enforcement for configuration reads and merges.
+- Bind identity context to configuration resolution so unauthorized cross-tenant access is rejected.
+- Define schema-validated configuration contracts for each tier with strict shape guarantees.
+- Add secure default fallbacks for missing tenant-specific overrides.
+- Define audit requirements for configuration resolution decisions and override provenance.
+- Establish isolation test cases for tenant crossover, malformed scope, and stale identity context.
+
+**Depends On**
+- CONFIG_DEFAULTS
+- ZOD_SCHEMAS
+- JWT_AUTH
+
+**Batch**
+- 4
+
+**Acceptance Criteria**
+- Configuration precedence across all five levels is deterministic and documented.
+- Tenant-scoped resolution prevents cross-tenant leakage in all supported access paths.
+- Identity-bound context is required for tenant-level and request-level override resolution.
+- Schema validation rejects malformed or unsupported configuration structures.
+- Missing lower-level config falls back safely to allowed upstream defaults.
+- Resolution and override decisions are auditable with actor, scope, and outcome metadata.
+- Configuration merges preserve required invariants under concurrent request load.
+
+**QA Scenarios**
+- Resolve config for two tenants with overlapping overrides, verify isolated and correct effective outcomes.
+- Submit request without valid tenant identity, verify tenant-scoped override access is denied.
+- Provide invalid scoped config payload, verify schema validation blocks activation.
+- Remove tenant override and re-resolve, verify deterministic fallback to parent scope.
+- Replay audited resolution event, verify scope chain and final effective values are reconstructable.
+
+**Implementation Notes**
+- Keep merge logic deterministic and side-effect free so behavior remains stable under replay.
+- Separate identity verification from merge execution to simplify threat analysis and auditing.
+- Align scope vocabulary with execution and server policy docs to avoid cross-module ambiguity.
+
 ## Delivery Checklist
 - Unified threat model defined across LLM, data, infrastructure, and extension layers.
 - OWASP Top 10 for LLM Applications mapped with governance actions.

@@ -344,6 +344,61 @@
 - Exception records include compatibility outcomes after remediation.
 - Exception closure requires confirmation of policy compliance restoration.
 
+## Task Specifications
+
+### Task API_GOVERNANCE: Public API Stability and Migration Governance
+
+**Task Name**
+- API_GOVERNANCE
+
+**Objective**
+- Establish enforceable governance for public API stability, deprecation lifecycle, and consumer migration safety.
+- Ensure API evolution remains predictable for adopters while preserving controlled platform iteration.
+
+**What To Do**
+- Define and maintain authoritative public API inventory with stable internal-boundary rules.
+- Assign and publish stability tiers for all consumer-facing contracts.
+- Enforce semantic release classification policy aligned to compatibility impact.
+- Define deprecation lifecycle with required notices, grace windows, and migration ownership.
+- Define breaking-change proposal, impact assessment, approval, and communication workflow.
+- Define migration-guide framework with phased adoption, validation, and rollback guidance.
+- Define compatibility testing matrix across release lines and high-impact consumer patterns.
+- Define extension-contract governance with author-facing communication and compatibility guarantees.
+- Define type and schema contract governance for additive versus breaking change classification.
+- Define operating cadence, KPI tracking, and escalation process for governance exceptions.
+
+**Depends On**
+- FOUNDATION
+- RELEASE_PIPELINE
+- CODING_STANDARDS
+- EXTENSIBILITY
+- DEVELOPER_EXPERIENCE
+
+**Batch**
+- FINAL
+
+**Acceptance Criteria**
+- Public API inventory is explicit, reproducible, and release-gated against undocumented drift.
+- Stability-tier assignments are complete and consistently reflected across docs and release communication.
+- Deprecation process enforces migration readiness before removal eligibility.
+- Breaking changes require approved impact assessment and coordinated migration communication.
+- Compatibility matrix and upgrade checks run as release admission gates.
+- Extension and type-contract changes follow formal governance classification with audit records.
+- Exception handling remains time-bounded, auditable, and tied to remediation plans.
+- Governance cadence and KPIs are defined and used for release decision support.
+
+**QA Scenarios**
+- Introduce undocumented export change in release candidate, verify governance gate blocks publication.
+- Mark a contract deprecated without migration guidance, verify policy validation fails.
+- Submit breaking-change proposal without impact analysis, verify approval workflow rejects admission.
+- Run compatibility matrix for candidate release, verify regression case blocks release progression.
+- Trigger emergency exception flow, verify time-bound approval and remediation tracking are recorded.
+
+**Implementation Notes**
+- Keep compatibility policy machine-checkable to reduce subjective release decisions.
+- Treat consumer communication artifacts as required release deliverables, not optional documentation.
+- Align extension and type-contract governance with the same lifecycle rigor as runtime API changes.
+
 ## Cross-Reference Table
 
 | Plan File | Governance Connection |

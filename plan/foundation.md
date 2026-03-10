@@ -1121,6 +1121,448 @@ The foundation layer task specifications remain authoritative.
 | PROVIDER_HELPERS | Build model resolver and fallback middleware helpers | SCAFFOLD_LIB | String resolution, passthrough, fallback activation validated |
 | BARREL_EXPORTS | Aggregate top-level exports from subpath barrels | Foundation and downstream public modules | Public surface complete, no private leaks, no circular warnings |
 
+### Task SPIKE_CORE_STACK: Core Runtime and Integration Validation Spike
+
+**Task Name**
+- SPIKE_CORE_STACK
+
+**Objective**
+- Validate that the core runtime stack works end to end before any implementation batches proceed.
+- Confirm critical integration assumptions across runtime, framework, storage, validation, and streaming behaviors.
+
+**What To Do**
+- Define a spike matrix covering runtime boot, framework execution, streaming lifecycle, guardrail behavior, and service connectivity.
+- Validate Bun runtime compatibility for core library and server execution flows.
+- Validate Elysia request lifecycle, middleware ordering, and health behavior.
+- Validate Drizzle-based PostgreSQL access patterns and typed query behavior.
+- Validate surqlize-based SurrealDB connectivity, relation handling, and vector access patterns.
+- Validate Zod v4 schema parsing patterns and expected validation behavior.
+- Validate agent framework integration for model execution, tool use, and streaming event flow.
+- Validate critical infrastructure dependencies and document pass, fail, and mitigation outcomes.
+- Record blocking findings, non-blocking findings, and required plan adjustments.
+
+**Depends On**
+- None
+
+**Batch**
+- 0
+
+**Acceptance Criteria**
+- A complete spike result set exists for all critical core stack assumptions.
+- Bun, Elysia, Drizzle, surqlize, and Zod v4 all pass required compatibility checks.
+- Streaming behavior confirms expected event progression and terminal states.
+- Guardrail tripwire paths are validated for both input and output blocking behavior.
+- Service connectivity checks confirm required storage and observability dependency behavior.
+- Critical failures are explicitly marked as blocking with clear remediation direction.
+- Non-critical failures are documented with impact and follow-up tasks.
+
+**QA Scenarios**
+- Run full spike validation suite, verify all critical checks report pass/fail status with evidence.
+- Trigger a guardrail p0 condition, verify blocking behavior is immediate and deterministic.
+- Execute concurrent runs with distinct contexts, verify no cross-run state leakage.
+- Simulate one dependency failure, verify failure classification and mitigation output are captured.
+
+**Implementation Notes**
+- Treat this as a go or no-go gate for all downstream work.
+- Keep findings structured for auditability and plan updates.
+- Prioritize reproducible validation signals over ad hoc observations.
+
+### Task SCAFFOLD_LIB: Library Workspace Scaffolding
+
+**Task Name**
+- SCAFFOLD_LIB
+
+**Objective**
+- Establish the baseline library workspace so all core packages share consistent tooling, typing, and quality gates.
+- Provide stable scaffolding for parallel development across library modules.
+
+**What To Do**
+- Create the Bun workspace baseline for core library modules and related package boundaries.
+- Establish TypeScript project configuration with strict settings aligned to plan constraints.
+- Define Biome configuration for formatting and lint consistency.
+- Set up baseline package metadata, scripts, and shared development conventions.
+- Define foundational module structure for core domains and subpath ownership.
+- Establish environment schema baseline and shared configuration contracts.
+- Add baseline test harness wiring and quality gate integration points.
+- Ensure initial exports and placeholders support incremental module implementation.
+
+**Depends On**
+- SPIKE_CORE_STACK
+
+**Batch**
+- 1
+
+**Acceptance Criteria**
+- Workspace installs and resolves dependencies without configuration conflicts.
+- Type-checking succeeds for the scaffolded baseline.
+- Biome configuration is active and enforces consistent style rules.
+- Package boundaries and module ownership are clear and non-overlapping.
+- Baseline tests execute successfully in the scaffolded environment.
+- Environment schema baseline is present and validates expected shapes.
+
+**QA Scenarios**
+- Initialize clean workspace state, verify dependency resolution and baseline checks pass.
+- Run type validation across scaffolded packages, verify strict rules are enforced.
+- Introduce an intentional lint violation, verify quality tooling reports it correctly.
+- Add a simple module export, verify workspace references resolve without manual patching.
+
+**Implementation Notes**
+- Keep scaffold minimal but production-oriented to avoid later rework.
+- Favor predictable conventions that reduce cross-package drift.
+- Preserve compatibility with downstream batch parallelization.
+
+### Task SCAFFOLD_FRONTEND: Frontend SDK Workspace Scaffolding
+
+**Task Name**
+- SCAFFOLD_FRONTEND
+
+**Objective**
+- Create the frontend SDK workspace foundation for hooks and component packages.
+- Enable frontend package development to proceed in parallel with backend and core library work.
+
+**What To Do**
+- Establish frontend workspace structure for hooks, web components, and native components.
+- Define TypeScript setup for frontend package interop and shared contracts.
+- Align frontend package tooling with workspace-wide lint and formatting standards.
+- Add baseline package manifests and dependency boundaries for each frontend surface.
+- Define placeholder exports for each package to stabilize early integration.
+- Configure Storybook-ready project shape for future component documentation work.
+- Ensure frontend workspace composes cleanly with the core library workspace.
+
+**Depends On**
+- SCAFFOLD_LIB
+
+**Batch**
+- 1
+
+**Acceptance Criteria**
+- Frontend workspace packages initialize and build in the shared monorepo context.
+- Hook, web, and native package boundaries are clearly separated.
+- Type contracts can be shared from core types without circular dependency issues.
+- Frontend packages expose stable placeholder exports for downstream tasks.
+- Storybook-oriented structure is present for later documentation tasks.
+- Lint and formatting behavior matches workspace standards.
+
+**QA Scenarios**
+- Build all frontend scaffold packages, verify no package-level configuration errors.
+- Import shared type contracts into each package, verify type-check success.
+- Validate placeholder export consumption from another package, verify resolution works.
+- Run lint checks across frontend workspace, verify baseline compliance.
+
+**Implementation Notes**
+- Keep package contracts stable so UI tasks can start without scaffold churn.
+- Avoid introducing frontend-specific conventions that diverge from workspace standards.
+- Reserve advanced runtime behavior for downstream feature tasks.
+
+### Task CORE_TYPES: Canonical Domain Contracts
+
+**Task Name**
+- CORE_TYPES
+
+**Objective**
+- Define the canonical TypeScript contracts used across all modules.
+- Deliver a unified type foundation for agents, retrieval, memory, streaming, guardrails, storage, and evaluation domains.
+
+**What To Do**
+- Define domain contract groups for core runtime surfaces and shared module boundaries.
+- Model agent, guardrail, memory, stream, upload, document, retrieval, and config contract families.
+- Define storage and provider contract interfaces required by runtime abstractions.
+- Define SSE event contracts for all supported event families and trace step variants.
+- Define queue, budget, and lifecycle support contracts for infrastructure-related flows.
+- Define typed error code contract surface for runtime and compile-time usage.
+- Ensure contract naming and field semantics align with architecture and execution plans.
+- Export contract groups for downstream schema, config, and implementation tasks.
+
+**Depends On**
+- SCAFFOLD_LIB
+
+**Batch**
+- 2
+
+**Acceptance Criteria**
+- All major domain families have canonical contracts with clear ownership.
+- Type contracts are reusable across modules without duplicate definitions.
+- Event contracts cover all required stream event variants.
+- Typed error contract surface supports both runtime enumeration and compile-time checks.
+- Core type package compiles cleanly under strict type rules.
+- Downstream tasks can consume contracts without introducing circular imports.
+
+**QA Scenarios**
+- Create representative objects for each major domain family, verify type compatibility.
+- Validate stream event union discrimination, verify each variant is correctly typed.
+- Use typed error contracts in a coverage check, verify compile-time completeness behavior.
+- Consume shared contracts in two separate modules, verify no type drift.
+
+**Implementation Notes**
+- Keep contracts implementation-agnostic and focused on stable boundaries.
+- Prefer explicit fields and discriminants over ambiguous polymorphic shapes.
+- Use consistent naming to simplify schema mirroring in validation tasks.
+
+### Task STORAGE_WRAPPER: Typed Storage Abstraction Layer
+
+**Task Name**
+- STORAGE_WRAPPER
+
+**Objective**
+- Provide a storage abstraction that supports PostgreSQL and SurrealDB through typed access layers.
+- Standardize backend selection and fallback behavior for storage consumers.
+
+**What To Do**
+- Define storage wrapper interfaces covering required persistence operations.
+- Implement PostgreSQL access path behavior through Drizzle-backed abstractions.
+- Define SurrealDB access path behavior through surqlize-backed abstractions.
+- Add backend selection logic for explicit configuration and auto-detection flow.
+- Support memory-backed mode for development and degraded runtime scenarios.
+- Ensure selection behavior is observable through structured selection signals.
+- Define custom storage extension contract for consumer-supplied implementations.
+- Validate consistent behavior across backend branches for shared operations.
+
+**Depends On**
+- SCAFFOLD_LIB
+
+**Batch**
+- 2
+
+**Acceptance Criteria**
+- Storage wrapper supports PostgreSQL, SurrealDB-related contracts, and memory fallback semantics.
+- Explicit backend selection overrides auto-detection behavior.
+- Auto-detection selects expected backend based on runtime environment state.
+- Typed access guarantees are preserved across supported backends.
+- Backend selection path emits deterministic diagnostics.
+- Consumer modules can use a consistent storage interface regardless of backend choice.
+
+**QA Scenarios**
+- Configure explicit PostgreSQL selection, verify typed persistence operations succeed.
+- Configure no explicit backend with database presence, verify auto-detected persistent path.
+- Configure no database availability, verify memory fallback path activation.
+- Inject custom storage implementation, verify wrapper accepts and uses it without interface mismatch.
+
+**Implementation Notes**
+- Enforce typed data access boundaries consistently across backends.
+- Keep backend selection deterministic and transparent.
+- Design for graceful degradation when optional infrastructure is unavailable.
+
+### Task MCP_HEALTH: MCP Health and Silent Failure Detection
+
+**Task Name**
+- MCP_HEALTH
+
+**Objective**
+- Detect and report MCP server availability mismatches before they cause hidden tool failures.
+- Provide deterministic health states and failure handling policy for MCP integrations.
+
+**What To Do**
+- Build MCP health evaluation logic comparing configured servers with observed tool availability.
+- Implement tool ownership parsing for server-level status attribution.
+- Define per-server status states for connected, empty, failed, and unknown.
+- Support minimum expected tool counts for configured servers.
+- Support explicit empty-tool allowances for intentionally empty servers.
+- Add configurable failure action behavior for warning and hard-fail modes.
+- Provide periodic recheck capability for runtime status updates.
+- Ensure wrapper behavior avoids duplicate client creation patterns.
+
+**Depends On**
+- SCAFFOLD_LIB
+
+**Batch**
+- 2
+
+**Acceptance Criteria**
+- Health output includes per-server status with deterministic classification.
+- Missing expected tools are detected and surfaced reliably.
+- Empty-tool servers are classified correctly when explicitly allowed.
+- Minimum tool threshold checks are enforced when configured.
+- Warning mode records failures without stopping execution.
+- Throw mode stops execution with clear failure information.
+- Periodic checks update status when server availability changes.
+
+**QA Scenarios**
+- Evaluate healthy server set, verify all statuses resolve to connected.
+- Evaluate one missing-tool server, verify failed status and failure callback behavior.
+- Evaluate explicitly empty server with allowance, verify empty status.
+- Toggle server availability between checks, verify status transitions update correctly.
+
+**Implementation Notes**
+- Favor clear operational visibility over optimistic assumptions.
+- Keep status semantics stable for observability and alerting consumers.
+- Preserve compatibility with multi-server MCP topologies.
+
+### Task PROVIDER_HELPERS: Provider Resolution and Fallback Utilities
+
+**Task Name**
+- PROVIDER_HELPERS
+
+**Objective**
+- Deliver reusable provider abstraction helpers for model resolution and fallback behavior.
+- Standardize provider input handling so downstream modules can resolve models consistently.
+
+**What To Do**
+- Define provider resolution behavior for string identifiers, direct instances, and factory inputs.
+- Implement fallback chain behavior for primary and secondary provider execution paths.
+- Support fallback notifications when fallback providers are used.
+- Ensure fallback behavior works for streaming and non-streaming generation paths.
+- Preserve primary error context for complete fallback failure outcomes.
+- Define stable helper contracts for use by agent and retrieval modules.
+- Align helper defaults with one-model policy and runtime configuration rules.
+
+**Depends On**
+- SCAFFOLD_LIB
+
+**Batch**
+- 2
+
+**Acceptance Criteria**
+- Resolver accepts all supported provider input forms and returns deterministic output.
+- Primary success path does not invoke fallback providers.
+- Primary failure path invokes fallback providers in configured order.
+- Full failure path surfaces original failure context predictably.
+- Fallback behavior functions in both streaming and non-streaming modes.
+- Helper contracts are reusable by downstream modules without adapter glue.
+
+**QA Scenarios**
+- Resolve model from string input, verify expected provider resolution behavior.
+- Trigger primary failure with valid fallback, verify fallback response path.
+- Trigger primary and fallback failure, verify original error context is preserved.
+- Run fallback path during streaming flow, verify stream behavior remains valid.
+
+**Implementation Notes**
+- Keep helper behavior deterministic and free of hidden provider branching.
+- Avoid policy duplication by centralizing resolution rules.
+- Ensure fallback behavior is observable for diagnostics.
+
+### Task ZOD_SCHEMAS: Shared Zod v4 Validation Schemas
+
+**Task Name**
+- ZOD_SCHEMAS
+
+**Objective**
+- Mirror core contracts with runtime validation schemas using Zod v4.
+- Provide reliable parse and validation behavior for configuration and runtime payload safety.
+
+**What To Do**
+- Build schema coverage for major contract families defined in core types.
+- Define schema defaults where explicit default behavior is required.
+- Implement discriminated schema handling for event and step variants.
+- Define schema wrappers for broad function and provider-shaped fields with runtime guards.
+- Provide parse and safe-validate helper behavior for consumers.
+- Ensure schema inference remains aligned with canonical contract outputs.
+- Validate strict schema behavior for unsupported values and malformed structures.
+
+**Depends On**
+- CORE_TYPES
+
+**Batch**
+- 2
+
+**Acceptance Criteria**
+- All required core contract families have corresponding validation schemas.
+- Zod v4 patterns are consistently used across schema definitions.
+- Discriminated unions validate correct branch selection.
+- Defaults are applied only where explicitly defined.
+- Invalid inputs return descriptive validation feedback.
+- Schema-inferred output remains aligned with type contracts.
+
+**QA Scenarios**
+- Validate correct payloads for each major schema family, verify successful parse output.
+- Validate malformed payloads, verify descriptive error details and field paths.
+- Validate event union inputs across variants, verify correct discrimination behavior.
+- Omit defaultable fields in config payloads, verify defaults are applied correctly.
+
+**Implementation Notes**
+- Keep schema definitions tightly aligned to contract ownership.
+- Prefer explicit validation semantics over permissive acceptance.
+- Treat schema drift from core types as a release-blocking defect.
+
+### Task CONFIG_DEFAULTS: Configuration Defaults and Resolution
+
+**Task Name**
+- CONFIG_DEFAULTS
+
+**Objective**
+- Deliver the configuration resolution system that merges defaults, applies overrides, and validates final runtime configuration.
+- Ensure environment-driven and request-driven configuration behavior is deterministic and safe.
+
+**What To Do**
+- Define built-in default configuration values for all foundational config domains.
+- Implement deep-merge semantics for override resolution.
+- Enforce explicit merge rules for undefined, null, arrays, functions, and nested objects.
+- Validate merged output through schema-backed configuration validation.
+- Build per-agent override layering over library defaults.
+- Implement environment variable resolution contract and required-field handling.
+- Enforce production fail-closed behavior for required security-sensitive settings.
+- Produce immutable resolved configuration output for runtime consumers.
+
+**Depends On**
+- CORE_TYPES
+- ZOD_SCHEMAS
+
+**Batch**
+- 3
+
+**Acceptance Criteria**
+- Default configuration resolves to a valid runtime config with no overrides.
+- Deep-merge behavior follows documented rules across all merge cases.
+- Invalid override payloads fail validation with descriptive field-level errors.
+- Environment variable handling enforces required and optional contract boundaries.
+- Production fail-closed checks prevent unsafe startup states.
+- Resolved configuration output is stable and immutable for consumers.
+- Per-agent override composition behaves predictably against global defaults.
+
+**QA Scenarios**
+- Resolve config with no overrides, verify valid defaults and immutable output.
+- Apply nested overrides with mixed value types, verify merge semantics.
+- Omit required production security value, verify startup refusal behavior.
+- Provide invalid override shape, verify structured validation failure details.
+
+**Implementation Notes**
+- Keep merge rules explicit and testable to avoid hidden precedence bugs.
+- Separate library defaults ownership from deployment-specific policy ownership.
+- Preserve deterministic startup behavior across environments.
+
+### Task BARREL_EXPORTS: Top-Level Public Surface Aggregation
+
+**Task Name**
+- BARREL_EXPORTS
+
+**Objective**
+- Assemble the top-level public export surface from module barrels once dependent modules are complete.
+- Ensure consumers get a stable, discoverable API without leaking private internals.
+
+**What To Do**
+- Define final export aggregation rules from subpath barrel ownership.
+- Collect and assemble all approved public exports from module groups.
+- Validate that private and internal-only contracts are excluded.
+- Ensure export ordering and naming remain stable for consumers.
+- Validate no circular export chains are introduced by aggregation.
+- Confirm downstream SDK and server consumers can import required surfaces from the top level.
+- Verify top-level aggregation remains aligned with subpath ownership policy.
+
+**Depends On**
+- SERVER_ROUTES
+- ALL_LIBRARY_MODULE_TASKS
+
+**Batch**
+- 9b
+
+**Acceptance Criteria**
+- Top-level exports include all required public module surfaces.
+- No private internals are exported through the public surface.
+- Export graph has no circular warning conditions.
+- Consumer import paths resolve cleanly against the assembled surface.
+- Subpath barrel ownership remains the source of truth for exported symbols.
+- Export naming remains stable and predictable across modules.
+
+**QA Scenarios**
+- Import representative contracts from each major module group, verify top-level availability.
+- Attempt to import internal-only symbols, verify they are not publicly exposed.
+- Validate export graph integrity, verify no circular export behavior appears.
+- Consume top-level exports from downstream integration module, verify compatibility.
+
+**Implementation Notes**
+- Treat subpath barrels as authoritative input; avoid direct symbol cherry-picking.
+- Keep public API shape intentional and minimal.
+- Maintain backward-stable naming where feasible.
+
 Task QA coverage includes streaming lifecycle, guardrail tripwires, MCP namespaced tool detection, grounding and session metadata delivery, storage fallback and explicit selection, model fallback behavior, schema defaults and error messaging, hybrid retrieval ranking with thread isolation, object storage round-trip, and workspace baseline integrity.
 
 All database-oriented task acceptance in this foundation layer assumes type-safe data access only: Drizzle for PostgreSQL paths and surqlize for SurrealDB paths, with raw query strings treated as plan violations.

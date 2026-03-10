@@ -1288,6 +1288,55 @@ flowchart TD
 
 ---
 
+### Task RAGFLOW_CLIENT: RAGFlow Retrieval Client Wrapper
+
+**Task Name**
+- RAGFLOW_CLIENT
+
+**Objective**
+- Build a robust client wrapper for retrieval operations against RAGFlow.
+- Provide consistent result normalization so RAGFlow outputs can participate in source routing and citation workflows.
+
+**What To Do**
+- Define wrapper configuration contract for endpoint, credentials, dataset scope, and runtime limits.
+- Implement request handling for retrieval queries with stable input normalization.
+- Implement response normalization into internal retrieval result shapes.
+- Map upstream source metadata into citation-ready provenance fields.
+- Add timeout, retry, and failure classification behavior for external call resilience.
+- Add graceful degradation behavior when RAGFlow is unavailable or partially degraded.
+- Integrate cache-aware handling for repeated retrieval patterns where configured.
+- Expose quality and latency telemetry signals for retrieval observability.
+- Ensure wrapper output is compatible with source-priority routing and evidence gating.
+
+**Depends On**
+- CORE_TYPES
+- CONFIG_DEFAULTS
+
+**Batch**
+- 6
+
+**Acceptance Criteria**
+- Client wrapper executes retrieval requests and returns normalized structured output.
+- Response mapping preserves source provenance needed for citation construction.
+- Timeout and retry behavior follow configured resilience policy.
+- External failures are surfaced as typed degradations, not ambiguous runtime failures.
+- Disabled or missing external configuration cleanly disables the source path.
+- Wrapper outputs are consumable by source routing without additional transformation.
+- Observability signals include request outcome, latency, and degradation state.
+
+**QA Scenarios**
+- Execute successful retrieval request, verify normalized results include provenance metadata.
+- Simulate timeout condition, verify retry behavior and typed failure outcome.
+- Simulate unavailable external service, verify graceful degradation without breaking other sources.
+- Provide malformed upstream payload, verify normalization fails safely with structured error output.
+
+**Implementation Notes**
+- Keep wrapper deterministic so downstream ranking behavior remains stable.
+- Separate transport concerns from result-shape normalization.
+- Preserve source transparency to support evidence and citation trust.
+
+---
+
 ### Task CROSS_CONV_RAG: Cross-Conversation Retrieval Scope
 
 **What to do**: Extend retrieval to support thread and global scope. Add `scope` metadata, store global rows under sentinel thread value, include both thread and global rows in search filters, and apply configurable ranking preference to thread-local content. Include citation `scope`.
@@ -1366,6 +1415,56 @@ flowchart TD
 - Strong evidence opens gate and triggers attribute-first flow.
 - Distinct topics with distinct thresholds evaluate independently.
 - Configuration updates apply at next startup boundary.
+
+---
+
+### Task RAG_FEEDBACK_LOOP: Automated Retrieval Quality Feedback Loop
+
+**Task Name**
+- RAG_FEEDBACK_LOOP
+
+**Objective**
+- Implement a closed-loop optimization system that uses retrieval feedback signals to improve ranking quality over time.
+- Ensure parameter adaptation is controlled, auditable, and safely reversible.
+
+**What To Do**
+- Ingest retrieval-related user feedback events and link them to originating query and evidence context.
+- Compute rolling quality signals at document, source-arm, and topic levels.
+- Adjust ranking influence when source-arm performance trends negative over sufficient samples.
+- Adjust evidence sufficiency thresholds for topics with sustained low-quality outcomes.
+- Invalidate low-quality cached retrieval outcomes after negative feedback.
+- Enforce minimum sample thresholds before any adaptive parameter updates are applied.
+- Add rollback safeguards that revert adjustments when post-change quality regresses.
+- Record full audit trails for each parameter change and rollback decision.
+- Support operator pinning to protect selected parameters from automated drift.
+
+**Depends On**
+- EVIDENCE_GATE
+- LANGFUSE_MODULE
+- VALKEY_CACHE
+
+**Batch**
+- 10
+
+**Acceptance Criteria**
+- Feedback events are trace-linked to query, evidence bundle, and contributing retrieval sources.
+- Quality scoring aggregates feedback and evidence outcomes into stable optimization signals.
+- Adaptive changes only occur after configured sample thresholds are met.
+- Parameter updates are reversible and rollback activates on quality regression.
+- Negative feedback invalidates affected cached retrieval outcomes.
+- Operator-pinned controls prevent automated changes to protected parameters.
+- Every adaptive change emits an audit record with before and after context.
+
+**QA Scenarios**
+- Submit repeated negative feedback for one retrieval arm, verify arm influence is reduced after threshold.
+- Submit negative feedback on cached response, verify cache invalidation occurs before next retrieval.
+- Force quality regression after parameter change, verify rollback restores previous values.
+- Pin protected parameter and trigger adaptation cycle, verify pinned value remains unchanged.
+
+**Implementation Notes**
+- Prioritize safety and auditability over aggressive optimization.
+- Keep adaptation logic transparent so operators can reason about changes.
+- Ensure optimization never bypasses evidence-gate safety boundaries.
 
 ---
 
