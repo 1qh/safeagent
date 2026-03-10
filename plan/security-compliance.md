@@ -488,7 +488,7 @@ flowchart LR
 | [Observability](./observability.md) | PII redaction and trace controls extended here into regulator-facing record-keeping and explainability. |
 | [Infrastructure](./infrastructure.md) | Rate limiting and resilience controls mapped here to audit and legal accountability. |
 | [Monitoring & Alerting](./monitoring.md) | Security signal detection and monitoring alert thresholds. |
-| [Incident Response & DR](./incident-response.md) | Breach workflow, escalation governance, and disaster recovery procedures. |
+| [Monitoring, Alerting, and Incident Response](./monitoring.md) | Breach workflow, escalation governance, and disaster recovery procedures. |
 | [Extensibility and Plugin Architecture Plan](./extensibility.md) | Extension control baseline connected here to approval gates and compromise response. |
 | [Durable Execution and HITL Oversight](./durable-execution.md) | Human oversight controls linked here to Article 14 obligations and high-impact action governance. |
 

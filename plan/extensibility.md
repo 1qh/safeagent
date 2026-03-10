@@ -720,7 +720,7 @@ flowchart LR
 |---|---|
 | [Foundation](./foundation.md) | Storage contracts and type system |
 | [Agents & Orchestration](./agents.md) | Tool registration, provider fallback |
-| [Agent Capabilities & Integrations](./agent-capabilities.md) | MCP integration, computer use, location tool, generative UI |
+| [Agents & Orchestration](./agents.md) | MCP integration, computer use, location tool, generative UI |
 | [Memory & Intelligence](./memory.md) | Memory provider contracts |
 | [Document Processing](./documents.md) | Document processor contracts |
 | [Retrieval & Evidence](./retrieval.md) | Retrieval strategy contracts |

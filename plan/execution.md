@@ -4,11 +4,7 @@
 >
 > **Goal**: Maximize throughput by grouping independent tasks into parallel batches. Each batch completes before the next begins. Within a batch, independent tasks run concurrently; intra-batch dependencies execute in dependency order within the batch window.
 >
-> **Scale**: 119 implementation tasks + 4 final audit tasks = 123 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
-
-> **Scale Update (Developer Experience and API Governance documents)**: 121 implementation tasks + 4 final audit tasks = 125 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
->
-> **Scale Update (Gap Round 4)**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency remains 18 tasks (Batch 6).
+> **Scale**: 125 implementation tasks + 4 final audit tasks = 129 total. 16 batches. Maximum concurrency: 18 tasks (Batch 6). Estimated ~69% faster than sequential execution.
 
 ---
 
@@ -20,12 +16,10 @@
 - [Dependency Graph](#dependency-graph)
 - [Batch Parallelism Visualization](#batch-parallelism-visualization)
 - [Agent Dispatch Map](#agent-dispatch-map)
-- [Complete Task Registry (123 Tasks) and Full Dependency Matrix](#complete-task-registry-123-tasks-and-full-dependency-matrix)
+- [Complete Task Registry (129 Tasks) and Full Dependency Matrix](#complete-task-registry-129-tasks-and-full-dependency-matrix)
 - [Subpath Barrel Export Convention](#subpath-barrel-export-convention)
 - [Batch Completion Rules](#batch-completion-rules)
 - [New Task Registry (Expanded Plan Documents)](#new-task-registry-expanded-plan-documents)
-- [Execution Addendum (Developer Experience and API Governance)](#execution-addendum-developer-experience-and-api-governance)
-- [Execution Addendum (Gap Analysis Round 4)](#execution-addendum-gap-analysis-round-4)
 
 ---
 
@@ -49,7 +43,7 @@ gantt
     Batch 3 — Foundation B (14 parallel)         :FOUNDATION_B_BATCH, after FOUNDATION_A_BATCH, 3d
 
     section Config + Guards + Extensibility
-    Batch 4 — Config+Guards+Extensibility (7 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
+    Batch 4 — Config+Guards+Extensibility (8 parallel)         :CONFIG_GUARDS_BATCH, after FOUNDATION_B_BATCH, 2d
 
     section Agent Factory + Pipelines
     Batch 5 — Agent Factory + Pipelines (4 parallel)      :crit, AGENT_PIPELINE_BATCH, after CONFIG_GUARDS_BATCH, 3d
@@ -62,20 +56,20 @@ gantt
 
     section Server + TUI + Pipeline
     Batch 8a — Server+TUI+Pipeline (16 parallel) :SERVER_TUI_PIPELINE_BATCH, after SELFTEST_MIDINTEGRATION_BATCH, 3d
-    Batch 8b — Extended Integration (13 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
+    Batch 8b — Extended Integration (14 parallel) :EXTENDED_INTEGRATION_BATCH, after SERVER_TUI_PIPELINE_BATCH, 2d
 
     section Routes + API
     Batch 9a — Server Routes + Sub-Agent + React Hooks (3 parallel)      :crit, SERVER_ROUTES_SUBAGENT_BATCH, after EXTENDED_INTEGRATION_BATCH, 2d
-    Batch 9b — Endpoints+Barrel+Frontend Components (7 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
+    Batch 9b — Endpoints+Barrel+Frontend Components (8 parallel)     :ENDPOINTS_BARREL_BATCH, after SERVER_ROUTES_SUBAGENT_BATCH, 1d
 
     section Testing + Deploy
-    Batch 10 — E2E+Deploy+Publish+Ops+Docs (11 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
+    Batch 10 — E2E+Deploy+Publish+Ops+Docs (12 parallel)   :E2E_DEPLOY_BATCH, after ENDPOINTS_BARREL_BATCH, 4d
 
     section Frontend + Demos
-    Batch 11 — Demos+Docs+Incident (4 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
+    Batch 11 — Demos+Docs+Incident (5 parallel)              :FRONTEND_DEMOS_BATCH, after E2E_DEPLOY_BATCH, 2d
 
     section Final Audit
-    FINAL — Compliance+QA (4 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
+    FINAL — Compliance+QA (5 parallel)          :crit, FINAL_AUDIT_BATCH, after FRONTEND_DEMOS_BATCH, 2d
 ```
 
 ### Batch Summary
@@ -87,21 +81,18 @@ gantt
 | 1 | Scaffolding | 3 | 3 parallel | Repo structure for library + server + standards baseline |
 | 2 | Foundation A | 9 | 9 parallel | Types, storage, MCP, TUI shell, Docker, logging, frontend scaffold |
 | 3 | Foundation B | 14 | 14 parallel | Schemas, memory, TUI components, observability, cache, rewrite strategies, CI foundation |
-| 4 | Config + Guards + Extensibility | 7 | 7 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra |
+| 4 | Config + Guards + Extensibility | 8 | 8 parallel | Configuration system, guardrails, FileRegistry, summary cap, extensibility infra, multi-tenant config |
 | 5 | Agent Factory + Pipelines | 4 | 4 parallel | Agent factory plus document/file pipeline gates |
 | 6 | Integration Layer | 18 | 18 parallel | Streaming, grounding, core tools, intent routing, RAG infra, durable execution |
 | 7 | Self-test + Mid Integration | 8 | 8 parallel | Evidence gate, upload pipeline, spans, Trigger tasks, eval infra, non-actionable detection, input validation, thread resurrection |
 | 8a | Server + TUI + Pipeline | 16 | 16 parallel | TUI integration, server config, search/visual tools, intent validator, extraction safeguards, context budget, style/fact calibration |
-| 8b | Extended Integration | 13 | 13 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification, AI operations |
+| 8b | Extended Integration | 14 | 14 parallel | Upload TUI, cost tracking, TTL, cross-conv RAG, pre-fetch, rewrite, orchestrator, dependent intent, attribute negation, query replay, frustration/clarification, AI operations, retrieval feedback loop |
 | 9a | Server Routes + Sub-Agent Factory | 3 | 3 parallel | HTTP routes + lifecycle + sub-agent assembly + React hooks |
-| 9b | Endpoints + Barrel | 7 | 7 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components |
-| 10 | E2E + Deploy + Ops + Docs Infra | 11 | 11 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance |
-| 11 | Frontend Demos + Docs + Incident Ops | 4 | 4 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures |
-| FINAL | Audit | 4 | 4 parallel | Plan compliance, code quality, full QA, scope fidelity |
-
-| 11 (Updated) | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
-| FINAL (Updated) | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
-| TOTAL (Updated) | Execution Plan | 125 | — | 121 implementation tasks + 4 final audit tasks |
+| 9b | Endpoints + Barrel | 8 | 8 parallel | Upload/feedback/file/admin endpoints + barrel exports + web+RN components + generative UI pipeline |
+| 10 | E2E + Deploy + Ops + Docs Infra | 12 | 12 parallel | Integration tests, publish prep, smoke/load tests, trace UI, CLI, Storybook, monitoring, docs site, release automation, security/compliance, conversation intelligence |
+| 11 | Frontend Demos + Docs + Incident Ops | 5 | 5 parallel | Next.js web demo, Expo mobile demo, docs authoring, incident response procedures, developer experience platform |
+| FINAL | Audit + Governance | 5 | 5 parallel | Plan compliance, code quality, full QA, scope fidelity, API governance policy |
+| TOTAL | Execution Plan | 129 | — | 125 implementation tasks + 4 final audit tasks |
 
 ### Milestone Markers
 
@@ -116,6 +107,7 @@ timeline
     FOUNDATION_B_MARKER : Foundation B complete
     CI_PIPELINE_MARKER : CI_PIPELINE quality gates complete
     CONFIG_GUARDRAIL_MARKER : CONFIG_DEFAULTS + guardrail baseline complete
+    TENANT_CONFIG_MARKER : MULTI_TENANT_CONFIG hierarchy complete
     AGENT_PIPELINE_MARKER : AGENT_FACTORY + document/file pipeline foundation complete
     INTEGRATION_MARKER : Integration layer complete
     EVIDENCE_UPLOAD_MARKER : EVIDENCE_GATE + upload + self-test complete
@@ -123,12 +115,15 @@ timeline
     EXTENDED_INTEGRATION_MARKER : Extended integration + orchestration complete
     SERVER_ROUTES_MARKER : SERVER_ROUTES + SUBAGENT_FACTORY complete
     ENDPOINT_SURFACE_MARKER : Endpoint surface + BARREL_EXPORTS complete
+    GENERATIVE_UI_MARKER : GENERATIVE_UI pipeline complete
     E2E_DEPLOY_MARKER : E2E + publish + smoke + load complete
     OPERATIONS_INFRA_MARKER : MONITORING_INFRA + DOCS_SITE complete
+    CONVERSATION_INTEL_MARKER : CONVERSATION_INTELLIGENCE analytics complete
     RELEASE_MARKER : RELEASE_PIPELINE complete
     FRONTEND_DEMOS_MARKER : DEMO_WEB + DEMO_MOBILE complete
-    DOCS_OPS_MARKER : DOCS_CONTENT + INCIDENT_PROCEDURES complete
-    FINAL_AUDIT_MARKER : AUDIT_PLAN + AUDIT_CODE + AUDIT_QA + AUDIT_SCOPE complete
+    DOCS_OPS_MARKER : DOCS_CONTENT + INCIDENT_PROCEDURES + DEVELOPER_EXPERIENCE complete
+    RETRIEVAL_FEEDBACK_MARKER : RAG_FEEDBACK_LOOP optimization complete
+    FINAL_AUDIT_MARKER : AUDIT_PLAN + AUDIT_CODE + AUDIT_QA + AUDIT_SCOPE + API_GOVERNANCE complete
 ```
 
 ---
@@ -174,7 +169,7 @@ graph LR
 | Metric | Value |
 |--------|-------|
 | Critical path length | 12 tasks across 12 batches |
-| Sequential execution (all 119 tasks) | ~405–515 hours estimated |
+| Sequential execution (all 125 implementation tasks) | ~405–515 hours estimated |
 | Parallel execution (batch model) | ~125–160 hours estimated |
 | Parallel speedup | ~69% faster than sequential |
 | Maximum concurrency | 18 tasks (Batch 6) |
@@ -264,7 +259,7 @@ graph LR
 
 ---
 
-### Batch 4 — Configuration + Guardrails + Extensibility (7 parallel)
+### Batch 4 — Configuration + Guardrails + Extensibility (8 parallel)
 
 > Configuration system, input/output/external guardrails, FileRegistry, and extension point infrastructure.
 
@@ -275,6 +270,7 @@ graph LR
 | OUTPUT_GUARD | Streaming output guardrail (framework output guardrail with tripwire-trigger pattern) | `deep` | CORE_TYPES, ZOD_SCHEMAS |
 | GUARD_FACTORY | External guardrail adapter | `unspecified-high` | CORE_TYPES |
 | **FILE_REGISTRY** | **FileRegistry — Temporal + ordinal + named resolution engine** | `deep` | STORAGE_WRAPPER, VALKEY_CACHE |
+| MULTI_TENANT_CONFIG | Five-level config hierarchy (global → organization → tenant → agent → request) with tenant isolation and JWT-based resolution | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
 | SUMMARY_CAP | Rolling summary size cap with compaction | `quick` | SHORT_TERM_MEM |
 | **EXTENSIBILITY_INFRA** | **Extension point infrastructure — 12 typed contracts, lifecycle hooks, registration validation, composition patterns, security model, contract test suites** | `deep` | FOUNDATION, CORE_TYPES |
 
@@ -368,7 +364,7 @@ graph LR
 
 ---
 
-### Batch 8b — Extended Integration (13 parallel)
+### Batch 8b — Extended Integration (14 parallel)
 
 > TUI upload, cost tracking, TTL cleanup, cross-conversation RAG, speculative pre-fetch coordination, query rewrite tool, and orchestrator agent.
 
@@ -387,6 +383,7 @@ graph LR
 | ATTRIBUTE_NEGATION | Attribute negation detection and search filtering | `unspecified-high` | LLM_INTENT, REWRITE_TOOL |
 | QUERY_REPLAY | Query replay detection and rewriting (+ humanlikeness enhancements) | `unspecified-high` | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM |
 | AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
+| RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization (quality scoring, re-ranking adaptation, cache invalidation, rollback) | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
 
 > **NEW**: PREFETCH_COORD (Conversation Pipeline) coordinates the speculative pre-fetch pattern — runs embedding router and LLM validator concurrently, starts sources speculatively, cancels on disagreement. REWRITE_TOOL (Conversation Pipeline) checks all 7 rewrite triggers (pronoun referent, short query, multi-intent, highly specific, jargon mismatch, ordinal reference, query replay) and applies per-source strategies with the entity-preservation guardrail.
 
@@ -402,7 +399,7 @@ graph LR
 
 ---
 
-### Batch 9b — Barrel Exports + Server Endpoints + Frontend Components (7 parallel)
+### Batch 9b — Barrel Exports + Server Endpoints + Frontend Components (8 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -411,6 +408,7 @@ graph LR
 | FEEDBACK_ENDPOINT | User feedback endpoint (feedback submission → Langfuse scores) | `quick` | SERVER_ROUTES, LANGFUSE_MODULE |
 | FILE_CRUD | File management CRUD endpoints | `unspecified-high` | SERVER_ROUTES, FILE_REGISTRY |
 | ADMIN_API | Admin API for budget management | `unspecified-high` | SERVER_ROUTES, COST_TRACKING, JWT_AUTH |
+| GENERATIVE_UI | Generative UI pipeline (component tool, SSE event type, stream processor, frontend renderers, component registry) | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
 | WEB_COMPONENTS | Web UI components (Web Components Package — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
 | RN_COMPONENTS | React Native components (Native Components Package — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
@@ -418,7 +416,7 @@ graph LR
 
 ---
 
-### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (11 parallel)
+### Batch 10 — E2E + Deploy + Publish + Ops + Docs Infra (12 parallel)
 
 | Task | Description | Category | Depends On |
 |------|-------------|----------|------------|
@@ -433,10 +431,11 @@ graph LR
 | DOCS_SITE | Documentation site infrastructure (Fumadocs) | `unspecified-high` | SCAFFOLD_LIB |
 | MONITORING_INFRA | Monitoring infrastructure, dashboards, AI monitoring, and alerts | `deep` | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE |
 | SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
+| CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
 
 ---
 
-### Batch 11 — Frontend Demos + Docs + Incident Ops (4 parallel)
+### Batch 11 — Frontend Demos + Docs + Incident Ops (5 parallel)
 
 > Full-featured demo applications exercising the complete frontend SDK stack.
 
@@ -450,17 +449,17 @@ graph LR
 
 ---
 
-### Batch FINAL — Audit (4 parallel)
+### Batch FINAL — Audit (5 parallel)
 
-> After ALL tasks complete. Independent review across four dimensions.
+> After ALL tasks complete. Independent review across plan, code, QA, scope, and API governance.
 > FINAL is scheduled after Batch 11, so audit coverage includes both frontend demo tasks.
 
-| Task | Description | Category |
-|------|-------------|----------|
-| AUDIT_PLAN | Plan compliance audit | `oracle` |
-| AUDIT_CODE | Code quality review | `unspecified-high` |
-| AUDIT_QA | Full QA run — agent-executed | `unspecified-high` + `playwright` |
-| AUDIT_SCOPE | Scope fidelity check | `deep` |
+| Task | Description | Category | Depends On |
+|------|-------------|----------|------------|
+| AUDIT_PLAN | Plan compliance audit | `oracle` | PKG_PUBLISH |
+| AUDIT_CODE | Code quality review | `unspecified-high` | PKG_PUBLISH |
+| AUDIT_QA | Full QA run — agent-executed | `unspecified-high` + `playwright` | PKG_PUBLISH |
+| AUDIT_SCOPE | Scope fidelity check | `deep` | PKG_PUBLISH |
 | API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
 
 ---
@@ -476,17 +475,17 @@ graph TB
     BATCH_SCAFFOLD["Batch 1<br/>3 tasks — Scaffold +<br/>Code Standards"]
     BATCH_TYPES_STORAGE["Batch 2<br/>9 tasks — Types, Storage,<br/>MCP, TUI, Docker, Logging,<br/>Frontend Scaffold"]
     BATCH_SCHEMAS_MEMORY["Batch 3<br/>14 tasks — Schemas, Memory,<br/>Cache, Observability, Rewrite,<br/>CI Pipeline"]
-    BATCH_CONFIG_GUARDS["Batch 4<br/>7 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility"]
+    BATCH_CONFIG_GUARDS["Batch 4<br/>8 tasks — Config, Guards,<br/>FileRegistry, Summary,<br/>Extensibility, Multi-tenant"]
     BATCH_AGENT_DOCS["Batch 5<br/>4 tasks — Agent Factory,<br/>Doc Pipeline, File Storage,<br/>Structured Results"]
     BATCH_STREAMING_TOOLS["Batch 6<br/>18 tasks — Streaming, Tools,<br/>RAG Infra, Intent Base,<br/>Durable Execution"]
     BATCH_EVIDENCE_UPLOAD["Batch 7<br/>8 tasks — Self-test,<br/>Evidence, Upload/Trigger"]
     BATCH_SERVER_TUI["Batch 8a<br/>16 tasks — Server, TUI,<br/>Intent, Search, Visual,<br/>Humanlikeness Signals"]
-    BATCH_UPLOAD_COST["Batch 8b<br/>13 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification,<br/>AI Operations"]
+    BATCH_UPLOAD_COST["Batch 8b<br/>14 tasks — Upload TUI, Cost,<br/>TTL, RAG, Pre-fetch, Rewrite,<br/>Orchestrator, Clarification,<br/>AI Ops, Retrieval Feedback"]
     BATCH_ROUTES_SUBAGENT["Batch 9a<br/>3 tasks — SERVER_ROUTES,<br/>SUBAGENT_FACTORY, REACT_HOOKS"]
-    BATCH_ENDPOINTS["Batch 9b<br/>7 tasks — Endpoints,<br/>Barrel Exports, Frontend Components"]
-    BATCH_END_TO_END_DEPLOY["Batch 10<br/>11 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring,<br/>Security Compliance"]
-    BATCH_FRONTEND_DEMOS["Batch 11<br/>4 tasks — Demos,<br/>Docs Content, Incident Ops"]
-    BATCH_FINAL_AUDIT["FINAL<br/>4 tasks — Audit"]
+    BATCH_ENDPOINTS["Batch 9b<br/>8 tasks — Endpoints,<br/>Barrel Exports, Frontend Components,<br/>Generative UI"]
+    BATCH_END_TO_END_DEPLOY["Batch 10<br/>12 tasks — E2E, Deploy,<br/>Publish, Frontend Tools,<br/>Release, Docs Site, Monitoring,<br/>Security, Conversation Intel"]
+    BATCH_FRONTEND_DEMOS["Batch 11<br/>5 tasks — Demos,<br/>Docs Content, Incident Ops,<br/>Dev Experience"]
+    BATCH_FINAL_AUDIT["FINAL<br/>5 tasks — Audit + Governance"]
 
     BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
 
@@ -547,6 +546,8 @@ graph TB
     RAG_INFRA --> EVIDENCE_GATE
 
     ZOD_SCHEMAS --> CONFIG_DEFAULTS["CONFIG_DEFAULTS Config"]:::crit
+    ZOD_SCHEMAS --> MULTI_TENANT_CONFIG["MULTI_TENANT_CONFIG Tenant Config"]:::new
+    CONFIG_DEFAULTS --> MULTI_TENANT_CONFIG
     ZOD_SCHEMAS --> INPUT_GUARD["INPUT_GUARD Input Guard"]
     ZOD_SCHEMAS --> OUTPUT_GUARD["OUTPUT_GUARD Output Guard"]
     ZOD_SCHEMAS --> GUARD_FACTORY["GUARD_FACTORY External Guard"]
@@ -645,12 +646,17 @@ graph TB
     TRIGGER_TASKS["TRIGGER_TASKS Trigger.dev"] --> SERVER_ROUTES
     RATE_LIMITING["RATE_LIMITING Rate Limit"] --> SERVER_ROUTES
     JWT_AUTH["JWT_AUTH JWT"] --> SERVER_ROUTES
+    JWT_AUTH --> MULTI_TENANT_CONFIG
 
     SERVER_ROUTES:::crit --> BARREL_EXPORTS["BARREL_EXPORTS Barrel"]
     SERVER_ROUTES --> UPLOAD_ENDPOINT["UPLOAD_ENDPOINT Upload EP"]:::crit
     SERVER_ROUTES --> FEEDBACK_ENDPOINT["FEEDBACK_ENDPOINT Feedback EP"]
     SERVER_ROUTES --> FILE_CRUD["FILE_CRUD File CRUD"]
     SERVER_ROUTES --> ADMIN_API["ADMIN_API Admin API"]
+    CTA_STREAMING --> GENERATIVE_UI["GENERATIVE_UI Generative UI"]:::new
+    SSE_STREAMING --> GENERATIVE_UI
+    CLIENT_SDK --> GENERATIVE_UI
+    REACT_HOOKS --> GENERATIVE_UI
 
     CLIENT_SDK --> REACT_HOOKS["REACT_HOOKS React Hooks"]:::new
     SCAFFOLD_FRONTEND --> REACT_HOOKS
@@ -680,12 +686,19 @@ graph TB
     JWT_AUTH --> SECURITY_COMPLIANCE
     GUARD_PIPELINE --> SECURITY_COMPLIANCE
     MONITORING_INFRA --> INCIDENT_PROCEDURES["INCIDENT_PROCEDURES Incident Procedures"]:::new
+    EVIDENCE_GATE --> RAG_FEEDBACK_LOOP["RAG_FEEDBACK_LOOP Retrieval Feedback"]:::new
+    LANGFUSE_MODULE --> RAG_FEEDBACK_LOOP
+    VALKEY_CACHE --> RAG_FEEDBACK_LOOP
+    AI_OPERATIONS --> CONVERSATION_INTELLIGENCE["CONVERSATION_INTELLIGENCE Conversation Intel"]:::new
+    LANGFUSE_MODULE --> CONVERSATION_INTELLIGENCE
+    EMBED_ROUTER --> CONVERSATION_INTELLIGENCE
 
-    E2E_TESTS --> FINAL_AUDIT_BLOCK["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE FINAL"]:::crit
+    E2E_TESTS --> FINAL_AUDIT_BLOCK["AUDIT_PLAN, AUDIT_CODE, AUDIT_QA, AUDIT_SCOPE, API_GOVERNANCE FINAL"]:::crit
     DEMO_WEB --> FINAL_AUDIT_BLOCK
     DEMO_MOBILE --> FINAL_AUDIT_BLOCK
     DOCS_CONTENT --> FINAL_AUDIT_BLOCK
     INCIDENT_PROCEDURES --> FINAL_AUDIT_BLOCK
+    DEVELOPER_EXPERIENCE["DEVELOPER_EXPERIENCE Dev Experience"]:::new --> FINAL_AUDIT_BLOCK
 
     classDef crit fill:#ff6b6b,stroke:#c92a2a,color:white,font-weight:bold
     classDef new fill:#4dabf7,stroke:#1971c2,color:white,font-weight:bold
@@ -720,6 +733,13 @@ graph TB
         SUBAGENT_FACTORY["SUBAGENT_FACTORY<br/>Sub-Agent Factory<br/>Batch 9a"]:::new
     end
 
+    subgraph PLATFORM_EXTENSIONS["Platform and Gap Extensions"]
+        MULTI_TENANT_CONFIG["MULTI_TENANT_CONFIG<br/>Tenant Config Hierarchy<br/>Batch 4"]:::new
+        RAG_FEEDBACK_LOOP["RAG_FEEDBACK_LOOP<br/>Retrieval Feedback Loop<br/>Batch 8b"]:::new
+        GENERATIVE_UI["GENERATIVE_UI<br/>Generative UI Pipeline<br/>Batch 9b"]:::new
+        CONVERSATION_INTELLIGENCE["CONVERSATION_INTELLIGENCE<br/>Conversation Intelligence<br/>Batch 10"]:::new
+    end
+
     EMBED_ROUTER --> LLM_INTENT --> PREFETCH_COORD
     LLM_INTENT --> REWRITE_TOOL
     RAGFLOW_CLIENT --> SOURCE_ROUTER --> PREFETCH_COORD
@@ -732,6 +752,10 @@ graph TB
     LLM_INTENT --> ORCHESTRATOR
     SOURCE_ROUTER --> ORCHESTRATOR
     ORCHESTRATOR --> SUBAGENT_FACTORY
+    EVIDENCE_GATE --> RAG_FEEDBACK_LOOP
+    LLM_INTENT --> GENERATIVE_UI
+    AI_OPERATIONS -.-> CONVERSATION_INTELLIGENCE
+    CONFIG_DEFAULTS --> MULTI_TENANT_CONFIG
 
     %% Cross-pipeline dependencies
     EMBED_ROUTER -.->|"Pre-fetch needs<br/>embedding router"| PREFETCH_COORD
@@ -790,12 +814,13 @@ graph TB
         CI_PIPELINE_P["CI_PIPELINE (new)"]
     end
 
-    subgraph BATCH_CONFIG_GUARDS["Batch 4 — 7 parallel"]
+    subgraph BATCH_CONFIG_GUARDS["Batch 4 — 8 parallel"]
         CONFIG_DEFAULTS_P["CONFIG_DEFAULTS"]
         INPUT_GUARD_P["INPUT_GUARD"]
         OUTPUT_GUARD_P["OUTPUT_GUARD"]
         GUARD_FACTORY_P["GUARD_FACTORY"]
         FILE_REGISTRY_P["FILE_REGISTRY (new)"]
+        MULTI_TENANT_CONFIG_P["MULTI_TENANT_CONFIG (new)"]
         SUMMARY_CAP_P["SUMMARY_CAP (new)"]
         EXTENSIBILITY_INFRA_P["EXTENSIBILITY_INFRA (new)"]
     end
@@ -858,7 +883,7 @@ graph TB
         CONTEXT_BUDGET_P["CONTEXT_BUDGET (new)"]
     end
 
-    subgraph BATCH_UPLOAD_COST["Batch 8b — 13 parallel"]
+    subgraph BATCH_UPLOAD_COST["Batch 8b — 14 parallel"]
         TUI_UPLOAD_P["TUI_UPLOAD"]
         COST_TRACKING_P["COST_TRACKING"]
         TTL_CLEANUP_P["TTL_CLEANUP"]
@@ -872,6 +897,7 @@ graph TB
         ATTRIBUTE_NEGATION_P["ATTRIBUTE_NEGATION (new)"]
         QUERY_REPLAY_P["QUERY_REPLAY (new)"]
         AI_OPERATIONS_P["AI_OPERATIONS (new)"]
+        RAG_FEEDBACK_LOOP_P["RAG_FEEDBACK_LOOP (new)"]
     end
 
     subgraph BATCH_ROUTES_SUBAGENT["Batch 9a — 3 parallel"]
@@ -880,17 +906,18 @@ graph TB
         REACT_HOOKS_P["REACT_HOOKS (frontend)"]
     end
 
-    subgraph BATCH_ENDPOINTS["Batch 9b — 7 parallel"]
+    subgraph BATCH_ENDPOINTS["Batch 9b — 8 parallel"]
         BARREL_EXPORTS_P["BARREL_EXPORTS"]
         UPLOAD_ENDPOINT_P["UPLOAD_ENDPOINT"]
         FEEDBACK_ENDPOINT_P["FEEDBACK_ENDPOINT"]
         FILE_CRUD_P["FILE_CRUD"]
         ADMIN_API_P["ADMIN_API"]
+        GENERATIVE_UI_P["GENERATIVE_UI (new)"]
         WEB_COMPONENTS_P["WEB_COMPONENTS (frontend)"]
         RN_COMPONENTS_P["RN_COMPONENTS (frontend)"]
     end
 
-    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 11 parallel"]
+    subgraph BATCH_END_TO_END_DEPLOY["Batch 10 — 12 parallel"]
         E2E_TESTS_P["E2E_TESTS"]
         PKG_PUBLISH_P["PKG_PUBLISH"]
         SMOKE_TESTS_P["SMOKE_TESTS"]
@@ -902,20 +929,23 @@ graph TB
         DOCS_SITE_P["DOCS_SITE (new)"]
         MONITORING_INFRA_P["MONITORING_INFRA (new)"]
         SECURITY_COMPLIANCE_P["SECURITY_COMPLIANCE (new)"]
+        CONVERSATION_INTELLIGENCE_P["CONVERSATION_INTELLIGENCE (new)"]
     end
 
-    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 4 parallel"]
+    subgraph BATCH_FRONTEND_DEMOS["Batch 11 — 5 parallel"]
         DEMO_WEB_P["DEMO_WEB (frontend)"]
         DEMO_MOBILE_P["DEMO_MOBILE (frontend)"]
         DOCS_CONTENT_P["DOCS_CONTENT (new)"]
         INCIDENT_PROCEDURES_P["INCIDENT_PROCEDURES (new)"]
+        DEVELOPER_EXPERIENCE_P["DEVELOPER_EXPERIENCE (new)"]
     end
 
-    subgraph BATCH_FINAL_AUDIT["FINAL — 4 parallel"]
+    subgraph BATCH_FINAL_AUDIT["FINAL — 5 parallel"]
         AUDIT_PLAN_P["AUDIT_PLAN"]
         AUDIT_CODE_P["AUDIT_CODE"]
         AUDIT_QA_P["AUDIT_QA"]
         AUDIT_SCOPE_P["AUDIT_SCOPE"]
+        API_GOVERNANCE_P["API_GOVERNANCE (new)"]
     end
 
     BATCH_SPIKE --> BATCH_RAG_SPIKE --> BATCH_SCAFFOLD --> BATCH_TYPES_STORAGE --> BATCH_SCHEMAS_MEMORY --> BATCH_CONFIG_GUARDS --> BATCH_AGENT_DOCS --> BATCH_STREAMING_TOOLS --> BATCH_EVIDENCE_UPLOAD --> BATCH_SERVER_TUI --> BATCH_UPLOAD_COST --> BATCH_ROUTES_SUBAGENT --> BATCH_ENDPOINTS --> BATCH_END_TO_END_DEPLOY --> BATCH_FRONTEND_DEMOS --> BATCH_FINAL_AUDIT
@@ -942,14 +972,14 @@ graph LR
         ORACLE["oracle<br/>(plan compliance,<br/>audit)"]
     end
 
-    subgraph DEEP_TASKS["deep Tasks (54)"]
+    subgraph DEEP_TASKS["deep Tasks (58)"]
         DEEP_FOUND["SPIKE_CORE_STACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, TUI_AGENT, SURREALDB_CLIENT"]
         DEEP_STREAM["SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, DOC_PIPELINE, DURABLE_EXECUTION"]
         DEEP_RAG["RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, AGENT_ROUTER, TRIGGER_TASKS, RATE_LIMITING, LOCATION_TOOL"]
-        DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM, EXTENSIBILITY_INFRA"]
+        DEEP_INFRA["TTL_CLEANUP, CIRCUIT_BREAKER, CROSS_CONV_RAG, PROMPT_MGMT, ZERO_LEAK_GUARD, LANG_GUARD, HATE_SPEECH_GUARD, STRUCTURED_RESULT_MEM, EXTENSIBILITY_INFRA, MULTI_TENANT_CONFIG"]
         DEEP_INTENT["EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL"]
         DEEP_INTEL["FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, ORCHESTRATOR, SUBAGENT_FACTORY, MEMORY_CONTROL, AI_OPERATIONS"]
-        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE, MONITORING_INFRA"]
+        DEEP_FINAL["E2E_TESTS, SPIKE_RAG_DEPS, AUDIT_SCOPE, EXTRACTION_SAFEGUARDS, DEPENDENT_INTENT, STYLE_PREFERENCES, FACT_SUPERSESSION, DEMO_WEB, DEMO_MOBILE, MONITORING_INFRA, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE"]
     end
 
     subgraph QUICK_TASKS["quick Tasks (27)"]
@@ -964,13 +994,13 @@ graph LR
         VIS_TUI_TASKS["TUI_SHELL, TUI_CHAT, TUI_INPUT, TUI_COMMANDS, TUI_UPLOAD"]
     end
 
-    subgraph U_HIGH_TASKS["unspecified-high Tasks (33)"]
+    subgraph U_HIGH_TASKS["unspecified-high Tasks (35)"]
         UHIGH_GUARD_MCP["GUARD_FACTORY, MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, EVAL_CONFIG, SELF_TEST"]
         UHIGH_SERVER_SMOKE["SERVER_ROUTES, SMOKE_TESTS, UPLOAD_ENDPOINT, CUSTOM_SPANS, CTA_STREAMING"]
         UHIGH_CLIENT_COST["CLIENT_SDK, COST_TRACKING, LOAD_TESTS, FILE_CRUD, JWT_AUTH, ADMIN_API, REWRITE_TOOL, CONTEXT_BUDGET, RESPONSE_CALIBRATION"]
         UHIGH_INTENT["ATTRIBUTE_NEGATION, QUERY_REPLAY, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS"]
         UHIGH_FRONTEND["TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, CI_PIPELINE, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE"]
-        UHIGH_AUDIT_CODE["AUDIT_CODE"]
+        UHIGH_AUDIT_CODE["AUDIT_CODE, DEVELOPER_EXPERIENCE, API_GOVERNANCE"]
     end
 
     subgraph WRITING_TASKS["writing Tasks (2)"]
@@ -1003,51 +1033,34 @@ graph LR
 | 1 | 3 | SCAFFOLD_LIB, SCAFFOLD_SERVER, CODE_STANDARDS → `quick` |
 | 2 | 9 | CORE_TYPES, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, DOCKER_COMPOSE, STRUCT_LOGGING, SCAFFOLD_FRONTEND → `quick`; TUI_SHELL → `visual-engineering`; SURREALDB_CLIENT → `deep` |
 | 3 | 14 | ZOD_SCHEMAS, PROVIDER_FALLBACK, LANGFUSE_MODULE, KEY_POOL, VALKEY_CACHE, REWRITE_STRATEGIES → `quick`; MCP_CLIENT, SHORT_TERM_MEM, USER_SHORTTERM_MEM, CI_PIPELINE → `unspecified-high`; TUI_CHAT, TUI_INPUT, TUI_COMMANDS → `visual-engineering`; CIRCUIT_BREAKER → `deep` |
-| 4 | 7 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA → `deep`; GUARD_FACTORY → `unspecified-high` |
+| 4 | 8 | CONFIG_DEFAULTS, SUMMARY_CAP → `quick`; INPUT_GUARD, OUTPUT_GUARD, FILE_REGISTRY, EXTENSIBILITY_INFRA, MULTI_TENANT_CONFIG → `deep`; GUARD_FACTORY → `unspecified-high` |
 | 5 | 4 | DOC_PIPELINE, FILE_STORAGE, AGENT_FACTORY, STRUCTURED_RESULT_MEM → `deep` |
 | 6 | 18 | SSE_STREAMING, GEMINI_GROUNDING, GUARD_PIPELINE, FACT_EXTRACTION, MEMORY_RECALL, RAG_INFRA, LOCATION_TOOL, RATE_LIMITING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, RAGFLOW_CLIENT, LANG_GUARD, HATE_SPEECH_GUARD, MEMORY_CONTROL, DURABLE_EXECUTION → `deep`; EVAL_CONFIG, CTA_STREAMING → `unspecified-high` |
 | 7 | 8 | EVIDENCE_GATE, UPLOAD_PIPELINE, TRIGGER_TASKS → `deep`; CUSTOM_SPANS, SELF_TEST → `unspecified-high`; NON_ACTIONABLE_DETECT, INPUT_VALIDATION, THREAD_RESURRECTION → `quick` |
 | 8a | 16 | TUI_AGENT, AGENT_ROUTER, LLM_INTENT, SOURCE_ROUTER, DOC_SEARCH, VISUAL_GROUNDING, EXTRACTION_SAFEGUARDS, STYLE_PREFERENCES, FACT_SUPERSESSION → `deep`; SERVER_AGENT_CFG, SERVER_MCP, SERVER_GUARDRAILS → `quick`; CLIENT_SDK, JWT_AUTH, CONTEXT_BUDGET, RESPONSE_CALIBRATION → `unspecified-high` |
-| 8b | 13 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS → `deep` |
+| 8b | 14 | TUI_UPLOAD → `visual-engineering`; COST_TRACKING, REWRITE_TOOL, ATTRIBUTE_NEGATION, QUERY_REPLAY → `unspecified-high`; TTL_CLEANUP, CROSS_CONV_RAG, PREFETCH_COORD, ORCHESTRATOR, DEPENDENT_INTENT, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, AI_OPERATIONS, RAG_FEEDBACK_LOOP → `deep` |
 | 9a | 3 | SUBAGENT_FACTORY → `deep`; SERVER_ROUTES, REACT_HOOKS → `unspecified-high` |
-| 9b | 7 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high` |
-| 10 | 11 | E2E_TESTS, MONITORING_INFRA → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
-| 11 | 4 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing` |
-| FINAL | 4 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
-| 11 (Updated) | 5 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing`; DEVELOPER_EXPERIENCE → `unspecified-high` |
-| FINAL (Updated) | 5 | AUDIT_PLAN → `oracle`; AUDIT_CODE, AUDIT_QA, API_GOVERNANCE → `unspecified-high` + `playwright` (AUDIT_QA); AUDIT_SCOPE → `deep` |
+| 9b | 8 | BARREL_EXPORTS, FEEDBACK_ENDPOINT → `quick`; UPLOAD_ENDPOINT, FILE_CRUD, ADMIN_API, WEB_COMPONENTS, RN_COMPONENTS → `unspecified-high`; GENERATIVE_UI → `deep` |
+| 10 | 12 | E2E_TESTS, MONITORING_INFRA, CONVERSATION_INTELLIGENCE → `deep`; PKG_PUBLISH → `quick`; SMOKE_TESTS, LOAD_TESTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, RELEASE_PIPELINE, DOCS_SITE, SECURITY_COMPLIANCE → `unspecified-high` |
+| 11 | 5 | DEMO_WEB, DEMO_MOBILE → `deep`; DOCS_CONTENT, INCIDENT_PROCEDURES → `writing`; DEVELOPER_EXPERIENCE → `unspecified-high` |
+| FINAL | 5 | AUDIT_PLAN → `oracle`; AUDIT_CODE, API_GOVERNANCE → `unspecified-high`; AUDIT_QA → `unspecified-high` + `playwright`; AUDIT_SCOPE → `deep` |
 
 ### Category Totals
 
 | Category | Count | Percentage |
 |----------|-------|------------|
-| `deep` | 54 | 44% |
-| `quick` | 27 | 22% |
-| `unspecified-high` | 33 | 27% |
+| `deep` | 58 | 45% |
+| `quick` | 27 | 21% |
+| `unspecified-high` | 35 | 27% |
 | `writing` | 2 | 2% |
 | `visual-engineering` | 5 | 4% |
 | `oracle` | 1 | 1% |
 | Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **123** | |
-
-### Category Totals (Updated for Developer Experience and API Governance)
-
-| Category | Count | Percentage |
-|----------|-------|------------|
-| `deep` | 54 | 43% |
-| `quick` | 27 | 22% |
-| `unspecified-high` | 35 | 28% |
-| `writing` | 2 | 2% |
-| `visual-engineering` | 5 | 4% |
-| `oracle` | 1 | 1% |
-| Mixed (`unspecified-high` + `playwright`) | 1 | 1% |
-| **Total** | **125** | |
+| **Total** | **129** | |
 
 ---
 
-## Complete Task Registry (123 Tasks) and Full Dependency Matrix
-
-> **Registry Update (Developer Experience and API Governance documents)**: Complete task count is now 125.
+## Complete Task Registry (129 Tasks) and Full Dependency Matrix
 
 > **Convention**: `Depends On` = direct dependencies (must complete before this task starts). `Blocks` = tasks that directly depend on this task's output. BARREL_EXPORTS barrel exports depend on ALL library modules — listed as "ALL library" for brevity.
 
@@ -1070,7 +1083,7 @@ graph LR
 | DOC_PIPELINE | SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS | RAG_INFRA | 5 |
 | FILE_STORAGE | DOCKER_COMPOSE, CONFIG_DEFAULTS | UPLOAD_PIPELINE, COST_TRACKING, TRIGGER_TASKS, TTL_CLEANUP, VISUAL_GROUNDING | 5 |
 | STRUCT_LOGGING | SCAFFOLD_LIB | BARREL_EXPORTS | 2 |
-| ZOD_SCHEMAS | CORE_TYPES | CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD | 3 |
+| ZOD_SCHEMAS | CORE_TYPES | CONFIG_DEFAULTS, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, MULTI_TENANT_CONFIG | 3 |
 | MCP_CLIENT | CORE_TYPES, MCP_HEALTH | SERVER_MCP | 3 |
 | SHORT_TERM_MEM | CORE_TYPES, STORAGE_WRAPPER | USER_SHORTTERM_MEM, SUMMARY_CAP, CONTEXT_BUDGET, THREAD_RESURRECTION | 3 |
 | USER_SHORTTERM_MEM | SHORT_TERM_MEM | CONTEXT_BUDGET | 3 |
@@ -1085,16 +1098,17 @@ graph LR
 | CIRCUIT_BREAKER | CORE_TYPES | BARREL_EXPORTS | 3 |
 | REWRITE_STRATEGIES | CORE_TYPES | REWRITE_TOOL | 3 |
 | CI_PIPELINE | SCAFFOLD_LIB, TEST_INFRA | RELEASE_PIPELINE | 3 |
-| CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER | 4 |
+| CONFIG_DEFAULTS | CORE_TYPES, ZOD_SCHEMAS | AGENT_FACTORY, RAGFLOW_CLIENT, SOURCE_ROUTER, MULTI_TENANT_CONFIG | 4 |
 | INPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS | 4 |
 | OUTPUT_GUARD | CORE_TYPES, ZOD_SCHEMAS | GUARD_PIPELINE, CUSTOM_SPANS, ZERO_LEAK_GUARD | 4 |
 | GUARD_FACTORY | CORE_TYPES | GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD | 4 |
 | LANG_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
 | HATE_SPEECH_GUARD | CORE_TYPES, GUARD_FACTORY | SERVER_GUARDRAILS | 6 |
 | FILE_REGISTRY | STORAGE_WRAPPER, VALKEY_CACHE | DOC_SEARCH, VISUAL_GROUNDING | 4 |
+| MULTI_TENANT_CONFIG | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH | — | 4 |
 | SUMMARY_CAP | SHORT_TERM_MEM | — | 4 |
 | EXTENSIBILITY_INFRA | FOUNDATION, CORE_TYPES | — | 4 |
-| EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING | 7 |
+| EVIDENCE_GATE | EMBED_ROUTER, RAG_INFRA, CORE_TYPES | DOC_SEARCH, VISUAL_GROUNDING, RAG_FEEDBACK_LOOP | 7 |
 | AGENT_FACTORY | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, PROVIDER_HELPERS | SSE_STREAMING, GEMINI_GROUNDING, EVAL_CONFIG, FACT_EXTRACTION, MEMORY_RECALL, CTA_STREAMING, LOCATION_TOOL, AGENT_ROUTER, EMBED_ROUTER, LLM_INTENT, STRUCTURED_RESULT_MEM, MEMORY_CONTROL, RESPONSE_CALIBRATION, CLARIFICATION_MODEL, DURABLE_EXECUTION, AI_OPERATIONS | 5 |
 | STRUCTURED_RESULT_MEM | STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY | MEMORY_CONTROL, QUERY_REPLAY | 5 |
 | SSE_STREAMING | AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, SCAFFOLD_LIB | SERVER_ROUTES, COST_TRACKING, AGENT_ROUTER, DURABLE_EXECUTION | 6 |
@@ -1109,7 +1123,7 @@ graph LR
 | INPUT_VALIDATION | SSE_STREAMING | — | 7 |
 | THREAD_RESURRECTION | SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL | — | 7 |
 | CUSTOM_SPANS | LANGFUSE_MODULE, INPUT_GUARD, OUTPUT_GUARD, RAG_INFRA | BARREL_EXPORTS | 7 |
-| CTA_STREAMING | AGENT_FACTORY, CORE_TYPES | SERVER_AGENT_CFG | 6 |
+| CTA_STREAMING | AGENT_FACTORY, CORE_TYPES | SERVER_AGENT_CFG, GENERATIVE_UI | 6 |
 | LOCATION_TOOL | CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE | SERVER_AGENT_CFG | 6 |
 | TRIGGER_TASKS | CORE_TYPES, RAG_INFRA, FILE_STORAGE, VALKEY_CACHE | TTL_CLEANUP | 7 |
 | RATE_LIMITING | CORE_TYPES, VALKEY_CACHE | — | 6 |
@@ -1133,7 +1147,7 @@ graph LR
 | FACT_SUPERSESSION | FACT_EXTRACTION, SURREALDB_CLIENT | — | 8a |
 | RESPONSE_CALIBRATION | CORE_TYPES, AGENT_FACTORY | — | 8a |
 | AGENT_ROUTER | AGENT_FACTORY, SSE_STREAMING | E2E_TESTS | 8a |
-| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE | 8a |
+| JWT_AUTH | SCAFFOLD_SERVER | ADMIN_API, SECURITY_COMPLIANCE, MULTI_TENANT_CONFIG | 8a |
 | LLM_INTENT | CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER | PREFETCH_COORD, REWRITE_TOOL, ORCHESTRATOR, DEPENDENT_INTENT, ATTRIBUTE_NEGATION, QUERY_REPLAY, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL | 8a |
 | SOURCE_ROUTER | RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS | PREFETCH_COORD | 8a |
 | TUI_UPLOAD | TUI_SHELL, TUI_COMMANDS, TUI_AGENT | E2E_TESTS | 8b |
@@ -1149,12 +1163,14 @@ graph LR
 | ATTRIBUTE_NEGATION | LLM_INTENT, REWRITE_TOOL | — | 8b |
 | QUERY_REPLAY | LLM_INTENT, REWRITE_TOOL, STRUCTURED_RESULT_MEM | — | 8b |
 | AI_OPERATIONS | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER | — | 8b |
+| RAG_FEEDBACK_LOOP | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE | — | 8b |
 | SUBAGENT_FACTORY | AGENT_FACTORY, ORCHESTRATOR, SOURCE_ROUTER | BARREL_EXPORTS, E2E_TESTS | 9a |
 | REACT_HOOKS | CLIENT_SDK, SCAFFOLD_FRONTEND | WEB_COMPONENTS, RN_COMPONENTS | 9a |
+| GENERATIVE_UI | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS | — | 9b |
 | SERVER_ROUTES | SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING | BARREL_EXPORTS, E2E_TESTS, SMOKE_TESTS, UPLOAD_ENDPOINT, FEEDBACK_ENDPOINT, LOAD_TESTS, FILE_CRUD, ADMIN_API, RELEASE_PIPELINE, MONITORING_INFRA | 9a |
 | WEB_COMPONENTS | REACT_HOOKS | TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, DEMO_WEB | 9b |
 | RN_COMPONENTS | REACT_HOOKS | FRONTEND_CLI, DEMO_MOBILE | 9b |
-| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES | PKG_PUBLISH | 9b |
+| BARREL_EXPORTS | CORE_TYPES, ZOD_SCHEMAS, CONFIG_DEFAULTS, STORAGE_WRAPPER, MCP_HEALTH, PROVIDER_HELPERS, PROVIDER_FALLBACK, AGENT_FACTORY, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, GUARD_PIPELINE, LANG_GUARD, HATE_SPEECH_GUARD, MCP_CLIENT, SHORT_TERM_MEM, FACT_EXTRACTION, MEMORY_RECALL, SURREALDB_CLIENT, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, FILE_REGISTRY, EVIDENCE_GATE, DOC_SEARCH, VISUAL_GROUNDING, SSE_STREAMING, CTA_STREAMING, LOCATION_TOOL, CLIENT_SDK, GEMINI_GROUNDING, PROMPT_MGMT, ZERO_LEAK_GUARD, EMBED_ROUTER, LLM_INTENT, PREFETCH_COORD, RAGFLOW_CLIENT, SOURCE_ROUTER, REWRITE_STRATEGIES, REWRITE_TOOL, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, LANGFUSE_MODULE, EVAL_CONFIG, CUSTOM_SPANS, KEY_POOL, VALKEY_CACHE, RATE_LIMITING, COST_TRACKING, STRUCT_LOGGING, CIRCUIT_BREAKER, TTL_CLEANUP, CROSS_CONV_RAG, TRIGGER_TASKS, ORCHESTRATOR, SUBAGENT_FACTORY, AGENT_ROUTER, TUI_AGENT, SERVER_ROUTES, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE | PKG_PUBLISH | 9b |
 | UPLOAD_ENDPOINT | SERVER_ROUTES, UPLOAD_PIPELINE | E2E_TESTS, SMOKE_TESTS, LOAD_TESTS | 9b |
 | FEEDBACK_ENDPOINT | SERVER_ROUTES, LANGFUSE_MODULE | E2E_TESTS | 9b |
 | FILE_CRUD | SERVER_ROUTES, FILE_REGISTRY | E2E_TESTS, SMOKE_TESTS | 9b |
@@ -1170,6 +1186,7 @@ graph LR
 | DOCS_SITE | SCAFFOLD_LIB | DOCS_CONTENT | 10 |
 | MONITORING_INFRA | DOCKER_COMPOSE, SERVER_ROUTES, LANGFUSE_MODULE | INCIDENT_PROCEDURES, SECURITY_COMPLIANCE | 10 |
 | SECURITY_COMPLIANCE | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE | — | 10 |
+| CONVERSATION_INTELLIGENCE | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER | — | 10 |
 | DEMO_WEB | WEB_COMPONENTS, TRACE_UI, SERVER_ROUTES | — | 11 |
 | DEMO_MOBILE | RN_COMPONENTS, SERVER_ROUTES | — | 11 |
 | DOCS_CONTENT | DOCS_SITE, ALL core module tasks | — | 11 |
@@ -1185,7 +1202,7 @@ graph LR
 
 BARREL_EXPORTS depends on every library module that exports public API surface:
 
-> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND
+> AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER, JWT_AUTH, CROSS_CONV_RAG, PROMPT_MGMT through SUBAGENT_FACTORY, STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, RN_COMPONENTS, TRACE_UI, FRONTEND_CLI, STORYBOOK_FRONTEND, MULTI_TENANT_CONFIG, RAG_FEEDBACK_LOOP, GENERATIVE_UI, CONVERSATION_INTELLIGENCE
 
 This is the complete list of all tasks that produce exports in the core library. BARREL_EXPORTS only handles the **top-level barrel** — see Subpath Barrel Export Convention below.
 
@@ -1298,7 +1315,7 @@ flowchart TB
 
 ## New Task Registry (Expanded Plan Documents)
 
-> **Document Coverage Update**: Includes the Developer Experience and API Governance documents via the execution addendum tasks listed below.
+> **Document Coverage Update**: Includes the Developer Experience and API Governance documents and gap-round platform tasks listed below.
 
 The following 25 tasks were added from the expanded requirements (three-layer memory system, orchestration and location enrichment, language and hate speech guardrails, intent detection, query rewriting, source priority, RAGFlow integration, file intelligence, and humanlikeness signals). Each is integrated into the batch structure above.
 
@@ -1379,61 +1396,20 @@ The following 11 tasks were added for coding standards, CI quality gates, releas
 | AI_OPERATIONS | Semantic caching, model routing, prompt A/B testing, eval framework | AI Operations | 8b | `deep` | AGENT_FACTORY, LANGFUSE_MODULE, EMBED_ROUTER |
 | SECURITY_COMPLIANCE | Unified threat model, compliance mapping, audit trail, DSAR, bias monitoring | Security | 10 | `unspecified-high` | MONITORING_INFRA, JWT_AUTH, GUARD_PIPELINE |
 
-### Execution Addendum Tasks (Developer Experience and API Governance)
+### Platform Governance and Gap Round Tasks
 
-The following 2 tasks were added for developer workflow maturity and public API governance. Each is integrated into late-stage execution where platform behavior is already stable.
+The following 6 tasks were added for developer workflow maturity, public API governance, retrieval quality feedback, generative UI, conversation intelligence, and multi-tenant configuration. Each is integrated into the batch structure and dependency matrix above.
 
 | Task | Name | Source | Batch | Category | Depends On |
 |------|------|--------|------|----------|------------|
 | DEVELOPER_EXPERIENCE | Project scaffolding, progressive API design, error taxonomy, local development studio, testing utilities, template ecosystem, AI coding agent integration | Developer Experience | 11 | `unspecified-high` | FOUNDATION, OBSERVABILITY, TESTING_FRAMEWORK, DOCUMENTATION, EXTENSIBILITY |
 | API_GOVERNANCE | Public API surface definition, stability tiers, semantic release policy, deprecation management, breaking change protocol, consumer migration tooling | API Governance | FINAL | `unspecified-high` | FOUNDATION, RELEASE_PIPELINE, CODING_STANDARDS, EXTENSIBILITY, DEVELOPER_EXPERIENCE |
-
----
-
-## Execution Addendum (Developer Experience and API Governance)
-
-### Batch and Total Impact
-
-| Item | Previous | Updated |
-|------|----------|---------|
-| Total tasks | 123 | 125 |
-| Batch 11 tasks | 4 | 5 |
-| FINAL batch tasks | 4 | 5 |
-| Maximum concurrency | 18 (Batch 6) | 18 (Batch 6) |
-
----
-
-## Execution Addendum (Gap Analysis Round 4)
-
-### New Tasks
-
-The following 4 tasks were added for retrieval quality feedback, generative UI, conversation intelligence, and multi-tenant configuration. Each integrates into mid-to-late execution where prerequisite infrastructure is stable.
-
-| Task | Name | Source | Batch | Category | Depends On |
-|------|------|--------|------|----------|------------|
 | RAG_FEEDBACK_LOOP | Feedback-driven retrieval optimization: quality scoring, re-ranking adaptation, cache invalidation, safe rollback | Retrieval extension | 8b | `deep` | EVIDENCE_GATE, LANGFUSE_MODULE, VALKEY_CACHE |
-| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | 9 | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
+| GENERATIVE_UI | Generative UI pipeline: component tool, SSE event type, stream processor, frontend renderers, component registry | Agents + Transport + Frontend SDK extensions | 9b | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
 | CONVERSATION_INTELLIGENCE | Conversation-level quality aggregation, topic extraction, engagement scoring, satisfaction composite, trend detection | AI Operations extension | 10 | `deep` | AI_OPERATIONS, LANGFUSE_MODULE, EMBED_ROUTER |
 | MULTI_TENANT_CONFIG | Five-level config hierarchy: global → organization → tenant → agent → request, tenant isolation, JWT-based resolution | Foundation extension | 4 | `deep` | CONFIG_DEFAULTS, ZOD_SCHEMAS, JWT_AUTH |
 
-### Batch and Total Impact
-
-| Item | Previous | Updated |
-|------|----------|---------|
-| Total tasks | 125 | 129 |
-| Batch 4 tasks | 7 | 8 |
-| Batch 8b tasks | existing | +1 |
-| Batch 9 tasks | existing | +1 |
-| Batch 10 tasks | existing | +1 |
-| Maximum concurrency | 18 (Batch 6) | 18 (Batch 6) |
-
----
-
-*Covers all 119 implementation tasks + 4 final audit tasks = 123 total across 16 execution batches. Includes 33 tasks from expanded requirements (Conversation Pipeline, Agents, Memory, Retrieval, Guardrails), 8 engine-gap tasks, 9 frontend SDK tasks (Frontend SDK, Demos), and 11 operations and quality tasks (Documentation, Release Pipeline, Monitoring, Coding Standards, Extensibility, Durable Execution, AI Operations, Security), all fully integrated into the batch structure and dependency matrix.*
-
-*Execution addendum update: 121 implementation tasks + 4 final audit tasks = 125 total across the same 16 execution batches, with Developer Experience and API Governance integrated into Batch 11 and FINAL respectively.*
-
-*Execution addendum update (gap round 4): 125 implementation tasks + 4 final audit tasks = 129 total. RAG feedback loop (Batch 8b), generative UI (Batch 9), conversation intelligence (Batch 10), multi-tenant config (Batch 4) integrated into existing batches.*
+*Covers all 125 implementation tasks + 4 final audit tasks = 129 total across 16 execution batches. Includes expanded requirements, engine-gap tasks, frontend SDK tasks, operations and quality tasks, and platform governance additions integrated into the primary plan structure and dependency matrix.*
 
 ---
 

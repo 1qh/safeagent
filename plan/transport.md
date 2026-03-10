@@ -1056,7 +1056,7 @@ Structured SSE event payloads require validation at both the emit boundary on th
 | **Requirements** ([Requirements & Constraints](./requirements.md)) | Defines platform requirements, transport expectations, and frontend SDK requirements that this SSE boundary and client SDK must satisfy. |
 | **Foundation** ([Foundation](./foundation.md)) | Defines the SSE event type contracts (including SSETraceStepEvent and TraceStepType) consumed by this transport layer and the client SDK. |
 | **Agents** ([Agents & Orchestration](./agents.md)) | Defines orchestrator and processor-chain behavior that produces the framework stream event sequence consumed by this SSE transport layer. |
-| **Agent Capabilities** ([Agent Capabilities & Integrations](./agent-capabilities.md)) | Defines location tool orchestration and generative UI component governance whose events flow through this transport layer. |
+| **Agents** ([Agents & Orchestration](./agents.md)) | Defines location tool orchestration and generative UI component governance whose events flow through this transport layer. |
 | **Guardrails & Safety** ([Guardrails & Safety](./guardrails.md)) | Defines language drift detection in output sliding windows and p0 enforcement behavior used by this transport layer. |
 | **Server Implementation** ([Server Implementation](./server.md)) | Owns the Elysia route wiring, HTTP boundary, and verbosity parameter where this document's stream handler factory and SSE event protocol are applied. |
 | **Observability** ([Observability](./observability.md)) | Trace-step events share the trace identifier with Langfuse traces, providing real-time visibility that complements async post-hoc analysis. |
