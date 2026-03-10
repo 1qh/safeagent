@@ -82,3 +82,4 @@ Use this sequence to start implementation quickly:
 - 30 source docs: per-file `Table of Contents` blocks were removed under [Compact Authoring Standard](./compact-authoring-standard.md) to reduce token overhead without changing normative schemas.
 - 4 source docs: Mermaid `style ... fill:` directives were removed as non-semantic visual metadata.
 - 46 docs in `plan`: markdown separator lines and redundant blank-line runs were removed for compactness without changing schemas, IDs, dependencies, or gate order.
+- 21 docs in `plan`: `Cross-References` sections were removed as redundant navigation blocks after centralizing navigation in agent-kernel/start-here/domain-playbooks.
