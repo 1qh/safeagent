@@ -42,7 +42,7 @@ For role-based reading paths, use [Start Here](./start-here.md). For domain-by-d
 ## Execution Source of Truth Rules
 
 - Batch ordering and dependency sequencing are authoritative in this document.
-- Task routing ownership (`Spec File`, `Context Sections`, `Test Spec File`) is authoritative in this document.
+- Task routing ownership (`Spec File`, `Context Sections`) is authoritative in this document; `Test Spec File` is a routing pointer, while verification ownership authority is in [Task Verification Index](./task-verification-index.md).
 - If another document conflicts with scheduling or dependency order, follow this document and reconcile the mismatch.
 - Task implementation details remain in domain documents; scheduling and dependency truth remains here.
 
