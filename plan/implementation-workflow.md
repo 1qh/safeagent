@@ -46,11 +46,12 @@ Before implementation starts, prepare this packet:
 
 Use this fixed order for every task:
 
-1. Task acceptance criteria in the task specification
-2. Task QA scenarios in the task specification
-3. Behavioral assertions in the mapped test-spec owner file
-4. Cross-domain checks required by context files
-5. Release and audit gates from [Quality Gates](./quality-gates.md)
+1. Requirement and constraint compliance from [Requirements & Constraints](./requirements.md) and [Constraints](./constraints.md)
+2. Task acceptance criteria in the task specification
+3. Task QA scenarios in the task specification
+4. Behavioral assertions in the mapped test-spec owner file
+5. Cross-domain checks required by context files
+6. Release and audit gates from [Quality Gates](./quality-gates.md)
 
 ---
 
