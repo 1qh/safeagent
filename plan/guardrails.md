@@ -873,12 +873,11 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task INPUT_VALIDATION: Input Validation Pipeline
 
-
-**Objective**
+**Goal**
 - Build a focused input validation stage that rejects malformed, oversized, or suspicious user content before deeper guardrail and orchestration processing.
 - Reduce security and reliability risk by enforcing deterministic pre-validation rules.
 
-**What To Do**
+**Work**
 - Define validation rules for input length bounds and structural sanity checks.
 - Validate message format expectations across plain text and normalized payload forms.
 - Add injection-signal checks for high-risk instruction patterns and delimiter abuse.
@@ -909,19 +908,18 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Submit a known injection-like prompt pattern, verify blocked or flagged outcome as configured.
 - Submit benign content near boundary limits, verify successful pass and normal processing.
 
-**Implementation Notes**
+**Notes**
 - Keep validation deterministic and low-latency to avoid runtime jitter.
 - Separate normalization from policy thresholds to simplify tuning.
 - Align outputs with existing guardrail observability conventions.
 
 ### Task HATE_SPEECH_GUARD: Hate Speech and Toxicity Guardrail Processor
 
-
-**Objective**
+**Goal**
 - Implement a robust hate speech and toxicity guardrail processor that blocks abusive content across supported languages.
 - Ensure consistent detection and enforcement on both user input and generated output streams.
 
-**What To Do**
+**Work**
 - Build hybrid detection flow using obscenity for English and @2toad/profanity for multilingual matching, supplemented by LDNOOBW data.
 - Configure normalization to catch evasive variants such as character substitutions and confusables (obscenity recommended transformers).
 - Add multilingual dictionary coverage with LDNOOBW supplement to reinforce thinner language coverage.
@@ -962,16 +960,16 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 - Output hate speech is caught during streaming
 - Submit multilingual abusive phrase from configured language set, verify blocking behavior
 
-**Implementation Notes**
+**Notes**
 - Keep language coverage extensible without changing enforcement semantics.
 - Favor conservative detection defaults with configurable operator controls.
 - Use consistent severity mapping so downstream handling remains predictable.
 
 ### Task INPUT_GUARD: Input Guardrails
 
-**What to do**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls abort on p0 or `onFlag` on p1.
+**Work**: Build the input guardrail processor that runs all configured guardrail function type instances in parallel on the user's message, aggregates verdicts with worst-wins, and calls abort on p0 or `onFlag` on p1.
 
-**Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
+**Depends On**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
 **Acceptance Criteria**:
 - All input guardrails run in parallel via promise-based fan-out
@@ -1000,9 +998,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task OUTPUT_GUARD: Output Guardrails
 
-**What to do**: Build the output guardrail processor that maintains a sliding window buffer, runs all configured guardrail function type instances on each chunk's window text, and takes action based on severity and GuardMode.
+**Work**: Build the output guardrail processor that maintains a sliding window buffer, runs all configured guardrail function type instances on each chunk's window text, and takes action based on severity and GuardMode.
 
-**Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
+**Depends On**: CORE_TYPES (Types), ZOD_SCHEMAS (Validation Schemas)
 
 **Acceptance Criteria**:
 - Output guardrail execution hook called on every `text-delta` chunk
@@ -1027,9 +1025,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task GUARD_FACTORY: Guardrail Authoring Factories
 
-**What to do**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose execution hook evaluates input or output and returns a tripwire flag plus supplemental output details. The tripwire flag maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when the tripwire flag is true; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
+**Work**: Build five guardrail factory functions that produce guardrail instances compatible with the framework guardrail interfaces. Each factory returns a guardrail whose execution hook evaluates input or output and returns a tripwire flag plus supplemental output details. The tripwire flag maps to our severity system: `p0` blocks, while `p1` and `p2` allow continuation with flag-or-pass behavior. The framework throws tripwire exceptions automatically when the tripwire flag is true; these are caught at the SSE boundary and emitted as `tripwire` events, matching our existing TripWire pattern.
 
-**Depends on**: CORE_TYPES (Types)
+**Depends On**: CORE_TYPES (Types)
 
 **Acceptance Criteria**:
 - Regex guardrail factory → matches any pattern → returns verdict with tripwire flag based on severity
@@ -1053,9 +1051,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task LANG_GUARD: Language Guard
 
-**What to do**: Implement the two-stage language detection guardrail using eld for fast detection and piggybacking on intent detection for edge cases. Includes output language scanner.
+**Work**: Implement the two-stage language detection guardrail using eld for fast detection and piggybacking on intent detection for edge cases. Includes output language scanner.
 
-**Depends on**: CORE_TYPES, GUARD_FACTORY
+**Depends On**: CORE_TYPES, GUARD_FACTORY
 
 **Acceptance Criteria**:
 - eld integration for fast language detection on input and output sliding window text
@@ -1078,9 +1076,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task GUARD_PIPELINE: Guardrail Pipeline Orchestrator
 
-**What to do**: Build the pipeline orchestrator that takes the guardrail pipeline configuration and produces framework-compatible input and output guardrail arrays, handling guard-mode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework agent constructor. The framework runs input guardrails in parallel with the agent by default (parallel-run mode enabled). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
+**Work**: Build the pipeline orchestrator that takes the guardrail pipeline configuration and produces framework-compatible input and output guardrail arrays, handling guard-mode precedence and wiring `onFlag` to both sets. The returned guardrails are attached to agent instances via the framework agent constructor. The framework runs input guardrails in parallel with the agent by default (parallel-run mode enabled). Our pipeline composes multiple guardrails (worst-wins aggregation) and produces framework-compatible guardrail objects.
 
-**Depends on**: INPUT_GUARD (Input Guardrails), OUTPUT_GUARD (Output Guardrails), GUARD_FACTORY (Guardrail Factories)
+**Depends On**: INPUT_GUARD (Input Guardrails), OUTPUT_GUARD (Output Guardrails), GUARD_FACTORY (Guardrail Factories)
 
 **Acceptance Criteria**:
 - The guardrail pipeline factory returns framework-compatible input and output guardrail arrays
@@ -1104,9 +1102,9 @@ In development mode, the TripWire exception carries `conceptId`, `reason`, and f
 
 ### Task ZERO_LEAK_GUARD: Zero-Leak Buffered Mode
 
-**What to do**: Extend the output guardrail processor with a buffered-mode option that holds all output in a server-side buffer before emitting anything to the client, guaranteeing zero partial content delivery on violation.
+**Work**: Extend the output guardrail processor with a buffered-mode option that holds all output in a server-side buffer before emitting anything to the client, guaranteeing zero partial content delivery on violation.
 
-**Depends on**: OUTPUT_GUARD (Output Guardrails)
+**Depends On**: OUTPUT_GUARD (Output Guardrails)
 
 **Acceptance Criteria**:
 - Buffered mode on output guardrail config activates buffered mode

@@ -260,11 +260,10 @@ flowchart TD
 
 ### DOCS_SITE
 
-
-**Objective**
+**Goal**
 - Build the Fumadocs documentation infrastructure that unifies authored guides, TypeScript API reference generation, and OpenAPI endpoint reference generation.
 
-**What To Do**
+**Work**
 - Establish a Fumadocs site foundation on Next.js App Router for long-term maintainable documentation delivery.
 - Integrate fumadocs-typescript for automatic library API reference generation.
 - Integrate fumadocs-openapi for automatic server endpoint reference generation.
@@ -296,18 +295,17 @@ flowchart TD
 - Toggle visual mode and verify code blocks, callouts, tables, and diagrams remain legible.
 - Validate mobile navigation usability across long-form technical pages.
 
-**Implementation Notes**
+**Notes**
 - Treat generated reference output as canonical contract source for public APIs and endpoints.
 - Keep documentation navigation stable as module and endpoint count grows.
 - Keep build reliability as a hard quality gate for documentation delivery.
 
 ### DOCS_CONTENT
 
-
-**Objective**
+**Goal**
 - Author complete documentation content across all safeagent modules so onboarding, conceptual understanding, and deep reference usage are all production-ready.
 
-**What To Do**
+**Work**
 - Write Getting Started documentation that moves from installation to first successful agent interaction.
 - Write module-specific guides for conversation pipeline, agents, memory, documents, retrieval, guardrails, streaming, server setup, frontend SDK, and observability.
 - Write Architecture and Concepts sections with high-signal diagrams and flow explanations.
@@ -338,7 +336,7 @@ flowchart TD
 - Reader reviewing guardrails and auth behavior can identify trust boundaries and expected enforcement points.
 - Reader on mobile can consume long conceptual content and reference tables without readability breakdown.
 
-**Implementation Notes**
+**Notes**
 - Keep narrative tone consistent across all domains and content authors.
 - Keep conceptual docs aligned with requirement and architecture identifiers for auditability.
 - Keep high-change areas prioritized for frequent editorial review.

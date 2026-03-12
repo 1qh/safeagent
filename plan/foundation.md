@@ -1008,30 +1008,15 @@ Barrel updates are not deferred.
 Any new public function, type, or class in a module group updates that module group barrel immediately. Top-level barrel assembly only aggregates subpath barrels.
 
 ## Task Specifications
-The foundation layer task specifications remain authoritative.
-
-| Task | Scope | Depends on | Core acceptance |
-|---|---|---|---|
-| SPIKE_CORE_STACK | Validate runtime stack, stream behavior, guardrails, route lifecycle, dependencies, service compatibility | None | Full spike suite pass, critical validations green, findings documented |
-| SPIKE_RAG_DEPS | Validate document split, multimodal summary, extraction, hybrid retrieval, object storage, rendering | SPIKE_CORE_STACK | Full RAG spike suite pass, findings documented |
-| SCAFFOLD_LIB | Create workspace baseline, core package, terminal package, SDK placeholder, strict tooling, env schema, module skeleton | SPIKE_CORE_STACK | Install success, type-check success, baseline tests clean, seed idempotent |
-| SCAFFOLD_SERVER | Server scaffold baseline and health shell | SPIKE_CORE_STACK | Canonical server task behavior aligns with server plan |
-| CORE_TYPES | Define all domain contracts and runtime-enumerable typed error code set | SCAFFOLD_LIB | Type-check pass, barrel import pass, DeepPartial behavior validated |
-| ZOD_SCHEMAS | Build schema layer mirroring core types with Zod v4 | CORE_TYPES | Schema tests pass, defaults apply, invalid config errors are descriptive |
-| CONFIG_DEFAULTS | Build configuration merge and validation capabilities for library defaults and per-agent overrides | CORE_TYPES and ZOD_SCHEMAS | Default configuration is valid with no overrides, and nested override behavior is correct and predictable |
-| STORAGE_WRAPPER | Build postgres/memory/custom factory with auto-detection | SCAFFOLD_LIB | Explicit and auto-detected selection paths validated |
-| MCP_HEALTH | Build MCP silent-failure detection wrapper | SCAFFOLD_LIB | Missing tools detected, throw and warn modes validated |
-| PROVIDER_HELPERS | Build model resolver and fallback middleware helpers | SCAFFOLD_LIB | String resolution, passthrough, fallback activation validated |
-| BARREL_EXPORTS | Aggregate top-level exports from subpath barrels | Foundation and downstream public modules | Public surface complete, no private leaks, no circular warnings |
+Task specs in this section are authoritative.
 
 ### Task SPIKE_CORE_STACK: Core Runtime and Integration Validation Spike
 
-
-**Objective**
+**Goal**
 - Validate that the core runtime stack works end to end before any implementation batches proceed.
 - Confirm critical integration assumptions across runtime, framework, storage, validation, and streaming behaviors.
 
-**What To Do**
+**Work**
 - Define a spike matrix covering runtime boot, framework execution, streaming lifecycle, guardrail behavior, and service connectivity.
 - Validate Bun runtime compatibility for core library and server execution flows.
 - Validate Elysia request lifecycle, middleware ordering, and health behavior.
@@ -1063,19 +1048,18 @@ The foundation layer task specifications remain authoritative.
 - Execute concurrent runs with distinct contexts, verify no cross-run state leakage.
 - Simulate one dependency failure, verify failure classification and mitigation output are captured.
 
-**Implementation Notes**
+**Notes**
 - Treat this as a go or no-go gate for all downstream work.
 - Keep findings structured for auditability and plan updates.
 - Prioritize reproducible validation signals over ad hoc observations.
 
 ### Task SCAFFOLD_LIB: Library Workspace Scaffolding
 
-
-**Objective**
+**Goal**
 - Establish the baseline library workspace so all core packages share consistent tooling, typing, and quality gates.
 - Provide stable scaffolding for parallel development across library modules.
 
-**What To Do**
+**Work**
 - Create the Bun workspace baseline for core library modules and related package boundaries.
 - Establish TypeScript project configuration with strict settings aligned to plan constraints.
 - Define Biome configuration for formatting and lint consistency.
@@ -1105,19 +1089,18 @@ The foundation layer task specifications remain authoritative.
 - Introduce an intentional lint violation, verify quality tooling reports it correctly.
 - Add a simple module export, verify workspace references resolve without manual patching.
 
-**Implementation Notes**
+**Notes**
 - Keep scaffold minimal but production-oriented to avoid later rework.
 - Favor predictable conventions that reduce cross-package drift.
 - Preserve compatibility with downstream batch parallelization.
 
 ### Task SCAFFOLD_FRONTEND: Frontend SDK Workspace Scaffolding
 
-
-**Objective**
+**Goal**
 - Create the frontend SDK workspace foundation for hooks and component packages.
 - Enable frontend package development to proceed in parallel with backend and core library work.
 
-**What To Do**
+**Work**
 - Establish frontend workspace structure for hooks, web components, and native components.
 - Define TypeScript setup for frontend package interop and shared contracts.
 - Align frontend package tooling with workspace-wide lint and formatting standards.
@@ -1146,19 +1129,18 @@ The foundation layer task specifications remain authoritative.
 - Validate placeholder export consumption from another package, verify resolution works.
 - Run lint checks across frontend workspace, verify baseline compliance.
 
-**Implementation Notes**
+**Notes**
 - Keep package contracts stable so UI tasks can start without scaffold churn.
 - Avoid introducing frontend-specific conventions that diverge from workspace standards.
 - Reserve advanced runtime behavior for downstream feature tasks.
 
 ### Task CORE_TYPES: Canonical Domain Contracts
 
-
-**Objective**
+**Goal**
 - Define the canonical TypeScript contracts used across all modules.
 - Deliver a unified type foundation for agents, retrieval, memory, streaming, guardrails, storage, and evaluation domains.
 
-**What To Do**
+**Work**
 - Define domain contract groups for core runtime surfaces and shared module boundaries.
 - Model agent, guardrail, memory, stream, upload, document, retrieval, and config contract families.
 - Define storage and provider contract interfaces required by runtime abstractions.
@@ -1188,19 +1170,18 @@ The foundation layer task specifications remain authoritative.
 - Use typed error contracts in a coverage check, verify compile-time completeness behavior.
 - Consume shared contracts in two separate modules, verify no type drift.
 
-**Implementation Notes**
+**Notes**
 - Keep contracts implementation-agnostic and focused on stable boundaries.
 - Prefer explicit fields and discriminants over ambiguous polymorphic shapes.
 - Use consistent naming to simplify schema mirroring in validation tasks.
 
 ### Task STORAGE_WRAPPER: Typed Storage Abstraction Layer
 
-
-**Objective**
+**Goal**
 - Provide a storage abstraction that supports PostgreSQL and SurrealDB through typed access layers.
 - Standardize backend selection and fallback behavior for storage consumers.
 
-**What To Do**
+**Work**
 - Define storage wrapper interfaces covering required persistence operations.
 - Implement PostgreSQL access path behavior through Drizzle-backed abstractions.
 - Define SurrealDB access path behavior through surqlize-backed abstractions.
@@ -1230,19 +1211,18 @@ The foundation layer task specifications remain authoritative.
 - Configure no database availability, verify memory fallback path activation.
 - Inject custom storage implementation, verify wrapper accepts and uses it without interface mismatch.
 
-**Implementation Notes**
+**Notes**
 - Enforce typed data access boundaries consistently across backends.
 - Keep backend selection deterministic and transparent.
 - Design for graceful degradation when optional infrastructure is unavailable.
 
 ### Task MCP_HEALTH: MCP Health and Silent Failure Detection
 
-
-**Objective**
+**Goal**
 - Detect and report MCP server availability mismatches before they cause hidden tool failures.
 - Provide deterministic health states and failure handling policy for MCP integrations.
 
-**What To Do**
+**Work**
 - Build MCP health evaluation logic comparing configured servers with observed tool availability.
 - Implement tool ownership parsing for server-level status attribution.
 - Define per-server status states for connected, empty, failed, and unknown.
@@ -1273,19 +1253,18 @@ The foundation layer task specifications remain authoritative.
 - Evaluate explicitly empty server with allowance, verify empty status.
 - Toggle server availability between checks, verify status transitions update correctly.
 
-**Implementation Notes**
+**Notes**
 - Favor clear operational visibility over optimistic assumptions.
 - Keep status semantics stable for observability and alerting consumers.
 - Preserve compatibility with multi-server MCP topologies.
 
 ### Task PROVIDER_HELPERS: Provider Resolution and Fallback Utilities
 
-
-**Objective**
+**Goal**
 - Deliver reusable provider abstraction helpers for model resolution and fallback behavior.
 - Standardize provider input handling so downstream modules can resolve models consistently.
 
-**What To Do**
+**Work**
 - Define provider resolution behavior for string identifiers, direct instances, and factory inputs.
 - Implement fallback chain behavior for primary and secondary provider execution paths.
 - Support fallback notifications when fallback providers are used.
@@ -1314,19 +1293,18 @@ The foundation layer task specifications remain authoritative.
 - Trigger primary and fallback failure, verify original error context is preserved.
 - Run fallback path during streaming flow, verify stream behavior remains valid.
 
-**Implementation Notes**
+**Notes**
 - Keep helper behavior deterministic and free of hidden provider branching.
 - Avoid policy duplication by centralizing resolution rules.
 - Ensure fallback behavior is observable for diagnostics.
 
 ### Task ZOD_SCHEMAS: Shared Zod v4 Validation Schemas
 
-
-**Objective**
+**Goal**
 - Mirror core contracts with runtime validation schemas using Zod v4.
 - Provide reliable parse and validation behavior for configuration and runtime payload safety.
 
-**What To Do**
+**Work**
 - Build schema coverage for major contract families defined in core types.
 - Define schema defaults where explicit default behavior is required.
 - Implement discriminated schema handling for event and step variants.
@@ -1355,19 +1333,18 @@ The foundation layer task specifications remain authoritative.
 - Validate event union inputs across variants, verify correct discrimination behavior.
 - Omit defaultable fields in config payloads, verify defaults are applied correctly.
 
-**Implementation Notes**
+**Notes**
 - Keep schema definitions tightly aligned to contract ownership.
 - Prefer explicit validation semantics over permissive acceptance.
 - Treat schema drift from core types as a release-blocking defect.
 
 ### Task CONFIG_DEFAULTS: Configuration Defaults and Resolution
 
-
-**Objective**
+**Goal**
 - Deliver the configuration resolution system that merges defaults, applies overrides, and validates final runtime configuration.
 - Ensure environment-driven and request-driven configuration behavior is deterministic and safe.
 
-**What To Do**
+**Work**
 - Define built-in default configuration values for all foundational config domains.
 - Implement deep-merge semantics for override resolution.
 - Enforce explicit merge rules for undefined, null, arrays, functions, and nested objects.
@@ -1399,19 +1376,18 @@ The foundation layer task specifications remain authoritative.
 - Omit required production security value, verify startup refusal behavior.
 - Provide invalid override shape, verify structured validation failure details.
 
-**Implementation Notes**
+**Notes**
 - Keep merge rules explicit and testable to avoid hidden precedence bugs.
 - Separate library defaults ownership from deployment-specific policy ownership.
 - Preserve deterministic startup behavior across environments.
 
 ### Task BARREL_EXPORTS: Top-Level Public Surface Aggregation
 
-
-**Objective**
+**Goal**
 - Assemble the top-level public export surface from module barrels once dependent modules are complete.
 - Ensure consumers get a stable, discoverable API without leaking private internals.
 
-**What To Do**
+**Work**
 - Define final export aggregation rules from subpath barrel ownership.
 - Collect and assemble all approved public exports from module groups.
 - Validate that private and internal-only contracts are excluded.
@@ -1422,7 +1398,7 @@ The foundation layer task specifications remain authoritative.
 
 **Depends On**
 - SERVER_ROUTES
-- ALL_LIBRARY_MODULE_TASKS
+- ALL library
 
 **Batch**
 - ENDPOINTS_BARREL_BATCH
@@ -1441,7 +1417,7 @@ The foundation layer task specifications remain authoritative.
 - Validate export graph integrity, verify no circular export behavior appears.
 - Consume top-level exports from downstream integration module, verify compatibility.
 
-**Implementation Notes**
+**Notes**
 - Treat subpath barrels as authoritative input; avoid direct symbol cherry-picking.
 - Keep public API shape intentional and minimal.
 - Maintain backward-stable naming where feasible.

@@ -940,7 +940,7 @@ flowchart TD
 
 **Batch**: FOUNDATION_A_BATCH
 
-**What to do**
+**Work**
 - Establish frontend workspace boundaries for the React hooks, web components, and native components subpath modules within the safeagent library.
 - Define module-level TypeScript baselines aligned with monorepo standards.
 - Add dependency baselines for AI SDK React integration, web styling primitives, component composition, native styling, and Expo runtime integration.
@@ -950,10 +950,10 @@ flowchart TD
 - Ensure build graph includes frontend subpath modules in workspace orchestration.
 - Document baseline module intent and public API ownership.
 
-**Depends on**
+**Depends On**
 - `SCAFFOLD_LIB`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Frontend subpath modules are discoverable by workspace tooling.
 - Type checking executes cleanly for all three module stubs.
 - Shared dependency graph resolves without circular references.
@@ -962,7 +962,7 @@ flowchart TD
 - No frontend subpath module imports server-only engine internals.
 - Workspace tasks can target each frontend subpath module independently.
 
-**QA scenarios**
+**QA Scenarios**
 - Validate workspace tooling detects all frontend subpath modules.
 - Validate isolated type checking for each module passes.
 - Validate cross-module type references resolve correctly from hooks to UI modules.
@@ -975,12 +975,11 @@ flowchart TD
 
 **Batch**: SERVER_ROUTES_SUBAGENT_BATCH
 
-
-**Objective**
+**Goal**
 - Build a React-hooks integration layer that gives product teams a stable, transport-safe way to drive agent interactions from UI state.
 - Ensure streaming, feedback, upload, and trace behaviors remain consistent across web and native consumers.
 
-**What to do**
+**Work**
 - Implement a transport adapter compatible with AI SDK chat-hook expectations.
 - Integrate SSE lifecycle handling through the client SDK module parser and queue behavior.
 - Implement a safe-agent wrapper hook with safeagent defaults for transport, auth, and endpoint wiring.
@@ -992,11 +991,11 @@ flowchart TD
 - Re-export hook and type surface for downstream component modules.
 - Add unit and integration tests for stream lifecycle, error handling, and type shape stability.
 
-**Depends on**
+**Depends On**
 - `CLIENT_SDK`
 - `SCAFFOLD_FRONTEND`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Chat-hook integration works through safeagent transport without adapter glue in consumer apps.
 - Stream messages, status changes, and completion events map to AI SDK expectations.
 - Trace steps appear only in full mode and remain empty in standard mode.
@@ -1006,7 +1005,7 @@ flowchart TD
 - Verbosity hook updates outgoing transport metadata reliably.
 - Hook exports are fully typed and reusable by both web and native modules.
 
-**QA scenarios**
+**QA Scenarios**
 - Stream with standard mode and confirm trace-step output remains absent.
 - Stream with full mode and confirm ordered trace-step output appears.
 - Simulate transient disconnect and confirm reconnection behavior is stable.
@@ -1017,7 +1016,7 @@ flowchart TD
 - Toggle verbosity between requests and verify transport metadata changes.
 - Validate type tests for hook output contracts against canonical event unions.
 
-**Implementation Notes**
+**Notes**
 - Keep transport state transitions deterministic so reconnect and retry behavior is predictable.
 - Treat trace payload handling as mode-gated to prevent accidental detail leakage in standard mode.
 - Keep hook return contracts stable and composable to reduce downstream migration churn.
@@ -1026,12 +1025,11 @@ flowchart TD
 
 **Batch**: ENDPOINTS_BARREL_BATCH
 
-
-**Objective**
+**Goal**
 - Deliver a framework-ready web component layer that composes shared agent hooks into accessible, customizable UI surfaces.
 - Balance rapid adoption through component reuse with safeagent-specific UX requirements for traceability and reliability.
 
-**What to do**
+**Work**
 - Install and configure ai-elements component set used by safeagent web surfaces.
 - Compose adopted components into safeagent-ready wrappers with consistent prop patterns.
 - Build custom components for server switching, thread navigation, timestamps, typing status, error recovery, offline state, and verbosity control.
@@ -1041,10 +1039,10 @@ flowchart TD
 - Add accessibility semantics and keyboard behavior for custom components.
 - Add story coverage for major states and interaction paths.
 
-**Depends on**
+**Depends On**
 - `REACT_HOOKS`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Adopted ai-elements wrappers render correctly in isolated and integrated states.
 - Custom components integrate with hook state and emit expected callbacks.
 - Component APIs are consistent across related primitives.
@@ -1053,7 +1051,7 @@ flowchart TD
 - Accessibility semantics are present and validated for custom components.
 - Offline and error states are represented with actionable UI.
 
-**QA scenarios**
+**QA Scenarios**
 - Render conversation flow with streaming response and verify message surfaces.
 - Render prompt input with attachment menu and verify file and screenshot action paths.
 - Render tool call states and verify each tool-state presentation.
@@ -1064,7 +1062,7 @@ flowchart TD
 - Validate controlled and uncontrolled usage for expandable surfaces.
 - Validate screen reader output for verbosity toggle and server selector.
 
-**Implementation Notes**
+**Notes**
 - Prefer composition wrappers over deep forks to preserve upstream accessibility behavior.
 - Keep component state ownership explicit so controlled and uncontrolled modes stay reliable.
 - Treat offline and error UI as first-class states, not edge-case overlays.
@@ -1073,12 +1071,11 @@ flowchart TD
 
 **Batch**: E2E_DEPLOY_BATCH
 
-
-**Objective**
+**Goal**
 - Build a high-signal trace visualization surface that turns low-level step events into debuggable execution timelines.
 - Make developer observability available without degrading default end-user chat experience.
 
-**What to do**
+**Work**
 - Implement a trace timeline component and child primitives for step rows, latency bars, and detail panels.
 - Consume typed output from the trace steps hook and render timeline entries in stable order.
 - Implement step icon mapping for all supported step categories.
@@ -1089,10 +1086,10 @@ flowchart TD
 - Display total pipeline latency summary.
 - Add accessibility roles and keyboard support for step expansion.
 
-**Depends on**
+**Depends On**
 - `WEB_COMPONENTS`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Every trace-step event appears exactly once in the timeline.
 - Step icon mapping is correct for each step type.
 - Latency bars match threshold color rules and proportional width behavior.
@@ -1101,7 +1098,7 @@ flowchart TD
 - Standard mode keeps trace surface hidden and lightweight.
 - Total latency summary is present and accurate for completed pipelines.
 
-**QA scenarios**
+**QA Scenarios**
 - Feed synthetic trace streams covering all supported step types and validate icon mapping.
 - Feed mixed latency values and validate color and width behavior.
 - Toggle verbosity during session boundaries and validate panel behavior.
@@ -1111,7 +1108,7 @@ flowchart TD
 - Validate screen reader narration of step labels and latency values.
 - Validate total latency at completion against summed or provided aggregate metrics.
 
-**Implementation Notes**
+**Notes**
 - Use stable ordering and idempotent append logic to prevent duplicate or shuffled step entries.
 - Keep latency visualization interpretable under burst conditions by anchoring to clear thresholds.
 - Ensure trace-panel behaviors remain explicitly tied to verbosity mode transitions.
@@ -1120,12 +1117,11 @@ flowchart TD
 
 **Batch**: ENDPOINTS_BARREL_BATCH
 
-
-**Objective**
+**Goal**
 - Provide mobile-native agent UI components that preserve cross-platform behavioral parity with web surfaces.
 - Prioritize offline resilience, touch ergonomics, and predictable streaming interactions in constrained mobile runtime conditions.
 
-**What to do**
+**Work**
 - Build native equivalents for conversation, messages, prompt input, attachments, server selector, thread list, verbosity toggle, and offline indicator.
 - Ensure component prop contracts align with web counterparts where platform constraints allow.
 - Integrate shared hooks from the React hooks module for stream, trace, upload, feedback, and connection state.
@@ -1136,10 +1132,10 @@ flowchart TD
 - Integrate offline queue behavior with local SQLite-backed persistence.
 - Ensure required runtime polyfills are applied for stream and clone support.
 
-**Depends on**
+**Depends On**
 - `REACT_HOOKS`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Native components render core chat flows with parity to web behavior semantics.
 - Shared hook APIs operate identically across web and native consumers.
 - Attachment flow works for documents and images in native contexts.
@@ -1148,7 +1144,7 @@ flowchart TD
 - Native styling is consistent and maintainable through utility classes.
 - Required polyfills are active and prevent runtime stream failures.
 
-**QA scenarios**
+**QA Scenarios**
 - Run chat session on mobile and validate streaming response behavior.
 - Validate markdown rendering for headings, lists, and code-like blocks in message content.
 - Validate keyboard avoidance and input focus transitions.
@@ -1158,7 +1154,7 @@ flowchart TD
 - Validate SQLite-backed history persistence across app relaunch.
 - Validate server switching behavior with stale token and refreshed token states.
 
-**Implementation Notes**
+**Notes**
 - Keep parity centered on behavior contracts, not pixel-level equivalence with web.
 - Isolate platform-specific adaptations inside component boundaries to protect shared hook logic.
 - Treat offline queue visibility and replay clarity as mandatory user trust features.
@@ -1167,12 +1163,11 @@ flowchart TD
 
 **Batch**: E2E_DEPLOY_BATCH
 
-
-**Objective**
+**Goal**
 - Build a deterministic installer workflow that lets teams adopt and customize frontend SDK components safely.
 - Ensure dependency resolution and project validation prevent broken installs and silent integration drift.
 
-**What to do**
+**Work**
 - Build installer core for component copy workflow.
 - Define registry schema for component metadata and dependency references.
 - Implement component resolver and transitive dependency planner.
@@ -1182,11 +1177,11 @@ flowchart TD
 - Implement install summary reporting for copied components and warnings.
 - Add tests for registry parsing, dependency resolution, and install outcomes.
 
-**Depends on**
+**Depends On**
 - `WEB_COMPONENTS`
 - `RN_COMPONENTS`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Installer resolves single and multi-component installs with correct dependency closure.
 - Web and native registries are independently addressable.
 - Validation checks prevent unsupported installs with clear diagnostics.
@@ -1194,7 +1189,7 @@ flowchart TD
 - Conflict detection prevents unintended overwrite scenarios.
 - Installer supports customization workflow by copying editable source.
 
-**QA scenarios**
+**QA Scenarios**
 - Install a simple component with no dependencies and validate copied output.
 - Install a composite component and validate transitive dependency inclusion.
 - Install into project missing required styling baseline and validate warning behavior.
@@ -1203,7 +1198,7 @@ flowchart TD
 - Install when local component already exists and validate conflict strategy.
 - Validate separate registry selection for web and native component families.
 
-**Implementation Notes**
+**Notes**
 - Keep registry metadata authoritative so dependency closure remains consistent over time.
 - Fail fast on unsupported target conditions with actionable validation feedback.
 - Preserve consumer ownership by copying editable sources rather than opaque runtime bindings.
@@ -1212,12 +1207,11 @@ flowchart TD
 
 **Batch**: E2E_DEPLOY_BATCH
 
-
-**Objective**
+**Goal**
 - Establish Storybook as the canonical component documentation and review surface for frontend SDK web primitives.
 - Use story-driven state coverage to reduce regressions before demo and production integration.
 
-**What to do**
+**Work**
 - Configure Storybook as the web component documentation surface.
 - Create stories for adopted wrappers and custom components.
 - Build reusable mock data generators for messages, traces, attachments, citations, and interaction states.
@@ -1227,10 +1221,10 @@ flowchart TD
 - Establish visual regression baseline snapshots for key component states.
 - Integrate story validation into frontend QA workflow.
 
-**Depends on**
+**Depends On**
 - `WEB_COMPONENTS`
 
-**Acceptance criteria**
+**Acceptance Criteria**
 - Every web component has at least one representative story.
 - Custom components include state-rich stories covering major branches.
 - Mock generators produce realistic and stable fixtures for review.
@@ -1238,7 +1232,7 @@ flowchart TD
 - Visual baseline artifacts exist for high-impact surfaces.
 - Accessibility checks can be run against story states.
 
-**QA scenarios**
+**QA Scenarios**
 - Render full conversation with streaming and attachments in Storybook.
 - Render trace timeline in standard and full mode scenarios.
 - Render server selector states for connected, connecting, and disconnected endpoints.
@@ -1248,7 +1242,7 @@ flowchart TD
 - Validate slot override stories for custom composition behavior.
 - Validate visual baseline diffs remain stable across routine updates.
 
-**Implementation Notes**
+**Notes**
 - Keep story fixtures contract-driven so scenario drift is caught early.
 - Cover state-rich branches explicitly to improve accessibility and regression review quality.
 - Treat visual-baseline updates as governed changes tied to intentional UI behavior shifts.

@@ -674,9 +674,9 @@ sequenceDiagram
 
 ### Task LOCATION_TOOL: Location Enrichment Tool
 
-**What to do**: Build the location tool factory that accepts location tool configuration and returns an AI SDK tool definition for location search. The tool receives place names and optional context, resolves each place through a configured geocoding provider (Nominatim default), optionally fetches images via a configured image search provider, and returns a list of location results. Build Valkey caching for resolved locations with configurable TTL. Build the location stream processor factory that intercepts location-tool call and result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Build a places image provider factory helper that wraps Google Places Photos as an image search provider, including place imagery and coordinate support.
+**Work**: Build the location tool factory that accepts location tool configuration and returns an AI SDK tool definition for location search. The tool receives place names and optional context, resolves each place through a configured geocoding provider (Nominatim default), optionally fetches images via a configured image search provider, and returns a list of location results. Build Valkey caching for resolved locations with configurable TTL. Build the location stream processor factory that intercepts location-tool call and result chunks, suppresses them from outbound stream, and emits `location` SSE events derived from tool result. Silent degradation: if geocoding returns null for a place, log warning and skip that place (no event emitted, no client-facing error). Build a places image provider factory helper that wraps Google Places Photos as an image search provider, including place imagery and coordinate support.
 
-**Depends on**: CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE
+**Depends On**: CORE_TYPES, AGENT_FACTORY, VALKEY_CACHE
 
 **Acceptance Criteria**:
 
@@ -787,9 +787,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task AGENT_FACTORY: Agent Creation Factory + Framework Adapter
 
-**What to do**: Build the core agent creation factory that wraps `@openai/agents` framework agent class with safeagent-specific configuration. Use the SDK model bridge from `@openai/agents-extensions` to connect Gemini into the framework model interface. Configure guardrail arrays, register tools (custom + MCP), and connect memory integration. Agent execution uses the framework's execution method to handle tool loop, maximum turn limits, retries, and streaming.
+**Work**: Build the core agent creation factory that wraps `@openai/agents` framework agent class with safeagent-specific configuration. Use the SDK model bridge from `@openai/agents-extensions` to connect Gemini into the framework model interface. Configure guardrail arrays, register tools (custom + MCP), and connect memory integration. Agent execution uses the framework's execution method to handle tool loop, maximum turn limits, retries, and streaming.
 
-**Depends on**: CORE_TYPES (Types), ZOD_SCHEMAS (Schemas), CONFIG_DEFAULTS (Config), STORAGE_WRAPPER (Storage), PROVIDER_HELPERS (Provider)
+**Depends On**: CORE_TYPES (Types), ZOD_SCHEMAS (Schemas), CONFIG_DEFAULTS (Config), STORAGE_WRAPPER (Storage), PROVIDER_HELPERS (Provider)
 
 **Acceptance Criteria**:
 
@@ -814,9 +814,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task PROVIDER_FALLBACK: Provider Fallback Helper
 
-**What to do**: Build the fallback model wrapper that wraps two providers with sequential try/catch.
+**Work**: Build the fallback model wrapper that wraps two providers with sequential try/catch.
 
-**Depends on**: PROVIDER_HELPERS (Provider helpers)
+**Depends On**: PROVIDER_HELPERS (Provider helpers)
 
 **Acceptance Criteria**:
 
@@ -834,9 +834,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task AGENT_ROUTER: Agent Router — Query Classification + Dispatch
 
-**What to do**: Build query classification that routes to the correct agent using structured output generation in enum mode with per-thread Valkey caching.
+**Work**: Build query classification that routes to the correct agent using structured output generation in enum mode with per-thread Valkey caching.
 
-**Depends on**: AGENT_FACTORY (Agent Factory), SSE_STREAMING (Streaming)
+**Depends On**: AGENT_FACTORY (Agent Factory), SSE_STREAMING (Streaming)
 
 **Acceptance Criteria**:
 
@@ -856,9 +856,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task MCP_CLIENT: MCP Client Configuration + Multi-Server
 
-**What to do**: Configure MCP client using the framework's MCP transport classes. Build a configuration layer that accepts multiple MCP server definitions and returns framework-compatible instances. Use the framework's tool filtering option (static allowlist and blocklist) to control exposed MCP tools per agent. Enable tool list caching for stable servers. Add health monitoring and graceful reconnection on top of framework MCP transport classes. Library provides default MCP client config that server may override.
+**Work**: Configure MCP client using the framework's MCP transport classes. Build a configuration layer that accepts multiple MCP server definitions and returns framework-compatible instances. Use the framework's tool filtering option (static allowlist and blocklist) to control exposed MCP tools per agent. Enable tool list caching for stable servers. Add health monitoring and graceful reconnection on top of framework MCP transport classes. Library provides default MCP client config that server may override.
 
-**Depends on**: CORE_TYPES (Foundation Types), MCP_HEALTH (MCP Health-Check Wrapper)
+**Depends On**: CORE_TYPES (Foundation Types), MCP_HEALTH (MCP Health-Check Wrapper)
 
 **Acceptance Criteria**:
 
@@ -881,9 +881,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task GEMINI_GROUNDING: Gemini Grounding Agent Mode
 
-**What to do**: Implement Gemini grounding mode using Google Search grounding for real-time web queries. Configure grounding metadata extraction and citation formatting.
+**Work**: Implement Gemini grounding mode using Google Search grounding for real-time web queries. Configure grounding metadata extraction and citation formatting.
 
-**Depends on**: AGENT_FACTORY (Agent Creation Factory)
+**Depends On**: AGENT_FACTORY (Agent Creation Factory)
 
 **Acceptance Criteria**:
 
@@ -892,6 +892,8 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Citation formatter converts grounding metadata into consistent citation output
 - Grounding mode works in streaming and non-streaming paths
 - Grounding failures return typed errors without crashing non-grounding modes
+- Freshness-critical answers include explicit source-backed recency context (for example, `as of` timestamp when available)
+- Grounding unavailable path for freshness-critical queries does not emit ungrounded realtime claims
 - Unit tests validate grounding metadata extraction and citation formatting
 
 **QA Scenarios**:
@@ -901,12 +903,13 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Grounding metadata with multiple sources -> formatter outputs deterministic citation ordering
 - Grounding provider error during request -> typed error surfaced and stream closes cleanly
 - Streaming grounding response -> citations remain aligned with final answer content
+- Realtime price query with unavailable grounding -> no fabricated current value, explicit limitation is returned
 
 ### Task ORCHESTRATOR: Orchestrator Agent Framework
 
-**What to do**: Build the supervisor orchestrator pattern using the framework's handoff mechanism. Orchestrator is a framework agent class instance with handoffs pointing to sub-agents. Each handoff uses history scoping to the assigned intent and routing callbacks for logging. For multi-intent messages, orchestrator spawns parallel sub-agent runs and synthesizes results while streaming. The runtime handles handoff execution automatically: when the model makes an agent transfer call, execution switches to the target agent.
+**Work**: Build the supervisor orchestrator pattern using the framework's handoff mechanism. Orchestrator is a framework agent class instance with handoffs pointing to sub-agents. Each handoff uses history scoping to the assigned intent and routing callbacks for logging. For multi-intent messages, orchestrator spawns parallel sub-agent runs and synthesizes results while streaming. The runtime handles handoff execution automatically: when the model makes an agent transfer call, execution switches to the target agent.
 
-**Depends on**: AGENT_FACTORY (Agent Factory), EMBED_ROUTER (Embedding Router), LLM_INTENT (LLM Intent Validator), SOURCE_ROUTER (Source Priority Router)
+**Depends On**: AGENT_FACTORY (Agent Factory), EMBED_ROUTER (Embedding Router), LLM_INTENT (LLM Intent Validator), SOURCE_ROUTER (Source Priority Router)
 
 **Acceptance Criteria**:
 
@@ -937,9 +940,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task SUBAGENT_FACTORY: Sub-Agent Factory
 
-**What to do**: Build a sub-agent factory that creates intent-scoped framework agent class instances with proper tools from topic source-priority configuration. Each sub-agent is referenced by the orchestrator through the framework's handoff mechanism. The factory produces both a sub-agent instance and corresponding handoff configuration, including context scoping, routing logging, and optional conditional routing predicates.
+**Work**: Build a sub-agent factory that creates intent-scoped framework agent class instances with proper tools from topic source-priority configuration. Each sub-agent is referenced by the orchestrator through the framework's handoff mechanism. The factory produces both a sub-agent instance and corresponding handoff configuration, including context scoping, routing logging, and optional conditional routing predicates.
 
-**Depends on**: AGENT_FACTORY (Agent Factory), ORCHESTRATOR (Orchestrator), SOURCE_ROUTER (Source Priority Router)
+**Depends On**: AGENT_FACTORY (Agent Factory), ORCHESTRATOR (Orchestrator), SOURCE_ROUTER (Source Priority Router)
 
 **Acceptance Criteria**:
 
@@ -962,9 +965,9 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task DEPENDENT_INTENT: Dependent Intent Coordination
 
-**What to do**: Build orchestrator support for detecting and processing dependent intents sequentially. When the intent validator reports dependent structure (for example, feedback + constrained search), the orchestrator executes feedback first to produce a constraint, then passes that constraint into dependent search through handoff context scoping, ensuring search respects feedback.
+**Work**: Build orchestrator support for detecting and processing dependent intents sequentially. When the intent validator reports dependent structure (for example, feedback + constrained search), the orchestrator executes feedback first to produce a constraint, then passes that constraint into dependent search through handoff context scoping, ensuring search respects feedback.
 
-**Depends on**: ORCHESTRATOR (Orchestrator Agent Framework), LLM_INTENT (LLM Intent Validator)
+**Depends On**: ORCHESTRATOR (Orchestrator Agent Framework), LLM_INTENT (LLM Intent Validator)
 
 **Acceptance Criteria**:
 
@@ -989,11 +992,10 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 
 ### Task RESPONSE_CALIBRATION: Response Energy Matching and Complexity Calibration
 
-
-**Objective**
+**Goal**
 - Calibrate response energy and depth to match user input complexity, tone, and effort level. Improve conversational fit while preserving correctness, safety, and task completion quality.
 
-**What To Do**
+**Work**
 - Define calibration signals from message length, structural complexity, and formality markers.
 - Classify incoming turns into response-energy bands from concise to expanded.
 - Generate advisory calibration hints for the orchestrator context layer.
@@ -1026,18 +1028,17 @@ The fallback model wrapper wraps two providers. If primary fails, it tries fallb
 - Submit safety-sensitive prompt with concise style, verify safety override forces required detail.
 - Submit repeated similar prompts, verify calibration decisions remain stable.
 
-**Implementation Notes**
+**Notes**
 - Keep calibration lightweight to avoid adding material latency.
 - Treat calibration as soft guidance, not a hard output-length constraint.
 - Separate signal extraction from policy mapping for easier tuning.
 
 ### Task GENERATIVE_UI: Rich UI Component Emission with Safety Governance
 
-
-**Objective**
+**Goal**
 - Enable agents to emit rich, structured UI payloads alongside text while enforcing strict safety and compatibility constraints. Support progressive client rendering without exposing executable or unsafe content.
 
-**What To Do**
+**Work**
 - Define a server-controlled catalog of allowed UI component categories.
 - Define Zod v4 contracts for each allowed component payload type.
 - Add validation gate that rejects emissions failing category or schema checks.

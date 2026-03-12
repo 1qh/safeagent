@@ -466,9 +466,9 @@ flowchart TB
 
 **Task Name**: CODE_STANDARDS
 
-**Objective**: Establish maximum-strictness coding standards enforcement across both safeagent library and server projects using lintmax.
+**Goal**: Establish maximum-strictness coding standards enforcement across both safeagent library and server projects using lintmax.
 
-**What To Do**:
+**Work**:
 - Install lintmax and initialize policy in both projects.
 - Verify all default rules are active at error severity.
 - Configure project-specific exceptions with documented justification.
@@ -499,7 +499,7 @@ flowchart TB
 - Add an inline disable for a non-existent rule and verify error detection.
 - Validate strictness by introducing patterns that only pass under weaker type policy.
 
-**Implementation Notes**:
+**Notes**:
 - CODE_STANDARDS is SCAFFOLDING_BATCH and should precede feature work.
 - Test-related exceptions are expected and must be scoped carefully.
 - Generated content can be excluded from strict linting when justified.

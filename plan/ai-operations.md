@@ -803,12 +803,11 @@ Scalability and security are mandatory, not optional optimizations.
 
 ### AI_OPERATIONS
 
-
-**Objective**
+**Goal**
 - Deliver an operational control layer that optimizes model cost, governs behavior rollouts, and blocks quality regressions before user impact.
 - Coordinate cost intelligence, prompt lifecycle governance, and evaluation signals into one auditable runtime decision system.
 
-**What To Do**
+**Work**
 - Implement semantic reuse governance with threshold, TTL, scope, and invalidation controls.
 - Implement dynamic routing policy that chooses lowest-cost safe lane before generation.
 - Implement prompt-cache-aware assembly policy that maximizes stable-prefix reuse.
@@ -819,6 +818,9 @@ Scalability and security are mandatory, not optional optimizations.
 - Implement canary decision policy with explicit rollback triggers for safety, quality, latency, and cost regressions.
 - Define composable scorer governance and dataset lifecycle controls for continuous evaluation quality.
 - Integrate conversation-level intelligence outputs into operational trend and health decision surfaces.
+- Enforce model-risk governance with version pinning, rollback readiness, drift guardrails, and release-block conditions.
+- Enforce prompt/tool supply-chain integrity checks for signed or integrity-verified bundle activation and tamper detection.
+- Enforce provider data-usage governance with no-training policy checks, retention-limit policy checks, and region-constrained routing guards.
 
 **Depends On**
 - AGENT_FACTORY
@@ -837,6 +839,9 @@ Scalability and security are mandatory, not optional optimizations.
 - Dataset and scorer revisions are traceable with lineage suitable for release decisions.
 - Conversation-intelligence aggregates provide trend and satisfaction indicators for operations.
 - Governance outputs are auditable and align with release and monitoring control planes.
+- Model release governance blocks rollout when pinning, canary, or drift criteria are not satisfied.
+- Prompt/tool artifact integrity failures block activation and generate audit-ready tamper events.
+- Provider routes are blocked when required no-training, retention, or region policy guarantees are missing.
 
 **QA Scenarios**
 - Run repeated semantically similar requests, verify safe cache-hit behavior and tracked savings.
@@ -844,8 +849,11 @@ Scalability and security are mandatory, not optional optimizations.
 - Run canary progression with induced quality regression, verify automatic rollback trigger and lineage record.
 - Run evaluation suite against fixed dataset snapshot, verify reproducible scoring and gate outcome.
 - Simulate cost anomaly surge, verify alerting and constrained rollout decision state activation.
+- Simulate model drift beyond policy threshold, verify release hold and rollback-ready state.
+- Simulate prompt/tool artifact integrity mismatch, verify activation block and tamper audit event.
+- Simulate provider profile without required no-training guarantee, verify provider route is policy-blocked and audited.
 
-**Implementation Notes**
+**Notes**
 - Keep rollout and rollback decisions coupled to explicit gate states, not ad hoc operator judgment.
 - Preserve strict separation between optimization signals and non-bypassable safety policy floors.
 - Treat lineage completeness as a release-critical artifact for every behavior change.

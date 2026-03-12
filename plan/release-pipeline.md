@@ -253,11 +253,10 @@ Scalability and security requirements are integrated into every release lane.
 
 ### CI_PIPELINE
 
-
-**Objective**
+**Goal**
 - Establish a complete Bun-native CI/CD baseline with multi-stage quality gates across pull request, main merge, and release triggers.
 
-**What To Do**
+**Work**
 - Define branch-protected pull-request workflow with required approvals and status checks.
 - Implement staged CI flow with fast, comprehensive, expensive, and release-gate tiers.
 - Integrate pre-commit quality gate policy with Biome, type safety, and ORM-only enforcement.
@@ -286,24 +285,28 @@ Scalability and security requirements are integrated into every release lane.
 - Trigger release flow and verify release gate reruns complete validation scope.
 - Simulate unhealthy test container startup and verify tests do not begin until healthy.
 
-**Implementation Notes**
+**Notes**
 - Keep stage responsibilities non-overlapping to simplify failure triage.
 - Keep gate outputs explicit so reviewers can identify blocking dimensions quickly.
 - Keep container lifecycle deterministic to reduce flaky infrastructure behavior.
 
 ### RELEASE_PIPELINE
 
-
-**Objective**
+**Goal**
 - Implement automated release publication and deployment promotion with staged safety checks, canary control, and instant rollback readiness.
 
-**What To Do**
+**Work**
 - Automate release publication flow for the library with automated changelog generation.
 - Automate server container image release and registry publication workflow.
 - Enforce staging validation before canary and production promotion.
 - Implement canary progression controls with automated and manual decision gates.
 - Implement rollback controls that restore prior image quickly without destructive data effects.
 - Integrate dependency governance, secrets controls, and release observability into release gates.
+- Enforce SBOM generation, provenance attestations, and signed-artifact verification as mandatory release gates.
+- Enforce explicit SLSA-aligned provenance attestation policy in release gates.
+- Enforce formal change-governance controls including CAB approval for standard production changes, emergency-change lane auditing, and production change-window policy enforcement.
+- Enforce PSIRT-aligned security-fix release workflow with patch-SLA tracking and advisory-evidence outputs.
+- Enforce sovereign and air-gapped release-profile constraints for environments that disallow external dependency fetch at deploy time.
 
 **Depends On**
 - CI_PIPELINE
@@ -319,6 +322,13 @@ Scalability and security requirements are integrated into every release lane.
 - Changelog generation reflects merged commit history accurately.
 - Rollback restores previous runtime image rapidly after canary or production regression.
 - Staging deployment validation completes successfully before production promotion.
+- Release artifacts include signed SBOM and provenance attestations linked to commit and build context.
+- Release artifacts include explicit SLSA provenance attestations and verification outcomes.
+- Deployment promotion blocks unsigned or unattested artifacts.
+- Production promotion requires recorded change-governance decision (CAB or approved emergency path).
+- Security-fix releases include patch-SLA timeline evidence and advisory publication artifacts.
+- Sovereign or air-gapped profile releases consume approved offline artifact set and block disallowed runtime dependency pulls.
+- Production promotions outside approved change windows require explicit emergency override evidence.
 
 **QA Scenarios**
 - Execute a library release candidate and verify changelog and package publication outputs.
@@ -326,8 +336,14 @@ Scalability and security requirements are integrated into every release lane.
 - Deploy to staging and validate health, smoke behavior, and promotion eligibility.
 - Trigger canary with controlled traffic and verify health-gated promotion path.
 - Induce canary health regression and verify automated rollback path restores prior image.
+- Attempt deployment with unsigned artifact, verify attestation gate blocks promotion.
+- Attempt deployment with missing SLSA provenance attestation, verify release gate blocks promotion.
+- Attempt production promotion without CAB or emergency-approval record, verify change-governance gate blocks release.
+- Trigger high-severity security-fix release, verify patch-SLA tracking and advisory evidence are generated.
+- Attempt sovereign-profile release with external fetch requirement, verify profile gate blocks promotion.
+- Attempt production promotion outside policy window without emergency override, verify change-window gate blocks release.
 
-**Implementation Notes**
+**Notes**
 - Keep library and server releases coordinated but independently recoverable.
 - Keep canary metrics narrowly focused on user-impact signals.
 - Keep rollback runbooks continuously validated through rehearsal drills.
@@ -397,6 +413,11 @@ Scalability and security requirements are integrated into every release lane.
 - Security vulnerability scanning blocks PRs with known critical vulnerabilities.
 - CI secrets are stored in encrypted secret storage and never appear in logs.
 - Staging and production use separate secret scopes.
+- SBOM is generated and signed for each release artifact set.
+- Provenance attestations are verified before artifact publication and deployment promotion.
+- SLSA provenance level policy is enforced before release publication.
+- Change-governance evidence is attached to each production promotion decision.
+- Security-fix releases carry patch-SLA and advisory records through release evidence bundle.
 
 **Pipeline observability**:
 

@@ -696,7 +696,7 @@ The system uses eight distinct testing approaches, each serving a different veri
 
 5. **Custom evaluation scorers**: Production monitoring via application-defined scorer functions. Runs in-process for real-time quality scoring.
 
-6. **QA scenarios**: Every implementation task includes agent-executed QA scenarios with evidence saved to the evidence directory.
+6. **QA Scenarios**: Every implementation task includes agent-executed QA scenarios with evidence saved to the evidence directory.
 
 7. **Spike validation**: SPIKE_CORE_STACK spike validates all technology assumptions before any implementation begins.
 

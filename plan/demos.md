@@ -453,11 +453,10 @@ flowchart LR
 
 ### DEMO_WEB
 
-
-**Objective**
+**Goal**
 - Build the Next.js demo application as a complete web reference for safeagent chat integration.
 
-**What To Do**
+**Work**
 - Create a Next.js demo application consuming the web components package and the React hooks package.
 - Implement sidebar thread list, main conversation panel, and optional trace timeline panel.
 - Implement multi-server switching with persistent server configuration.
@@ -495,7 +494,7 @@ flowchart LR
 - Resize viewport to mobile width, verify sidebar collapse and thread navigation access.
 - Trigger recoverable server error, verify retry affordance preserves thread context.
 
-**Implementation Notes**
+**Notes**
 - Keep thread identity scoped to active server.
 - Keep trace rendering decoupled from message markdown rendering.
 - Keep upload state local to input lifecycle and pending prompt context.
@@ -503,11 +502,10 @@ flowchart LR
 
 ### DEMO_MOBILE
 
-
-**Objective**
+**Goal**
 - Build the Expo demo application as a complete mobile reference for safeagent chat integration.
 
-**What To Do**
+**Work**
 - Create an Expo demo application consuming the native components package and the React hooks package.
 - Implement tab navigation with conversations and settings areas.
 - Implement conversation view with thread switching and bottom input.
@@ -545,7 +543,7 @@ flowchart LR
 - Restart app while offline, verify cached thread list and messages remain available.
 - Launch app from cold start, verify polyfills prevent runtime failures.
 
-**Implementation Notes**
+**Notes**
 - Keep settings state transitions explicit to reduce accidental server changes.
 - Keep queue metadata visible so users understand pending delivery.
 - Keep offline banner persistent but non-blocking.

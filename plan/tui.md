@@ -543,11 +543,11 @@ OpenTUI handles terminal resize natively. Layout reflows automatically and chat 
 
 ### Task TUI_SHELL: App Shell
 
-**What to do**:
+**Work**:
 
 Set up OpenTUI Solid entry with correct JSX import source, scoped preload configuration, and root App component. The App renders full-screen layout: header, chat, status, input. Register global `onKeyDown` for quit and clear. Own top-level signals for overlay visibility and global error state.
 
-**Depends on**:
+**Depends On**:
 
 SCAFFOLD_LIB
 
@@ -570,11 +570,11 @@ SCAFFOLD_LIB
 
 ### Task TUI_CHAT: Chat Display
 
-**What to do**:
+**Work**:
 
 Implement chat display as scrollbox with reactive message list. User messages render plain text with colored prefix. Assistant messages render streaming markdown with syntax-highlighted fenced blocks. System messages render with distinct muted style. Auto-scroll follows new content unless user scrolled up. Returning to bottom re-enables auto-scroll.
 
-**Depends on**:
+**Depends On**:
 
 TUI_SHELL
 
@@ -596,11 +596,11 @@ TUI_SHELL
 
 ### Task TUI_INPUT: Input Component
 
-**What to do**:
+**Work**:
 
 Implement textarea composer with multiline support. Enter submits. Shift+Enter inserts newline. Composer grows to eight lines and then scrolls internally. Up/down arrows traverse input history. Tab autocompletes slash commands. Composer clears after submission and re-focuses automatically.
 
-**Depends on**:
+**Depends On**:
 
 TUI_SHELL
 
@@ -624,11 +624,11 @@ TUI_SHELL
 
 ### Task TUI_COMMANDS: Command System
 
-**What to do**:
+**Work**:
 
 Implement command router as pure function that parses slash commands. Implement handlers for `/help`, `/model`, `/clear`, `/quit`, and `/upload`. `/help` opens help overlay. `/model` opens selector or sets active model directly. `/clear` flushes message history. `/quit` performs graceful shutdown. Unknown commands show inline error. Tab completion uses command registry from this module.
 
-**Depends on**:
+**Depends On**:
 
 TUI_SHELL
 
@@ -653,11 +653,11 @@ TUI_SHELL
 
 ### Task TUI_AGENT: Agent Integration
 
-**What to do**:
+**Work**:
 
 Connect the TUI to the library in both direct and SDK modes. Build stream lifecycle: start stream on submit, dispatch stream events, catch input and output guardrail tripwire exceptions, handle cancellation on Ctrl+C, finalize message on completion, show spinner while streaming, and update token count when streaming completes.
 
-**Depends on**:
+**Depends On**:
 
 TUI_SHELL, TUI_CHAT, TUI_INPUT
 
@@ -681,11 +681,11 @@ TUI_SHELL, TUI_CHAT, TUI_INPUT
 
 ### Task TUI_UPLOAD: Upload Command
 
-**What to do**:
+**Work**:
 
 Implement `/upload` end to end. Picker browses and filters files by supported type. Multi-select uses Space. After confirmation, validate size, type via magic bytes, and quota. Show per-file progress bars through processing. Attach ready files to pending attachments state. Show `N files ready` in status bar. Include references in next submitted message. Clear pending attachments after submission or `/clear`.
 
-**Depends on**:
+**Depends On**:
 
 TUI_SHELL, TUI_COMMANDS, TUI_AGENT
 

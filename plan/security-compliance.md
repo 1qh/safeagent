@@ -331,14 +331,12 @@ flowchart LR
 - Consent governance includes periodic clarity review.
 
 ## Data Classification Scheme
-| Data Category | Sensitivity | Core Risk | Control Posture |
+| Data Class | Typical Content | Core Risk | Required Control Posture |
 |---|---|---|---|
-| Public metadata | Low | Context misuse | Basic integrity and access controls |
-| Telemetry without identifiers | Medium | Re-identification by correlation | Aggregation, minimization, retention bounds |
-| Personal profile attributes | High | Privacy harm | Strict access controls and auditing |
-| Conversation data with personal context | High | Sensitive exposure | Redaction, policy scope checks, deletion support |
-| Special-category personal data | Critical | Severe legal and individual harm | Enhanced restrictions and elevated oversight |
-| Security forensic records | High | Tampering risk | Immutability and restricted investigator access |
+| Public | Non-sensitive public docs and published metadata | Integrity loss or misuse | Integrity controls and basic access governance |
+| Internal | Operational telemetry and non-public service metadata | Internal misuse or correlation leakage | Access controls, minimization, retention bounds |
+| Confidential | Personal profile attributes and identified conversation context | Privacy harm and unauthorized disclosure | Strong access controls, encryption, and full audit trail |
+| Restricted | Special-category personal data, secrets, and security forensic records | Severe legal, security, and individual harm | Strict least-privilege, mandatory DLP gates, immutable evidence, and elevated review controls |
 
 ## Bias and Fairness Governance
 - Fairness monitoring evaluates output behavior across demographic cohorts.
@@ -451,12 +449,11 @@ flowchart LR
 
 ### Task SECURITY_COMPLIANCE: Security and Compliance Operations Baseline
 
-
-**Objective**
+**Goal**
 - Implement a unified security and compliance operating layer that ties technical controls to auditable governance outcomes.
 - Ensure threat, privacy, and regulatory obligations can be continuously enforced and evidenced at scale.
 
-**What To Do**
+**Work**
 - Define and operationalize a unified threat model spanning model, data, infrastructure, and extension layers.
 - Build governance mappings for OWASP LLM risk categories to prevention, detection, and escalation controls.
 - Establish audit-trail requirements for decision lineage, oversight interventions, and policy execution outcomes.
@@ -466,6 +463,28 @@ flowchart LR
 - Establish fairness monitoring governance with cohort-level parity checks, thresholds, and remediation ownership.
 - Define security review gates for high-risk changes and a recurring audit cadence with required evidence outputs.
 - Integrate compliance checkpoints with incident response, monitoring, and access-control ownership models.
+- Define data-residency governance with region pinning, transfer-basis validation, and exception approval trails.
+- Define secret and key lifecycle governance including rotation cadence, compromise response, revocation propagation, and break-glass controls.
+- Define legal-hold governance for retention overrides, immutable hold evidence, and defensible export workflows.
+- Define abuse and fraud containment governance spanning account abuse, coordinated prompt attacks, and automated containment escalation.
+- Define human-override governance for sensitive actions with approver identity, reason capture, and dual-control policy support.
+- Define enterprise identity lifecycle governance for provisioning, deprovisioning, and role-change propagation with deterministic access revocation.
+- Define IdP federation governance for SCIM lifecycle sync, SAML assertion validation, OIDC token validation, replay protection, and deterministic session revocation.
+- Define customer-managed key governance for BYOK/HYOK/HSM operating modes, dual-control key operations, and auditable cryptographic lifecycle.
+- Define external model-provider governance for no-training commitments, retention limits, and region-constrained processing controls with audit evidence.
+- Define privileged access governance for PAM/JIT access grants, break-glass controls, separation of duties, and insider-threat detection workflows.
+- Define defensible deletion governance with backup/index propagation checks and immutable erasure attestations.
+- Define security/compliance verification for release artifact attestation evidence including signed SBOM and SLSA provenance compliance.
+- Define subprocessor and vendor risk governance including inventory, risk-tier review cadence, control attestation checks, and change-notice policy.
+- Define data-classification governance with explicit classes (public, internal, confidential, restricted) mapped to retention, encryption, access, and export controls.
+- Define DLP egress governance for prompts, responses, tool outputs, and exports with block, redact, and quarantine policy actions.
+- Define cryptographic assurance-depth governance including FIPS-targeted custody requirements, escrow prohibition for customer-managed keys, and M-of-N approval for destructive key operations.
+- Define certification-readiness governance with control-family mapping, evidence owners, and recurring control-matrix review cadence.
+- Define PSIRT and coordinated vulnerability-disclosure governance with intake, severity triage, patch-SLA targets, and advisory publication workflow.
+- Define formal change-governance policy for CAB approvals, emergency-change handling, and production change-window controls.
+- Define connector and OAuth scope governance for third-party integrations with least-privilege scope policy and periodic recertification.
+- Define sovereign and air-gapped deployment governance profiles with boundary constraints and approved release pathways.
+- Define customer trust-evidence delivery governance for evidence package generation, integrity verification, and controlled customer access.
 
 **Depends On**
 - MONITORING_INFRA
@@ -484,6 +503,29 @@ flowchart LR
 - Compliance mapping for EU AI Act and GDPR duties is explicit, measurable, and reviewable.
 - Fairness governance includes monitored metrics, alert thresholds, and assigned remediation owners.
 - Security review gates and audit cadence are documented and operationally actionable.
+- Data-residency governance enforces region policy and transfer-basis checks with auditable exception chains.
+- Secret lifecycle governance enforces rotation and revocation controls with compromise-response evidence.
+- Legal-hold governance preserves scoped records and exports regulator-reviewable evidence.
+- Abuse/fraud governance defines detection-to-containment workflow with explicit owners and SLAs.
+- Human-override governance captures approver, rationale, scope, and policy conformance for every override event.
+- Enterprise identity lifecycle governance enforces deterministic provisioning/deprovisioning and role-change propagation with audit evidence.
+- IdP federation governance enforces SCIM/SAML/OIDC validation, role/group propagation, and replay-safe session controls.
+- Customer-managed key governance supports BYOK/HYOK/HSM policy paths with dual-control for sensitive key actions.
+- External provider governance enforces no-training and retention policy checks before provider activation.
+- Privileged access governance enforces JIT access, time-bounded grants, and insider-threat auditability.
+- Defensible deletion governance produces erasure attestations proving primary, backup, and index propagation outcomes.
+- Security/compliance review includes verification of signed SBOM and SLSA attestation evidence for release-critical artifacts.
+- Subprocessor and vendor governance maintains current inventory, risk-tier decisions, and change-notice evidence.
+- Data classification governance enforces class-specific retention, encryption, access, and export handling.
+- DLP governance enforces block/redact/quarantine actions for sensitive egress attempts.
+- Cryptographic assurance governance enforces escrow prohibition for customer-managed keys and M-of-N controls on destructive key actions.
+- Cryptographic assurance governance verifies FIPS-targeted key-custody policy compliance for scoped key-management paths.
+- Certification-readiness governance maintains enterprise control-matrix coverage with explicit evidence owners and review cadence.
+- PSIRT governance enforces vulnerability intake, triage, patch-SLA tracking, and security-advisory evidence publication.
+- Formal change governance enforces CAB approval policy, emergency-change controls, and auditable change-window decisions.
+- Connector/OAuth governance enforces least-privilege scope issuance and rejects overbroad connector access requests.
+- Sovereign and air-gapped profile governance enforces profile-constrained release and dependency boundaries.
+- Customer trust-evidence governance produces integrity-verified evidence packages with controlled export and access audit trail.
 
 **QA Scenarios**
 - Run a simulated high-severity threat review, verify classification, ownership assignment, and escalation path.
@@ -491,20 +533,45 @@ flowchart LR
 - Trigger a breach tabletop scenario, verify triage timeline and reporting-readiness artifacts.
 - Review a fairness alert scenario, verify threshold detection and remediation workflow ownership.
 - Audit a high-risk release change, verify mandatory security-review gate completion before approval.
+- Simulate cross-border transfer request without legal basis, verify policy block and logged exception path.
+- Simulate key compromise event, verify revocation propagation and break-glass audit capture.
+- Simulate legal-hold activation, verify retention override and immutable hold event export.
+- Simulate coordinated abuse pattern, verify containment escalation and decision trail completeness.
+- Simulate sensitive override action, verify dual-control requirement and approver lineage in audit output.
+- Simulate user deprovisioning event, verify runtime access revocation and policy propagation complete within configured SLA.
+- Simulate privileged-role downgrade, verify elevated API access is removed and audit trail captures old/new role state.
+- Simulate SCIM deprovision event, verify account disablement and active-session revocation within configured SLA.
+- Replay a stale SAML assertion, verify rejection and replay-attempt audit record.
+- Simulate BYOK key revocation, verify encrypted data becomes unreadable until approved key replacement path completes.
+- Simulate provider profile missing no-training guarantee, verify provider route is blocked by policy gate.
+- Simulate JIT privileged access request, verify approval chain, automatic expiry, and full session audit capture.
+- Simulate deletion request completion, verify attestation includes primary store, backup set, and retrieval-index coverage fields.
+- Audit release evidence bundle, verify signed SBOM and SLSA attestation records are present and policy-conformant.
+- Simulate subprocessor onboarding with missing control attestation, verify onboarding is blocked until risk controls are satisfied.
+- Simulate unannounced high-risk subprocessor change, verify change-notice policy violation is flagged and escalated.
+- Simulate restricted-class data egress attempt, verify DLP block or quarantine action and audit record.
+- Simulate classification mismatch on export request, verify policy denial with class-based handling reason.
+- Simulate single-actor destructive key operation request, verify M-of-N requirement blocks execution.
+- Simulate key-custody configuration below required FIPS target, verify compliance gate blocks the policy path.
+- Simulate certification control-matrix review, verify missing control evidence owner triggers governance escalation.
+- Simulate high-severity vulnerability intake, verify PSIRT triage, patch-SLA timer activation, and advisory workflow.
+- Simulate production change without CAB approval, verify policy block unless emergency-change pathway is authorized.
+- Simulate connector request with overbroad OAuth scope, verify denial and least-privilege remediation path.
+- Simulate sovereign-profile release with disallowed external dependency, verify profile gate blocks rollout.
+- Simulate customer evidence request, verify trust-evidence package generation with integrity proof and access logging.
 
-**Implementation Notes**
+**Notes**
 - Keep governance controls mapped to existing technical enforcement points to avoid duplicate policy surfaces.
 - Treat evidence integrity and traceability as first-class acceptance gates for compliance readiness.
 - Favor measurable control definitions so recurring audits remain objective and repeatable.
 
 ### Task MULTI_TENANT_CONFIG: Multi-Tenant Isolation and Configuration Hierarchy
 
-
-**Objective**
+**Goal**
 - Implement tenant-aware configuration resolution that supports controlled overrides without violating isolation boundaries.
 - Ensure every request resolves policy and runtime settings deterministically from the correct tenant context.
 
-**What To Do**
+**Work**
 - Define a five-level configuration hierarchy from global through request scope.
 - Specify deterministic precedence rules and conflict resolution across all hierarchy levels.
 - Implement tenant and organization boundary enforcement for configuration reads and merges.
@@ -538,7 +605,7 @@ flowchart LR
 - Remove tenant override and re-resolve, verify deterministic fallback to parent scope.
 - Replay audited resolution event, verify scope chain and final effective values are reconstructable.
 
-**Implementation Notes**
+**Notes**
 - Keep merge logic deterministic and side-effect free so behavior remains stable under replay.
 - Separate identity verification from merge execution to simplify threat analysis and auditing.
 - Align scope vocabulary with execution and server policy docs to avoid cross-module ambiguity.

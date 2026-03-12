@@ -76,6 +76,9 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_MCP_CLIENT | MCP client wrapper | Multi-server support and health checks |
 | MH_SSE_STREAMING | SSE streaming via Elysia | The framework's execution method emits stream event types that are forwarded through Elysia SSE generators for real-time token delivery |
 | MH_GEMINI_GROUNDING | Gemini grounding search | Separate agent mode for web-grounded responses |
+| MH_REALTIME_QUERY_DETECTION | Realtime-required query detection | Intent validation emits explicit `realtimeRequired` signal and `freshnessDomain` classification for freshness-critical requests (market prices, exchange rates, weather, breaking news, live sports) |
+| MH_REALTIME_LIVE_ROUTING | Live-source enforcement for realtime domains | When `realtimeRequired=true`, routing must prioritize live grounding path and treat non-live evidence as insufficient for current-value claims |
+| MH_REALTIME_STALE_BLOCK | Stale realtime answer prevention | Freshness-critical responses require timestamp-aware evidence checks and must refuse or caveat when live evidence is stale or unavailable |
 | MH_PROVIDER_AGNOSTIC | Provider-agnostic model configuration | No model-specific branching in core agent logic. Grounding mode is an explicit exception — it uses `@ai-sdk/google` directly because Gemini grounding is a Google-specific capability with no provider-neutral equivalent |
 | MH_CONFIG_OVERRIDABLE | All configs have defaults, all defaults are overridable | Every configuration surface has sensible fallbacks |
 | MH_NO_HARDCODED_PROMPTS | No hardcoded agent instructions/app-level prompts in library | Internal implementation prompts (extraction, tool descriptions) are acceptable — user-facing prompts are not |
@@ -261,6 +264,33 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 | MH_SEED_DATA | Seed data for testing | Reproducible seed data fixtures for smoke tests and end-to-end tests — deterministic test state |
 | MH_TYPEDOC | API documentation generation | TypeDoc generates API reference documentation from source TypeScript — published alongside the package |
 | MH_BUN_LINK | Local development linking | Symlink-based local development workflow for developing safeagent library and server project simultaneously without publishing |
+| MH_DATA_RESIDENCY_CONTROLS | Data residency and transfer governance | Tenant and region policy enforces residency pinning, transfer-basis checks, and auditable cross-border exception workflow |
+| MH_SECRET_KEY_LIFECYCLE | Secret and key lifecycle governance | Key and credential lifecycle includes rotation cadence, revocation propagation, compromise playbook, and break-glass audit trail |
+| MH_MODEL_RISK_GOVERNANCE | Model risk management | Model and prompt releases require version pinning, canary gates, drift detection, and deterministic rollback criteria |
+| MH_PROMPT_TOOL_INTEGRITY | Prompt and tool supply-chain integrity | Prompt bundles and tool manifests require integrity verification and tamper detection before runtime activation |
+| MH_ABUSE_FRAUD_RESPONSE | Abuse and fraud containment governance | Coordinated abuse detection, anomaly escalation, and containment playbooks prevent adversarial and account-abuse amplification |
+| MH_HITL_OVERRIDE_GOVERNANCE | Human override governance | Sensitive overrides require explicit approver identity, dual-control policy where configured, and immutable decision logging |
+| MH_SLO_ERROR_BUDGET_GUARDRAILS | SLO and error-budget policy enforcement | Workload-class SLOs, burn-rate triggers, and policy actions are defined and operationally enforced |
+| MH_COST_BLAST_RADIUS_GUARDS | Cost blast-radius containment | Multi-level spend guardrails (org, tenant, user, session) enforce warnings, throttles, and hard-stop controls |
+| MH_ENTERPRISE_IDENTITY_LIFECYCLE | Enterprise identity lifecycle integration | Identity provisioning/deprovisioning and role lifecycle changes propagate deterministically to runtime access policy |
+| MH_LEGAL_HOLD_AUDIT_READINESS | Legal hold and defensible audit export | Legal hold preserves required records and provides immutable, regulator-grade evidence export workflow |
+| MH_IDP_FEDERATION_CONTROLS | IdP federation controls (SCIM/SAML/OIDC) | Federation policy enforces SCIM lifecycle sync, SAML/OIDC assertion validation, replay protection, and deterministic session revocation |
+| MH_CUSTOMER_MANAGED_KEY_OPTIONS | Customer-managed key options (BYOK/HYOK/HSM) | Key-management policy defines customer-managed key models, HSM-grade controls, rotation/revocation behavior, and dual-control governance |
+| MH_ARTIFACT_ATTESTATION_GATES | Artifact attestation gates (SBOM/SLSA/signing) | Release policy requires signed SBOM, provenance attestations, and deployment gating that blocks unsigned or unattested artifacts |
+| MH_PROVIDER_DATA_USAGE_GUARDS | Provider data-usage and retention controls | External model providers are constrained by no-training and retention policy contracts, region controls, and auditable enforcement checks |
+| MH_PRIVILEGED_ACCESS_GOVERNANCE | Privileged access governance (PAM/JIT) | Privileged operations require time-bound JIT access, break-glass controls, insider-threat auditability, and separation of duties |
+| MH_DEFENSIBLE_DELETION_ATTESTATION | Defensible deletion and erasure attestation | Deletion workflow includes backup/index propagation checks and immutable erasure attestations proving removal completeness |
+| MH_SUBPROCESSOR_VENDOR_RISK_GOVERNANCE | Subprocessor and vendor risk governance | Subprocessor inventory, risk-tier review, contractual control checks, and change-notice governance are enforced with auditable evidence |
+| MH_DLP_EGRESS_CONTROLS | Data loss prevention and egress controls | Sensitive data egress paths enforce classification-aware filtering, redaction or block policy, and quarantine workflow for suspected exfiltration |
+| MH_DATA_CLASSIFICATION_POLICY | Data classification and handling policy | Data classes (public, internal, confidential, restricted) define required retention, encryption, access, and export controls |
+| MH_ENTERPRISE_SUPPORT_SLA_GOVERNANCE | Enterprise support SLA governance | Incident response, restoration, and communication SLAs are measured, enforced, and evidenced for enterprise support commitments |
+| MH_CRYPTO_ASSURANCE_DEPTH | Cryptographic assurance depth controls | Crypto governance explicitly enforces FIPS-grade key custody targets, escrow prohibition for customer-managed keys, and M-of-N approval for destructive key operations |
+| MH_CERTIFICATION_READINESS_MAPPING | Certification readiness mapping | Control-family mapping, evidence ownership, and audit-ready control matrix are maintained for enterprise certification profiles (for example SOC 2, ISO 27001, FedRAMP-targeted deployments) |
+| MH_PSIRT_DISCLOSURE_LIFECYCLE | PSIRT and coordinated disclosure lifecycle | Vulnerability intake, triage, patch-SLA tracking, and security-advisory publication workflow are operationally enforced and auditable |
+| MH_FORMAL_CHANGE_GOVERNANCE | Formal production change governance | CAB approvals, emergency-change controls, and production change-window policy are enforced for release-affecting changes |
+| MH_CONNECTOR_OAUTH_SCOPE_GOVERNANCE | Connector and OAuth scope governance | Third-party connector onboarding enforces least-privilege OAuth scopes, scope review, and overbroad-scope rejection controls |
+| MH_SOVEREIGN_AIRGAPPED_DEPLOYMENT_PROFILES | Sovereign and air-gapped deployment profiles | Deployment governance supports sovereign or air-gapped profiles with restricted dependency boundaries and compliant release pathways |
+| MH_CUSTOMER_TRUST_EVIDENCE_DELIVERY | Customer trust-evidence delivery | Customer-facing trust evidence packages are generated, access-controlled, and exportable with integrity verification |
 
 ### Complete Must-Have → Task Ownership Mapping
 
@@ -277,6 +307,9 @@ Every must-have requirement maps to one or more implementation tasks in the [Exe
 | MH_MCP_CLIENT | MCP_CLIENT |
 | MH_SSE_STREAMING | SSE_STREAMING |
 | MH_GEMINI_GROUNDING | GEMINI_GROUNDING |
+| MH_REALTIME_QUERY_DETECTION | LLM_INTENT |
+| MH_REALTIME_LIVE_ROUTING | SOURCE_ROUTER, GEMINI_GROUNDING |
+| MH_REALTIME_STALE_BLOCK | EVIDENCE_GATE, SOURCE_ROUTER |
 | MH_PROVIDER_AGNOSTIC | AGENT_FACTORY, PROVIDER_HELPERS |
 | MH_CONFIG_OVERRIDABLE | CONFIG_DEFAULTS |
 | MH_NO_HARDCODED_PROMPTS | AGENT_FACTORY (convention enforced by AUDIT_CODE) |
@@ -418,6 +451,33 @@ Every must-have requirement maps to one or more implementation tasks in the [Exe
 | MH_SEED_DATA | SMOKE_TESTS, E2E_TESTS |
 | MH_TYPEDOC | PKG_PUBLISH |
 | MH_BUN_LINK | SCAFFOLD_LIB, SCAFFOLD_SERVER |
+| MH_DATA_RESIDENCY_CONTROLS | MULTI_TENANT_CONFIG, SECURITY_COMPLIANCE |
+| MH_SECRET_KEY_LIFECYCLE | CONFIG_DEFAULTS, SECURITY_COMPLIANCE |
+| MH_MODEL_RISK_GOVERNANCE | AI_OPERATIONS, RELEASE_PIPELINE, MONITORING_INFRA |
+| MH_PROMPT_TOOL_INTEGRITY | AI_OPERATIONS, CODE_STANDARDS, SECURITY_COMPLIANCE |
+| MH_ABUSE_FRAUD_RESPONSE | SECURITY_COMPLIANCE, MONITORING_INFRA, GUARD_PIPELINE |
+| MH_HITL_OVERRIDE_GOVERNANCE | DURABLE_EXECUTION, SECURITY_COMPLIANCE, AUDIT_SCOPE |
+| MH_SLO_ERROR_BUDGET_GUARDRAILS | MONITORING_INFRA, INCIDENT_PROCEDURES |
+| MH_COST_BLAST_RADIUS_GUARDS | COST_TRACKING, ADMIN_API, MONITORING_INFRA |
+| MH_ENTERPRISE_IDENTITY_LIFECYCLE | JWT_AUTH, ADMIN_API, MULTI_TENANT_CONFIG |
+| MH_LEGAL_HOLD_AUDIT_READINESS | SECURITY_COMPLIANCE, INCIDENT_PROCEDURES, DOCS_SITE |
+| MH_IDP_FEDERATION_CONTROLS | JWT_AUTH, ADMIN_API, MULTI_TENANT_CONFIG, SECURITY_COMPLIANCE |
+| MH_CUSTOMER_MANAGED_KEY_OPTIONS | CONFIG_DEFAULTS, SECURITY_COMPLIANCE |
+| MH_ARTIFACT_ATTESTATION_GATES | RELEASE_PIPELINE, CI_PIPELINE, SECURITY_COMPLIANCE |
+| MH_PROVIDER_DATA_USAGE_GUARDS | AI_OPERATIONS, SECURITY_COMPLIANCE, CONFIG_DEFAULTS |
+| MH_PRIVILEGED_ACCESS_GOVERNANCE | DURABLE_EXECUTION, JWT_AUTH, SECURITY_COMPLIANCE, AUDIT_SCOPE |
+| MH_DEFENSIBLE_DELETION_ATTESTATION | SECURITY_COMPLIANCE, INCIDENT_PROCEDURES, TTL_CLEANUP, DOC_PIPELINE |
+| MH_SUBPROCESSOR_VENDOR_RISK_GOVERNANCE | SECURITY_COMPLIANCE |
+| MH_DLP_EGRESS_CONTROLS | SECURITY_COMPLIANCE |
+| MH_DATA_CLASSIFICATION_POLICY | SECURITY_COMPLIANCE, MULTI_TENANT_CONFIG |
+| MH_ENTERPRISE_SUPPORT_SLA_GOVERNANCE | MONITORING_INFRA, INCIDENT_PROCEDURES |
+| MH_CRYPTO_ASSURANCE_DEPTH | SECURITY_COMPLIANCE |
+| MH_CERTIFICATION_READINESS_MAPPING | SECURITY_COMPLIANCE |
+| MH_PSIRT_DISCLOSURE_LIFECYCLE | SECURITY_COMPLIANCE, RELEASE_PIPELINE |
+| MH_FORMAL_CHANGE_GOVERNANCE | RELEASE_PIPELINE, SECURITY_COMPLIANCE |
+| MH_CONNECTOR_OAUTH_SCOPE_GOVERNANCE | SECURITY_COMPLIANCE |
+| MH_SOVEREIGN_AIRGAPPED_DEPLOYMENT_PROFILES | RELEASE_PIPELINE, SECURITY_COMPLIANCE |
+| MH_CUSTOMER_TRUST_EVIDENCE_DELIVERY | SECURITY_COMPLIANCE |
 
 #### Humanlikeness
 
@@ -464,10 +524,10 @@ Production-scale infrastructure (PgBouncer deployment, table partitioning, multi
 flowchart LR
     subgraph MUST_HAVE["MUST HAVE — Inside Boundary"]
         direction TB
-        AREA_AGENT_CORE[Agent Core<br/>10 items]
+        AREA_AGENT_CORE[Agent Core<br/>18 items]
         AREA_LANG[Language and Content Safety<br/>5 items]
         AREA_MEMORY[Memory<br/>5 items]
-        AREA_AUTH[Auth & Transport<br/>3 items]
+        AREA_AUTH[Auth & Transport<br/>6 items]
         AREA_TUI[TUI<br/>1 item]
         AREA_EVAL[Evaluation<br/>2 items]
         AREA_DOC[Document Processing<br/>10 items]
@@ -476,8 +536,8 @@ flowchart LR
         AREA_DATA[Data Layer<br/>1 item]
         AREA_CTA[CTA Streaming<br/>4 items]
         AREA_LOC[Location Enrichment<br/>4 items]
-        AREA_INFRA[Infrastructure<br/>6 items]
-        AREA_CROSS[Cross-Cutting<br/>15 items]
+        AREA_INFRA[Infrastructure<br/>7 items]
+        AREA_CROSS[Cross-Cutting<br/>43 items]
         AREA_HUMAN[Humanlikeness<br/>13 items]
         AREA_FRONTEND[Frontend SDK<br/>16 items]
     end

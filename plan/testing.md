@@ -1202,12 +1202,14 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task E2E_TESTS
 
-**What to do**:
+**Work**:
 
 - Create dedicated end-to-end suites for library and server concerns.
 - Validate full streaming flow from agent creation to final output consumption.
 - Validate guardrail violation behavior across development and production modes.
 - Validate grounding mode metadata.
+- Validate realtime-required classification and freshness-domain output.
+- Validate stale-answer blocking behavior for freshness-critical queries.
 - Validate MCP tool registration and invocation.
 - Validate short-term memory persistence across thread turns.
 - Validate long-term memory round-trip: extraction, persistence, cross-thread recall.
@@ -1225,7 +1227,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Do not require keys for unit tests.
 - Do not include TUI rendering assertions in end-to-end suites.
 
-**Depends on**: TUI_AGENT, SELF_TEST, SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, TUI_UPLOAD, DOCKER_COMPOSE, FEEDBACK_ENDPOINT, CLIENT_SDK, COST_TRACKING, AGENT_ROUTER, VALKEY_CACHE, TRIGGER_TASKS, RATE_LIMITING, FILE_CRUD, TTL_CLEANUP, JWT_AUTH, CROSS_CONV_RAG, ADMIN_API.
+**Depends On**: TUI_AGENT, SELF_TEST, SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, TUI_UPLOAD, DOCKER_COMPOSE, FEEDBACK_ENDPOINT, CLIENT_SDK, COST_TRACKING, AGENT_ROUTER, VALKEY_CACHE, TRIGGER_TASKS, RATE_LIMITING, FILE_CRUD, TTL_CLEANUP, JWT_AUTH, CROSS_CONV_RAG, ADMIN_API.
 
 **Acceptance Criteria**:
 
@@ -1239,6 +1241,10 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Trace visibility and feedback chain are proven.
 - Token-budget denial response is structured and correct.
 - Image lifecycle from upload to citation access is proven.
+- Realtime-required flows prove live-source-first routing and freshness-safe outcomes.
+- Enterprise federation, key-governance, attestation, privileged-access, and deletion-attestation controls are validated with scenario-level checks.
+- Vendor-risk, DLP egress controls, data-classification policy, enterprise support SLA governance, and crypto-assurance-depth controls are validated with scenario-level checks.
+- Certification mapping, PSIRT disclosure lifecycle, formal change governance, connector OAuth scope governance, sovereign profile constraints, and trust-evidence delivery controls are validated with scenario-level checks.
 
 **QA Scenarios**:
 
@@ -1246,10 +1252,29 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Server streaming suite validates authenticated stream behavior and evidence capture.
 - Image pipeline suite validates visual retrieval, image citation links, byte-signature checks, and fallback behavior.
 - Long-term memory suite validates extraction, persistence, and cross-thread recall with evidence capture.
+- Realtime freshness suite validates finance/FX/crypto/weather/news queries route to live source and do not emit uncited current-value claims.
+- Realtime stock-price suite validates current stock queries require live-source evidence and freshness-safe outputs.
+- Realtime sports-live suite validates live-score queries require live-source evidence and freshness-safe outputs.
+- Realtime outage suite validates live-source failure returns refusal or explicit freshness caveat.
+- Federation suite validates OIDC token validation and SCIM lifecycle propagation behavior.
+- Key-governance suite validates BYOK/HYOK/HSM policy paths, key revocation behavior, and dual-control enforcement.
+- Privileged-access suite validates JIT grant expiry, break-glass controls, and separation-of-duties enforcement.
+- Deletion-attestation suite validates erasure attestation completeness across primary, backup, and retrieval-index coverage fields.
+- Vendor-risk suite validates subprocessor inventory controls, risk-tier checks, and change-notice policy enforcement.
+- DLP suite validates sensitive prompt or output egress is blocked, redacted, or quarantined with audit evidence.
+- Data-classification suite validates class-specific retention, encryption, access, and export policy enforcement.
+- Enterprise-support SLA suite validates first-response, restoration, and communication SLA timer evidence under incident conditions.
+- Crypto-assurance suite validates escrow-prohibition policy, M-of-N approval controls for destructive key operations, and FIPS-targeted custody compliance checks.
+- Certification-readiness suite validates control-matrix completeness and evidence-owner coverage for enterprise certification profiles.
+- PSIRT suite validates vulnerability intake, severity triage, patch-SLA tracking, and security-advisory publication evidence.
+- Change-governance suite validates CAB approval enforcement, emergency-change pathway auditability, and change-window policy checks.
+- Connector-scope suite validates least-privilege OAuth scope issuance, overbroad-scope rejection, and scope recertification evidence.
+- Sovereign-profile suite validates air-gapped or sovereign deployment constraints and release-path dependency boundary enforcement.
+- Trust-evidence suite validates customer evidence package generation, integrity verification, access controls, and export audit trail.
 
 ### Task PKG_PUBLISH
 
-**What to do**:
+**Work**:
 
 - Prepare concise package documentation with quick start, feature highlights, API overview, config examples, and constraints.
 - Ensure root licensing artifacts are complete.
@@ -1265,7 +1290,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Do not include test assets in publish payload.
 - Do not expand documentation into tutorial-length content.
 
-**Depends on**: BARREL_EXPORTS.
+**Depends On**: BARREL_EXPORTS.
 
 **Acceptance Criteria**:
 
@@ -1280,7 +1305,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task SMOKE_TESTS
 
-**What to do**:
+**Work**:
 
 - Build smoke workflow covering startup, health behavior, stream behavior, auth denial behavior, and graceful shutdown.
 - Define container build behavior for both pre-publish and post-publish modes.
@@ -1294,7 +1319,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Do not add orchestration for out-of-scope platforms.
 - Do not add CI pipeline orchestration here.
 
-**Depends on**: SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API.
+**Depends On**: SERVER_AGENT_CFG, SERVER_ROUTES, SERVER_MCP, SERVER_GUARDRAILS, UPLOAD_ENDPOINT, DOCKER_COMPOSE, FILE_CRUD, ADMIN_API.
 
 **Acceptance Criteria**:
 
@@ -1312,7 +1337,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task LOAD_TESTS
 
-**What to do**:
+**Work**:
 
 - Create load suite with five scenarios: streaming, upload, retrieval, budget enforcement, health baseline.
 - Use pre-generated authenticated context and request-correlation identifiers.
@@ -1328,7 +1353,7 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 - Do not block correctness delivery on performance target attainment.
 - Do not wire load tests into CI gates.
 
-**Depends on**: SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE.
+**Depends On**: SERVER_ROUTES, UPLOAD_ENDPOINT, DOCKER_COMPOSE.
 
 **Acceptance Criteria**:
 
@@ -1347,11 +1372,11 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task AUDIT_PLAN
 
-**Depends on**: PKG_PUBLISH.
+**Depends On**: PKG_PUBLISH.
 
 **Agent**: oracle.
 
-**What to do**:
+**Work**:
 
 - Review the plan and implementation end to end.
 - Verify every Must Have item has implementation and verification coverage.
@@ -1377,11 +1402,11 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task AUDIT_CODE
 
-**Depends on**: PKG_PUBLISH.
+**Depends On**: PKG_PUBLISH.
 
 **Agent**: executor.
 
-**What to do**:
+**Work**:
 
 - Execute build, lint, and tests.
 - Review changed files for unsafe typing escapes, production logging misuse, empty catches, commented dead blocks, and unused imports.
@@ -1411,11 +1436,11 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task AUDIT_QA
 
-**Depends on**: PKG_PUBLISH.
+**Depends On**: PKG_PUBLISH.
 
 **Agent**: executor, optionally with browser-automation support if needed.
 
-**What to do**:
+**Work**:
 
 - Start from clean environment state with dependencies and service stack.
 - Execute every QA scenario from every implementation task.
@@ -1455,11 +1480,11 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 ### Task AUDIT_SCOPE
 
-**Depends on**: PKG_PUBLISH.
+**Depends On**: PKG_PUBLISH.
 
 **Agent**: deep.
 
-**What to do**:
+**Work**:
 
 - For each task from initial stack setup through final visual-grounding scope, compare specification intent and implementation outcome.
 - Verify one-to-one scope fidelity: nothing missing, nothing extra.
@@ -1498,58 +1523,6 @@ End-to-end suites rely on a cleanup helper that removes thread-associated conver
 
 **Output format**: `Tasks [N/N compliant] | Contamination [CLEAN/ISSUES] | Unaccounted [CLEAN/ISSUES] | VERDICT`.
 
-### FINAL Audit Consolidation Wrapper (Non-Execution, Non-Counted)
-
-> This is a consolidation wrapper for final-audit evidence. It is not a separate routed execution task in [Execution Plan](./execution.md), and it is not counted in the 129-task total.
-
-
-**Objective**
-- Execute final audit consolidation so release readiness is validated across code quality, test quality, build integrity, and documentation integrity.
-- Produce one clear go or no-go decision backed by verifiable evidence from all audit lanes.
-
-**What To Do**
-- Aggregate outcomes from plan, code, QA, and scope audits into one release-readiness view.
-- Run lint audit to confirm no unresolved policy violations remain.
-- Run coverage audit to validate required coverage depth across critical modules.
-- Run build audit to confirm all build targets complete without regression.
-- Run documentation audit to confirm user-facing and API-facing docs are complete and consistent.
-- Reconcile any conflicting findings across audit lanes and classify blocker severity.
-- Verify evidence artifacts exist and are traceable for every final audit assertion.
-- Produce consolidated verdict with blocker list, waived risks, and remediation ownership.
-
-**Depends On**
-- AUDIT_PLAN
-- AUDIT_CODE
-- AUDIT_QA
-- AUDIT_SCOPE
-- API_GOVERNANCE
-
-**Batch**
-- FINAL_AUDIT_BATCH
-
-**Acceptance Criteria**
-- Lint audit confirms zero unresolved quality-gate violations.
-- Coverage audit confirms critical-path coverage meets defined thresholds.
-- Build audit confirms all required build outputs complete successfully.
-- Documentation audit confirms release-facing docs and references are complete and consistent.
-- Consolidated report clearly labels blocker, warning, and pass outcomes.
-- Final verdict is reproducible from attached evidence artifacts.
-- Any approved risk exception includes owner, timeline, and remediation plan.
-
-**QA Scenarios**
-- Run final audit with fully clean inputs, verify consolidated pass verdict.
-- Introduce lint regression before final audit, verify blocker classification and fail verdict.
-- Drop documentation completeness for one release-critical area, verify documentation audit failure is surfaced.
-- Reduce critical-path coverage below threshold, verify coverage audit blocks final approval.
-- Trigger conflicting sub-audit outcomes, verify reconciliation notes and decision rationale are explicit.
-
-**Implementation Notes**
-- Treat FINAL as a release-decision wrapper over upstream audits, not a replacement for them.
-- Keep evidence linking strict so each verdict line can be traced to a concrete artifact.
-- Prioritize blocker clarity and remediation ownership over verbose narrative.
-
-Per-module test specifications are co-located within each module's plan file under `## Test Specifications`. This ensures test assertions are maintained alongside the features they verify. The Coverage Map below provides the cross-cutting view across all modules.
-
 ### Testing Strategy Self-Validation
 
 **Testing infrastructure self-validation**:
@@ -1567,260 +1540,6 @@ Per-module test specifications are co-located within each module's plan file und
 
 - Repeated seed-data runs are idempotent and produce identical resulting state.
 
-## Coverage Map
-
-Every Must Have feature area maps to one or more testing layers.
-
-| Feature Area | Unit | Integration | End-to-End | Eval | Load | Adversarial | Regression |
-|---|---|---|---|---|---|---|---|
-| Agent creation and defaults | ✓ |  | ✓ |  |  |  |  |
-| Input guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| Streaming output guardrails | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| Zero-leak buffered mode | ✓ |  | ✓ |  |  | ✓ | ✓ |
-| Guardrail factories | ✓ |  |  |  |  |  |  |
-| MCP client wrapper | ✓ | ✓ | ✓ |  |  |  |  |
-| Streaming transport | ✓ |  | ✓ |  | ✓ |  | ✓ |
-| Grounding search mode | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| Short-term memory | ✓ | ✓ | ✓ |  |  |  |  |
-| Long-term memory | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Memory recall tool | ✓ |  | ✓ |  |  |  |  |
-| Auth middleware | ✓ |  | ✓ |  | ✓ |  | ✓ |
-| Trace and thread delivery | ✓ |  | ✓ |  |  |  |  |
-| Provider-agnostic configuration | ✓ |  |  |  |  |  |  |
-| TUI streaming display | ✓ |  | ✓ |  |  |  |  |
-| Promptfoo provider helper | ✓ |  |  | ✓ |  |  |  |
-| Custom evaluation scorers | ✓ |  |  | ✓ |  |  |  |
-| File upload pipeline | ✓ | ✓ | ✓ |  | ✓ |  |  |
-| Multimodal document processing | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| Hybrid retrieval | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |
-| Structured citations | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| Object storage | ✓ | ✓ | ✓ |  | ✓ |  |  |
-| File signature validation | ✓ |  |  |  |  |  | ✓ |
-| CTA streaming | ✓ |  | ✓ | ✓ |  |  |  |
-| Location enrichment | ✓ |  | ✓ |  |  |  |  |
-| Rate limiting | ✓ | ✓ |  |  | ✓ |  | ✓ |
-| Token budget | ✓ |  | ✓ |  | ✓ |  | ✓ |
-| Circuit breaker | ✓ |  |  |  |  |  | ✓ |
-| Structured logging | ✓ |  |  |  |  |  |  |
-| Observability tracing | ✓ | ✓ | ✓ |  |  |  |  |
-| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| CORS allowlist enforcement | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Role-based authorization | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Audit logging | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |
-| User feedback linkage | ✓ |  | ✓ |  |  |  |  |
-| ORM and migrations | ✓ | ✓ |  |  |  |  |  |
-| Injection detection ensemble | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| Content sanitization | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| Memory poisoning defense | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Structured result memory | ✓ | ✓ | ✓ |  |  |  |  |
-| Cross-conversation retrieval | ✓ | ✓ | ✓ |  |  |  |  |
-| Admin API | ✓ |  |  |  |  |  |  |
-| Prompt management | ✓ | ✓ |  |  |  |  |  |
-| Client offline queue | ✓ |  |  |  |  |  |  |
-| Frontend type safety | ✓ | ✓ | ✓ |  |  |  |  |
-| OpenAPI documentation | ✓ | ✓ | ✓ |  |  |  |  |
-| Correction handling | ✓ |  | ✓ | ✓ |  |  |  |
-| Emotional context carry-forward | ✓ |  | ✓ | ✓ |  |  |  |
-| Frustration escalation detection | ✓ |  | ✓ | ✓ |  | ✓ | ✓ |
-| Repeated question differentiation | ✓ |  | ✓ | ✓ |  |  |  |
-| Communication style memory | ✓ | ✓ | ✓ |  |  |  |  |
-| Temporal fact markers | ✓ | ✓ |  |  |  |  |  |
-| Fact supersession | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Implicit reference resolution | ✓ |  | ✓ | ✓ |  |  |  |
-| Response energy matching | ✓ |  | ✓ | ✓ |  |  |  |
-| Conversation resumption | ✓ |  | ✓ |  |  |  |  |
-| Clarification patience model | ✓ |  | ✓ | ✓ |  |  |  |
-| Topic abandonment | ✓ |  | ✓ | ✓ |  |  |  |
-| Proactive clarification | ✓ |  | ✓ | ✓ |  |  |  |
-| Extension point contracts | ✓ | ✓ | ✓ |  |  |  |  |
-| Extension registration validation | ✓ | ✓ |  |  |  |  | ✓ |
-| Lifecycle hook system | ✓ | ✓ | ✓ |  |  |  |  |
-| Extension security model | ✓ | ✓ |  |  |  | ✓ | ✓ |
-| Extension composition patterns | ✓ | ✓ |  |  |  |  |  |
-| Contract test suites | ✓ | ✓ |  |  |  |  |  |
-| Extension performance budgets | ✓ |  |  |  | ✓ |  |  |
-| Checkpoint persistence and recovery | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Time-travel replay and forking | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Background run lifecycle | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| HITL approval gates | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Oversight modes and automation ratio | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Escalation and review queue | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Checkpoint TTL, cleanup, and archive | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| Concurrent workflow limits and failure isolation | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Semantic cache lifecycle | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Dynamic model routing | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| Prompt cache optimization | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| Per-agent cost attribution and budgets | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| Prompt A/B testing and winner detection | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Atomic bundle rollout and rollback | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Shadow mode behavior comparison | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |
-| LLM-as-judge scoring | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |
-| Eval dataset governance and tracking | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Experiment regression detection and CI gates | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| CLASSic dimension governance | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| Threat model and defense-in-depth governance | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| OWASP LLM Top 10 coverage | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Decision audit trail and explainability | ✓ | ✓ | ✓ | ✓ |  |  | ✓ |
-| DSAR workflow and timeline enforcement | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Breach notification governance | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Consent lifecycle governance | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Bias monitoring and disparate impact detection | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ |
-| Security audit cadence and dependency scanning | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Content provenance and audit trail | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Disaster recovery and backup | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| Agent identity and data residency | ✓ | ✓ | ✓ |  |  | ✓ | ✓ |
-| Dynamic fan-out orchestration | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| Concurrent request policy | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Deferred tool loading | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Structured output guarantees | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| MCP client protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Computer use and browser agents | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Code execution sandboxing | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Real-time voice transport | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |
-| RAG feedback loop | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Generative UI tool | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Generative UI SSE protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Generative UI renderer | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Conversation intelligence | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Multi-tenant config hierarchy | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Project onboarding and creation flow | ✓ |  | ✓ |  |  |  | ✓ |
-| Progressive API tiers | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Error taxonomy and diagnostics | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Local development environment | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Interactive development studio | ✓ | ✓ | ✓ |  |  |  |  |
-| Testing utilities and mock provider | ✓ | ✓ |  |  |  |  | ✓ |
-| Template and starter ecosystem | ✓ |  | ✓ |  |  |  | ✓ |
-| AI coding agent integration | ✓ |  |  |  |  |  | ✓ |
-| TypeScript performance budget | ✓ |  |  |  | ✓ |  | ✓ |
-| OpenTelemetry integration | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Tool development workflow | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Public API surface governance |  |  |  |  |  |  | ✓ |
-| Stability tier enforcement | ✓ | ✓ |  |  |  |  | ✓ |
-| Deprecation lifecycle | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Breaking change protocol | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Migration guide and automated migration tooling | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Consumer upgrade and canary testing | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Extension contract stability | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Type contract governance | ✓ | ✓ |  |  |  |  | ✓ |
-| Semantic release policy | ✓ | ✓ | ✓ |  |  |  | ✓ |
-| Exception and escalation handling | ✓ | ✓ |  |  |  |  | ✓ |
-| Governance operating cadence |  |  |  |  |  |  | ✓ |
-
-## Extended Coverage Map
-
-The six new testing categories provide additional coverage layers beyond the original seven-column map.
-
-| Feature Area | Chaos | Contract | Mutation | Snapshot | Streaming | Property-Based |
-|---|---|---|---|---|---|---|
-| Agent creation and defaults |  | ✓ |  | ✓ |  | ✓ |
-| Input guardrails | ✓ |  | ✓ | ✓ |  | ✓ |
-| Streaming output guardrails | ✓ |  | ✓ |  | ✓ | ✓ |
-| Zero-leak buffered mode |  |  | ✓ |  | ✓ | ✓ |
-| Guardrail factories |  |  | ✓ |  |  | ✓ |
-| MCP client wrapper | ✓ | ✓ |  |  |  |  |
-| Streaming transport | ✓ | ✓ |  | ✓ | ✓ | ✓ |
-| Grounding search mode |  |  |  | ✓ |  |  |
-| Short-term memory | ✓ |  |  |  |  | ✓ |
-| Long-term memory | ✓ |  | ✓ | ✓ |  | ✓ |
-| Memory recall tool |  |  |  | ✓ |  | ✓ |
-| Auth middleware |  | ✓ | ✓ |  |  |  |
-| Trace and thread delivery |  | ✓ |  | ✓ | ✓ |  |
-| Provider-agnostic configuration |  | ✓ |  |  |  | ✓ |
-| TUI streaming display |  |  |  |  | ✓ |  |
-| Promptfoo provider helper |  |  |  |  |  |  |
-| Custom evaluation scorers |  |  |  | ✓ |  |  |
-| File upload pipeline | ✓ | ✓ | ✓ |  |  | ✓ |
-| Multimodal document processing | ✓ |  |  | ✓ |  | ✓ |
-| Hybrid retrieval | ✓ |  | ✓ | ✓ |  | ✓ |
-| Structured citations |  |  |  | ✓ |  |  |
-| Object storage | ✓ |  |  |  |  |  |
-| File signature validation |  |  | ✓ |  |  | ✓ |
-| CTA streaming |  | ✓ |  | ✓ | ✓ |  |
-| Location enrichment |  |  |  |  | ✓ |  |
-| Rate limiting | ✓ |  | ✓ |  |  | ✓ |
-| Token budget | ✓ |  | ✓ |  |  | ✓ |
-| Circuit breaker | ✓ |  | ✓ |  |  | ✓ |
-| Structured logging |  |  |  |  |  |  |
-| Observability tracing | ✓ |  |  | ✓ |  |  |
-| Boundary input validation | ✓ | ✓ | ✓ |  |  | ✓ |
-| CORS allowlist enforcement |  | ✓ |  |  |  |  |
-| Role-based authorization |  | ✓ | ✓ |  |  |  |
-| Audit logging | ✓ | ✓ | ✓ |  |  |  |
-| User feedback linkage |  | ✓ |  |  |  |  |
-| ORM and migrations | ✓ |  |  |  |  |  |
-| Structured result memory |  | ✓ |  | ✓ |  |  |
-| Cross-conversation retrieval |  |  |  |  |  | ✓ |
-| Admin API |  | ✓ |  |  |  |  |
-| Prompt management | ✓ |  |  |  |  |  |
-| Client offline queue |  |  |  |  | ✓ |  |
-| Correction handling |  |  |  | ✓ |  |  |
-| Emotional context carry-forward |  |  |  |  |  | ✓ |
-| Frustration escalation detection |  |  | ✓ |  |  |  |
-| Repeated question differentiation |  |  |  | ✓ |  |  |
-| Communication style memory |  |  |  |  |  | ✓ |
-| Temporal fact markers |  |  |  |  |  | ✓ |
-| Fact supersession |  |  | ✓ |  |  | ✓ |
-| Implicit reference resolution |  |  |  | ✓ |  |  |
-| Response energy matching |  |  |  | ✓ |  |  |
-| Conversation resumption | ✓ |  |  |  |  |  |
-| Clarification patience model |  |  |  | ✓ |  |  |
-| Topic abandonment |  |  |  |  |  |  |
-| Proactive clarification |  |  |  | ✓ |  |  |
-| Injection detection ensemble | ✓ |  | ✓ |  |  | ✓ |
-| Content sanitization |  |  | ✓ |  |  |  |
-| Memory poisoning defense |  |  | ✓ |  |  |  |
-| Evidence bundle gate |  |  | ✓ |  |  | ✓ |
-| SSE event types |  | ✓ |  | ✓ | ✓ | ✓ |
-| Verbosity filtering |  | ✓ |  |  | ✓ | ✓ |
-| Health endpoint | ✓ |  |  |  |  |  |
-| Graceful shutdown | ✓ |  |  |  | ✓ |  |
-| Error message mapping |  | ✓ |  |  |  |  |
-| Frontend SDK transport |  | ✓ |  | ✓ | ✓ |  |
-| React hooks |  | ✓ |  |  |  |  |
-| Web components |  |  |  | ✓ |  |  |
-| Frontend type safety |  | ✓ |  | ✓ |  |  |
-| OpenAPI documentation |  | ✓ |  | ✓ |  |  |
-| Accessibility |  |  |  |  |  |  |
-| Content provenance |  |  | ✓ |  |  |  |
-| Disaster recovery | ✓ |  |  |  |  |  |
-| Agent identity and data residency |  | ✓ | ✓ |  |  |  |
-| Dynamic fan-out |  |  |  |  |  | ✓ |
-| Concurrent request policy |  |  |  |  |  | ✓ |
-| Deferred tool loading | ✓ |  |  |  |  |  |
-| Structured output guarantees |  | ✓ |  |  |  | ✓ |
-| MCP client protocol | ✓ | ✓ |  |  |  |  |
-| Computer use and browser agents |  |  |  | ✓ |  |  |
-| Code execution sandboxing | ✓ |  | ✓ |  |  | ✓ |
-| Real-time voice transport | ✓ |  |  |  | ✓ | ✓ |
-| RAG feedback loop |  |  |  |  |  | ✓ |
-| Generative UI tool |  | ✓ |  |  | ✓ |  |
-| Generative UI SSE protocol |  | ✓ |  |  | ✓ |  |
-| Generative UI renderer |  |  |  | ✓ |  |  |
-| Conversation intelligence |  |  |  |  |  | ✓ |
-| Multi-tenant config hierarchy |  | ✓ |  |  |  | ✓ |
-| Project onboarding and creation flow |  |  |  | ✓ |  |  |
-| Progressive API tiers |  | ✓ |  | ✓ |  | ✓ |
-| Error taxonomy and diagnostics |  |  | ✓ | ✓ |  | ✓ |
-| Local development environment | ✓ |  |  |  |  |  |
-| Interactive development studio |  |  |  | ✓ |  |  |
-| Testing utilities and mock provider |  | ✓ |  |  | ✓ | ✓ |
-| Template and starter ecosystem |  |  |  | ✓ |  |  |
-| AI coding agent integration |  |  |  | ✓ |  |  |
-| TypeScript performance budget |  |  |  |  |  | ✓ |
-| OpenTelemetry integration |  | ✓ |  |  |  |  |
-| Tool development workflow |  | ✓ |  |  |  |  |
-| Public API surface governance |  | ✓ |  | ✓ |  |  |
-| Stability tier enforcement |  | ✓ |  | ✓ |  |  |
-| Deprecation lifecycle |  |  | ✓ |  |  |  |
-| Breaking change protocol |  | ✓ |  |  |  |  |
-| Migration guide and automated migration tooling |  |  |  |  |  | ✓ |
-| Consumer upgrade and canary testing |  | ✓ |  |  |  |  |
-| Extension contract stability |  | ✓ |  |  |  |  |
-| Type contract governance |  | ✓ |  | ✓ |  | ✓ |
-| Semantic release policy |  | ✓ |  |  |  |  |
-| Exception and escalation handling |  |  | ✓ |  |  |  |
-| Governance operating cadence |  |  |  |  |  |  |
-
 ## Requirement-Level Coverage (MH_*, MN_*)
 
 Coverage is additionally mapped directly to requirement IDs in the Requirements & Constraints document.
@@ -1829,7 +1548,7 @@ Coverage is additionally mapped directly to requirement IDs in the Requirements 
 
 | Requirement Group | Representative IDs | Primary Test Layers |
 |---|---|---|
-| Agent core | MH_AGENT_DEFAULTS, MH_INPUT_GUARDRAILS, MH_STREAMING_GUARDRAILS, MH_GUARDRAIL_FACTORIES, MH_MCP_CLIENT, MH_SSE_STREAMING, MH_GEMINI_GROUNDING, MH_PROVIDER_AGNOSTIC, MH_CONFIG_OVERRIDABLE, MH_NO_HARDCODED_PROMPTS | Unit, Integration, End-to-End, Eval, Adversarial |
+| Agent core | MH_AGENT_DEFAULTS, MH_INPUT_GUARDRAILS, MH_STREAMING_GUARDRAILS, MH_GUARDRAIL_FACTORIES, MH_MCP_CLIENT, MH_SSE_STREAMING, MH_GEMINI_GROUNDING, MH_REALTIME_QUERY_DETECTION, MH_REALTIME_LIVE_ROUTING, MH_REALTIME_STALE_BLOCK, MH_PROVIDER_AGNOSTIC, MH_CONFIG_OVERRIDABLE, MH_NO_HARDCODED_PROMPTS | Unit, Integration, End-to-End, Eval, Adversarial |
 | Language and content safety | MH_LANG_GUARD, MH_HATE_SPEECH_GUARD, MH_LANG_OUTPUT_SCAN, MH_LDNOOBW_ATTRIBUTION, MH_VI_OFFENSIVE_ATTRIBUTION | Unit, Integration, End-to-End, Eval, Adversarial |
 | Memory | MH_SHORT_TERM_MEMORY, MH_LONG_TERM_MEMORY, MH_MEMORY_RECALL_TOOL, MH_USERID_SCOPING, MH_NO_WRITES_WITHOUT_USER | Unit, Integration, End-to-End, Eval |
 | Auth and transport | MH_JWT_AUTH_REQUIRED, MH_TRACE_THREAD_DELIVERY, MH_ESM_ONLY | Unit, End-to-End, Load |
@@ -1848,7 +1567,7 @@ Coverage is additionally mapped directly to requirement IDs in the Requirements 
 | Frontend tooling | MH_COMPONENT_CLI, MH_STORYBOOK | Unit, End-to-End |
 | Demos | MH_SERVER_SWITCH, MH_DEMO_WEB, MH_DEMO_MOBILE, MH_OFFLINE_MOBILE | End-to-End, Snapshot |
 | Type safety and ORM | MH_SURQLIZE, MH_TYPED_ENV, MH_TYPED_ERRORS, MH_NO_RAW_SQL, MH_SECRET_MANAGEMENT | Unit, Integration, audit scans |
-| Additional platform | MH_CROSS_CONV_RAG, MH_ADMIN_API, MH_PROMPT_MGMT, MH_ZERO_LEAK, MH_OFFLINE_QUEUE | Unit, Integration, End-to-End |
+| Additional platform | MH_CROSS_CONV_RAG, MH_ADMIN_API, MH_PROMPT_MGMT, MH_ZERO_LEAK, MH_OFFLINE_QUEUE, MH_DATA_RESIDENCY_CONTROLS, MH_SECRET_KEY_LIFECYCLE, MH_MODEL_RISK_GOVERNANCE, MH_PROMPT_TOOL_INTEGRITY, MH_ABUSE_FRAUD_RESPONSE, MH_HITL_OVERRIDE_GOVERNANCE, MH_SLO_ERROR_BUDGET_GUARDRAILS, MH_COST_BLAST_RADIUS_GUARDS, MH_ENTERPRISE_IDENTITY_LIFECYCLE, MH_LEGAL_HOLD_AUDIT_READINESS, MH_IDP_FEDERATION_CONTROLS, MH_CUSTOMER_MANAGED_KEY_OPTIONS, MH_ARTIFACT_ATTESTATION_GATES, MH_PROVIDER_DATA_USAGE_GUARDS, MH_PRIVILEGED_ACCESS_GOVERNANCE, MH_DEFENSIBLE_DELETION_ATTESTATION, MH_SUBPROCESSOR_VENDOR_RISK_GOVERNANCE, MH_DLP_EGRESS_CONTROLS, MH_DATA_CLASSIFICATION_POLICY, MH_ENTERPRISE_SUPPORT_SLA_GOVERNANCE, MH_CRYPTO_ASSURANCE_DEPTH, MH_CERTIFICATION_READINESS_MAPPING, MH_PSIRT_DISCLOSURE_LIFECYCLE, MH_FORMAL_CHANGE_GOVERNANCE, MH_CONNECTOR_OAUTH_SCOPE_GOVERNANCE, MH_SOVEREIGN_AIRGAPPED_DEPLOYMENT_PROFILES, MH_CUSTOMER_TRUST_EVIDENCE_DELIVERY | Unit, Integration, End-to-End, Adversarial, audit scans |
 | Build and development | MH_PRECOMMIT_HOOKS, MH_WATCH_ONLY, MH_OPENAPI_DOCS, MH_SEED_DATA, MH_TYPEDOC, MH_BUN_LINK | Unit, audit scans, End-to-End |
 
 ### Must Not (MN_*) Guardrail Coverage Groups
@@ -1858,29 +1577,6 @@ Coverage is additionally mapped directly to requirement IDs in the Requirements 
 | Runtime and compatibility exclusions | MN_BUN_SQLITE_PROD, MN_PROMPTFOO_DIRECT_IMPORT, MN_SHARP, MN_JIMP_LEGACY, MN_AWS_SDK_REDUNDANT, MN_LANGFUSE_OTEL, MN_VERCEL_OTEL, MN_GROUNDING_TOOL_CONFLICT, MN_MCP_NAMESPACE_COLLISION, MN_MCP_DUPLICATE_INSTANCES, MN_OPENTUI_ONKEYPRESS | Unit static checks, audit scans, regression |
 | Architecture exclusions | MN_LLM_CONTROLLED_ACCESS, MN_MAMMOTH, MN_SUMMARIES_ONLY, MN_CHUNKS_WITHOUT_SUMMARIES, MN_LOCAL_FILESYSTEM, MN_CROSS_USER_SHARING, MN_MULTI_PROVIDER_ROUTING, MN_HEAVY_ORM, MN_LANGFUSE_CLOUD, MN_LANGFUSE_DATASETS, MN_LANG_GUARD_DEFAULT_ON, MN_SSE_COMPRESSION, MN_CTA_SERVER_RENDER, MN_LOCATION_DEFAULT_IMAGES, MN_SINGLE_LAYER_INJECTION, MN_DELIMITER_ONLY_DEFENSE, MN_UNSCOPED_TOOL_ACCESS, MN_RAW_SQL | Unit, Integration, End-to-End, audit scans |
 | Scope exclusions | MN_WORKFLOW_ENGINE, MN_REDIS_STORAGE, MN_UNSUPPORTED_MEDIA, MN_VOICE_AGENT, MN_WEB_DASHBOARD, MN_COMPLEX_MULTI_AGENT, MN_WEBSOCKET, MN_EDGE_RUNTIME, MN_CUSTOM_EMBEDDINGS, MN_WEBHOOKS, MN_AUTO_PROMPT_OPT, MN_CTA_AB_TESTING, MN_COMPLEX_CTA, MN_TUI_IDE_FEATURES, MN_BUN_HOT, MN_RAW_SURREALQL, MN_DIRECT_ENV_ACCESS, MN_ASSISTANT_UI, MN_CUSTOM_THEME, MN_EDEN_PRIMARY, MN_SHARED_JSX | Plan audit, scope audit, code audit |
-
-## Verification Strategy Summary
-
-All verification is automated and agent-executed. The thirteen testing types form a comprehensive strategy governed by the testing philosophy: we sacrifice speed of development to ensure nothing breaks when we move forward.
-
-- Infrastructure baseline: Bun test runner.
-- Delivery discipline: RED to GREEN to REFACTOR per task.
-- Unit gate: always green with zero secrets.
-- Integration gate: conditional skip for missing-key environments.
-- Evidence gate: every QA scenario emits evidence artifact.
-- Mocking standard: the AI SDK test mock model from AI SDK test utilities.
-- Separation: distinct unit, integration, and end-to-end scopes.
-- Regression policy: every bug fix adds permanent regression coverage.
-- Adversarial policy: every guardrail has bypass-attempt coverage.
-- Load policy: k6 scripts exist for critical routes with smoke baselines and production-scale scenarios.
-- Eval policy: Promptfoo plus custom scorers validate quality dimensions against defined thresholds.
-- Chaos policy: systematic fault injection for all external dependencies verifying graceful degradation and recovery.
-- Contract policy: consumer-driven contracts between library and server repositories verifying interface stability on every commit.
-- Mutation policy: safety-critical paths (guardrails, budget enforcement, rate limiting, injection detection) validated through mutation testing with ninety-five percent kill rate target.
-- Snapshot policy: structural and quality-score snapshots for non-deterministic outputs with human-reviewed updates.
-- Streaming policy: dedicated mid-stream failure, backpressure, reconnection, and format compliance tests.
-- Property policy: invariant validation through randomized input generation covering modules with deterministic invariants with at least one hundred iterations per property.
-- Per-module coverage: every plan document from Requirements through API Governance has explicit test specifications mapping testable behaviors to test layers.
 
 ## Cross-Plan References
 

@@ -527,12 +527,11 @@ flowchart TD
 
 ### Task DURABLE_EXECUTION: Durable Workflow Runtime and HITL Gates
 
-
-**Objective**
+**Goal**
 - Build durable execution infrastructure that preserves workflow continuity across crashes, restarts, and long human-approval waits.
 - Ensure high-risk actions can be paused behind auditable human gates without sacrificing deterministic recovery behavior.
 
-**What To Do**
+**Work**
 - Define checkpoint boundaries for all state transitions, including wait, resume, and terminal states.
 - Implement durable checkpoint persistence with canonical history and hot-state acceleration behavior.
 - Implement lease-based resume ownership to prevent duplicate concurrent recovery execution.
@@ -569,7 +568,7 @@ flowchart TD
 - Let approval timeout expire, verify escalation policy activates and outcome is fully audited.
 - Fork from historical checkpoint and replay, verify original branch remains immutable and traceable.
 
-**Implementation Notes**
+**Notes**
 - Keep deterministic transition logic separate from model reasoning so replay remains reproducible.
 - Favor canonical-history authority during divergence recovery to avoid split-brain checkpoint state.
 - Treat approval artifacts as security-sensitive control records with strict integrity validation.

@@ -2262,11 +2262,10 @@ Forecasting dimensions:
 
 ### MONITORING_INFRA
 
-
-**Objective**
+**Goal**
 - Establish production-grade monitoring infrastructure, dashboards, health aggregation, and alert routing for real-time reliability management.
 
-**What To Do**
+**Work**
 - Set up pull-based metric collection across application and infrastructure layers.
 - Define and publish health checks for shallow and deep dependency states.
 - Configure severity-based alert rules with deduplication, grouping, silencing, and escalation.
@@ -2288,14 +2287,18 @@ Forecasting dimensions:
 - Add meta-monitoring for ingestion freshness, alert-delivery verification, evaluator-pipeline continuity, and monitoring coverage audits.
 - Add prompt experiment observability with per-variant quality, latency, cost, significance gating, and interference detection.
 - Add graceful degradation monitoring for degraded-state quality floors, fallback capacity, recovery smoothness, and flapping detection.
+- Add workload-class SLA/SLO governance with explicit error-budget policy actions and escalation ownership.
+- Add blast-radius dashboards and controls for org, tenant, user, and session-level cost anomaly containment.
+- Add enterprise support SLA governance with first-response, restoration, and customer-communication timer tracking.
+- Add support-commitment dashboards for SLA attainment, breach events, and service-credit evidence readiness.
 
 **Depends On**
-- INFRASTRUCTURE
+- DOCKER_COMPOSE
 - SERVER_ROUTES
-- OBSERVABILITY_TRACING
+- LANGFUSE_MODULE
 
 **Batch**
-- 9
+- E2E_DEPLOY_BATCH
 
 **Acceptance Criteria**
 - Metrics collection is running continuously for application, infrastructure, and business signals.
@@ -2319,6 +2322,10 @@ Forecasting dimensions:
 - Meta-monitoring dashboards expose ingestion freshness, alert delivery integrity, sampling coverage, and coverage-gap percentage.
 - Prompt experiment monitoring exposes per-variant quality, latency, and cost outcomes with confidence-gated promotion policy.
 - Degradation monitoring exposes degraded-state duration, quality-floor compliance, fallback headroom, and recovery stability.
+- SLA/SLO dashboards expose per-workload objectives, burn-rate posture, and policy-action state.
+- Cost containment dashboards expose blast-radius scope (org/tenant/user/session), trigger state, and mitigation outcomes.
+- Enterprise support dashboards expose first-response timer, restoration timer, communication SLA timer, and breach-state evidence.
+- SLA breach-state outputs include decision records suitable for service-credit and customer-review workflows.
 
 **QA Scenarios**
 - Simulate service outage and verify critical paging within target detection window.
@@ -2345,19 +2352,22 @@ Forecasting dimensions:
 - Simulate evaluator backlog growth and verify sampling-coverage minimum breach alert.
 - Simulate prompt experiment split drift and verify allocation-accuracy alert.
 - Simulate prolonged degraded operation and verify duration-threshold escalation and recovery validation.
+- Simulate fast-burn error-budget breach on one workload class and verify escalation plus policy-action activation.
+- Simulate tenant-level spend surge and verify blast-radius containment activates at tenant scope without global shutdown.
+- Simulate enterprise-severity incident and verify first-response, restoration, and customer-communication timers are measured and alerted.
+- Simulate support SLA breach and verify evidence bundle includes timeline, owner actions, and customer-notification artifacts.
 
-**Implementation Notes**
+**Notes**
 - Keep alert rules risk-based and user-impact oriented.
 - Keep dashboard ownership explicit to prevent stale operational surfaces.
 - Keep threshold policy adjustable as traffic patterns evolve.
 
 ### INCIDENT_PROCEDURES
 
-
-**Objective**
+**Goal**
 - Define incident response lifecycle, escalation policy, on-call rotation, and scenario runbooks to minimize recovery time and user impact.
 
-**What To Do**
+**Work**
 - Define incident lifecycle from detection through post-mortem with ownership roles.
 - Document severity model, escalation chain, and acknowledgement timeouts.
 - Create and maintain runbooks for critical operational failure patterns.
@@ -2374,6 +2384,7 @@ Forecasting dimensions:
 - Define meta-monitoring incident playbooks for stale metrics, broken alert delivery, and evaluator-pipeline degradation.
 - Define prompt experiment incident playbooks for split drift, inconclusive significance risk, and variant regression containment.
 - Define graceful degradation incident playbooks for prolonged fallback operation, flapping states, and trust-impact communication.
+- Define enterprise support incident playbooks for contractual SLA breach handling, customer communications cadence, and service-credit evidence capture.
 
 **Depends On**
 - MONITORING_INFRA
@@ -2398,6 +2409,7 @@ Forecasting dimensions:
 - Incident runbooks include monitoring-control failures such as stale dashboards and alert-delivery outages.
 - Incident runbooks include prompt experiment regression and interference-contamination scenarios.
 - Incident runbooks include prolonged degraded-mode operation and repeated flapping recovery scenarios.
+- Incident runbooks include enterprise support SLA breach pathways with communication and evidence responsibilities.
 
 **QA Scenarios**
 - Trigger simulated critical outage and verify full incident lifecycle execution.
@@ -2419,36 +2431,12 @@ Forecasting dimensions:
 - Trigger simulated evaluator pipeline backlog and verify quality-visibility risk escalation path.
 - Trigger simulated prompt experiment interference and verify contamination containment workflow.
 - Trigger simulated degraded-state flapping and verify stabilization and communication runbook execution.
+- Trigger simulated enterprise support SLA breach and verify customer communication cadence plus service-credit evidence workflow.
 
-**Implementation Notes**
+**Notes**
 - Keep response ownership unambiguous at every incident stage.
 - Keep runbooks concise, action-first, and drill-validated.
 - Keep post-mortem follow-ups tracked to completion.
-
-### Delivery Checklist
-
-- Monitoring stack established with pull-based metrics and push-based alerting.
-- Health checks cover process, dependency, and fleet aggregation states.
-- Alerting severity model, routing, deduplication, and escalation are active.
-- SLA and error budget tracking are integrated into operational reporting.
-- Dashboard suite covers executive, service, infrastructure, AI operations, and user experience needs.
-- LLM quality monitoring is active with sampled scoring, hallucination objective tracking, and regression detection.
-- Agentic workflow monitoring is active for loop depth, plan drift, stuck-state detection, tool reliability, and handoff reliability.
-- RAG monitoring is active for relevance, hit rate, context precision, embedding drift, and vector latency objectives.
-- AI security monitoring is active for injection detection quality, jailbreak patterns, guardrail effectiveness, and sensitive-output zero-tolerance alerts.
-- Multi-window burn-rate alerting is active for availability, latency, quality, and cost objectives with visible remaining budget percentages.
-- Synthetic probes run on scheduled cadence for golden prompts, end-to-end workflows, RAG known queries, and provider failover readiness.
-- Token cost anomaly detection is active for user spikes, feature regressions, model mix shifts, context utilization anomalies, and runaway sessions.
-- Prompt deployment correlation is active with dashboard markers, regression windows, and rollback trigger policies.
-- Business correlation dashboards are active with divergence alerts linking AI quality shifts to user and revenue outcomes.
-- Chaos validation program is active with explicit expected-alert contracts and coverage-audit remediation tracking.
-- AIOps correlation and dynamic baseline monitoring are active with responder-facing root-cause support.
-- Provider health monitoring is active with latency, error, quota, behavior-shift, and failover readiness visibility.
-- Meta-monitoring is active for ingestion freshness, alert-delivery integrity, evaluator continuity, and coverage maturity tracking.
-- Prompt experiment observability is active with per-variant outcome comparison and significance-based decision gating.
-- Graceful degradation monitoring is active with degraded-state quality-floor, fallback headroom, and recovery-stability controls.- Status page is live with component health, incident timeline, and maintenance notices.
-- Incident lifecycle and runbook templates are documented and tested.
-- On-call rotation and escalation chain are operational.
 
 ## Test Specifications
 
@@ -2713,28 +2701,6 @@ Forecasting dimensions:
 - Historical uptime percentage is accurate over the trailing measurement window.
 - Planned maintenance announcements appear before the maintenance window begins.
 - Status update subscriptions deliver notifications to subscribers on state change.
-
-**Incident response behavior**:
-
-- Trigger simulated critical outage and verify full incident lifecycle execution.
-- Trigger simulated warning event and verify non-paging response flow.
-- Execute handoff between on-call shifts during active incident and verify continuity.
-- Run certificate-risk scenario and verify pre-expiry escalation behavior.
-- Run queue backlog scenario and verify mitigation and communication sequence.
-- Trigger simulated hallucination burn event and verify fast-burn paging plus quality containment workflow.
-- Trigger simulated slow-burn quality drift and verify warning escalation with prevention-focused mitigation.
-- Trigger simulated agent stuck-state storm and verify runbook-driven containment and recovery validation.
-- Trigger simulated memory contamination alert and verify immediate security escalation and strict closure checks.
-- Trigger simulated injection campaign and verify security triage, communications cadence, and guardrail effectiveness review.
-- Trigger simulated prompt deployment regression and verify rollback path and recovery confirmation.
-- Trigger simulated provider failover probe failure and verify failover readiness mitigation runbook.
-- Trigger simulated business divergence incident and verify joint reliability and product triage workflow.
-- Trigger simulated chaos validation failure where expected alert is absent and verify coverage-gap incident workflow.
-- Trigger simulated provider behavior shift and verify canary-driven escalation and routing decision workflow.
-- Trigger simulated alert-delivery outage and verify backup-notification and escalation continuity workflow.
-- Trigger simulated evaluator pipeline backlog and verify quality-visibility risk escalation path.
-- Trigger simulated prompt experiment interference and verify contamination containment workflow.
-- Trigger simulated degraded-state flapping and verify stabilization and communication runbook execution.
 
 ### Extension: Disaster Recovery
 

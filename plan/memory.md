@@ -1445,9 +1445,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task SHORT_TERM_MEM: Thread Short-Term Memory + Mandatory Rolling Summaries
 
-**What to do**: Wire a conversation store-backed short-term module into the agent factory with strict `userId` + `threadId` scoping, ten-turn sliding window, mandatory rolling summaries, and a thread summary retrieval capability.
+**Work**: Wire a conversation store-backed short-term module into the agent factory with strict `userId` + `threadId` scoping, ten-turn sliding window, mandatory rolling summaries, and a thread summary retrieval capability.
 
-**Depends on**: CORE_TYPES, STORAGE_WRAPPER
+**Depends On**: CORE_TYPES, STORAGE_WRAPPER
 
 **Acceptance Criteria**:
 
@@ -1485,9 +1485,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task USER_SHORTTERM_MEM: User Short-Term Memory (Cross-Thread)
 
-**What to do**: Implement cross-thread user short-term retrieval from the same conversation store, active only for young threads, injected as constrained ambiguity-resolution context.
+**Work**: Implement cross-thread user short-term retrieval from the same conversation store, active only for young threads, injected as constrained ambiguity-resolution context.
 
-**Depends on**: SHORT_TERM_MEM, CORE_TYPES
+**Depends On**: SHORT_TERM_MEM, CORE_TYPES
 
 **Acceptance Criteria**:
 
@@ -1516,9 +1516,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task SURREALDB_CLIENT: SurrealDB Client
 
-**What to do**: Build typed SurrealDB memory client with server-mode connectivity, schema definitions, resilient reconnection, and helper APIs for fact, interaction, media, inspection, deletion, and supersession workflows.
+**Work**: Build typed SurrealDB memory client with server-mode connectivity, schema definitions, resilient reconnection, and helper APIs for fact, interaction, media, inspection, deletion, and supersession workflows.
 
-**Depends on**: SCAFFOLD_LIB
+**Depends On**: SCAFFOLD_LIB
 
 **Acceptance Criteria**:
 
@@ -1557,9 +1557,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task FACT_EXTRACTION: Enhanced Fact Extraction Pipeline
 
-**What to do**: Run non-blocking extraction after final stream completion to store user facts, interaction signals, media facts, temporal markers, emotional context state, and contradiction-aware supersession updates.
+**Work**: Run non-blocking extraction after final stream completion to store user facts, interaction signals, media facts, temporal markers, emotional context state, and contradiction-aware supersession updates.
 
-**Depends on**: SURREALDB_CLIENT, AGENT_FACTORY
+**Depends On**: SURREALDB_CLIENT, AGENT_FACTORY
 
 **Acceptance Criteria**:
 
@@ -1606,9 +1606,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task MEMORY_RECALL: Enhanced Memory Recall Tool
 
-**What to do**: Build the memory recall tool factory supporting semantic + graph retrieval over facts/interactions/media, temporal filtering, recency weighting, TTL refresh, and auto-trigger behavior on new threads.
+**Work**: Build the memory recall tool factory supporting semantic + graph retrieval over facts/interactions/media, temporal filtering, recency weighting, TTL refresh, and auto-trigger behavior on new threads.
 
-**Depends on**: SURREALDB_CLIENT, AGENT_FACTORY
+**Depends On**: SURREALDB_CLIENT, AGENT_FACTORY
 
 **Acceptance Criteria**:
 
@@ -1651,9 +1651,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task STRUCTURED_RESULT_MEM: Structured Result Memory
 
-**What to do**: Detect ordered result outputs, store result sets with TTL in Postgres, and provide ordinal resolution helpers across threads.
+**Work**: Detect ordered result outputs, store result sets with TTL in Postgres, and provide ordinal resolution helpers across threads.
 
-**Depends on**: STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY
+**Depends On**: STORAGE_WRAPPER, CORE_TYPES, AGENT_FACTORY
 
 **Acceptance Criteria**:
 
@@ -1681,9 +1681,9 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task MEMORY_CONTROL: User Memory Control Tools
 
-**What to do**: Build memory inspect and memory delete tool factories for user-visible memory inspection and confirmation-gated memory deletion including cache and structured-result cleanup.
+**Work**: Build memory inspect and memory delete tool factories for user-visible memory inspection and confirmation-gated memory deletion including cache and structured-result cleanup.
 
-**Depends on**: SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY
+**Depends On**: SURREALDB_CLIENT, STRUCTURED_RESULT_MEM, AGENT_FACTORY
 
 **Acceptance Criteria**:
 
@@ -1714,11 +1714,10 @@ Emotional carry-forward can over-persist if decay is too long.
 
 ### Task CONTEXT_BUDGET: Context Budget Allocation and Enforcement
 
-
-**Objective**
+**Goal**
 - Define and enforce deterministic token budgeting across context layers so essential instructions and user input are always preserved. Ensure overflow handling is predictable, observable, and safe for long or memory-heavy conversations.
 
-**What To Do**
+**Work**
 - Define a context-layer budget policy with explicit priority ordering and non-truncatable segments.
 - Allocate per-layer token targets for thread turns, rolling summary, recalled memory, and cross-thread context.
 - Implement a pre-reasoning budget estimation pass using the same approximation model across all calls.
@@ -1752,18 +1751,17 @@ Emotional carry-forward can over-persist if decay is too long.
 - Assemble a request with oversized summary, verify compaction occurs and final summary fits its cap.
 - Assemble a request where only core segments exceed budget, verify explicit overflow handling is reported.
 
-**Implementation Notes**
+**Notes**
 - Keep budgeting deterministic so repeated identical inputs yield identical truncation outcomes.
 - Preserve separation between estimation, truncation policy, and final assembly for easier testing.
 - Emit structured diagnostics to support tuning without exposing internal details to users.
 
 ### Task EXTRACTION_SAFEGUARDS: Fact Extraction Quality Safeguards
 
-
-**Objective**
+**Goal**
 - Improve long-term memory quality by filtering low-trust and ambiguous extraction candidates before persistence. Reduce false memories by enforcing attribution, certainty, and contextual-polarity safeguards consistently.
 
-**What To Do**
+**Work**
 - Define a safeguard stage that evaluates each extracted candidate before storage.
 - Enforce attribution classification so only self-attributed user facts are eligible for durable fact storage.
 - Enforce certainty classification to reject hypothetical and question-form statements.
@@ -1797,18 +1795,17 @@ Emotional carry-forward can over-persist if decay is too long.
 - Provide a hypothetical statement, verify it is rejected from fact storage.
 - Provide sarcasm with negative intent in positive wording, verify stored polarity reflects negative intent.
 
-**Implementation Notes**
+**Notes**
 - Run safeguards after extraction and before deduplication or supersession side effects.
 - Keep rejection reasons machine-readable for later quality analysis.
 - Favor precision over recall to prevent persistent contamination of memory.
 
 ### Task FACT_SUPERSESSION: Fact Lifecycle Supersession and Conflict Resolution
 
-
-**Objective**
+**Goal**
 - Manage fact lifecycle changes without destructive overwrites by preserving lineage between prior and replacement facts. Resolve contradictions in the same attribute dimension while retaining explainable audit history.
 
-**What To Do**
+**Work**
 - Define contradiction detection rules for same-subject and same-attribute dimensions.
 - Compare new candidates against active facts using semantic similarity and dimension matching.
 - Mark replaced facts as superseded rather than deleting them.
@@ -1842,18 +1839,17 @@ Emotional carry-forward can over-persist if decay is too long.
 - Re-submit an equivalent fact, verify duplicate suppression prevents a new record.
 - Run recall after supersession, verify only the active replacement appears.
 
-**Implementation Notes**
+**Notes**
 - Treat supersession as a state transition with lineage, not as deletion.
 - Keep contradiction rules narrow to avoid accidental replacement of orthogonal facts.
 - Validate recall filtering and inspection visibility independently.
 
 ### Task STYLE_PREFERENCES: User Style Preference Detection and Adaptation
 
-
-**Objective**
+**Goal**
 - Detect stable communication preferences from user language and persist them as style memory. Use those preferences to calibrate future responses while preserving safety and correctness overrides.
 
-**What To Do**
+**Work**
 - Define extractable style dimensions such as brevity, structure, tone, and detail depth.
 - Extract explicit and implicit style signals from user turns.
 - Normalize style signals into durable preference entries with confidence.
@@ -1887,18 +1883,17 @@ Emotional carry-forward can over-persist if decay is too long.
 - Trigger a safety-sensitive request after brevity preference, verify response keeps required safety detail.
 - Inspect memory after style updates, verify current active style preference is listed.
 
-**Implementation Notes**
+**Notes**
 - Prioritize explicit user instructions over inferred style patterns.
 - Keep style guidance advisory to avoid hard failures in critical-response paths.
 - Separate style extraction confidence from factual memory confidence.
 
 ### Task SUMMARY_CAP: Conversation Summary Capping and Rotation Policy
 
-
-**Objective**
+**Goal**
 - Keep rolling summaries bounded in size so long-lived threads remain context-efficient. Preserve high-value continuity details while rotating out low-value historical detail under token pressure.
 
-**What To Do**
+**Work**
 - Define a hard maximum token cap for rolling summaries.
 - Add pre-injection cap checks during context assembly.
 - Implement compaction policy that removes resolved or stale detail first.
@@ -1930,18 +1925,17 @@ Emotional carry-forward can over-persist if decay is too long.
 - Include explicit user preferences, verify they remain after multiple compactions.
 - Trigger repeated overflow cycles, verify summary stays coherent and bounded.
 
-**Implementation Notes**
+**Notes**
 - Use strict priority rules in compaction to keep behavior predictable.
 - Optimize for continuity fidelity, not transcript-like completeness.
 - Keep cap enforcement independent from broader context truncation logic.
 
 ### Task THREAD_RESURRECTION: Thread Resurrection for Resumed Conversations
 
-
-**Objective**
+**Goal**
 - Detect long-inactive thread returns and restore enough context for natural continuation. Rehydrate memory with staleness awareness so responses remain coherent without over-trusting stale state.
 
-**What To Do**
+**Work**
 - Define inactivity-gap threshold that classifies a turn as thread resurrection.
 - Evaluate thread inactivity at request start before intent analysis.
 - Extract key entities from rolling summary for targeted recall queries.
@@ -1975,7 +1969,7 @@ Emotional carry-forward can over-persist if decay is too long.
 - Resume after long gap with expired memories, verify partial rehydration without failure.
 - Resume with new intent shift, verify fresh intent interpretation is not blocked by old context.
 
-**Implementation Notes**
+**Notes**
 - Keep resurrection detection early so rehydrated context is available before planning.
 - Treat resurrected memory as supportive context, not absolute truth.
 - Reuse standard budget and trust-boundary controls for resurrected content.

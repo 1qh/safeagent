@@ -1010,7 +1010,7 @@ Structured SSE event payloads require validation at both the emit boundary on th
 
 ### Task SSE_STREAMING: SSE Streaming Layer
 
-**What to do**:
+**Work**:
 
 Build stream handler factory that turns internal agent stream output into a well-formed SSE response. This includes:
 
@@ -1037,7 +1037,7 @@ Build stream handler factory that turns internal agent stream output into a well
 - Catching all other errors, looking up the error code in the error-message mapping to get the user-facing message, and emitting an `error` SSE event with code and message fields
 - Closing the stream cleanly in all exit paths
 
-**Depends on**:
+**Depends On**:
 
 - AGENT_FACTORY (Agent Factory — internal execution must expose an async stream of framework events)
 - INPUT_GUARD, OUTPUT_GUARD (Guardrail Processors — processor chain must be composable)
@@ -1073,7 +1073,7 @@ Build stream handler factory that turns internal agent stream output into a well
 
 ### Task CTA_STREAMING: CTA Streaming
 
-**What to do**:
+**Work**:
 
 Build the CTA tool and stream processor pair:
 
@@ -1083,7 +1083,7 @@ Build the CTA tool and stream processor pair:
 - Enforce the max-3-CTAs constraint at the tool schema level
 - Document the catalog configuration shape for server authors
 
-**Depends on**:
+**Depends On**:
 
 - AGENT_FACTORY (Agent Factory — agent must accept custom tools)
 - CORE_TYPES (tool definition and stream processor type interfaces)
@@ -1109,7 +1109,7 @@ Build the CTA tool and stream processor pair:
 
 ### Task CLIENT_SDK: Client SDK
 
-**What to do**:
+**Work**:
 
 Build the client SDK module as a zero-dependency TypeScript package:
 
@@ -1125,7 +1125,7 @@ Build the client SDK module as a zero-dependency TypeScript package:
 - Full TypeScript types for all events, config, and public methods
 - No runtime dependencies — zero production dependencies
 
-**Depends on**:
+**Depends On**:
 
 - SSE_STREAMING (SSE Streaming Layer — server must emit the event types the client parses)
 - CTA_STREAMING (CTA Streaming — `cta` event type must be defined before client handles it)

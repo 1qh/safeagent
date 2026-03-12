@@ -625,7 +625,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - **Runtime behavior** remains migration-safe because request-time admission paths rely on Valkey counters and cached limits, while Postgres is the source of reconciliation truth.
 ## Task Specifications
 ### Task DOCKER_COMPOSE: Docker Compose Infrastructure
-**What to do**:
+**Work**:
 - Define the container orchestration infrastructure with all core services: Postgres (pgvector/pgvector), SurrealDB, MinIO, and Valkey.
 - Include storage initialization for automatic bucket provisioning (application bucket, media bucket).
 - Add Trigger.dev stack under profile `trigger`: webapp, supervisor, docker-proxy, electric, and local registry.
@@ -636,7 +636,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Declare persistent volumes: pg_data, surrealdb_data, minio_data, valkey_data, clickhouse_data.
 - Add health checks on every service with appropriate check probes.
 - Update environment variable templates with all S3, SurrealDB, Valkey, Trigger.dev, Langfuse, and LibreOffice variables.
-**Depends on**: SCAFFOLD_SERVER (Server Scaffolding)
+**Depends On**: SCAFFOLD_SERVER (Server Scaffolding)
 **Acceptance Criteria**:
 - Starting the core stack brings all core services to healthy state.
 - Postgres has pgvector extension available.
@@ -656,7 +656,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Trigger profile starts and webapp is reachable.
 - LibreOffice sidecar is reachable from API context.
 ### Task COST_TRACKING: Cost Tracking and Per-User Token Budgets
-**What to do**:
+**Work**:
 - Create budget module with two-layer architecture: Valkey hot path for real-time decisions and Postgres cold path for audit.
 - Add Drizzle schema tables: `usage_events` (append-only) and `user_budget_limits` (per-user overrides).
 - Implement budget admission checks that read only from Valkey and return budget decision details with allowance state, period usage, and reset timing.
@@ -671,7 +671,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Middleware checks budget after `userId` extraction and before agent stream.
 - Post-stream recording uses a usage callback in the stream handler with fire-and-forget semantics.
 - Scheduled aggregation task reconciles Valkey counters with Postgres every five minutes.
-**Depends on**: FILE_STORAGE (Drizzle schema), SSE_STREAMING (stream handler), VALKEY_CACHE (Cache module)
+**Depends On**: FILE_STORAGE (Drizzle schema), SSE_STREAMING (stream handler), VALKEY_CACHE (Cache module)
 **Acceptance Criteria**:
 - Hot-path budget checks read from Valkey only.
 - Daily and monthly counters auto-expire via TTL.
@@ -693,7 +693,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Admin set takes effect immediately via cache invalidation.
 - Admin list with over-budget filter returns only over-limit users.
 ### Task KEY_POOL: API Key Pool
-**What to do**:
+**Work**:
 - Build the key pool capability with a key pool factory and configuration object.
 - Read the key pool environment variable (`GOOGLE_API_KEY`), parse comma-separated keys, and trim whitespace.
 - Create one provider factory per key using AI SDK Google adapter.
@@ -703,7 +703,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - The key pool environment helper returns undefined for missing or single key values and returns a pool for two or more keys.
 - Add per-key health tracking where three consecutive failures mark a key unhealthy and 60-second re-probe allows recovery.
 - If all keys are unhealthy, enter degraded mode with full-key round-robin instead of hard stop.
-**Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
+**Depends On**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
 **Acceptance Criteria**:
 - Pool size reflects parsed key count.
 - Provider rotation cycles in round-robin order.
@@ -718,7 +718,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Env parsing with multiple keys yields expected size and concurrency.
 - Single-key env value bypasses pool creation.
 ### Task VALKEY_CACHE: Valkey Cache Module
-**What to do**:
+**Work**:
 - Build the cache capability with a cache factory.
 - Valkey implementation uses a Redis client library with a Redis connection URL from `VALKEY_URL`.
 - Cache interface includes read, write, delete, increment, decrement, expiration, close, health-check, and raw client-accessor operations.
@@ -727,7 +727,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - In-memory raw client accessor returns `null` so consumers can degrade to no-op or sequential fallback.
 - Include budget key helpers for daily keys, monthly keys, seconds until midnight UTC, and seconds until month-end UTC.
 - The cache getter returns a string or null, where null means no key. Numeric consumers parse values, and general cache consumers store serialized JSON.
-**Depends on**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
+**Depends On**: CORE_TYPES (types), SCAFFOLD_LIB (scaffolding)
 **Acceptance Criteria**:
 - Valkey implementation connects and handles get/set/increment operations.
 - In-memory fallback conforms to identical interface.
@@ -742,7 +742,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - In-memory fallback behavior mirrors Valkey semantics.
 - Budget key helpers emit correct date and month key patterns.
 ### Task TRIGGER_TASKS: Trigger.dev Task Definitions and QueueAdapter
-**What to do**:
+**Work**:
 - Create trigger module with QueueAdapter implementations.
 - The remote queue adapter dispatches to Trigger.dev through its task endpoint.
 - The in-process queue adapter executes handlers in-process with fire-and-forget semantics and running-task tracking.
@@ -750,7 +750,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Define tasks: background-enrichment (retries 3, concurrency 10), budget-aggregation (every five minutes), cleanup (retries 3, concurrency 5).
 - Shared handlers include the background-stage processor, budget-aggregation runner, and cleanup runner.
 - Ensure handler idempotency through upsert keyed on `file_id + page_number`.
-**Depends on**: CORE_TYPES (types), RAG_INFRA (RAG functions), FILE_STORAGE (FileStorage), VALKEY_CACHE (Cache)
+**Depends On**: CORE_TYPES (types), RAG_INFRA (RAG functions), FILE_STORAGE (FileStorage), VALKEY_CACHE (Cache)
 **Acceptance Criteria**:
 - In-process adapter executes registered handlers.
 - Unregistered task IDs fail with explicit error.
@@ -766,7 +766,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Adapter selection changes with env presence.
 - Enrichment handler performs expected retrieval, extraction, upsert, and status updates.
 ### Task RATE_LIMITING: Rate Limiting Middleware
-**What to do**:
+**Work**:
 - Build rate limiting middleware with a rate limiter factory.
 - Implement sliding window algorithm using Valkey sorted sets.
 - Use single Lua script for prune, add, count, oldest-entry lookup, and expiration.
@@ -778,7 +778,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Support custom key-extraction behavior for non-default route patterns.
 - No-op pass-through when the raw client accessor returns null in memory mode.
 - Provide deterministic tests with fake clock for boundary conditions.
-**Depends on**: CORE_TYPES (types), VALKEY_CACHE (Cache or Valkey)
+**Depends On**: CORE_TYPES (types), VALKEY_CACHE (Cache or Valkey)
 **Acceptance Criteria**:
 - Defaults apply when config omitted.
 - Middleware reads auth context and builds expected key.
@@ -792,7 +792,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - With maxRequests set to 3, first three requests pass and fourth is rejected with Retry-After.
 - After advancing time beyond window, request is allowed and effective counter resets.
 ### Task STRUCT_LOGGING: Structured Logging
-**What to do**:
+**Work**:
 - Create logger module using LogTape where library code uses category loggers and server configures sinks at startup.
 - Produce JSON output with configurable level from `LOG_LEVEL` and default `info`.
 - Default redaction covers `req.headers.authorization`, `*.apiKey`, and `*.jwtSecret`.
@@ -802,7 +802,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - The logger accessor returns a category-scoped logger enriched with active async context.
 - Hierarchical sub-categories inherit parent sink configuration.
 - Elysia lifecycle helper reads or generates request ID from `x-request-id` and wraps request execution in context.
-**Depends on**: SCAFFOLD_LIB (scaffolding)
+**Depends On**: SCAFFOLD_LIB (scaffolding)
 **Acceptance Criteria**:
 - Logger accessor yields a logger scoped to requested category array.
 - Log-context runner and accessor persist context across async boundaries.
@@ -815,7 +815,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Async context persists across awaits and appears in emitted logs.
 - Sensitive fields are redacted in structured output.
 ### Task TTL_CLEANUP: TTL-Based Automatic Cleanup
-**What to do**:
+**Work**:
 - Build cleanup capability with an expired file cleanup function.
 - Query expired rows where `expires_at < NOW()` and `status != 'deleted'`, with optional batch limit.
 - Perform per-file cleanup with isolated try/catch: read metadata, delete object storage artifacts, delete `page_index` rows, delete vector chunks, release quota, and mark deleted with timestamp.
@@ -824,7 +824,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Register scheduled task in Trigger task registry.
 - Return summary object with `scanned`, `deleted`, and `failed` counts.
 - No extra migration is needed because expiration and deletion columns are already in schema.
-**Depends on**: FILE_STORAGE (file storage), TRIGGER_TASKS (task registry), RAG_INFRA (chunk deletion)
+**Depends On**: FILE_STORAGE (file storage), TRIGGER_TASKS (task registry), RAG_INFRA (chunk deletion)
 **Acceptance Criteria**:
 - Expired query targets only current time threshold and non-deleted status.
 - Cleanup removes storage assets, page-index rows, and vector chunks.
@@ -838,7 +838,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Expired file seed is fully cleaned with deleted status update.
 - Partial failure still allows subsequent files to be deleted and summary to reflect mixed outcomes.
 ### Task CIRCUIT_BREAKER: Circuit Breaker for External Calls
-**What to do**:
+**Work**:
 - Build the circuit breaker capability with a circuit breaker factory.
 - Implement state machine: closed pass-through, open fast-reject with circuit-open error, and half-open limited probing.
 - Default config includes threshold 5, reset timeout 30,000, and half-open max attempts 3.
@@ -849,7 +849,7 @@ Infrastructure-facing schema evolution is managed by Drizzle migrations with exp
 - Breakers are in-memory per process with no Valkey synchronization.
 - Clock function is injectable for deterministic tests.
 - Wrapped errors propagate without swallowing.
-**Depends on**: CORE_TYPES (types)
+**Depends On**: CORE_TYPES (types)
 **Acceptance Criteria**:
 - Defaults match threshold 5, reset timeout 30,000, and half-open attempts 3.
 - Breaker transitions to open after threshold failures.

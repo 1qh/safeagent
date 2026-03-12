@@ -772,9 +772,9 @@ flowchart TB
 ## Task Specifications
 
 ### Task EMBED_ROUTER: Embedding Router
-**What to do**: Implement embedding similarity router using cached topic vectors in Valkey.
+**Work**: Implement embedding similarity router using cached topic vectors in Valkey.
 
-**Depends on**: CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY.
+**Depends On**: CORE_TYPES, VALKEY_CACHE, AGENT_FACTORY.
 
 **Acceptance Criteria**:
 - Startup embeds and caches topic examples.
@@ -796,14 +796,16 @@ flowchart TB
 - Empty intent configuration does not crash.
 
 ### Task LLM_INTENT: LLM Intent Validator + Base Rewriter
-**What to do**: Implement structured LLM authority for validation, conditional rewrite, and conversational signals.
+**Work**: Implement structured LLM authority for validation, conditional rewrite, and conversational signals.
 
-**Depends on**: CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER.
+**Depends On**: CORE_TYPES, AGENT_FACTORY, EMBED_ROUTER.
 
 **Acceptance Criteria**:
 - Uses structured output generation.
 - Embedding guess is passed as hint.
 - Outputs validated intent/topics, rewrittenQuery, needsClarification, detectedIntentsCount.
+- Outputs `realtimeRequired` boolean for freshness-critical queries.
+- Outputs `freshnessDomain` enum (`finance_rates`, `market_prices`, `weather`, `breaking_news`, `sports_live`, `other`).
 - Outputs language fields: intended output language, translation intent, translation target.
 - Detects multi-intent and decomposition.
 - Emits temporal references with resolved ranges.
@@ -829,11 +831,17 @@ flowchart TB
 - Correction recovers prior misinterpretation.
 - Abandonment flushes stale topic context.
 - Frustration escalation injects de-escalation context.
+- Query "what is USD/JPY right now" sets `realtimeRequired=true` and `freshnessDomain=finance_rates`.
+- Query "latest BTC price" sets `realtimeRequired=true` and `freshnessDomain=market_prices`.
+- Query "AAPL stock price now" sets `realtimeRequired=true` and `freshnessDomain=market_prices`.
+- Query "weather in Hanoi now" sets `realtimeRequired=true` and `freshnessDomain=weather`.
+- Query "live Premier League score" sets `realtimeRequired=true` and `freshnessDomain=sports_live`.
+- Non-realtime historical query keeps `realtimeRequired=false`.
 
 ### Task PREFETCH_COORD: Speculative Pre-Fetch Coordinator
-**What to do**: Run embedding + LLM in parallel, prefetch sources on embedding guess, cancel/refetch on disagreement.
+**Work**: Run embedding + LLM in parallel, prefetch sources on embedding guess, cancel/refetch on disagreement.
 
-**Depends on**: EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER.
+**Depends On**: EMBED_ROUTER, LLM_INTENT, SOURCE_ROUTER.
 
 **Acceptance Criteria**:
 - Embedding and LLM run concurrently.
@@ -858,9 +866,9 @@ flowchart TB
 > This section remains as a routing bridge because the Conversation Pipeline depends on the same retrieval client contract for source routing behavior.
 
 ### Task SOURCE_ROUTER: Source Priority Router
-**What to do**: Implement parallel source fan-out, weighted merge, and fail-fast propagation.
+**Work**: Implement parallel source fan-out, weighted merge, and fail-fast propagation.
 
-**Depends on**: RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS.
+**Depends On**: RAGFLOW_CLIENT, CORE_TYPES, CONFIG_DEFAULTS.
 
 **Acceptance Criteria**:
 - All sources execute concurrently.
@@ -869,6 +877,8 @@ flowchart TB
 - Source errors propagate immediately.
 - Empty result behavior honors `normal` vs `suspicious`.
 - Suspicious empties log warning and inform orchestrator.
+- `realtimeRequired=true` forces live-source-first routing before merge weighting.
+- When live source is unavailable for `realtimeRequired=true`, output state is freshness-blocked for refusal or caveat path.
 - Strong type-safe interfaces.
 - Unit tests for parallelism, weights, merge order.
 - Integration tests for varied source latency.
@@ -880,11 +890,15 @@ flowchart TB
 - Suspicious empty is surfaced.
 - Normal empty is accepted.
 - Empty priority list returns empty output.
+- Realtime query routes through live source before non-live sources.
+- Stock-price query routes through live source before non-live sources.
+- Live-score query routes through live source before non-live sources.
+- Realtime query with live-source outage returns freshness-blocked outcome.
 
 ### Task REWRITE_TOOL: Query Rewrite Tool
-**What to do**: Implement conditional rewrite tool with trigger checks, strategy selection, and entity guardrail.
+**Work**: Implement conditional rewrite tool with trigger checks, strategy selection, and entity guardrail.
 
-**Depends on**: REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT.
+**Depends On**: REWRITE_STRATEGIES, CORE_TYPES, LLM_INTENT.
 
 **Acceptance Criteria**:
 - Checks all 7 triggers in order.
@@ -908,9 +922,9 @@ flowchart TB
 - Entity loss rewrite rejected.
 
 ### Task REWRITE_STRATEGIES: Strategy Modules
-**What to do**: Implement HyDE, EntityExtraction, DenseKeywords as independent modules.
+**Work**: Implement HyDE, EntityExtraction, DenseKeywords as independent modules.
 
-**Depends on**: CORE_TYPES.
+**Depends On**: CORE_TYPES.
 
 **Acceptance Criteria**:
 - HyDE generates short hypothetical answer text for embedding input.
@@ -931,11 +945,10 @@ flowchart TB
 
 ### Task ATTRIBUTE_NEGATION: Attribute Negation Detection and Filtering
 
-
-**Objective**
+**Goal**
 - Detect property-level negations in user requests and propagate them through retrieval and synthesis. Ensure excluded attributes are consistently respected without misclassifying entity-level rejection.
 
-**What To Do**
+**Work**
 - Define negation signal schema that distinguishes attributes from entities.
 - Extend intent interpretation to capture explicit and implicit attribute negations.
 - Normalize extracted negations into canonical filter clauses.
@@ -968,18 +981,17 @@ flowchart TB
 - Provide ambiguous negation phrasing, verify clarification is requested.
 - Ask with two attribute negations, verify both survive rewrite and retrieval.
 
-**Implementation Notes**
+**Notes**
 - Keep negation extraction lossless so downstream filtering has full context.
 - Apply negations before retrieval execution, not only during final synthesis.
 - Avoid over-broad negation expansion that can remove valid results.
 
 ### Task CLARIFICATION_MODEL: Clarification Patience and Ambiguity Policy
 
-
-**Objective**
+**Goal**
 - Implement a bounded clarification strategy that resolves genuine ambiguity while preventing loops. Balance user effort and forward progress by switching to best-effort assumptions after patience limits.
 
-**What To Do**
+**Work**
 - Define ambiguity thresholds using confidence and interpretation spread signals.
 - Create clarification state tracking per thread for consecutive clarification turns.
 - Generate concise clarifying prompts with top plausible interpretations.
@@ -1012,18 +1024,17 @@ flowchart TB
 - Provide clear disambiguation after one clarification, verify normal execution resumes.
 - Trigger ambiguity with frustration cues, verify clarification tone is de-escalated.
 
-**Implementation Notes**
+**Notes**
 - Keep clarification prompts short to minimize user friction.
 - Prioritize progress guarantees over perfect disambiguation after patience is exhausted.
 - Store policy state in thread context so behavior is consistent across turns.
 
 ### Task CONVERSATION_INTELLIGENCE: Conversation Analytics and Trend Signals
 
-
-**Objective**
+**Goal**
 - Aggregate conversation-level analytics that describe topical focus, sentiment movement, and engagement quality over time. Provide measurable signals for quality monitoring and iterative system tuning.
 
-**What To Do**
+**Work**
 - Define analytics schema for topic extraction, sentiment trajectory, and engagement scoring.
 - Aggregate per-turn signals into conversation-level metrics.
 - Compute topic drift and dominant-topic summaries across sessions.
@@ -1057,18 +1068,17 @@ flowchart TB
 - Run analytics on short and long conversations, verify engagement scores remain bounded and comparable.
 - Replay identical conversation data twice, verify analytics outputs are identical.
 
-**Implementation Notes**
+**Notes**
 - Keep analytics read-oriented and decoupled from online response logic.
 - Favor stable metric definitions over frequent formula churn.
 - Version metric schemas carefully when introducing new dimensions.
 
 ### Task FRUSTRATION_SIGNAL: Frustration Detection and Adaptive Response Behavior
 
-
-**Objective**
+**Goal**
 - Detect user frustration signals and escalation trends across turns to guide de-escalation behavior. Improve conversational recovery by adapting tone and guidance without changing core factual output.
 
-**What To Do**
+**Work**
 - Define frustration indicators across wording, repetition, punctuation, and correction density.
 - Score per-turn frustration intensity and maintain rolling trend state.
 - Detect escalation, stabilization, and recovery patterns.
@@ -1101,18 +1111,17 @@ flowchart TB
 - Move from frustrated language to neutral language, verify frustration state decays.
 - Trigger safety-sensitive request during frustration, verify safety behavior remains intact.
 
-**Implementation Notes**
+**Notes**
 - Use trend-based scoring to avoid overreacting to single-turn noise.
 - Keep adaptation focused on tone and structure, not factual policy changes.
 - Make thresholds configurable for domain-specific calibration.
 
 ### Task NON_ACTIONABLE_DETECT: Non-Actionable Input Detection
 
-
-**Objective**
+**Goal**
 - Short-circuit clearly non-actionable turns so expensive intent and retrieval stages are skipped when no actionable request exists. Preserve precision by avoiding false positives on brief but valid requests.
 
-**What To Do**
+**Work**
 - Define subtype taxonomy for greetings, acknowledgments, emoji-only turns, and gibberish.
 - Build conservative first-pass detection rules for non-actionable text patterns.
 - Add gibberish detection combining entropy and language reliability indicators.
@@ -1145,18 +1154,17 @@ flowchart TB
 - Send short actionable request, verify it continues to full intent pipeline.
 - Send gibberish text, verify non-actionable gibberish subtype is returned.
 
-**Implementation Notes**
+**Notes**
 - Keep gating conservative to minimize accidental suppression of real requests.
 - Separate subtype detection from response wording so behavior is reusable.
 - Log short-circuit reasons for ongoing threshold tuning.
 
 ### Task QUERY_REPLAY: Query Replay and Rephrase Detection
 
-
-**Objective**
+**Goal**
 - Detect when users repeat or rephrase prior queries and reconstruct replay intent with parameter substitutions. Improve continuity by reusing prior query structure instead of reinterpreting from scratch.
 
-**What To Do**
+**Work**
 - Define replay detection signals using semantic similarity and temporal proximity.
 - Extract candidate origin query from recent thread and structured result memory.
 - Identify substitution slots such as location, date, or preference constraints.
@@ -1189,7 +1197,7 @@ flowchart TB
 - Ask similar query without clear origin, verify fallback to standard rewrite path.
 - Replay a prior query with explicit negation, verify negation is preserved.
 
-**Implementation Notes**
+**Notes**
 - Prefer high-precision replay matching over aggressive linking.
 - Keep replay reconstruction transparent through structured metadata.
 - Limit origin search scope to recent relevant history for performance.
@@ -1246,6 +1254,7 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Attribute negation: property-level exclusion distinct from entity exclusion.
 - Query replay: parameter substitution with thread context recovery.
 - Temporal resolution: phrases resolved to concrete ranges using user timezone with UTC fallback.
+- Realtime-sensitive query detection emits `realtimeRequired` and `freshnessDomain`.
 
 **Phase 3 — multi-intent dependency patterns**:
 
@@ -1259,12 +1268,14 @@ Conversation pipeline tests span unit tests for individual phases and end-to-end
 - Seven rewrite triggers: pronoun referent, short query expansion, multi-intent separation, specific identifier preservation, jargon alignment, ordinal resolution, query replay reconstruction.
 - Entity preservation guardrail: all original entities appear verbatim in rewrite, guardrail failure discards rewrite.
 - Source priority: parallel fan-out across all configured sources with priority weighting at merge.
+- Realtime-required routing: live source is mandatory primary path before non-live fallback paths.
 - Fail-fast source error handling: a failing source stops that source path while other sources continue.
 - Result merging: weight formula application, priority as scaling factor not absolute gate.
 - Attribute negation application: per-source negation strategies (minus-prefix, contextual clause, negation-aware recall, negative preference framing).
 - Dependent-intent exclusion filtering is applied before merged ranking.
 - Topic-level rewrite-strategy override takes precedence over library defaults.
 - Empty result handling: normal versus suspicious empties with logging.
+- Live-source failure under realtime-required path triggers freshness-blocked handoff for refusal or caveated response.
 
 **RAGFlow integration**:
 

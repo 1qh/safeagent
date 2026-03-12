@@ -87,4 +87,4 @@ For domain-by-domain implementation routes, see [Domain Playbooks](./domain-play
 
 ## Preservation Note
 
-All original planning documents from the historical `plan_v0` baseline are preserved in `plan`, with reader-first guidance layered on top. See [Coverage Matrix](./coverage-matrix.md) for preservation tracking.
+All original planning documents from the historical baseline are preserved in `plan`, with reader-first guidance layered on top. See [Coverage Matrix](./coverage-matrix.md) for preservation tracking.

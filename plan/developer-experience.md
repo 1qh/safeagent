@@ -408,12 +408,11 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 
 ### Task DEVELOPER_EXPERIENCE: Developer Platform and Onboarding Operations
 
-
-**Objective**
+**Goal**
 - Build a cohesive developer-experience platform that shortens time-to-first-success while preserving production-grade guardrails.
 - Provide a progressive path from beginner onboarding through expert workflows without fragmenting the platform contract.
 
-**What To Do**
+**Work**
 - Implement interactive onboarding flow with local-first defaults and visible first-run outcomes.
 - Define progressive API tiers for quick start, standard controls, and expert composition.
 - Define error taxonomy and diagnostics contracts with domain, category, and remediation guidance.
@@ -453,7 +452,7 @@ The error taxonomy SHALL classify every error into one of three fault-origin cat
 - Execute offline local workflow with mock provider, verify development loop remains productive.
 - Validate template starter outcomes, verify each path produces runnable output with adaptation notes.
 
-**Implementation Notes**
+**Notes**
 - Keep onboarding and diagnostics language consistent with documentation and standards governance.
 - Prioritize deterministic developer feedback loops before introducing optional advanced complexity.
 - Align all DX artifacts to one runtime and package posture to reduce ecosystem fragmentation risk.

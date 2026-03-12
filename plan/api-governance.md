@@ -331,12 +331,11 @@
 
 ### Task API_GOVERNANCE: Public API Stability and Migration Governance
 
-
-**Objective**
+**Goal**
 - Establish enforceable governance for public API stability, deprecation lifecycle, and consumer migration safety.
 - Ensure API evolution remains predictable for adopters while preserving controlled platform iteration.
 
-**What To Do**
+**Work**
 - Define and maintain authoritative public API inventory with stable internal-boundary rules.
 - Assign and publish stability tiers for all consumer-facing contracts.
 - Enforce semantic release classification policy aligned to compatibility impact.
@@ -375,7 +374,7 @@
 - Run compatibility matrix for candidate release, verify regression case blocks release progression.
 - Trigger emergency exception flow, verify time-bound approval and remediation tracking are recorded.
 
-**Implementation Notes**
+**Notes**
 - Keep compatibility policy machine-checkable to reduce subjective release decisions.
 - Treat consumer communication artifacts as required release deliverables, not optional documentation.
 - Align extension and type-contract governance with the same lifecycle rigor as runtime API changes.

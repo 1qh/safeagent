@@ -1,17 +1,17 @@
 # Coverage Matrix
 
-This matrix tracks preservation from the historical `plan_v0` baseline into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
+This matrix tracks preservation from the historical baseline into the current `plan` workspace so no original planning content is lost while the new reader-first layer is added.
 
 ## Preservation Status
 
-- Source files in `plan_v0`: 30
+- Source files in historical baseline: 30
 - Preserved source files in `plan`: 30
 - Missing files: 0
 - Additional reader-first files in `plan`: `start-here.md`, `constraints.md`, `quality-gates.md`, `operations.md`, `coverage-matrix.md`, `domain-playbooks.md`, `implementation-workflow.md`, `task-verification-index.md`, `batch-delivery-playbook.md`, `handoff-packet-template.md`, `plan-drift-control.md`, `readiness-scoreboard.md`, `readiness-decision-record-template.md`, `eval-adversarial-matrix.md`, `compact-authoring-standard.md`, `agent-kernel.md`
 
 ## Source-to-Current Preservation Map
 
-| Source (`plan_v0`) | Preserved (`plan`) | Status |
+| Source (historical baseline) | Preserved (`plan`) | Status |
 |---|---|---|
 | `overview.md` | `overview.md` | Preserved (additive reader-first links) |
 | `requirements.md` | `requirements.md` | Preserved |
@@ -68,7 +68,7 @@ Use this sequence to start implementation quickly:
 
 ## Verification Procedure
 
-- File parity check: all source filenames from the historical `plan_v0` baseline exist in `plan`.
+- File parity check: all source filenames from the historical baseline exist in `plan`.
 - Missing check: no source file is absent from `plan`.
 - Additions check: reader-first files are additive and do not replace source files.
 - Content loss check: no removed lines from source files unless explicitly documented.

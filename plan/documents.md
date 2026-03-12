@@ -719,16 +719,15 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ## Task Specifications
 
-> **SPIKE_RAG_DEPS** — canonical task specification is in [Foundation](./foundation.md). This document's pipeline tasks depend on its output.
+> **SPIKE_RAG_DEPS** — canonical task specification is in this document (below), aligned with execution routing authority.
 
 ### Task SPIKE_RAG_DEPS: RAG Dependency Validation Spike
 
-
-**Objective**
+**Goal**
 - Validate the full RAG dependency chain before document and retrieval implementation begins.
 - Prove that multimodal processing, embeddings, storage, and retrieval dependencies operate correctly in the target runtime.
 
-**What To Do**
+**Work**
 - Define the spike matrix for document parsing, multimodal processing, embedding generation, and retrieval primitives.
 - Validate PDF page splitting and per-page artifact handling.
 - Validate multimodal summarization dependency behavior for page-level outputs.
@@ -760,16 +759,16 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 - Exercise object storage upload and retrieval path, verify artifact round-trip integrity.
 - Simulate one dependency failure, verify spike output flags blocking impact and mitigation path.
 
-**Implementation Notes**
+**Notes**
 - Treat this spike as a hard precondition for document and retrieval implementation tasks.
 - Keep dependency findings traceable to downstream task risk.
 - Capture both runtime compatibility and operational behavior, not only import success.
 
 ### Task DOC_PIPELINE: Document Processing Pipeline
 
-**What to do**: Build the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini structured output generation summarizes each page with a schema that includes summary text, image descriptions, and vector-chart detection. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when vector charts are detected and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.
+**Work**: Build the full blocking stage pipeline. pdf-lib splits PDFs into per-page PDFs. pdfjs extracts raster images per page with the 100×100px size filter. Gemini structured output generation summarizes each page with a schema that includes summary text, image descriptions, and vector-chart detection. p-limit controls concurrency based on the key pool tier. Vector chart fallback renders pages to PNG when vector charts are detected and no raster images were found. Summaries are embedded and stored in `page_index`. Progress is tracked via `progress_current`.
 
-**Depends on**: SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS
+**Depends On**: SPIKE_RAG_DEPS, KEY_POOL, CONFIG_DEFAULTS
 
 **Acceptance Criteria**:
 - Large-PDF benchmark (e.g., ~200 pages when the upload size limit is increased for internal load testing) processes in under 15 seconds with a 10-key pool at elevated summarization per-key concurrency
@@ -790,9 +789,9 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ### Task FILE_STORAGE: File Storage
 
-**What to do**: Build the S3 storage layer using an S3-compatible storage client. Build the key naming scheme for original files, per-page PDFs, and extracted images. Build presigned URL generation with 7-day TTL. Build the page image redirect endpoint that generates a fresh presigned URL and returns a redirect response. Build the thread cleanup capability that lists and batch-deletes all S3 objects under a thread prefix.
+**Work**: Build the S3 storage layer using an S3-compatible storage client. Build the key naming scheme for original files, per-page PDFs, and extracted images. Build presigned URL generation with 7-day TTL. Build the page image redirect endpoint that generates a fresh presigned URL and returns a redirect response. Build the thread cleanup capability that lists and batch-deletes all S3 objects under a thread prefix.
 
-**Depends on**: DOCKER_COMPOSE, CONFIG_DEFAULTS
+**Depends On**: DOCKER_COMPOSE, CONFIG_DEFAULTS
 
 **Acceptance Criteria**:
 - All S3 keys follow a hierarchical structure organized by user, thread, and file identity
@@ -810,9 +809,9 @@ Files have an `expires_at` timestamp set at upload time. The Trigger.dev schedul
 
 ### Task UPLOAD_PIPELINE: Upload Pipeline
 
-**What to do**: Implement the complete upload pipeline from validation through routing. Magic bytes validation for all supported types. Size enforcement (≤5MB per file, ≤5 files per turn). Quota check against `user_storage_quotas`. DOCX detection and routing to LibreOffice conversion. Page count detection for PDFs. Mode assignment (`direct`, `indexed`, `rag`). `file_uploads` record creation. Quota increment. FileRegistry cache invalidation in Valkey.
+**Work**: Implement the complete upload pipeline from validation through routing. Magic bytes validation for all supported types. Size enforcement (≤5MB per file, ≤5 files per turn). Quota check against `user_storage_quotas`. DOCX detection and routing to LibreOffice conversion. Page count detection for PDFs. Mode assignment (`direct`, `indexed`, `rag`). `file_uploads` record creation. Quota increment. FileRegistry cache invalidation in Valkey.
 
-**Depends on**: FILE_STORAGE, STORAGE_WRAPPER, VALKEY_CACHE, DOCKER_COMPOSE
+**Depends On**: FILE_STORAGE, STORAGE_WRAPPER, VALKEY_CACHE, DOCKER_COMPOSE
 
 **Acceptance Criteria**:
 - Magic bytes check rejects files with mismatched content and extension

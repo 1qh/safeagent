@@ -462,27 +462,29 @@ HTTP status behavior:
 - 503 for down
 ## Task Specifications
 ### Task SCAFFOLD_SERVER: Server Scaffolding
-What to do:
+**Work**
 Set up the HTTP server project, wire safeagent dependency integration for development and CI modes, implement server entrypoint with lifecycle stack registration, start listening on default port behavior, expose basic liveness health endpoint, and include container build support.
-Depends on: SPIKE_CORE_STACK
-Acceptance criteria:
+**Depends On**
+- SPIKE_CORE_STACK
+**Acceptance Criteria**
 - Server starts and listens on configured port with default behavior.
 - Health endpoint returns ok without authentication.
 - Chat streaming endpoint returns unauthorized without JWT.
 - Unimplemented routes return not found.
 - Server consumes safeagent through expected dependency mode in development and CI.
 - Container image builds and starts successfully.
-QA scenarios:
+**QA Scenarios**
 - Start server and verify health response.
 - Call protected route without auth and verify unauthorized.
 - Call unknown route and verify not found.
 - Build and run container and verify health externally.
 - Terminate process and verify clean non-hanging shutdown.
 ### Task SERVER_AGENT_CFG: Agent Configuration
-What to do:
+**Work**
 Define all server-exposed agents with prompts, model constants, guardrail arrays, MCP configuration, CTA catalog wiring, and optional location tool providers. Export registry for route resolution by agent id.
-Depends on: SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL
-Acceptance criteria:
+**Depends On**
+- SCAFFOLD_SERVER, CTA_STREAMING, LOCATION_TOOL
+**Acceptance Criteria**
 - Every agent has unique stable id.
 - System prompts are non-empty and purpose-aligned.
 - Model values come from shared constants.
@@ -491,19 +493,20 @@ Acceptance criteria:
 - CTA catalog is defined and attached where used.
 - Location tool supports custom provider configuration.
 - Registry lookup returns correct agent or undefined for unknown id.
-QA scenarios:
+**QA Scenarios**
 - Resolve each registered agent by id.
 - Resolve unknown id and verify undefined.
 - Verify guardrail arrays are populated.
 - Verify model config aligns with shared config definitions.
 - Verify CTA entries include required fields.
 ### Task SERVER_ROUTES: Routes
-What to do:
+**Work**
 Build all route handlers described in this document with thin handler design: validate request, delegate to library function, map response. Organize route groups with appropriate middleware and apply role authorization guard to admin routes.
 Define all routes with API documentation integration using Zod v4 request and response schemas and aligned schema mapping configuration. Serve OpenAPI JSON and Scalar UI from public endpoints.
 The chat streaming endpoint must accept an optional verbosity control parameter (`standard` or `full`, default `standard`) validated by the verbosity-level schema. The handler passes the verbosity value to the stream handler factory. When `full`, the server should verify the requesting user has developer-level permissions before allowing trace-step event emission.
-Depends on: SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING
-Acceptance criteria:
+**Depends On**
+- SCAFFOLD_SERVER, SERVER_AGENT_CFG, SSE_STREAMING
+**Acceptance Criteria**
 - All mapped routes are registered on correct HTTP methods.
 - Protected routes enforce unauthorized behavior without valid JWT.
 - Admin routes enforce forbidden behavior for non-admin role.
@@ -515,7 +518,7 @@ Acceptance criteria:
 - SSE endpoint documents stream response behavior.
 - SSE endpoint accepts optional verbosity control parameter and passes it to stream handler factory.
 - Error responses use server error message map.
-QA scenarios:
+**QA Scenarios**
 - Validate unauthorized behavior across protected routes.
 - Validate forbidden behavior for admin routes with non-admin token.
 - Validate admin token reaches admin handlers.
@@ -526,26 +529,28 @@ QA scenarios:
 - Validate verbosity `full` includes `trace-step` events interleaved with user-facing events.
 - Validate invalid verbosity value returns bad request.
 ### Task SERVER_MCP: MCP Definitions
-What to do:
+**Work**
 Define MCPServerConfig array for required MCP servers, including transport, connection details, and optional tool allowlists. Export array for agent configuration wiring.
-Depends on: SCAFFOLD_SERVER, MCP_CLIENT
-Acceptance criteria:
+**Depends On**
+- SCAFFOLD_SERVER, MCP_CLIENT
+**Acceptance Criteria**
 - At least one MCP config exists.
 - Each config uses unique stable id.
 - Stdio transport entries include command and needed environment values.
 - SSE transport entries include URL.
 - Tool allowlists include only valid tool names.
 - Array type checks against MCPServerConfig.
-QA scenarios:
+**QA Scenarios**
 - Verify non-empty MCP config export.
 - Verify required fields per entry.
 - Start with MCP unavailable and confirm warning plus continued startup.
 - Verify health endpoint reports per-server MCP status.
 ### Task SERVER_GUARDRAILS: Guardrail Rules
-What to do:
+**Work**
 Define inputGuardrails and outputGuardrails arrays using guardrail factories and define ConceptRegistry vocabulary. Export all for agent configuration wiring.
-Depends on: SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD
-Acceptance criteria:
+**Depends On**
+- SCAFFOLD_SERVER, INPUT_GUARD, OUTPUT_GUARD, GUARD_FACTORY, LANG_GUARD, HATE_SPEECH_GUARD
+**Acceptance Criteria**
 - inputGuardrails is non-empty GuardrailFn array.
 - outputGuardrails is non-empty GuardrailFn array.
 - ConceptRegistry is defined and referenced by guardrail logic.
@@ -554,17 +559,18 @@ Acceptance criteria:
 - At least one guardrail enforces topic boundaries.
 - At least one guardrail detects harmful content.
 - Arrays pass type checks.
-QA scenarios:
+**QA Scenarios**
 - Benign input yields pass behavior.
 - Blocked input yields p0 behavior.
 - Benign output chunk yields pass behavior.
 - Blocked output chunk yields p0 behavior.
 - Concept registry covers all referenced concept identifiers.
 ### Task UPLOAD_ENDPOINT: Upload Endpoint
-What to do:
+**Work**
 Implement upload route handler that parses multipart payload, extracts file and metadata, delegates to handleUpload, and maps validation errors through error message map.
-Depends on: SERVER_ROUTES, UPLOAD_PIPELINE
-Acceptance criteria:
+**Depends On**
+- SERVER_ROUTES, UPLOAD_PIPELINE
+**Acceptance Criteria**
 - Accept multipart payload with file.
 - Accept optional metadata.
 - Accept optional scope with thread default and global option.
@@ -574,7 +580,7 @@ Acceptance criteria:
 - Return payload-too-large on oversize.
 - Return quota-exceeded on storage limit violation.
 - Stream through library without whole-file in-memory buffering.
-QA scenarios:
+**QA Scenarios**
 - Upload valid document and verify created uploading record.
 - Upload unsupported type and verify mapped error.
 - Upload oversize file and verify rejection.
@@ -582,34 +588,36 @@ QA scenarios:
 - Upload malformed multipart and verify validation error.
 - Simulate quota exceed and verify quota response.
 ### Task FEEDBACK_ENDPOINT: Feedback Endpoint
-What to do:
+**Work**
 Implement feedback route handler with request validation, trace ownership verification, feedback submission delegation, and response mapping.
-Depends on: SERVER_ROUTES, LANGFUSE_MODULE
-Acceptance criteria:
+**Depends On**
+- SERVER_ROUTES, LANGFUSE_MODULE
+**Acceptance Criteria**
 - Accept trace identifier, binary score, optional comment.
 - Enforce binary score values only.
 - Delegate submission with authenticated user identity.
 - Return ok on success with traced false variant when tracing backend absent.
 - Return not found when trace is missing or not owned by user.
 - Return bad request on invalid score.
-QA scenarios:
+**QA Scenarios**
 - Submit valid positive score and verify success.
 - Submit valid negative score and verify success.
 - Submit invalid score and verify validation failure.
 - Submit unknown trace and verify not found.
 - Submit foreign-user trace and verify not found.
 ### Task FILE_CRUD: File CRUD
-What to do:
+**Work**
 Implement file list, detail, delete, status, and page image redirect handlers using library file APIs with strict user scoping.
-Depends on: SERVER_ROUTES, FILE_REGISTRY
-Acceptance criteria:
+**Depends On**
+- SERVER_ROUTES, FILE_REGISTRY
+**Acceptance Criteria**
 - List endpoint returns paginated user-scoped results.
 - Detail endpoint returns not found for non-owned records.
 - Delete endpoint returns no-content on success and not found otherwise.
 - Status endpoint returns current state and progress.
 - Image endpoint returns redirect for existing image and not found for missing image.
 - All endpoints enforce user scoping without cross-user access.
-QA scenarios:
+**QA Scenarios**
 - List with no files returns empty set.
 - List with files returns expected records.
 - Fetch owned file returns success.
@@ -620,10 +628,11 @@ QA scenarios:
 - Request valid page image returns redirect.
 - Request non-existent page image returns not found.
 ### Task JWT_AUTH: JWT Auth
-What to do:
+**Work**
 Implement auth middleware factory and role authorization guard with JWT verification, user and role context resolution, and route group registration on protected routes.
-Depends on: SCAFFOLD_SERVER
-Acceptance criteria:
+**Depends On**
+- SCAFFOLD_SERVER
+**Acceptance Criteria**
 - auth middleware factory returns valid Elysia lifecycle wiring.
 - Middleware resolves userId and role on success.
 - Missing authorization maps to missing_token.
@@ -632,7 +641,7 @@ Acceptance criteria:
 - role authorization guard rejects non-admin role with insufficient_role.
 - role authorization guard passes admin role.
 - Log context is updated with user identity post-auth.
-QA scenarios:
+**QA Scenarios**
 - Missing authorization returns missing_token.
 - Invalid bearer token returns invalid_token.
 - Wrong-secret token returns invalid_token.
@@ -641,17 +650,18 @@ QA scenarios:
 - Admin token reaches admin handler.
 - Downstream handler observes resolved userId and role.
 ### Task ADMIN_API: Admin API
-What to do:
+**Work**
 Implement admin budget detail, update, and list endpoints with role authorization guard enforcement and budget API delegation.
-Depends on: SERVER_ROUTES, JWT_AUTH, COST_TRACKING
-Acceptance criteria:
+**Depends On**
+- SERVER_ROUTES, JWT_AUTH, COST_TRACKING
+**Acceptance Criteria**
 - All admin budget routes require admin role.
 - Detail endpoint returns requested user budget record.
 - Update endpoint writes limits and optionally resets spend.
 - List endpoint returns paginated records with optional over-budget filter.
 - resetNow true resets active-period spend counters.
 - Routes return not found for non-existent users.
-QA scenarios:
+**QA Scenarios**
 - Call admin routes without auth and verify unauthorized.
 - Call admin routes with non-admin token and verify forbidden.
 - Call detail with admin token and valid user and verify success.

@@ -565,13 +565,25 @@ The sufficiency score is deterministic:
 
 **sufficiency = (w_coverage * coverage) + (w_confidence * confidence) + (w_completeness * completeness)**
 
+For freshness-critical queries, an additional deterministic freshness term is required:
+
+**fresh_sufficiency = (w_coverage * coverage) + (w_confidence * confidence) + (w_completeness * completeness) + (w_freshness * freshness)**
+
+`freshness` is derived from evidence timestamp age against domain policy windows.
+
 | Component | Range | Computation | Default Weight |
 |-----------|-------|-------------|----------------|
 | Coverage | 0.0–1.0 | Fraction of query concepts covered by retrieved evidence. | 0.4 |
 | Confidence | 0.0–1.0 | Mean normalized similarity of top retrieved evidence units. | 0.4 |
 | Completeness | 0.0 or 1.0 | `1.0` if enough distinct passages are present, else `0.0`. | 0.2 |
 
-The minimum-distinct-passages setting, weights, thresholds, and gate-closed behavior are configured per topic through the intent configuration.
+Freshness-critical policy adds:
+
+| Component | Range | Computation | Default Weight |
+|-----------|-------|-------------|----------------|
+| Freshness | 0.0–1.0 | Age-based score from evidence timestamps against domain window. | 0.3 |
+
+The minimum-distinct-passages setting, weights, thresholds, and gate-closed behavior are configured per topic through the intent configuration. For freshness-critical queries, topic policy must also define max-age windows and stale-data handling behavior.
 
 ### Gate-Closed Behaviors
 
@@ -580,6 +592,7 @@ The minimum-distinct-passages setting, weights, thresholds, and gate-closed beha
 | `hard` | High-stakes topics | Direct refusal due to insufficient evidence. |
 | `soft` | Partial guidance acceptable | Caveated answer with explicit limitation. |
 | `clarify` | Query ambiguity | Clarification question before retrying retrieval. |
+| `freshness_block` | Realtime-required query with stale or unavailable live evidence | Refusal or caveated response that explicitly states freshness limitation. |
 
 The system blocks prose generation when the gate is closed.
 
@@ -1184,9 +1197,9 @@ flowchart TD
 
 ### Task RAG_INFRA: Retrieval and Evidence Infrastructure
 
-**What to do**: Build the full PDF hybrid retrieval pipeline using the page-level retrieval table, including three-arm RRF fusion, page context retrieval, and a document query tool factory with mandatory server-side `userId` and `threadId` filters. Build evidence-based answer generation using structured output generation for an answer-plus-citations response structure after gate-open.
+**Work**: Build the full PDF hybrid retrieval pipeline using the page-level retrieval table, including three-arm RRF fusion, page context retrieval, and a document query tool factory with mandatory server-side `userId` and `threadId` filters. Build evidence-based answer generation using structured output generation for an answer-plus-citations response structure after gate-open.
 
-**Depends on**: Storage wrapper, document processing pipeline.
+**Depends On**: Storage wrapper, document processing pipeline.
 
 **Acceptance Criteria**:
 
@@ -1219,12 +1232,11 @@ flowchart TD
 
 ### Task RAGFLOW_CLIENT: RAGFlow Retrieval Client Wrapper
 
-
-**Objective**
+**Goal**
 - Build a robust client wrapper for retrieval operations against RAGFlow.
 - Provide consistent result normalization so RAGFlow outputs can participate in source routing and citation workflows.
 
-**What To Do**
+**Work**
 - Define wrapper configuration contract for endpoint, credentials, dataset scope, and runtime limits.
 - Implement request handling for retrieval queries with stable input normalization.
 - Implement response normalization into internal retrieval result shapes.
@@ -1257,16 +1269,16 @@ flowchart TD
 - Simulate unavailable external service, verify graceful degradation without breaking other sources.
 - Provide malformed upstream payload, verify normalization fails safely with structured error output.
 
-**Implementation Notes**
+**Notes**
 - Keep wrapper deterministic so downstream ranking behavior remains stable.
 - Separate transport concerns from result-shape normalization.
 - Preserve source transparency to support evidence and citation trust.
 
 ### Task CROSS_CONV_RAG: Cross-Conversation Retrieval Scope
 
-**What to do**: Extend retrieval to support thread and global scope. Add `scope` metadata, store global rows under sentinel thread value, include both thread and global rows in search filters, and apply configurable ranking preference to thread-local content. Include citation `scope`.
+**Work**: Extend retrieval to support thread and global scope. Add `scope` metadata, store global rows under sentinel thread value, include both thread and global rows in search filters, and apply configurable ranking preference to thread-local content. Include citation `scope`.
 
-**Depends on**: RAG_INFRA.
+**Depends On**: RAG_INFRA.
 
 **Acceptance Criteria**:
 
@@ -1293,9 +1305,9 @@ flowchart TD
 
 ### Task FILE_REGISTRY: Temporal, Ordinal, Named Resolution
 
-**What to do**: Implement FileRegistry resolution for temporal, ordinal, and fuzzy named references with per-user cross-session persistence. Use Postgres as source of truth and Valkey as cache.
+**Work**: Implement FileRegistry resolution for temporal, ordinal, and fuzzy named references with per-user cross-session persistence. Use Postgres as source of truth and Valkey as cache.
 
-**Depends on**: Storage wrapper, cache.
+**Depends On**: Storage wrapper, cache.
 
 **Acceptance Criteria**:
 
@@ -1316,9 +1328,9 @@ flowchart TD
 
 ### Task EVIDENCE_GATE: Sufficiency and Policy-Controlled Outcomes
 
-**What to do**: Implement deterministic sufficiency scoring with coverage, confidence, and completeness components. Enforce gate-open prerequisite for prose generation. Use per-topic intent configuration to control threshold and closed-gate behavior. Run attribute-first citation planning before generation.
+**Work**: Implement deterministic sufficiency scoring with coverage, confidence, and completeness components. Enforce gate-open prerequisite for prose generation. Use per-topic intent configuration to control threshold and closed-gate behavior. Run attribute-first citation planning before generation.
 
-**Depends on**: Embed routing, retrieval infrastructure, core types.
+**Depends On**: Embed routing, retrieval infrastructure, core types.
 
 **Acceptance Criteria**:
 
@@ -1328,6 +1340,9 @@ flowchart TD
 - Hard refusal emits no generated answer prose.
 - Soft caveat includes configured disclaimer text.
 - Gate evaluation adds minimal latency.
+- Freshness-critical mode requires timestamp-bearing evidence and freshness scoring before gate-open.
+- Evidence older than configured domain max-age triggers `freshness_block` behavior.
+- Freshness-blocked responses include explicit age/freshness caveat or hard refusal by policy.
 
 **QA Scenarios**:
 
@@ -1336,15 +1351,19 @@ flowchart TD
 - Strong evidence opens gate and triggers attribute-first flow.
 - Distinct topics with distinct thresholds evaluate independently.
 - Configuration updates apply at next startup boundary.
+- Realtime finance query with stale evidence triggers freshness-blocked outcome.
+- Realtime stock query with stale timestamped evidence triggers freshness-blocked outcome.
+- Realtime weather query with fresh timestamped evidence opens gate.
+- Realtime live-score query with stale evidence triggers freshness-blocked outcome.
+- Realtime query with live-source outage triggers configured refusal or caveat path.
 
 ### Task RAG_FEEDBACK_LOOP: Automated Retrieval Quality Feedback Loop
 
-
-**Objective**
+**Goal**
 - Implement a closed-loop optimization system that uses retrieval feedback signals to improve ranking quality over time.
 - Ensure parameter adaptation is controlled, auditable, and safely reversible.
 
-**What To Do**
+**Work**
 - Ingest retrieval-related user feedback events and link them to originating query and evidence context.
 - Compute rolling quality signals at document, source-arm, and topic levels.
 - Adjust ranking influence when source-arm performance trends negative over sufficient samples.
@@ -1378,16 +1397,16 @@ flowchart TD
 - Force quality regression after parameter change, verify rollback restores previous values.
 - Pin protected parameter and trigger adaptation cycle, verify pinned value remains unchanged.
 
-**Implementation Notes**
+**Notes**
 - Prioritize safety and auditability over aggressive optimization.
 - Keep adaptation logic transparent so operators can reason about changes.
 - Ensure optimization never bypasses evidence-gate safety boundaries.
 
 ### Task DOC_SEARCH: Unified Document Search Tool
 
-**What to do**: Build a document search tool as a stable interface for PDFs and TXT. PDFs use hybrid page retrieval; TXT uses chunk retrieval. Return structured evidence bundles for gating and post-gate response generation. Support configurable not-found behavior and parallel multi-document calls.
+**Work**: Build a document search tool as a stable interface for PDFs and TXT. PDFs use hybrid page retrieval; TXT uses chunk retrieval. Return structured evidence bundles for gating and post-gate response generation. Support configurable not-found behavior and parallel multi-document calls.
 
-**Depends on**: FileRegistry, RAG_INFRA, EVIDENCE_GATE.
+**Depends On**: FileRegistry, RAG_INFRA, EVIDENCE_GATE.
 
 **Acceptance Criteria**:
 
@@ -1406,9 +1425,9 @@ flowchart TD
 
 ### Task VISUAL_GROUNDING: Multimodal Visual Evidence
 
-**What to do**: Implement multimodal chart/table/image/diagram grounding with image extraction and metadata at processing time, image retrieval at query time, and confidence gating before response generation.
+**Work**: Implement multimodal chart/table/image/diagram grounding with image extraction and metadata at processing time, image retrieval at query time, and confidence gating before response generation.
 
-**Depends on**: File storage, configuration defaults, FileRegistry, EVIDENCE_GATE.
+**Depends On**: File storage, configuration defaults, FileRegistry, EVIDENCE_GATE.
 
 **Acceptance Criteria**:
 
@@ -1471,6 +1490,8 @@ flowchart TD
 - Gate open: plan citations and generate prose.
 - Gate closed: hard refusal, soft caveat, or clarification per config.
 - Thresholds configurable per topic.
+- Freshness-critical topics require timestamp-aware freshness scoring before gate-open.
+- Stale evidence for freshness-critical queries routes to freshness-blocked outcome.
 
 **FileRegistry**:
 
