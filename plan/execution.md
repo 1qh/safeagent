@@ -252,7 +252,7 @@ For role-based reading paths, use [Start Here](./start-here.md). For domain-by-d
 | ADMIN_API | Admin API for budget management | `unspecified-high` | SERVER_ROUTES, COST_TRACKING, JWT_AUTH |
 | GENERATIVE_UI | Generative UI pipeline (component tool, SSE event type, stream processor, frontend renderers, component registry) | `deep` | CTA_STREAMING, SSE_STREAMING, CLIENT_SDK, REACT_HOOKS |
 | WEB_COMPONENTS | Web UI components (Web Components Package — ai-elements adoption + custom components) | `unspecified-high` | REACT_HOOKS |
-| RN_COMPONENTS | React Native components (Native Components Package — NativeWind, offline-first) | `unspecified-high` | REACT_HOOKS |
+| RN_COMPONENTS | React Native components (Native Components Package — Uniwind, offline-first) | `unspecified-high` | REACT_HOOKS |
 
 > **Note**: BARREL_EXPORTS depends on ALL library module tasks that are complete by ENDPOINTS_BARREL_BATCH (AGENT_FACTORY through EVAL_CONFIG, SERVER_ROUTES, SURREALDB_CLIENT, FACT_EXTRACTION, MEMORY_RECALL, SPIKE_RAG_DEPS, DOC_PIPELINE, RAG_INFRA, FILE_STORAGE, UPLOAD_PIPELINE, LANGFUSE_MODULE through TRIGGER_TASKS, RATE_LIMITING, STRUCT_LOGGING, CIRCUIT_BREAKER through VISUAL_GROUNDING, plus STYLE_PREFERENCES, FACT_SUPERSESSION, RESPONSE_CALIBRATION, FRUSTRATION_SIGNAL, CLARIFICATION_MODEL, REACT_HOOKS, WEB_COMPONENTS, and RN_COMPONENTS). It handles only the TOP-LEVEL barrel — subpath barrels are each task's responsibility (see Subpath Barrel Export Convention below).
 

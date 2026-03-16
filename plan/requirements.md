@@ -14,7 +14,7 @@ Create a production-ready TypeScript library (`safeagent`) that encapsulates all
 | **Client SDK** | Lightweight, framework-agnostic TypeScript SDK module for consuming safeagent server APIs — SSE parsing, file upload, feedback, thread management, offline queue |
 | **React Hooks** | React hooks module implementing AI SDK ChatTransport for seamless `useChat` integration with safeagent SSE protocol |
 | **Web Components** | Web components module built on shadcn and Vercel ai-elements with custom trace and verbosity visualization components |
-| **Native Components** | Native components module using NativeWind with offline-first capabilities |
+| **Native Components** | Native components module using Uniwind with offline-first capabilities |
 | **safeagent-tui binary** | Interactive terminal UI for agent testing with streaming chat display, textarea input, commands, and file upload |
 | **Server project** | Separate repository with working SSE streaming API, file upload endpoint, guardrail configuration, MCP server definitions, agent prompts |
 | **Next.js demo app** | Full-featured web chat application demonstrating all components, server switching, verbosity toggle, trace visualization |
@@ -229,7 +229,7 @@ Every item listed below is a non-negotiable requirement. No item may be trimmed,
 |---|---|---|
 | MH_REACT_HOOKS | React hooks module for AI SDK integration | The React hooks module implements the AI SDK ChatTransport interface so `useChat` works with the safeagent SSE protocol. It exports typed hooks for chat, feedback, file upload, and thread management. It depends on the client SDK module for SSE transport |
 | MH_WEB_COMPONENTS | Web UI components module | The web components module includes shadcn and Vercel ai-elements based components for conversation, messages, input, attachments, tool calls, reasoning, sources, and model selector. Every component is customizable via className and children slots. Installation follows shadcn-style copy-into-project workflow |
-| MH_RN_COMPONENTS | Native UI components module | The native components module provides an equivalent React Native component set using NativeWind. It shares hooks and business logic with the web layer through the React hooks module while keeping separate JSX and styling. Expo is required for the `expo/fetch` polyfill |
+| MH_RN_COMPONENTS | Native UI components module | The native components module provides an equivalent React Native component set using Uniwind. It shares hooks and business logic with the web layer through the React hooks module while keeping separate JSX and styling. Expo is required for the `expo/fetch` polyfill |
 | MH_TRACE_STEP_EVENTS | Trace-step SSE event family | `trace-step` named SSE events for real-time pipeline visibility: intent detection, memory recall, guardrail verdicts, retrieval progress, tool execution, context budget. Emitted only when verbosity is `full`. See [Streaming & Transport](./transport.md) |
 | MH_VERBOSITY_FILTER | Verbosity-level event filtering | Chat streaming endpoint accepts verbosity level (`standard` or `full`). `standard` emits user-facing events only. `full` adds trace-step events for developer debugging. Server controls via query parameter |
 | MH_TRACE_UI | Trace visualization components | Custom UI components (web) for displaying trace-step events: collapsible timeline, latency indicators, token counts, pipeline step status badges. Not from ai-elements — built on top of shadcn primitives. See [Frontend SDK](./frontend-sdk.md) |

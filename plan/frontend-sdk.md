@@ -69,7 +69,7 @@ flowchart LR
     CLIENT[Client SDK\nConsumes Types\nRe-exports Types\nSSE Parsing\nOffline Queue]
     REACT[React Hooks Module\nTransport Adapter Wrapper\nChat Hook Integration\nTyped Hooks]
     UI_WEB[Web Components Module\nDepends on React Hooks\nshadcn + ai-elements]
-    UI_NATIVE[Native Components Module\nDepends on React Hooks\nNativeWind Styling]
+    UI_NATIVE[Native Components Module\nDepends on React Hooks\nUniwind Styling]
 
     SAFEAGENT --> CLIENT
     CLIENT --> REACT
@@ -654,7 +654,7 @@ The native components module provides native equivalents of web component capabi
 The module shares logic through hooks and diverges only where platform rendering constraints require native implementations.
 
 Official references:
-- NativeWind docs: https://www.nativewind.dev
+- Uniwind docs: https://www.uniwind.dev
 
 Shared logic commitments:
 - Consume chat-hook integration through safeagent transport wrappers.
@@ -690,14 +690,14 @@ Polyfill expectations:
 flowchart LR
     REACT_HOOKS_LAYER[React Hooks Module Hooks]
     NATIVE_UI_LAYER[Native Components Module Components]
-    NATIVEWIND_LAYER[NativeWind Styling Translation]
+    UNIWIND_LAYER[Uniwind Styling Translation]
     EXPO_RUNTIME[Expo Runtime Services]
     DEVICE_UI[Mobile App Surfaces]
 
     REACT_HOOKS_LAYER --> NATIVE_UI_LAYER
-    NATIVE_UI_LAYER --> NATIVEWIND_LAYER
+    NATIVE_UI_LAYER --> UNIWIND_LAYER
     NATIVE_UI_LAYER --> EXPO_RUNTIME
-    NATIVEWIND_LAYER --> DEVICE_UI
+    UNIWIND_LAYER --> DEVICE_UI
     EXPO_RUNTIME --> DEVICE_UI
 ```
 
@@ -747,7 +747,7 @@ Install workflow model:
 
 Validation responsibilities:
 - Verify Tailwind-oriented setup for web installs.
-- Verify NativeWind-oriented setup for native installs.
+- Verify Uniwind-oriented setup for native installs.
 - Verify required utility support for class merge helpers and style tokens.
 - Warn when an existing local component diverges from registry signature.
 
@@ -866,7 +866,7 @@ Dark and light appearance behavior:
 - Ensure trace latency colors remain legible in both appearance contexts.
 
 Native styling policies:
-- The native components module uses NativeWind translation to native style objects at build time.
+- The native components module uses Uniwind translation to native style objects at build time.
 - Native classes mirror conceptual utility naming from web where practical.
 - Platform-specific spacing and typography may diverge for usability.
 
@@ -1252,7 +1252,7 @@ flowchart TD
 Documentation links for implementation teams:
 - AI SDK React integration patterns: https://ai-sdk.dev/docs/ai-sdk-ui/chatbot
 - ai-elements component catalog and usage notes: https://elements.ai-sdk.dev
-- NativeWind utility translation and runtime behavior: https://www.nativewind.dev
+- Uniwind utility translation and runtime behavior: https://www.uniwind.dev
 - shadcn design tokens and utility composition guidance: https://ui.shadcn.com
 - Storybook authoring and testing workflows: https://storybook.js.org
 

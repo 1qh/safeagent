@@ -254,7 +254,7 @@ graph LR
 | **safeagent-tui** | Interactive TUI testing app — streaming chat, /upload, commands, "as good as opencode" |
 | **React Hooks** | React hooks module — ChatTransport, useSafeAgent, useTraceSteps, useFeedback, useUpload, useServerConnection, useVerbosity |
 | **Web Components** | Web components module — shadcn + ai-elements adopted components, custom trace and server and thread components, Storybook, component CLI |
-| **Native Components** | Native components module — NativeWind styling, offline-first behavior, native equivalents of web components |
+| **Native Components** | Native components module — Uniwind styling, offline-first behavior, native equivalents of web components |
 | **Next.js Demo** | Web reference application — full-featured chat with server switching, verbosity toggle, trace timeline, file upload, feedback |
 | **Expo Demo** | Mobile reference application — offline-first, tab navigation, server management, local SQLite persistence |
 | **Server** | Thin API server — custom prompts, intent config, guardrail rules, MCP config, JWT auth |
@@ -283,7 +283,7 @@ graph LR
 | Streaming | Framework stream-event format throughout | No format bridge, direct streaming path via the framework's execution method, TripWire safety |
 | Frontend SDK | Client SDK → React hooks → web components plus native components | Types flow once from engine through the frontend subpath module chain — zero duplication, shared hooks, separate JSX |
 | Web Components | shadcn + ai-elements (48 adopted) + 8 custom | Mature Radix-backed primitives from AI SDK team, gap-fill only where needed |
-| RN Components | NativeWind, separate JSX, shared hooks | No DOM, no Radix — native implementation with hook-level parity |
+| RN Components | Uniwind, separate JSX, shared hooks | No DOM, no Radix — native implementation with hook-level parity |
 | Trace Visualization | Trace-step SSE events → TraceTimeline component | Real-time pipeline visibility in full verbosity mode, hidden in standard mode |
 | Demo Strategy | Next.js web + Expo mobile reference apps | Production-quality references, not throwaway samples — server switching and verbosity as first-class UX |
 | Scaling | Trigger.dev queue + horizontal workers | Configurable per deployment (queue-all vs in-process) |
